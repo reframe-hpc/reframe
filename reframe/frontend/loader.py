@@ -8,6 +8,7 @@
 #
 
 import ast
+import contextlib
 import inspect
 import os
 import sys
@@ -27,7 +28,7 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
     @property
     def valid(self):
-        return self._has_import
+        return self._has_import or self._has_regression_test
 
     def visit_Import(self, node):
         for m in node.names:
@@ -37,6 +38,13 @@ class RegressionCheckValidator(ast.NodeVisitor):
     def visit_ImportFrom(self, node):
         if node.module is not None and node.module.startswith('reframe'):
             self._has_import = True
+
+    def visit_ClassDef(self, node):
+        for deco in node.decorator_list:
+            with contextlib.suppress(AttributeError):
+                if deco.attr == 'simple_test':
+                    self._has_regression_test = True
+                    break
 
 
 class RegressionCheckLoader:

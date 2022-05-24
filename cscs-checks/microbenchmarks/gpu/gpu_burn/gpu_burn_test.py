@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import reframe as rfm   # noqa: F501
+import reframe as rfm
 from hpctestlib.microbenchmarks.gpu.gpu_burn import gpu_burn_check
 
 
