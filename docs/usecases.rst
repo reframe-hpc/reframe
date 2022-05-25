@@ -13,7 +13,7 @@ ReFrame at CSCS
 
 CSCS uses ReFrame for both functionality and performance tests for all of its production and test development systems, among which are the `Piz Daint <https://www.cscs.ch/computers/piz-daint/>`__ supercomputer (Cray XC40/XC50 hybrid system), the `Kesch/Escha <https://www.cscs.ch/computers/kesch-escha-meteoswiss/>`__ twin systems (Cray CS-Storm used by MeteoSwiss for weather predition).
 The same ReFrame tests are reused as much as possible across systems with minor adaptations.
-The test suite of CSCS (publicly `available <https://github.com/eth-cscs/reframe/tree/master/cscs-checks>`__ inside ReFrame's repository) comprises tests for full scientific applications, scientific libraries, programming environments, compilation and linking, profiling and debugger tools, basic CUDA operations, performance microbenchmarks and I/O libraries.
+The test suite of CSCS (publicly `available <https://github.com/reframe-hpc/reframe/tree/master/cscs-checks>`__ inside ReFrame's repository) comprises tests for full scientific applications, scientific libraries, programming environments, compilation and linking, profiling and debugger tools, basic CUDA operations, performance microbenchmarks and I/O libraries.
 Using tags we have split the tests in three broad overlapping categories:
 
 1. Production tests -- This category comprises a large variety of tests and is run daily overnight using Jenkins.
@@ -57,7 +57,7 @@ Separating the logical description of a regression test from all the unnecessary
 
 .. note:: The higher test count of the older suite refers to test cases, i.e., running the same test for different programming environments, whereas for ReFrame the counts do not account for this.
 
-.. note:: CSCS maintains a separate repository for tests related to HPC debugging and performance tools, which you can find `here <https://github.com/eth-cscs/hpctools>`__. These tests were not accounted in this analysis.
+.. note:: CSCS maintains a separate repository for tests related to HPC debugging and performance tools, which you can find `here <https://github.com/reframe-hpc/hpctools>`__. These tests were not accounted in this analysis.
 
 
 ReFrame at NERSC

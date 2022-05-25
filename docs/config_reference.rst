@@ -15,7 +15,7 @@ The syntax we use in the following to describe the different configuration objec
 .. |jq| replace:: :attr:`jq(1)`
 .. _jq: https://stedolan.github.io/jq/manual/
 .. |schemas/config.json| replace:: ``reframe/schemas/config.json``
-.. _schemas/config.json: https://github.com/eth-cscs/reframe/blob/master/reframe/schemas/config.json
+.. _schemas/config.json: https://github.com/reframe-hpc/reframe/blob/master/reframe/schemas/config.json
 .. |access| replace:: :attr:`access`
 .. _access: #.systems[].partitions[].access
 .. |basedir| replace:: :attr:`basedir`

@@ -30,7 +30,7 @@ Users have no control over this variable.
 It is always set by the framework upon startup.
 
 If no configuration file is found in any of the predefined locations, ReFrame will fall back to a generic configuration that allows it to run on any system.
-You can find this generic configuration file `here <https://github.com/eth-cscs/reframe/blob/master/reframe/core/settings.py>`__.
+You can find this generic configuration file `here <https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py>`__.
 Users may *not* modify this file.
 
 There are two ways to provide a custom configuration file to ReFrame:
