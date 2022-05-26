@@ -15,15 +15,6 @@ ReFrame also offers a high-level and flexible abstraction for writing sanity and
 
 Finally, ReFrame offers a powerful and efficient runtime for running and managing the execution of tests, as well as integration with common logging facilities, where ReFrame can send live data from currently running performance tests.
 
-Use Cases
-=========
-
-A pre-release of ReFrame has been in production at the `Swiss National Supercomputing Centre <http://www.cscs.ch>`__ since early December 2016.
-The `first <https://github.com/reframe-hpc/reframe/releases/tag/v2.2>`__ public release was in May 2017 and it is being actively developed since then.
-Several HPC centers around the globe have adopted ReFrame for testing and benchmarking their systems in an easy, consistent and reproducible way.
-You can read a couple of early use cases `here <usecases.html>`__.
-
-
 Publications
 ============
 
@@ -50,7 +41,6 @@ Publications
    tutorials
    configure
    topics
-   usecases
    migration_2_to_3
    manuals
    hpctestlib
