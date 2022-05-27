@@ -681,7 +681,7 @@ First, we need to enable the container platform support in ReFrame's configurati
    :emphasize-lines: 15-24
 
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
-In this case, we define the `Sarus <https://github.com/reframe-hpc/sarus>`__ platform for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
+In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
 Similarly, we add an entry for the `Singularity <https://sylabs.io>`__ platform.
 
 The following parameterized test, will create two tests, one for each of the supported container platforms:
