@@ -289,7 +289,7 @@ def test_select_subconfig():
     assert site_config.get('general/0/check_search_path') == ['c:d']
 
     # Test default values for non-existent name-addressable objects
-    # See https://github.com/eth-cscs/reframe/issues/1339
+    # See https://github.com/reframe-hpc/reframe/issues/1339
     assert site_config.get('modes/@foo/options') == []
     assert site_config.get('modes/10/options') == []
 

@@ -26,9 +26,6 @@ class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
          - *None*
     '''
 
-    # FIXME: We set a default value to the following variable due to:
-    # https://github.com/eth-cscs/reframe/issues/2477
-
     #: Set the build option to either ``'cuda'`` or ``'hip'``.
     #:
     #: :type: :class:`str`
