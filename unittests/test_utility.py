@@ -238,8 +238,8 @@ def test_is_interactive(monkeypatch):
 
 
 def test_is_url():
-    repo_https = 'https://github.com/eth-cscs/reframe.git'
-    repo_ssh = 'git@github.com:eth-cscs/reframe.git'
+    repo_https = 'https://github.com/reframe-hpc/reframe.git'
+    repo_ssh = 'git@github.com:reframe-hpc/reframe.git'
     assert osext.is_url(repo_https)
     assert not osext.is_url(repo_ssh)
 
@@ -278,10 +278,10 @@ def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
 
 
 def test_git_repo_exists(git_only):
-    assert osext.git_repo_exists('https://github.com/eth-cscs/reframe.git',
+    assert osext.git_repo_exists('https://github.com/reframe-hpc/reframe.git',
                                  timeout=10)
     assert not osext.git_repo_exists('reframe.git', timeout=10)
-    assert not osext.git_repo_exists('https://github.com/eth-cscs/xxx',
+    assert not osext.git_repo_exists('https://github.com/reframe-hpc/xxx',
                                      timeout=10)
 
 

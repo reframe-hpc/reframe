@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/reframe/schemas/runreport.json",
+    "$id": "https://raw.githubusercontent.com/reframe-hpc/reframe/master/reframe/schemas/runreport.json",
     "title": "Validation schema for ReFrame's run report",
     "defs": {
         "testcase_type": {

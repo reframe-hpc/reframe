@@ -1543,7 +1543,7 @@ Users may *not* modify this file.
 For a complete reference of the configuration, please refer to |reframe.settings(8)|_ man page.
 
 .. |reframe/core/settings.py| replace:: ``reframe/core/settings.py``
-.. _reframe/core/settings.py: https://github.com/eth-cscs/reframe/blob/master/reframe/core/settings.py
+.. _reframe/core/settings.py: https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py
 .. |reframe.settings(8)| replace:: ``reframe.settings(8)``
 .. _reframe.settings(8): config_reference.html
 
@@ -1551,7 +1551,7 @@ For a complete reference of the configuration, please refer to |reframe.settings
 Reporting Bugs
 --------------
 
-For bugs, feature request, help, please open an issue on Github: <https://github.com/eth-cscs/reframe>
+For bugs, feature request, help, please open an issue on Github: <https://github.com/reframe-hpc/reframe>
 
 
 See Also
