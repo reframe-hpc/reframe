@@ -5,6 +5,7 @@
 
 import re
 
+import reframe.utility as utils
 from reframe.core.exceptions import ReframeError
 from reframe.core.runtime import runtime
 
@@ -49,7 +50,12 @@ def have_any_name(names):
     regex_matches = []
     for n in names:
         if has_compact_names and '@' in n:
-            exact_matches.append(n.replace('@', '_'))
+            test_name, sep, id = n.rpartition('@')
+            if not sep:
+                exact_matches.append((test_name, ''))
+            elif id.isdigit():
+                exact_matches.append((test_name, id))
+
         else:
             regex_matches.append(n)
 
@@ -61,8 +67,18 @@ def have_any_name(names):
     def _fn(case):
         # Check if we have an exact match
         for m in exact_matches:
-            if m == case.check.unique_name:
-                return True
+            name = m[0]
+            if m[1]:
+                variant_num = int(m[1])
+                cls = type(case.check)
+                if cls.num_variants == 1:
+                    continue
+
+                width = utils.count_digits(cls.num_variants)
+                name += f'_{variant_num:0{width}}'
+
+            if name == case.check.unique_name:
+                    return True
 
         display_name = case.check.display_name.replace(' ', '')
         if regex:
