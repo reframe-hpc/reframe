@@ -49,11 +49,11 @@ def have_any_name(names):
     regex_matches = []
     for n in names:
         if has_compact_names and '@' in n:
-            test_name, sep, id = n.rpartition('@')
-            if id.isdigit():
-                exact_matches.append((test_name, int(id)))
-            else:
-                exact_matches.append((test_name, id))
+            test, _, variant = n.rpartition('@')
+            try:
+                exact_matches.append((test, int(variant)))
+            except ValueError:
+                exact_matches.append((test, variant))
 
         else:
             regex_matches.append(n)
