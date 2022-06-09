@@ -46,22 +46,13 @@ class _PollController:
 
     def __init__(self):
         self._num_polls = 0
-        self._num_tasks = 0
         self._sleep_duration = None
         self._t_init = None
 
-    def set_sleep_duration(self, reset=False):
-        if self._sleep_duration is None or reset:
-            self._sleep_duration = self.SLEEP_MIN
-        else:
-            self._sleep_duration = min(
-                self._sleep_duration*self.SLEEP_INC_RATE, self.SLEEP_MAX
-            )
-
+    def reset_snooze_time(self):
+        self._sleep_duration = self.SLEEP_MIN
         if self._num_polls == 0:
             self._t_init = time.time()
-
-        return self
 
     def snooze(self):
         t_elapsed = time.time() - self._t_init
@@ -72,6 +63,9 @@ class _PollController:
             f'(current poll rate: {poll_rate} polls/s)'
         )
         time.sleep(self._sleep_duration)
+        self._sleep_duration = min(
+            self._sleep_duration*self.SLEEP_INC_RATE, self.SLEEP_MAX
+        )
 
 
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
@@ -131,13 +125,11 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             else:
                 sched = partition.scheduler
 
-            self._pollctl.set_sleep_duration(reset=True)
+            self._pollctl.reset_snooze_time()
             while True:
                 sched.poll(task.check.job)
                 if task.run_complete():
                     break
-
-                self._pollctl.set_sleep_duration()
 
             task.run_wait()
             if not self.skip_sanity_check:
@@ -317,6 +309,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if self._pipeline_statistics:
             self._init_pipeline_progress(len(self._current_tasks))
 
+        self._pollctl.reset_snooze_time()
+
         while self._current_tasks:
             try:
                 self._poll_tasks()
@@ -345,7 +339,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     )
 
                 if num_running:
-                    self._pollctl.set_sleep_duration().snooze()
+                    self._pollctl.snooze()
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise
@@ -561,10 +555,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_exit(self, task):
-        self._pollctl.set_sleep_duration(reset=True)
+        self._pollctl.reset_snooze_time()
 
     def on_task_compile_exit(self, task):
-        self._pollctl.set_sleep_duration(reset=True)
+        self._pollctl.reset_snooze_time()
 
     def on_task_skip(self, task):
         msg = str(task.exc_info[1])
