@@ -5,7 +5,6 @@
 
 import re
 
-import reframe.utility as utils
 from reframe.core.exceptions import ReframeError
 from reframe.core.runtime import runtime
 
