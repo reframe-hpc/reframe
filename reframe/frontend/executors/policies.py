@@ -51,10 +51,11 @@ class _PollController:
 
     def reset_snooze_time(self):
         self._sleep_duration = self.SLEEP_MIN
+
+    def snooze(self):
         if self._num_polls == 0:
             self._t_init = time.time()
 
-    def snooze(self):
         t_elapsed = time.time() - self._t_init
         self._num_polls += 1
         poll_rate = self._num_polls / t_elapsed if t_elapsed else math.inf
@@ -310,7 +311,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._init_pipeline_progress(len(self._current_tasks))
 
         self._pollctl.reset_snooze_time()
-
         while self._current_tasks:
             try:
                 self._poll_tasks()
