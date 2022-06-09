@@ -110,6 +110,7 @@ class TestStats:
                     'environment': None,
                     'fail_phase': None,
                     'fail_reason': None,
+                    'is_fixture': check.is_fixture(),
                     'jobid': None,
                     'job_stderr': None,
                     'job_stdout': None,
@@ -234,7 +235,7 @@ class TestStats:
                          f"{r['dependencies_actual']}")
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
-            if rerun_info:
+            if rerun_info and not r['is_fixture']:
                 if rt.runtime().get_option('general/0/compact_test_names'):
                     cls = r['display_name'].split(' ')[0]
                     variant = r['unique_name'].replace(cls, '')

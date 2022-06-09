@@ -50,10 +50,8 @@ def have_any_name(names):
     for n in names:
         if has_compact_names and '@' in n:
             test, _, variant = n.rpartition('@')
-            try:
+            if variant.isdigit():
                 exact_matches.append((test, int(variant)))
-            except ValueError:
-                exact_matches.append((test, variant))
 
         else:
             regex_matches.append(n)
@@ -67,12 +65,7 @@ def have_any_name(names):
         # Check if we have an exact match
         for m in exact_matches:
             cls_name = type(case.check).__name__
-            if case.check.is_fixture():
-                fixt_id = case.check._rfm_fixt_data.mashup()
-                if (cls_name, fixt_id) == m:
-                    return True
-
-            elif (cls_name, case.check.variant_num) == m:
+            if (cls_name, case.check.variant_num) == m:
                 return True
 
         display_name = case.check.display_name.replace(' ', '')
