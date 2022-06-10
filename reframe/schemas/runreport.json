@@ -40,6 +40,7 @@
                 "fail_reason": {"type": ["string", "null"]},
                 "fail_severe": {"type": "boolean"},
                 "filename": {"type": "string"},
+                "fixture": {"type": "boolean"},
                 "jobid": {"type": ["string", "null"]},
                 "job_stderr": {"type": ["string", "null"]},
                 "job_stdout": {"type": ["string", "null"]},
