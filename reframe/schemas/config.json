@@ -266,6 +266,7 @@
                                     "type": "array",
                                     "items": {"type": "string"}
                                 },
+                                "container_runtime": {"type": "string"},
                                 "container_platforms": {
                                     "type": "array",
                                     "items": {
@@ -578,6 +579,7 @@
         "systems/partitions/descr": "",
         "systems/partitions/access": [],
         "systems/partitions/environs": [],
+        "systems/partitions/container_runtime": null,
         "systems/partitions/container_platforms": [],
         "systems/partitions/container_platforms/*modules": [],
         "systems/partitions/container_platforms/*variables": [],

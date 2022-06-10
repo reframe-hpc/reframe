@@ -143,12 +143,35 @@ class ContainerPlatform(abc.ABC):
         :arg stagedir: The stage directory of the test.
         '''
 
+    @classmethod
+    def create(cls, name):
+        '''Factory method to create a new container by name.'''
+        name = name.capitalize()
+        try:
+            return globals()[name]()
+        except KeyError:
+            raise ValueError(f'unknown container platform: {name}') from None
+
+    @classmethod
+    def create_from(cls, name, other):
+        new = cls.create(name)
+        new.image = other.image
+        new.command = other.command
+        new.mount_points = other.mount_points
+        new.options = other.options
+        new.pull_image = other.pull_image
+        return new
+
     def validate(self):
         if self.image is None:
             raise ContainerError('no image specified')
 
-    def __str__(self):
+    @property
+    def name(self):
         return type(self).__name__
+
+    def __str__(self):
+        return self.name
 
     def __rfm_json_encode__(self):
         return str(self)
@@ -275,10 +298,6 @@ class ContainerPlatformField(fields.TypedField):
 
     def __set__(self, obj, value):
         if isinstance(value, str):
-            try:
-                value = globals()[value]()
-            except KeyError:
-                raise ValueError(
-                    f'unknown container platform: {value}') from None
+            value = ContainerPlatform.create(value)
 
         super().__set__(obj, value)
