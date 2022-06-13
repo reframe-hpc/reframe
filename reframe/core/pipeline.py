@@ -63,6 +63,7 @@ class _NoRuntime(ContainerPlatform):
 
 
 # Dependency kinds
+
 #: Constant to be passed as the ``how`` argument of the
 #: :func:`~RegressionTest.depends_on` method. It denotes that test case
 #: dependencies will be explicitly specified by the user.
@@ -1674,163 +1675,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             timeout=rt.runtime().get_option('general/0/git_timeout')
         )
 
-    def _get_contplatf_env(self):
-        try:
-            cp_name = self.container_platform.name
-            return self.current_partition.container_environs[cp_name]
-        except KeyError:
-            return None
-
-    def _prepare_build_job_containerized(self):
-        assert self.container_platform.image is not None
-
-        # We will use a dummy local job to generate a local shell script that
-        # will contain all the build commands; this will be then executed by
-        # the build job
-
-        build_script_name = f'_do_build_{self.unique_name}'
-        build_commands = [
-            *self.prebuild_cmds,
-            *self.build_system.emit_build_commands(self.current_environ),
-            *self.postbuild_cmds
-        ]
-        Job.create(
-            getscheduler('local')(),
-            getlauncher('local')(),
-            build_script_name
-        ).prepare(build_commands, [], trap_errors=True)
-
-        # Setup the build_job now so that it runs with selected container runtime
-        environs = [self.current_partition.local_env]
-        cp_env = self._get_contplatf_env()
-        if cp_env:
-            environs.append(cp_env)
-
-        cplatf = self.container_platform
-        cplatf_cmd_save = self.container_platform.command
-        try:
-            self.container_platform.commands = [f'./{build_sciprt_name}']
-            launch_cmd = self.build_job.launcher.run_command(self.build_job)
-            cplatf_launch_cmd = cplatf.launch_command(self.stagedir)
-        finally:
-            # Restore container platform commands
-            self.container_platform.command = cplatf_cmd_save
-
-        self.build_job.prepare(
-            [
-                self.container_platform.emit_prepare_commands(self.stagedir),
-                f'{launch_cmd} {cplatf_launch_cmd}'
-            ],
-            [self.current_partition.local_env],
-            login=rt.runtime().get_option('general/0/use_login_shell'),
-            trap_errors=True
-        )
-
-    def _prepare_build_job(self):
-        user_environ = Environment(self.unique_name,
-                                   self.modules, self.variables.items())
-
-        build_environs = [self.current_partition.local_env,
-                          self.current_environ,
-                          user_environ, self._cdt_environ]
-        build_commands = [
-            *self.prebuild_cmds,
-            *self.build_system.emit_build_commands(self.current_environ),
-            *self.postbuild_cmds
-        ]
-        self.build_job.time_limit = (
-            self.build_time_limit or rt.runtime().get_option(
-                f'systems/0/partitions/@{self.current_partition.name}'
-                f'/time_limit')
-        )
-        self.build_job.prepare(
-            build_commands, build_environs,
-            self.current_partition.prepare_cmds,
-            login=rt.runtime().get_option('general/0/use_login_shell'),
-            trap_errors=True
-        )
-
-    def _prepare_run_job_containerized(self):
-        assert self.container_platform.image is not None
-
-        if self.build_system:
-            prepare_cmds = self.build_system.prepare_cmds()
-        else:
-            prepare_cmds = []
-
-        cp_env = self._get_contplatf_env()
-        if cp_env:
-            environs.append(cp_env)
-
-        if self.container_platform.command:
-            run_cmds = [
-                *prepare_cmds,
-                *self.prerun_cmds,
-                *self.container_platform.emit_prepare_commands(self.stagedir)
-                ' '.join([
-                    self.job.launcher.run_command(self.job),
-                    self.container_platform.launch_command(self.stagedir)
-                ]).strip(),
-                *self.postrun_cmds
-            ]
-            run_environs = [
-                self._current_partition.local_env,
-                self._current_environ,
-                user_environ,
-                self._cdt_environ
-            ]
-            if cp_env:
-                run_environs.insert(2, cp_env)
-        else:
-            # Populate the container command from the tests `prerun_cmds`,
-            # `executable` and `postrun_cmds`
-            #
-            # Q: How do we deal with the parallel execution of the
-            # `executable` if we put everything in the container platform
-            # command? Where the parallel launch should go?
-            pass
-
-        self.job.prepare(
-            run_cmds, run_environs,
-            self.current_partition.prepare_cmds,
-            login=rt.runtime().get_option('general/0/use_login_shell'),
-            trap_errors=rt.runtime().get_option(
-                'general/0/trap_job_errors'
-            )
-        )
-
-    def _prepare_run_job(self):
-        launch_cmd = ' '.join([self.job.launcher.run_command(self.job),
-                               self.executable, *self.executable_opts]).strip()
-
-        if self.build_system:
-            prepare_cmds = self.build_system.prepare_cmds()
-        else:
-            prepare_cmds = []
-
-        test_environ = Environment(self.unique_name, self.modules,
-                                   self.variables.items())
-        run_cmds = [
-            *prepare_cmds,
-            *self.prerun_cmds,
-            launch_cmd,
-            *self.postrun_cmds
-        ]
-        run_environs = [
-            self.current_partition.local_env,
-            self.current_environ,
-            test_environ,
-            self._cdt_environ
-        ]
-        self.job.prepare(
-            run_cmds, run_environs,
-            self.current_partition.prepare_cmds,
-            login=rt.runtime().get_option('general/0/use_login_shell'),
-            trap_errors=rt.runtime().get_option(
-                'general/0/trap_job_errors'
-            )
-        )
-
     @final
     def compile(self):
         '''The compilation phase of the regression test pipeline.
@@ -1851,8 +1695,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
-
-        assert self.current_environ
 
         # Copy the check's resources to the stage directory
         if self.sourcesdir:
@@ -1913,18 +1755,33 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
-        self.build_job.time_limit = (
+        user_environ = Environment(self.unique_name,
+                                   self.modules, self.variables.items())
+        environs = [self._current_partition.local_env, self._current_environ,
+                    user_environ, self._cdt_environ]
+        self._build_job.time_limit = (
             self.build_time_limit or rt.runtime().get_option(
                 f'systems/0/partitions/@{self.current_partition.name}'
                 f'/time_limit')
         )
-        with osext.change_dir(self.stagedir):
-            if self.container_platform.image:
-                self._prepare_build_job_containerized()
-            else:
-                self._prepare_build_job()
+        with osext.change_dir(self._stagedir):
+            # Prepare build job
+            build_commands = [
+                *self.prebuild_cmds,
+                *self.build_system.emit_build_commands(self._current_environ),
+                *self.postbuild_cmds
+            ]
+            try:
+                self._build_job.prepare(
+                    build_commands, environs,
+                    self._current_partition.prepare_cmds,
+                    login=rt.runtime().get_option('general/0/use_login_shell'),
+                    trap_errors=True
+                )
+            except OSError as e:
+                raise PipelineError('failed to prepare build job') from e
 
-            self.build_job.submit()
+            self._build_job.submit()
 
     @final
     def compile_wait(self):
@@ -1978,9 +1835,29 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
 
-        assert (self.current_system and
-                self.current_partition and
-                self.current_environ)
+        def _get_cp_env():
+            '''Retrieve the container platform environment.'''
+            try:
+                cp_name = self.container_platform.name
+                return self.current_partition.container_environs[cp_name]
+            except KeyError:
+                return None
+
+        cp = self.container_platform
+        if cp.image:
+            # We replace executable and executable_opts in case of containers
+            try:
+                self.executable = cp.launch_command(self.stagedir)
+                self.executable_opts = []
+                prepare_container = cp.emit_prepare_commands(self.stagedir)
+                if prepare_container:
+                    self.prerun_cmds += prepare_container
+            except NotImplementedError:
+                raise PipelineError(
+                    "no container runtime was configured; "
+                    "consider setting the 'container_platform' test attribute "
+                    "or the corresponding partition configuration setting"
+                )
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
@@ -1993,6 +1870,32 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         )
         self.job.max_pending_time = self.max_pending_time
         self.job.exclusive_access = self.exclusive_access
+        exec_cmd = [self.job.launcher.run_command(self.job),
+                    self.executable, *self.executable_opts]
+
+        if self.build_system:
+            prepare_cmds = self.build_system.prepare_cmds()
+        else:
+            prepare_cmds = []
+
+        commands = [
+            *prepare_cmds,
+            *self.prerun_cmds,
+            ' '.join(exec_cmd).strip(),
+            *self.postrun_cmds
+        ]
+        user_environ = Environment(self.unique_name,
+                                   self.modules, self.variables.items())
+        environs = [
+            self._current_partition.local_env,
+            self._current_environ,
+            user_environ,
+            self._cdt_environ
+        ]
+        if self.container_platform.image:
+            cp_env = _get_cp_env()
+            if cp_env:
+                environs.insert(2, cp_env)
 
         # num_gpus_per_node is a managed resource
         if self.num_gpus_per_node > 0:
@@ -2006,44 +1909,30 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         resources_opts = []
         for r, v in self.extra_resources.items():
             resources_opts.extend(
-                self.current_partition.get_resource(r, **v))
+                self._current_partition.get_resource(r, **v))
 
-        self.job.options = resources_opts + self.job.options
-        with osext.change_dir(self.stagedir):
-            if self.container_platform.image:
-                self._prepare_run_job_containerized()
-            else:
-                self._prepare_run_job()
+        self._job.options = resources_opts + self._job.options
+        with osext.change_dir(self._stagedir):
+            try:
+                self.logger.debug('Generating the run script')
+                self._job.prepare(
+                    commands, environs,
+                    self._current_partition.prepare_cmds,
+                    login=rt.runtime().get_option('general/0/use_login_shell'),
+                    trap_errors=rt.runtime().get_option(
+                        'general/0/trap_job_errors'
+                    )
+                )
+            except OSError as e:
+                raise PipelineError('failed to prepare run job') from e
 
-            self.job.submit()
+            self._job.submit()
 
         self.logger.debug(f'Spawned run job (id={self.job.jobid})')
 
         # Update num_tasks if test is flexible
         if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
-
-        # cp_env = None
-        # if self.container_platform.image:
-        #     try:
-        #         cp_name = type(self.container_platform).__name__
-        #         cp_env = self._current_partition.container_environs[cp_name]
-        #     except KeyError as e:
-        #         raise PipelineError(
-        #             'container platform not configured '
-        #             'on the current partition: %s' % e) from None
-
-        #     self.container_platform.validate()
-
-        #     # We replace executable and executable_opts in case of containers
-        #     self.executable = self.container_platform.launch_command(
-        #         self.stagedir)
-        #     self.executable_opts = []
-        #     prepare_container = self.container_platform.emit_prepare_commands(
-        #         self.stagedir
-        #     )
-        #     if prepare_container:
-        #         self.prerun_cmds += prepare_container
 
     @final
     def compile_complete(self):

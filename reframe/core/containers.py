@@ -7,7 +7,6 @@ import abc
 
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
-from reframe.core.exceptions import ContainerError
 
 
 _STAGEDIR_MOUNT = '/rfm_workdir'
@@ -162,10 +161,6 @@ class ContainerPlatform(abc.ABC):
         new.pull_image = other.pull_image
         return new
 
-    def validate(self):
-        if self.image is None:
-            raise ContainerError('no image specified')
-
     @property
     def name(self):
         return type(self).__name__
@@ -220,7 +215,8 @@ class Sarus(ContainerPlatform):
         # The format that Sarus uses to call the images is
         # <reposerver>/<user>/<image>:<tag>. If an image was loaded
         # locally from a tar file, the <reposerver> is 'load'.
-        if not self.pull_image or self.image.startswith('load/'):
+        if (not self.pull_image or not self.image or
+            self.image.startswith('load/')):
             return []
         else:
             return [f'{self._command} pull {self.image}']

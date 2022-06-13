@@ -7,7 +7,6 @@ import pytest
 
 import reframe.core.containers as containers
 import reframe.core.warnings as warn
-from reframe.core.exceptions import ContainerError
 
 
 @pytest.fixture(params=[
@@ -195,12 +194,6 @@ def test_mount_points(container_platform, expected_cmd_mount_points):
                                        ('/path/two', '/two')]
     cmd = container_platform.launch_command('/foo')
     assert cmd == expected_cmd_mount_points
-
-
-def test_missing_image(container_platform):
-    container_platform.image = None
-    with pytest.raises(ContainerError):
-        container_platform.validate()
 
 
 def test_prepare_command(container_platform, expected_cmd_prepare):

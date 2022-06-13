@@ -504,9 +504,10 @@ class System(jsonext.JSONSerializable):
             part_sched = getscheduler(site_config.get(f'{partid}/scheduler'))
             part_launcher = getlauncher(site_config.get(f'{partid}/launcher'))
             part_container_environs = {}
-            for i, p in enumerate(
-                    site_config.get(f'{partid}/container_platforms')
-            ):
+            part_container_runtime = None
+            container_platforms = site_config.get(
+                f'{partid}/container_platforms')
+            for i, p in enumerate(container_platforms):
                 ctype = p['type']
                 part_container_environs[ctype] = Environment(
                     name=f'__rfm_env_{ctype}',
@@ -517,6 +518,12 @@ class System(jsonext.JSONSerializable):
                         f'{partid}/container_platforms/{i}/variables'
                     )
                 )
+                if p.get('default', None):
+                    part_container_runtime = ctype
+
+            if not part_container_runtime and container_platforms:
+                # No default set, pick the first one
+                part_container_runtime = container_platforms[0]['type']
 
             env_patt = site_config.get('general/0/valid_env_names') or [r'.*']
             part_environs = [
@@ -547,9 +554,7 @@ class System(jsonext.JSONSerializable):
                     access=site_config.get(f'{partid}/access'),
                     resources=site_config.get(f'{partid}/resources'),
                     environs=part_environs,
-                    container_runtime=site_config.get(
-                        f'{partid}/container_runtime'
-                    ),
+                    container_runtime=part_container_runtime,
                     container_environs=part_container_environs,
                     local_env=Environment(
                         name=f'__rfm_env_{part_name}',
