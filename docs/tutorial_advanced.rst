@@ -683,6 +683,9 @@ First, we need to enable the container platform support in ReFrame's configurati
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
 In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
 Similarly, we add an entry for the `Singularity <https://sylabs.io>`__ platform.
+Optionally, users are allowed to set the ``default`` attribute to :obj:`True` in order to mark a specific container platform as the default of that partition (see below on how this information is being used).
+If no default container platform is specified explicitly, then always the first in the list will be considered as suc
+
 
 The following parameterized test, will create two tests, one for each of the supported container platforms:
 
@@ -698,14 +701,17 @@ The following parameterized test, will create two tests, one for each of the sup
 
 A container-based test can be written as :class:`~reframe.core.pipeline.RunOnlyRegressionTest` that sets the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` attribute.
 This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
-If such a platform is not `configured <config_reference.html#container-platform-configuration>`__ for the current system, the test will fail.
+It is not necessary to specify this attribute, in which case, the default container platform of the current partition will be used.
+You can still differentiate your test based on the actual container platform that is being used by checking the ``self.container_platform.name`` variable.
 
-As soon as the container platform to be used is defined, you need to specify the container image to use by setting the :attr:`~reframe.core.containers.ContainerPlatform.image`.
+As soon as the container platform to be used is determined, you need to specify the container image to use by setting the :attr:`~reframe.core.containers.ContainerPlatform.image`.
+If the image is not specified, then the container logic is skipped and the test executes as if the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` was never set.
+
 In the ``Singularity`` test variant, we add the ``docker://`` prefix to the image name, in order to instruct ``Singularity`` to pull the image from `DockerHub <https://hub.docker.com/>`__.
 The default command that the container runs can be overwritten by setting the :attr:`~reframe.core.containers.ContainerPlatform.command` attribute of the container platform.
 
 The :attr:`~reframe.core.containers.ContainerPlatform.image` is the only mandatory attribute for container-based checks.
-It is important to note that the :attr:`~reframe.core.pipeline.RegressionTest.executable` and :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attributes of the actual test are ignored in case of container-based tests.
+It is important to note that the :attr:`~reframe.core.pipeline.RegressionTest.executable` and :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attributes of the actual test are ignored if the containerized code path is taken, i.e., when :attr:`~reframe.core.containers.ContainerPlatform.image` is not :obj:`None`.
 
 ReFrame will run the container according to the given platform as follows:
 
@@ -757,6 +763,11 @@ Therefore, the ``release.txt`` file can now be used in the subsequent sanity che
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
 On how to configure ReFrame for running containerized tests, please have a look at the :ref:`container-platform-configuration` section of the :doc:`config_reference`.
+
+
+.. versionchanged:: 3.12.0
+   There is no need any more to explicitly set the :attr:`container_platform` in the test.
+   This is automatically initialized from the default platform of the current partition.
 
 
 Writing reusable tests
