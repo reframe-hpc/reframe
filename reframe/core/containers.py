@@ -88,6 +88,9 @@ class ContainerPlatform(abc.ABC):
     #:
     #: :type: :class:`str`
     #: :default: ``/rfm_workdir``
+    #:
+    #: .. versionchanged:: 3.12.0
+    #:    This attribute is no more deprecated.
     workdir = fields.TypedField(str, type(None))
 
     def __init__(self):

@@ -472,24 +472,33 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: The container platform to be used for launching this test.
     #:
-    #: If this field is set, the test will run inside a container using the
-    #: specified container runtime. Container-specific options must be defined
-    #: additionally after this field is set:
+    #: This field is set automatically by the default container runtime
+    #: associated with the current system partition. Users may also set this,
+    #: explicitly overriding any partition setting. If the
+    #: :attr:`~reframe.core.containers.ContainerPlatform.image` attribute of
+    #: :attr:`container_platform` is set, then the test will run inside a
+    #: container using the specified container runtime.
     #:
     #: .. code:: python
     #:
     #:    self.container_platform = 'Singularity'
     #:    self.container_platform.image = 'docker://ubuntu:18.04'
-    #:    self.container_platform.commands = ['cat /etc/os-release']
+    #:    self.container_platform.command = 'cat /etc/os-release'
     #:
-    #: If this field is set, :attr:`executable` and :attr:`executable_opts`
-    #: attributes are ignored. The container platform's :attr:`commands
-    #: <reframe.core.containers.ContainerPlatform.commands>` will be used
+    #: If the test will run inside a container, the :attr:`executable` and
+    #: :attr:`executable_opts` attributes are ignored. The container platform's
+    #: :attr:`~reframe.core.containers.ContainerPlatform.command` will be used
     #: instead.
     #:
     #: :type: :class:`str` or
-    #:     :class:`reframe.core.containers.ContainerPlatform`.
-    #: :default: :class:`None`.
+    #:     :class:`~reframe.core.containers.ContainerPlatform`.
+    #: :default: the container runtime specified in the current system
+    #:   partition's configuration (see also
+    #:   :ref:`container-platform-configuration`).
+    #:
+    #: .. versionchanged:: 3.12.0
+    #:    This field is now set automatically from the current partition's
+    #:    configuration.
     container_platform = variable(field=ContainerPlatformField,
                                   value=_NoRuntime())
 
