@@ -770,6 +770,32 @@ On how to configure ReFrame for running containerized tests, please have a look 
    This is automatically initialized from the default platform of the current partition.
 
 
+
+Combining containerized and native application tests
+====================================================
+
+.. versionadded:: 3.12.0
+
+It is very easy in ReFrame to have a single run-only test to either test the native or the containerized version of an application.
+This is possible, since the framework will only take the "containerized" code path only if the :attr:`~reframe.core.containers.ContainerPlatform.image` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` is not :obj:`None`.
+Otherwise, the *bare metal* version of the tested application will be run.
+The following test uses exactly this trick to test a series of GROMACS images as well as the native one provided on the Piz Daint supercomputer.
+It also extends the GROMACS benchmark tests that are provided with ReFrame's test library (see :doc:`hpctestlib`).
+For simplicity, we are assuming a single system here (the hybrid partition of Piz Daint) and we set fixed values for the :attr:`num_cpus_per_task` as well as the ``-ntomp`` option of GROMACS (NB: in a real-world test we would use the auto-detected processor topology information to set these values; see :ref:`proc-autodetection` for more information).
+Finally, we also reset the executable to use ``gmx`` instead of the ``gmx_mpi`` that is used from the library test.
+
+
+.. literalinclude:: ../tutorials/advanced/containers/gromacs_test.py
+   :start-after: # rfmdocstart: gromacstest
+
+All this test does is to set the :attr:`~reframe.core.containers.ContainerPlatform.image` and the :attr:`~reframe.core.containers.ContainerPlatform.command` attributes of the :attr:`~reframe.core.pipeline.RegressionTest.container_platform`.
+The former is set from the ``gromacs_image`` test parameter whereas the latter from the test's :attr:`~reframe.core.pipeline.RegressionTest.executable` and :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attributes.
+Remember that these attributes are ignored if the framework takes the path of launching  a container.
+Finally, if the image is :obj:`None` we handle the case of the native run, in which case we load the modules required to run GROMACS natively on the target system.
+
+
+
+
 Writing reusable tests
 ----------------------
 

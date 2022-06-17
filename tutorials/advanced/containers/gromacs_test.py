@@ -1,10 +1,15 @@
+# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# rfmdocstart: gromacstest
 import reframe as rfm
 from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 
 
 @rfm.simple_test
 class gromacs_containerized_test(gromacs_check):
-    # gromacs_image = variable(str, type(None), value=None)
     gromacs_image = parameter([
         None,
         'nvcr.io/hpc/gromacs:2020',
@@ -29,4 +34,4 @@ class gromacs_containerized_test(gromacs_check):
         self.container_platform.command = exec_cmd
 
         if self.gromacs_image is None:
-            self.modules = ['GROMACS']
+            self.modules = ['daint-gpu', 'GROMACS']
