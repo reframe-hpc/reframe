@@ -793,6 +793,85 @@ The former is set from the ``gromacs_image`` test parameter whereas the latter f
 Remember that these attributes are ignored if the framework takes the path of launching  a container.
 Finally, if the image is :obj:`None` we handle the case of the native run, in which case we load the modules required to run GROMACS natively on the target system.
 
+In the following, we run the GPU version of a single benchmark with a series of images from NVIDIA and natively:
+
+.. code-block:: console
+
+   $ ./bin/reframe -C tutorials/config/settings.py -c tutorials/advanced/containers/gromacs_test.py -n '.*hEGFRDimerSmallerPL.*nb_impl=gpu.*' -r
+
+.. code-block:: console
+
+   [==========] Running 6 check(s)
+   [==========] Started on Fri Jun 17 16:20:16 2022
+
+   [----------] start processing checks
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2022.1 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2021.3 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2021 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2020.2 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2020 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=None @daint:gpu+gnu
+   [       OK ] (1/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2020.2 @daint:gpu+gnu
+   [       OK ] (2/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2020 @daint:gpu+gnu
+   [       OK ] (3/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=None @daint:gpu+gnu
+   [       OK ] (4/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2022.1 @daint:gpu+gnu
+   [       OK ] (5/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2021 @daint:gpu+gnu
+   [       OK ] (6/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2021.3 @daint:gpu+gnu
+   [----------] all spawned checks have finished
+
+   [  PASSED  ] Ran 6/6 test case(s) from 6 check(s) (0 failure(s), 0 skipped)
+   [==========] Finished on Fri Jun 17 16:23:47 2022
+
+
+We can also inspect the generated job scripts for the native and a containerized run:
+
+.. code-block:: console
+
+   cat output/daint/gpu/gnu/gromacs_containerized_test_42/rfm_gromacs_containerized_test_42_job.sh
+
+.. code-block:: bash
+
+   #!/bin/bash
+   #SBATCH --job-name="rfm_gromacs_containerized_test_42_job"
+   #SBATCH --ntasks=1
+   #SBATCH --ntasks-per-node=1
+   #SBATCH --cpus-per-task=12
+   #SBATCH --output=rfm_gromacs_containerized_test_42_job.out
+   #SBATCH --error=rfm_gromacs_containerized_test_42_job.err
+   #SBATCH -A csstaff
+   #SBATCH --constraint=gpu
+   #SBATCH --hint=nomultithread
+   module unload PrgEnv-cray
+   module load PrgEnv-gnu
+   module load daint-gpu
+   module load GROMACS
+   curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/1.0.0/HECBioSim/hEGFRDimerSmallerPL/benchmark.tpr
+   srun gmx mdrun -dlb yes -ntomp 12 -npme -1 -v -nb gpu -s benchmark.tpr
+
+And the containerized run:
+
+.. code-block:: console
+
+   cat output/daint/gpu/gnu/gromacs_containerized_test_43/rfm_gromacs_containerized_test_43_job.sh
+
+.. code-block:: bash
+
+   #!/bin/bash
+   #SBATCH --job-name="rfm_gromacs_containerized_test_43_job"
+   #SBATCH --ntasks=1
+   #SBATCH --ntasks-per-node=1
+   #SBATCH --cpus-per-task=12
+   #SBATCH --output=rfm_gromacs_containerized_test_43_job.out
+   #SBATCH --error=rfm_gromacs_containerized_test_43_job.err
+   #SBATCH -A csstaff
+   #SBATCH --constraint=gpu
+   #SBATCH --hint=nomultithread
+   module unload PrgEnv-cray
+   module load PrgEnv-gnu
+   module load sarus
+   curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/1.0.0/HECBioSim/hEGFRDimerSmallerPL/benchmark.tpr
+   sarus pull nvcr.io/hpc/gromacs:2020
+   srun sarus run --mount=type=bind,source="/users/user/Devel/reframe/stage/daint/gpu/gnu/gromacs_containerized_test_43",destination="/rfm_workdir" -w /rfm_workdir nvcr.io/hpc/gromacs:2020 gmx mdrun -dlb yes -ntomp 12 -npme -1 -v -nb gpu -s benchmark.tpr
 
 
 
