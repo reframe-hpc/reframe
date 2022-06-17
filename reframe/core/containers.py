@@ -7,6 +7,7 @@ import abc
 
 import reframe.core.fields as fields
 import reframe.core.warnings as warn
+import reframe.utility as util
 import reframe.utility.typecheck as typ
 
 
@@ -194,7 +195,7 @@ class Docker(ContainerPlatform):
 
         if self.commands:
             return (f"docker run --rm {' '.join(run_opts)} {self.image} "
-                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+                    f"bash -c '{'; '.join(self.commands)}'")
 
         return f'docker run --rm {" ".join(run_opts)} {self.image}'
 
@@ -236,14 +237,13 @@ class Sarus(ContainerPlatform):
             run_opts.append(f'-w {self.workdir}')
 
         run_opts += self.options
-
         if self.command:
             return (f'{self._command} run {" ".join(run_opts)} {self.image} '
                     f'{self.command}')
 
         if self.commands:
             return (f"{self._command} run {' '.join(run_opts)} {self.image} "
-                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+                    f"bash -c '{'; '.join(self.commands)}'")
 
         return f'{self._command} run {" ".join(run_opts)} {self.image}'
 
@@ -256,6 +256,12 @@ class Shifter(Sarus):
     def __init__(self):
         super().__init__()
         self._command = 'shifter'
+
+    def launch_command(self, stagedir):
+        # Temporarily change `workdir`, since Sarus and Shifter have otherwise
+        # the same interface
+        with util.temp_setattr(self, 'workdir', None):
+            return super().launch_command(stagedir)
 
 
 class Singularity(ContainerPlatform):
@@ -292,7 +298,7 @@ class Singularity(ContainerPlatform):
 
         if self.commands:
             return (f"singularity exec {' '.join(run_opts)} {self.image} "
-                    f"bash -c 'cd {self.workdir}; {'; '.join(self.commands)}'")
+                    f"bash -c '{'; '.join(self.commands)}'")
 
         return f'singularity run {" ".join(run_opts)} {self.image}'
 
