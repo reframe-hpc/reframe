@@ -6,6 +6,7 @@
 import abc
 
 import reframe.core.fields as fields
+import reframe.core.warnings as warn
 import reframe.utility.typecheck as typ
 
 
@@ -79,24 +80,15 @@ class ContainerPlatform(abc.ABC):
     #: :default: ``[]``
     options = fields.TypedField(typ.List[str])
 
-    _workdir = fields.TypedField(str, type(None))
     #: The working directory of ReFrame inside the container.
     #:
     #: This is the directory where the test's stage directory is mounted inside
     #: the container. This directory is always mounted regardless if
     #: :attr:`mount_points` is set or not.
     #:
-    #: .. deprecated:: 3.5
-    #:    Please use the `options` field to set the working directory.
-    #:
     #: :type: :class:`str`
     #: :default: ``/rfm_workdir``
-    workdir = fields.DeprecatedField(
-        _workdir,
-        'The `workdir` field is deprecated, please use the `options` field to '
-        'set the container working directory',
-        fields.DeprecatedField.OP_SET, from_version='3.5.0'
-    )
+    workdir = fields.TypedField(str, type(None))
 
     def __init__(self):
         self.image = None
@@ -105,8 +97,8 @@ class ContainerPlatform(abc.ABC):
         # NOTE: Here we set the target fields directly to avoid the deprecation
         # warnings
         self._commands = []
-        self._workdir = _STAGEDIR_MOUNT
 
+        self.workdir = _STAGEDIR_MOUNT
         self.mount_points  = []
         self.options = []
         self.pull_image = True
@@ -159,6 +151,12 @@ class ContainerPlatform(abc.ABC):
         new.mount_points = other.mount_points
         new.options = other.options
         new.pull_image = other.pull_image
+        new.workdir = other.workdir
+
+        # Update deprecated fields
+        with warn.suppress_deprecations():
+            new.commands = other.commands
+
         return new
 
     @property
@@ -183,8 +181,10 @@ class Docker(ContainerPlatform):
         super().launch_command(stagedir)
         mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
         run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in mount_points]
-        run_opts += self.options
+        if self.workdir:
+            run_opts.append(f'-w {self.workdir}')
 
+        run_opts += self.options
         if self.command:
             return (f'docker run --rm {" ".join(run_opts)} '
                     f'{self.image} {self.command}')
@@ -228,6 +228,9 @@ class Sarus(ContainerPlatform):
                     for mp in mount_points]
         if self.with_mpi:
             run_opts.append('--mpi')
+
+        if self.workdir:
+            run_opts.append(f'-w {self.workdir}')
 
         run_opts += self.options
 
@@ -275,6 +278,9 @@ class Singularity(ContainerPlatform):
         run_opts = [f'-B"{mp[0]}:{mp[1]}"' for mp in mount_points]
         if self.with_cuda:
             run_opts.append('--nv')
+
+        if self.workdir:
+            run_opts.append(f'-W {self.workdir}')
 
         run_opts += self.options
         if self.command:
