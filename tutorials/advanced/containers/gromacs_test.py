@@ -8,8 +8,18 @@ import reframe as rfm
 from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 
 
+def _hecbiosim_bench(params):
+    for p in params:
+        if p[0] == 'HECBioSim/hEGFRDimerSmallerPL':
+            return [p]
+
+
 @rfm.simple_test
 class gromacs_containerized_test(gromacs_check):
+    benchmark_info = parameter(inherit_params=True,
+                               filter_params=_hecbiosim_bench,
+                               fmt=lambda x: x[0])
+    nb_impl = parameter(['gpu'])
     gromacs_image = parameter([
         None,
         'nvcr.io/hpc/gromacs:2020',
