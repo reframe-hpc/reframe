@@ -30,7 +30,8 @@ import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
 
-from reframe.frontend.testgenerators import distribute_tests, getallnodes
+from reframe.frontend.testgenerators import (distribute_tests,
+                                             getallnodes, repeat_tests)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
@@ -407,6 +408,10 @@ def main():
     )
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use'
+    )
+    run_options.add_argument(
+        '--repeat', action='store', metavar='N',
+        help='Repeat selected tests N times'
     )
     run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
@@ -1034,6 +1039,15 @@ def main():
                 f'Filtering successful test case(s): '
                 f'{len(testcases)} remaining'
             )
+
+        if options.repeat is not None:
+            num_repeats = int(options.repeat)
+            if num_repeats <= 0:
+                raise ValueError('the number of repetitions '
+                                 'must be a positive integer')
+
+            testcases = repeat_tests(testcases, num_repeats)
+            testcases_all = testcases
 
         if options.distribute:
             node_map = getallnodes(options.distribute, parsed_job_options)

@@ -7,23 +7,19 @@ import pytest
 
 import reframe.frontend.executors as executors
 import reframe.frontend.filters as filters
-from reframe.frontend.testgenerators import distribute_tests
+from reframe.frontend.testgenerators import (distribute_tests, repeat_tests)
 from reframe.frontend.loader import RegressionCheckLoader
 
 
 @pytest.fixture
-def default_exec_ctx(make_exec_ctx_g):
+def sys0_exec_ctx(make_exec_ctx_g):
     yield from make_exec_ctx_g(system='sys0')
 
 
-@pytest.fixture
-def loader():
-    return RegressionCheckLoader([
+def test_distribute_testcases(sys0_exec_ctx):
+    loader = RegressionCheckLoader([
         'unittests/resources/checks_unlisted/distribute.py'
     ])
-
-
-def test_distribute_testcases(loader, default_exec_ctx):
     testcases = executors.generate_testcases(loader.load_all())
     testcases = filter(
         filters.have_any_name('Simple'), testcases
@@ -62,3 +58,14 @@ def test_distribute_testcases(loader, default_exec_ctx):
     # Make sure we have consumed all the elements from nodelist_iter
     with pytest.raises(StopIteration):
         next(nodelist_iter)
+
+
+def test_repeat_testcases():
+    loader = RegressionCheckLoader([
+        'unittests/resources/checks/hellocheck.py'
+    ])
+    testcases = executors.generate_testcases(loader.load_all())
+    assert len(testcases) == 2
+
+    testcases = repeat_tests(testcases, 10)
+    assert len(testcases) == 20
