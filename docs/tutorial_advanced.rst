@@ -782,13 +782,14 @@ Otherwise, the *bare metal* version of the tested application will be run.
 The following test uses exactly this trick to test a series of GROMACS images as well as the native one provided on the Piz Daint supercomputer.
 It also extends the GROMACS benchmark tests that are provided with ReFrame's test library (see :doc:`hpctestlib`).
 For simplicity, we are assuming a single system here (the hybrid partition of Piz Daint) and we set fixed values for the :attr:`num_cpus_per_task` as well as the ``-ntomp`` option of GROMACS (NB: in a real-world test we would use the auto-detected processor topology information to set these values; see :ref:`proc-autodetection` for more information).
+We also redefine and restrict the benchmark's parameters ``benchmark_info`` and ``nb_impl`` to the values that are of interest for the demonstration of this test.
 Finally, we also reset the executable to use ``gmx`` instead of the ``gmx_mpi`` that is used from the library test.
 
 
 .. literalinclude:: ../tutorials/advanced/containers/gromacs_test.py
    :start-after: # rfmdocstart: gromacstest
 
-All this test does is to set the :attr:`~reframe.core.containers.ContainerPlatform.image` and the :attr:`~reframe.core.containers.ContainerPlatform.command` attributes of the :attr:`~reframe.core.pipeline.RegressionTest.container_platform`.
+All this test does in addition to the library test it inherits from is to set the :attr:`~reframe.core.containers.ContainerPlatform.image` and the :attr:`~reframe.core.containers.ContainerPlatform.command` attributes of the :attr:`~reframe.core.pipeline.RegressionTest.container_platform`.
 The former is set from the ``gromacs_image`` test parameter whereas the latter from the test's :attr:`~reframe.core.pipeline.RegressionTest.executable` and :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attributes.
 Remember that these attributes are ignored if the framework takes the path of launching  a container.
 Finally, if the image is :obj:`None` we handle the case of the native run, in which case we load the modules required to run GROMACS natively on the target system.
@@ -797,7 +798,7 @@ In the following, we run the GPU version of a single benchmark with a series of 
 
 .. code-block:: console
 
-   $ ./bin/reframe -C tutorials/config/settings.py -c tutorials/advanced/containers/gromacs_test.py -n '.*hEGFRDimerSmallerPL.*nb_impl=gpu.*' -r
+   $ ./bin/reframe -C tutorials/config/settings.py -c tutorials/advanced/containers/gromacs_test.py -r
 
 .. code-block:: console
 
@@ -827,17 +828,17 @@ We can also inspect the generated job scripts for the native and a containerized
 
 .. code-block:: console
 
-   cat output/daint/gpu/gnu/gromacs_containerized_test_42/rfm_gromacs_containerized_test_42_job.sh
+   cat output/daint/gpu/gnu/gromacs_containerized_test_0/rfm_gromacs_containerized_test_0_job.sh
 
 .. code-block:: bash
 
    #!/bin/bash
-   #SBATCH --job-name="rfm_gromacs_containerized_test_42_job"
+   #SBATCH --job-name="rfm_gromacs_containerized_test_0_job"
    #SBATCH --ntasks=1
    #SBATCH --ntasks-per-node=1
    #SBATCH --cpus-per-task=12
-   #SBATCH --output=rfm_gromacs_containerized_test_42_job.out
-   #SBATCH --error=rfm_gromacs_containerized_test_42_job.err
+   #SBATCH --output=rfm_gromacs_containerized_test_0_job.out
+   #SBATCH --error=rfm_gromacs_containerized_test_0_job.err
    #SBATCH -A csstaff
    #SBATCH --constraint=gpu
    #SBATCH --hint=nomultithread
@@ -852,17 +853,17 @@ And the containerized run:
 
 .. code-block:: console
 
-   cat output/daint/gpu/gnu/gromacs_containerized_test_43/rfm_gromacs_containerized_test_43_job.sh
+   cat output/daint/gpu/gnu/gromacs_containerized_test_1/rfm_gromacs_containerized_test_1_job.sh
 
 .. code-block:: bash
 
    #!/bin/bash
-   #SBATCH --job-name="rfm_gromacs_containerized_test_43_job"
+   #SBATCH --job-name="rfm_gromacs_containerized_test_1_job"
    #SBATCH --ntasks=1
    #SBATCH --ntasks-per-node=1
    #SBATCH --cpus-per-task=12
-   #SBATCH --output=rfm_gromacs_containerized_test_43_job.out
-   #SBATCH --error=rfm_gromacs_containerized_test_43_job.err
+   #SBATCH --output=rfm_gromacs_containerized_test_1_job.out
+   #SBATCH --error=rfm_gromacs_containerized_test_1_job.err
    #SBATCH -A csstaff
    #SBATCH --constraint=gpu
    #SBATCH --hint=nomultithread

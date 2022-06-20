@@ -16,10 +16,13 @@ def _hecbiosim_bench(params):
 
 @rfm.simple_test
 class gromacs_containerized_test(gromacs_check):
+    # Restrict library test parameters to only those relevant for this example
     benchmark_info = parameter(inherit_params=True,
                                filter_params=_hecbiosim_bench,
                                fmt=lambda x: x[0])
     nb_impl = parameter(['gpu'])
+
+    # New parameter for testing the various images
     gromacs_image = parameter([
         None,
         'nvcr.io/hpc/gromacs:2020',
@@ -42,6 +45,5 @@ class gromacs_containerized_test(gromacs_check):
         exec_cmd = ' '.join([self.executable, *self.executable_opts])
         self.container_platform.image = self.gromacs_image
         self.container_platform.command = exec_cmd
-
         if self.gromacs_image is None:
             self.modules = ['daint-gpu', 'GROMACS']
