@@ -9,7 +9,6 @@ import json
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 from reframe.core.backends import (getlauncher, getscheduler)
-from reframe.core.containers import ContainerPlatform
 from reframe.core.environments import (Environment, ProgEnvironment)
 from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
