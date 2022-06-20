@@ -30,7 +30,7 @@ import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
 
-from reframe.frontend.distribute import distribute_tests, getallnodes
+from reframe.frontend.testgenerators import distribute_tests, getallnodes
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
