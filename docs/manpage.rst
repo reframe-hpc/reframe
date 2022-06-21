@@ -454,6 +454,13 @@ Options controlling ReFrame execution
    An execution mode is simply a predefined invocation of ReFrame that is set with the :js:attr:`modes` configuration parameter.
    If an option is specified both in an execution mode and in the command-line, then command-line takes precedence.
 
+.. option:: --repeat=N
+
+   Repeat the selected tests ``N`` times.
+   This option can be used in conjunction with the :option:`--distribute` option in which case the selected tests will be repeated multiple times and distributed on individual nodes of the system's partitions.
+
+   .. versionadded:: 3.12.0
+
 .. option:: --restore-session [REPORT1[,REPORT2,...]]
 
    Restore a testing session that has run previously.
