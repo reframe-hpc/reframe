@@ -106,6 +106,7 @@ def run_command_async(cmd,
     if isinstance(cmd, str) and not shell:
         cmd = shlex.split(cmd)
 
+    popen_args.setdefault('stdin', subprocess.DEVNULL)
     return subprocess.Popen(args=cmd,
                             stdout=stdout,
                             stderr=stderr,
@@ -265,11 +266,11 @@ def rmtree(*args, max_retries=3, **kwargs):
     This version of :func:`rmtree` is mostly provided to work around a race
     condition between when ``sacct`` reports a job as completed and when the
     Slurm epilog runs. See `gh #291
-    <https://github.com/eth-cscs/reframe/issues/291>`__ for more information.
+    <https://github.com/reframe-hpc/reframe/issues/291>`__ for more information.
     Furthermore, it offers a work around for NFS file systems where stale
     file handles may be present during the :func:`rmtree` call, causing it to
     throw a busy device/resource error. See `gh #712
-    <https://github.com/eth-cscs/reframe/issues/712>`__ for more information.
+    <https://github.com/reframe-hpc/reframe/issues/712>`__ for more information.
 
     ``args`` and ``kwargs`` are passed through to :py:func:`shutil.rmtree`.
 

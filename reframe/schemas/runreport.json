@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/reframe/schemas/runreport.json",
+    "$id": "https://raw.githubusercontent.com/reframe-hpc/reframe/master/reframe/schemas/runreport.json",
     "title": "Validation schema for ReFrame's run report",
     "defs": {
         "testcase_type": {
@@ -40,6 +40,7 @@
                 "fail_reason": {"type": ["string", "null"]},
                 "fail_severe": {"type": "boolean"},
                 "filename": {"type": "string"},
+                "fixture": {"type": "boolean"},
                 "jobid": {"type": ["string", "null"]},
                 "job_stderr": {"type": ["string", "null"]},
                 "job_stdout": {"type": ["string", "null"]},

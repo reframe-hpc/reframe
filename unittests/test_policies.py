@@ -63,8 +63,8 @@ class timer:
 
 @pytest.fixture
 def make_loader():
-    def _make_loader(check_search_path):
-        return RegressionCheckLoader(check_search_path)
+    def _make_loader(check_search_path, *args, **kwargs):
+        return RegressionCheckLoader(check_search_path, *args, **kwargs)
 
     return _make_loader
 
@@ -115,9 +115,11 @@ def make_runner(request):
 def make_cases(make_loader):
     def _make_cases(checks=None, sort=False, *args, **kwargs):
         if checks is None:
-            checks = make_loader(['unittests/resources/checks']).load_all()
+            checks = make_loader(
+                ['unittests/resources/checks'], *args, **kwargs
+            ).load_all(force=True)
 
-        cases = executors.generate_testcases(checks, *args, **kwargs)
+        cases = executors.generate_testcases(checks)
         if sort:
             depgraph, _ = dependencies.build_deps(cases)
             dependencies.validate_deps(depgraph)
@@ -304,7 +306,7 @@ def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
 
 def test_runall_skip_prgenv_check(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
-    runner.runall(make_cases(skip_environ_check=True))
+    runner.runall(make_cases(skip_prgenv_check=True))
     stats = runner.stats
     assert 10 == stats.num_cases()
     assert_runall(runner)

@@ -25,7 +25,8 @@ def environ():
                            ldflags=['-dynamic'])
 
 
-@pytest.fixture(params=['Autotools', 'CMake', 'Make', 'SingleSource'])
+@pytest.fixture(params=['Autotools', 'CMake',
+                        'CustomBuild', 'Make', 'SingleSource'])
 def build_system(request):
     return bs.__dict__[request.param]()
 
@@ -127,6 +128,12 @@ def _emit_from_env_SingleSource(build_system, environ):
     assert expected == build_system.emit_build_commands(environ)
 
 
+def _emit_from_env_CustomBuild(build_system, environ):
+    build_system.commands = ['./custom-configure --foo', 'make']
+    expected = ['./custom-configure --foo', 'make']
+    assert expected == build_system.emit_build_commands(environ)
+
+
 def _emit_from_buildsystem_Make(build_system_with_flags, environ):
     build_system_with_flags.makefile = 'Makefile_foo'
     build_system_with_flags.srcdir = 'foodir'
@@ -188,6 +195,12 @@ def _emit_from_buildsystem_SingleSource(build_system_with_flags, environ):
     assert expected == build_system_with_flags.emit_build_commands(environ)
 
 
+def _emit_from_buildsystem_CustomBuild(build_system_with_flags, environ):
+    build_system_with_flags.commands = ['./custom-configure --foo', 'make']
+    expected = ['./custom-configure --foo', 'make']
+    assert expected == build_system_with_flags.emit_build_commands(environ)
+
+
 def _emit_no_env_defaults_Make(build_system, environ):
     build_system.flags_from_environ = False
     assert ['make -j 1'] == build_system.emit_build_commands(environ)
@@ -211,6 +224,12 @@ def _emit_no_env_defaults_SingleSource(build_system, environ):
     build_system.flags_from_environ = False
     assert (['gcc foo.c -o foo.x'] ==
             build_system.emit_build_commands(environ))
+
+
+def _emit_no_env_defaults_CustomBuild(build_system, environ):
+    build_system.commands = ['./custom-configure --foo', 'make']
+    expected = ['./custom-configure --foo', 'make']
+    assert expected == build_system.emit_build_commands(environ)
 
 
 @pytest.fixture(params=['C', 'C++', 'Fortran', 'CUDA'])

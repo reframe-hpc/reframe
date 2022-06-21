@@ -11,6 +11,7 @@ import functools
 import types
 import collections
 
+import reframe.core.builtins as builtins
 import reframe.core.namespaces as namespaces
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
@@ -19,12 +20,10 @@ import reframe.core.hooks as hooks
 import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
 from reframe.core.runtime import runtime
 
 
 class RegressionTestMeta(type):
-
     class MetaNamespace(namespaces.LocalNamespace):
         '''Custom namespace to control the cls attribute assignment.
 
@@ -210,6 +209,10 @@ class RegressionTestMeta(type):
     def __prepare__(metacls, name, bases, **kwargs):
         namespace = super().__prepare__(name, bases, **kwargs)
 
+        #
+        # Initialize the various class level helper data structures
+        #
+
         # Keep reference to the bases inside the namespace
         namespace['_rfm_bases'] = [
             b for b in bases if hasattr(b, '_rfm_var_space')
@@ -218,29 +221,22 @@ class RegressionTestMeta(type):
         # Regression test parameter space defined at the class level
         namespace['_rfm_local_param_space'] = namespaces.LocalNamespace()
 
-        # Directive to insert a regression test parameter directly in the
-        # class body as: `P0 = parameter([0,1,2,3])`.
-        namespace['parameter'] = parameters.TestParam
-
         # Regression test var space defined at the class level
         namespace['_rfm_local_var_space'] = namespaces.LocalNamespace()
-
-        # Directives to add/modify a regression test variable
-        namespace['variable'] = variables.TestVar
-        namespace['required'] = variables.Undefined
-        namespace['deprecate'] = variables.TestVar.create_deprecated
 
         # Regression test fixture space
         namespace['_rfm_local_fixture_space'] = namespaces.LocalNamespace()
 
-        # Directive to add a fixture
-        namespace['fixture'] = fixtures.TestFixture
-
         # Utility decorators
         namespace['_rfm_ext_bound'] = set()
 
-        # Loggable attributes and properties
+        # Loggable properties
         namespace['_rfm_loggable_props'] = []
+
+        namespace['_rfm_final_methods'] = set()
+        namespace['_rfm_hook_registry'] = hooks.HookRegistry()
+        namespace['_rfm_local_hook_registry'] = hooks.HookRegistry()
+        namespace['_rfm_perf_fns'] = namespaces.LocalNamespace()
 
         def bind(fn, name=None):
             '''Directive to bind a free function to a class.
@@ -268,134 +264,33 @@ class RegressionTestMeta(type):
             namespace['_rfm_ext_bound'].add(inst.__name__)
             return inst
 
-        def final(fn):
-            '''Indicate that a function is final and cannot be overridden.'''
-
-            fn._rfm_final = True
-            return fn
-
-        def loggable_as(name):
-            '''Mark a property loggable.
-
-            :param name: An alternative name that will be used for logging
-                this property. If :obj:`None`, the name of the decorated
-                property will be used.
-            :raises ValueError: if the decorated function is not a property.
-
-            .. versionadded:: 3.10.2
-
-            :meta private:
-
-            '''
-            def _loggable(fn):
-                if not hasattr(fn, 'fget'):
-                    raise ValueError('decorated function does not '
-                                     'look like a property')
-
-                prop_name = fn.fget.__name__
-                namespace['_rfm_loggable_props'].append((prop_name, name))
-                return fn
-
-            return _loggable
+        # Register all builtins
+        for name in builtins.__all__:
+            namespace[name] = getattr(builtins, name)
 
         namespace['bind'] = bind
-        namespace['final'] = final
-        namespace['loggable'] = loggable_as(None)
-        namespace['loggable_as'] = loggable_as
-        namespace['_rfm_final_methods'] = set()
-
-        # Hook-related functionality
-        def run_before(stage):
-            '''Decorator for attaching a test method to a given stage.
-
-            See online docs for more information.
-            '''
-            return hooks.attach_to('pre_' + stage)
-
-        def run_after(stage):
-            '''Decorator for attaching a test method to a given stage.
-
-            See online docs for more information.
-            '''
-            return hooks.attach_to('post_' + stage)
-
-        namespace['run_before'] = run_before
-        namespace['run_after'] = run_after
-        namespace['require_deps'] = hooks.require_deps
-        namespace['_rfm_hook_registry'] = hooks.HookRegistry()
-        namespace['_rfm_local_hook_registry'] = hooks.HookRegistry()
-
-        # Machinery to add a sanity function
-        def sanity_function(fn):
-            '''Mark a function as the test's sanity function.
-
-            Decorated functions must be unary and they will be converted into
-            deferred expressions.
-            '''
-
-            _def_fn = deferrable(fn)
-            setattr(_def_fn, '_rfm_sanity_fn', True)
-            return _def_fn
-
-        namespace['sanity_function'] = sanity_function
-        namespace['deferrable'] = deferrable
-
-        # Machinery to add performance functions
-        def performance_function(units, *, perf_key=None):
-            '''Decorate a function to extract a performance variable.
-
-            The ``units`` argument indicates the units of the performance
-            variable to be extracted.
-            The ``perf_key`` optional arg will be used as the name of the
-            performance variable. If not provided, the function name will
-            be used as the performance variable name.
-            '''
-            if not isinstance(units, str):
-                raise TypeError('performance units must be a string')
-
-            if perf_key and not isinstance(perf_key, str):
-                raise TypeError("'perf_key' must be a string")
-
-            def _deco_wrapper(func):
-                if not utils.is_trivially_callable(func, non_def_args=1):
-                    raise TypeError(
-                        f'performance function {func.__name__!r} has more '
-                        f'than one argument without a default value'
-                    )
-
-                @functools.wraps(func)
-                def _perf_fn(*args, **kwargs):
-                    return _DeferredPerformanceExpression(
-                        func, units, *args, **kwargs
-                    )
-
-                _perf_key = perf_key if perf_key else func.__name__
-                setattr(_perf_fn, '_rfm_perf_key', _perf_key)
-                return _perf_fn
-
-            return _deco_wrapper
-
-        namespace['performance_function'] = performance_function
-        namespace['_rfm_perf_fns'] = namespaces.LocalNamespace()
         return metacls.MetaNamespace(namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
-        '''Remove directives from the class namespace.
+        '''Remove builtins from the class namespace.
 
-        It does not make sense to have some directives available after the
-        class was created or even at the instance level (e.g. doing
+        It does not make sense to have the builtins available after the class
+        was created or even at the instance level (e.g. doing
         ``self.parameter([1, 2, 3])`` does not make sense). So here, we
-        intercept those directives out of the namespace before the class is
+        intercept those builtins out of the namespace before the class is
         constructed.
+
         '''
 
-        directives = [
-            'parameter', 'variable', 'bind', 'run_before', 'run_after',
-            'require_deps', 'required', 'deferrable', 'sanity_function',
-            'final', 'performance_function', 'fixture'
+        # Collect the loggable properties
+        loggable_props = []
+        namespace['_rfm_loggable_props'] = [
+            v.fget._rfm_loggable for v in namespace.values()
+            if hasattr(v, 'fget') and hasattr(v.fget, '_rfm_loggable')
         ]
-        for b in directives:
-            namespace.pop(b)
+
+        for n in builtins.__all__ + ['bind']:
+            namespace.pop(n)
 
         # Reset the external functions imported through the bind directive.
         for item in namespace.pop('_rfm_ext_bound'):
@@ -502,6 +397,7 @@ class RegressionTestMeta(type):
         # Intercept the requested variant number (if any) and map it to the
         # respective points in the parameter and fixture spaces.
         variant_num = kwargs.pop('variant_num', None)
+        reset_sysenv = kwargs.pop('reset_sysenv', 0)
         param_index, fixt_index = cls._map_variant_num(variant_num)
         fixt_name = kwargs.pop('fixt_name', None)
         fixt_data = kwargs.pop('fixt_data', None)
@@ -534,7 +430,19 @@ class RegressionTestMeta(type):
             if k in cls.var_space:
                 setattr(obj, k, v)
 
+        # Inject fixture proxies to give access to fixture parameters during
+        # the init phase
+        varinfo = cls.get_variant_info(variant_num, recurse=True)
+        for fname, finfo in varinfo['fixtures'].items():
+            if not isinstance(finfo, tuple):
+                setattr(obj, fname, fixtures.FixtureProxy(finfo))
+
         obj.__init__(*args, **kwargs)
+        if reset_sysenv & 1:
+            obj.valid_systems = ['*']
+
+        if reset_sysenv & 2:
+            obj.valid_prog_environs = ['*']
 
         # Register the fixtures
         # Fixtures must be injected after the object's initialisation because
@@ -626,6 +534,17 @@ class RegressionTestMeta(type):
             variable with a descriptor other than its underlying one.
 
         '''
+
+        if '.' in name:
+            # `name` refers to a fixture variable
+            fixtname, varname = name.split('.', maxsplit=1)
+            try:
+                fixt_space = super().__getattribute__('_rfm_fixture_space')
+            except AttributeError:
+                '''Catch early access attempt to the variable space.'''
+
+            if fixtname in fixt_space:
+                return fixt_space[fixtname].cls.setvar(varname, value)
 
         try:
             var_space = super().__getattribute__('_rfm_var_space')
@@ -797,7 +716,7 @@ class RegressionTestMeta(type):
               ...
 
           # Get the raw info for variant 0
-          MyTest.get_variant_info(0, recursive=True)
+          MyTest.get_variant_info(0, recurse=True)
           # {
           #     'params': {'p1': 'a'},
           #     'fixtures': {
@@ -913,7 +832,7 @@ class RegressionTestMeta(type):
         return sorted(loggable_props + loggable_vars + loggable_params)
 
 
-def make_test(name, bases, body, **kwargs):
+def make_test(name, bases, body, methods=None, **kwargs):
     '''Define a new test class programmatically.
 
     Using this method is completely equivalent to using the :keyword:`class`
@@ -938,23 +857,73 @@ def make_test(name, bases, body, **kwargs):
        class HelloTest(rfm.RunOnlyRegressionTest):
            valid_systems = ['*']
            valid_prog_environs = ['*']
-           executable = 'echo',
+           executable = 'echo'
            sanity_patterns: sn.assert_true(1)
 
        hello_cls = HelloTest
+
+    Test :ref:`builtins <builtins>` can also be used when defining the body of
+    the test by accessing them through the :obj:`reframe.core.builtins`.
+    Methods can also be bound to the newly created tests using the ``methods``
+    argument. The following is an example:
+
+    .. code-block:: python
+
+       import reframe.core.builtins as builtins
+
+
+       def set_message(obj):
+           obj.executable_opts = [obj.message]
+
+       def validate(obj):
+           return sn.assert_found(obj.message, obj.stdout)
+
+       hello_cls = rfm.make_test(
+           'HelloTest', (rfm.RunOnlyRegressionTest,),
+           {
+               'valid_systems': ['*'],
+               'valid_prog_environs': ['*'],
+               'executable': 'echo',
+               'message': builtins.variable(str)
+           },
+           methods=[
+               builtins.run_before('run')(set_message),
+               builtins.sanity_function(validate)
+           ]
+       )
+
 
     :param name: The name of the new test class.
     :param bases: A tuple of the base classes of the class that is being
         created.
     :param body: A mapping of key/value pairs that will be inserted as class
         attributes in the newly created class.
+    :param methods: A list of functions to be bound as methods to the class
+        that is being created. The functions will be bound with their original
+        name.
     :param kwargs: Any keyword arguments to be passed to the
         :class:`RegressionTestMeta` metaclass.
 
     .. versionadded:: 3.10.0
 
+    .. versionchanged:: 3.11.0
+       Added the ``methods`` arguments.
+
     '''
     namespace = RegressionTestMeta.__prepare__(name, bases, **kwargs)
+    methods = methods or []
+
+    # Add methods to the body
+    for m in methods:
+        body[m.__name__] = m
+
+    # We update the namespace with the body of the class and we explicitly
+    # call reset on each namespace key to trigger the functionality of
+    # `__setitem__()` as if the body elements were actually being typed in the
+    # class definition
     namespace.update(body)
+    for k in list(namespace.keys()):
+        namespace.reset(k)
+
     cls = RegressionTestMeta(name, bases, namespace, **kwargs)
     return cls

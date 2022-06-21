@@ -29,7 +29,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
     #:
     #: :type: :class:`str`
     #: :default: ``'1.0.0'``
-    benchmark_version = variable(str, value='1.0.0')
+    benchmark_version = variable(str, value='1.0.0', loggable=True)
 
     #: Parameter pack encoding the benchmark information.
     #:
@@ -46,13 +46,13 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         ('HECBioSim/hEGFRDimerSmallerPL', -3.27080e+06, 0.001),
         ('HECBioSim/hEGFRDimerPair', -1.20733e+07, 0.001),
         ('HECBioSim/hEGFRtetramerPair', -2.09831e+07, 0.001)
-    ])
+    ], fmt=lambda x: x[0], loggable=True)
 
     #: Parameter encoding the implementation of the non-bonded calculations
     #:
     #: :type: :class:`str`
     #: :values: ``['cpu', 'gpu']``
-    nb_impl = parameter(['cpu', 'gpu'])
+    nb_impl = parameter(['cpu', 'gpu'], loggable=True)
 
     executable = 'gmx_mpi mdrun'
     tags = {'sciapp', 'chemistry'}
@@ -67,6 +67,7 @@ class gromacs_check(rfm.RunOnlyRegressionTest):
         ]
         self.executable_opts += ['-nb', self.nb_impl, '-s benchmark.tpr']
 
+    @loggable
     @property
     def bench_name(self):
         '''The benchmark name.

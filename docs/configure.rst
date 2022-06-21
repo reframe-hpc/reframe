@@ -30,7 +30,7 @@ Users have no control over this variable.
 It is always set by the framework upon startup.
 
 If no configuration file is found in any of the predefined locations, ReFrame will fall back to a generic configuration that allows it to run on any system.
-You can find this generic configuration file `here <https://github.com/eth-cscs/reframe/blob/master/reframe/core/settings.py>`__.
+You can find this generic configuration file `here <https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py>`__.
 Users may *not* modify this file.
 
 There are two ways to provide a custom configuration file to ReFrame:
@@ -235,11 +235,14 @@ Picking a System Configuration
 
 As discussed previously, ReFrame's configuration file can store the configurations for multiple systems.
 When launched, ReFrame will pick the first matching configuration and load it.
-This process is performed as follows:
-ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
-If this cannot be found, the hostname will be obtained from the standard ``hostname`` command.
-Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns defined in each system's ``hostnames`` property.
+
+ReFrame uses an auto-detection mechanism to get information about the host it is running on and uses that information to pick the right system configuration.
+Currently, only one auto-detection method is supported that retrieves the hostname.
+Based on this, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns defined in each system's ``hostnames`` property.
 The detection process stops at the first match found, and that system's configuration is selected.
+
+The auto-detection process can be controlled through the :envvar:`RFM_AUTODETECT_METHOD`, :envvar:`RFM_AUTODETECT_FQDN` and :envvar:`RFM_AUTODETECT_XTHOSTNAME` environment variables.
+
 
 As soon as a system configuration is selected, all configuration objects that have a ``target_systems`` property are resolved against the selected system, and any configuration object that is not applicable is dropped.
 So, internally, ReFrame keeps an *instantiation* of the site configuration for the selected system only.

@@ -16,7 +16,7 @@ def re_compile(patt):
         raise ReframeError(f'invalid regex: {patt!r}')
 
 
-def have_name(patt):
+def _have_name(patt):
     regex = re_compile(patt)
 
     def _fn(case):
@@ -37,7 +37,45 @@ def have_name(patt):
 
 def have_not_name(patt):
     def _fn(case):
-        return not have_name(patt)(case)
+        return not _have_name(patt)(case)
+
+    return _fn
+
+
+def have_any_name(names):
+    rt = runtime()
+    has_compact_names = rt.get_option('general/0/compact_test_names')
+    exact_matches = []
+    regex_matches = []
+    for n in names:
+        if has_compact_names and '@' in n:
+            test, _, variant = n.rpartition('@')
+            if variant.isdigit():
+                exact_matches.append((test, int(variant)))
+
+        else:
+            regex_matches.append(n)
+
+    if regex_matches:
+        regex = re_compile('|'.join(regex_matches))
+    else:
+        regex = None
+
+    def _fn(case):
+        # Check if we have an exact match
+        for m in exact_matches:
+            cls_name = type(case.check).__name__
+            if (cls_name, case.check.variant_num) == m:
+                return True
+
+        display_name = case.check.display_name.replace(' ', '')
+        if regex:
+            if has_compact_names:
+                return regex.match(display_name)
+            else:
+                return regex.match(case.check.unique_name)
+
+        return False
 
     return _fn
 

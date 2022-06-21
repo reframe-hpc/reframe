@@ -19,7 +19,7 @@ If you haven't done so yet, all you need is Python 3.6 and above and to follow t
 
 .. code:: bash
 
-   git clone https://github.com/eth-cscs/reframe.git
+   git clone https://github.com/reframe-hpc/reframe.git
    cd reframe
    ./bootstrap.sh
    ./bin/reframe -V

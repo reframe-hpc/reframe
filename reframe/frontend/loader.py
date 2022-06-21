@@ -8,6 +8,7 @@
 #
 
 import ast
+import contextlib
 import inspect
 import os
 import sys
@@ -18,7 +19,6 @@ import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
 from reframe.core.logging import getlogger
-from reframe.core.fixtures import FixtureRegistry
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
@@ -28,7 +28,7 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
     @property
     def valid(self):
-        return self._has_import
+        return self._has_import or self._has_regression_test
 
     def visit_Import(self, node):
         for m in node.names:
@@ -39,9 +39,17 @@ class RegressionCheckValidator(ast.NodeVisitor):
         if node.module is not None and node.module.startswith('reframe'):
             self._has_import = True
 
+    def visit_ClassDef(self, node):
+        for deco in node.decorator_list:
+            with contextlib.suppress(AttributeError):
+                if deco.attr == 'simple_test':
+                    self._has_regression_test = True
+                    break
+
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, recurse=False, external_vars=None):
+    def __init__(self, load_path, recurse=False, external_vars=None,
+                 skip_system_check=False, skip_prgenv_check=False):
         # Expand any environment variables and symlinks
         load_path = [os.path.realpath(osext.expandvars(p)) for p in load_path]
         self._load_path = osext.unique_abs_paths(load_path, recurse)
@@ -52,6 +60,8 @@ class RegressionCheckLoader:
 
         # Variables set in the command line
         self._external_vars = external_vars or {}
+        self._skip_system_check = bool(skip_system_check)
+        self._skip_prgenv_check = bool(skip_prgenv_check)
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.
@@ -171,7 +181,12 @@ class RegressionCheckLoader:
             return []
 
         self._set_defaults(registry)
-        test_pool = registry.instantiate_all() if registry else []
+        reset_sysenv = self._skip_prgenv_check << 1 | self._skip_system_check
+        if registry:
+            candidate_tests = registry.instantiate_all(reset_sysenv)
+        else:
+            candidate_tests = []
+
         legacy_tests = legacy_registry() if legacy_registry else []
         if self._external_vars and legacy_tests:
             getlogger().warning(
@@ -180,32 +195,20 @@ class RegressionCheckLoader:
                 "please use the 'parameter' builtin in your tests"
             )
 
-        # Merge registries
-        test_pool += legacy_tests
+        # Reset valid_systems and valid_prog_environs in all legacy tests
+        if reset_sysenv:
+            for t in legacy_tests:
+                if self._skip_system_check:
+                    t.valid_systems = ['*']
 
-        # Do a level-order traversal of the fixture registries of all tests in
-        # the test pool, instantiate all fixtures and generate the final set
-        # of candidate tests to load; the test pool is consumed at the end of
-        # the traversal and all instantiated tests (including fixtures) are
-        # stored in `candidate_tests`.
-        candidate_tests = []
-        fixture_registry = FixtureRegistry()
-        while test_pool:
-            tmp_registry = FixtureRegistry()
-            while test_pool:
-                c = test_pool.pop()
-                reg = getattr(c, '_rfm_fixture_registry', None)
-                candidate_tests.append(c)
-                if reg:
-                    tmp_registry.update(reg)
+                if self._skip_prgenv_check:
+                    t.valid_prog_environs = ['*']
 
-            # Instantiate the new fixtures and update the registry
-            new_fixtures = tmp_registry.difference(fixture_registry)
-            test_pool = new_fixtures.instantiate_all()
-            fixture_registry.update(new_fixtures)
+        # Merge tests
+        candidate_tests += legacy_tests
 
         # Post-instantiation validation of the candidate tests
-        tests = []
+        final_tests = []
         for c in candidate_tests:
             if not isinstance(c, RegressionTest):
                 continue
@@ -218,15 +221,15 @@ class RegressionCheckLoader:
                 conflicted = self._loaded[c.unique_name]
             except KeyError:
                 self._loaded[c.unique_name] = testfile
-                tests.append(c)
+                final_tests.append(c)
             else:
                 raise NameConflictError(
                     f'test {c.unique_name!r} from {testfile!r} '
                     f'is already defined in {conflicted!r}'
                 )
 
-        getlogger().debug(f'  > Loaded {len(tests)} test(s)')
-        return tests
+        getlogger().debug(f'  > Loaded {len(final_tests)} test(s)')
+        return final_tests
 
     def load_from_file(self, filename, force=False):
         if not self._validate_source(filename):

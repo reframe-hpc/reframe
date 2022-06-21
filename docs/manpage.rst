@@ -379,6 +379,36 @@ Options controlling ReFrame execution
 
    .. versionadded:: 3.2
 
+.. option:: --distribute[=NODESTATE]
+
+   Distribute the selected tests on all the nodes in state ``NODESTATE`` in their respective valid partitions.
+
+   ReFrame will parameterize and run the tests on the selected nodes.
+   Effectively, it will dynamically create new tests that inherit from the original tests and add a new parameter named ``$nid`` which contains the list of nodes that the test must run on.
+   The new tests are named with the following pattern  ``{orig_test_basename}_{partition_fullname}``.
+
+   When determining the list of nodes to distribute the selected tests, ReFrame will take into account any job options passed through the :option:`-J` option.
+
+   You can optionally specify the state of the nodes to consider when distributing the test through the ``NODESTATE`` argument:
+
+   - ``all``: Tests will run on all the nodes of their respective valid partitions regardless of the nodes' state.
+   - ``idle``: Tests will run on all *idle* nodes of their respective valid partitions.
+   - ``NODESTATE``: Tests will run on all the nodes in state ``NODESTATE`` of their respective valid partitions.
+     If ``NODESTATE`` is not specified, ``idle`` will be assumed.
+
+   The state of the nodes will be determined once, before beginning the
+   execution of the tests, so it might be different at the time the tests are actually submitted.
+
+   .. note::
+      Currently, only single-node jobs can be distributed and only local or the Slurm-based backends support this feature.
+
+   .. note::
+      Distributing tests with dependencies is not supported.
+      However, you can distribute tests that use fixtures.
+
+
+   .. versionadded:: 3.11.0
+
 .. option:: --exec-policy=POLICY
 
    The execution policy to be used for running tests.
@@ -454,6 +484,10 @@ Options controlling ReFrame execution
 
    Set variable ``VAR`` in all tests or optionally only in test ``TEST`` to ``VAL``.
 
+   ``TEST`` can have the form ``[TEST.][FIXT.]*``, in which case ``VAR`` will be set in fixture ``FIXT`` of ``TEST``.
+   Note that this syntax is recursive on fixtures, so that a variable can be set in a fixture arbitrarily deep.
+   ``TEST`` prefix refers to the test class name, *not* the test name, but ``FIXT`` refers to the fixture name *inside* the referenced test.
+
    Multiple variables can be set at the same time by passing this option multiple times.
    This option *cannot* change arbitrary test attributes, but only test variables declared with the :attr:`~reframe.core.pipeline.RegressionMixin.variable` built-in.
    If an attempt is made to change an inexistent variable or a test parameter, a warning will be issued.
@@ -480,8 +514,6 @@ Options controlling ReFrame execution
 
    Conversions to arbitrary objects are also supported.
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
-
-   The optional ``TEST.`` prefix refers to the test class name, *not* the test name.
 
    Variable assignments passed from the command line happen *before* the test is instantiated and is the exact equivalent of assigning a new value to the variable *at the end* of the test class body.
    This has a number of implications that users of this feature should be aware of:
@@ -530,6 +562,10 @@ Options controlling ReFrame execution
    .. versionchanged:: 3.9.3
 
       Proper handling of boolean variables.
+
+   .. versionchanged:: 3.11.1
+
+      Allow setting variables in fixtures.
 
 
 .. option:: --skip-performance-check
@@ -784,7 +820,6 @@ Miscellaneous options
    If this option is not specified, ReFrame will try to pick the correct configuration entry automatically.
    It does so by trying to match the hostname of the current machine again the hostname patterns defined in the :js:attr:`hostnames` system configuration parameter.
    The system with the first match becomes the current system.
-   For Cray systems, ReFrame will first look for the *unqualified machine name* in ``/etc/xthostname`` before trying retrieving the hostname of the current machine.
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
@@ -939,6 +974,64 @@ Boolean environment variables can have any value of ``true``, ``yes``, ``y`` (ca
 
 
 Here is an alphabetical list of the environment variables recognized by ReFrame:
+
+
+.. envvar:: RFM_AUTODETECT_FQDN
+
+   Use the fully qualified domain name as the hostname.
+   This is a boolean variable and defaults to ``1``.
+
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+
+   .. versionadded:: 3.11.0
+
+
+.. envvar:: RFM_AUTODETECT_METHOD
+
+   Method to use for detecting the current system and pick the right configuration.
+   The following values can be used:
+
+   - ``hostname``: The ``hostname`` command will be used to detect the current system.
+     This is the default value, if not specified.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+
+   .. versionadded:: 3.11.0
+
+
+.. envvar:: RFM_AUTODETECT_XTHOSTNAME
+
+   Use ``/etc/xthostname`` file, if present, to retrieve the current system's name.
+   If the file cannot be found, the hostname will be retrieved using the ``hostname`` command.
+   This is a boolean variable and defaults to ``1``.
+
+   This option meaningful for Cray systems.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+
+   .. versionadded:: 3.11.0
 
 
 .. envvar:: RFM_CHECK_SEARCH_PATH
@@ -1450,7 +1543,7 @@ Users may *not* modify this file.
 For a complete reference of the configuration, please refer to |reframe.settings(8)|_ man page.
 
 .. |reframe/core/settings.py| replace:: ``reframe/core/settings.py``
-.. _reframe/core/settings.py: https://github.com/eth-cscs/reframe/blob/master/reframe/core/settings.py
+.. _reframe/core/settings.py: https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py
 .. |reframe.settings(8)| replace:: ``reframe.settings(8)``
 .. _reframe.settings(8): config_reference.html
 
@@ -1458,7 +1551,7 @@ For a complete reference of the configuration, please refer to |reframe.settings
 Reporting Bugs
 --------------
 
-For bugs, feature request, help, please open an issue on Github: <https://github.com/eth-cscs/reframe>
+For bugs, feature request, help, please open an issue on Github: <https://github.com/reframe-hpc/reframe>
 
 
 See Also

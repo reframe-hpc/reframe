@@ -27,13 +27,15 @@ import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
+import reframe.utility.typecheck as typ
 
 
-from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.distribute import distribute_tests, getallnodes
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
+from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.printer import PrettyPrinter
 
 
 def format_env(envvars):
@@ -312,7 +314,7 @@ def main():
     # partition environments as the runtime is created, similarly to how the
     # system partitions are treated. Currently, this facilitates the
     # implementation of fixtures, but we should reconsider it: see discussion
-    # in https://github.com/eth-cscs/reframe/issues/2245
+    # in https://github.com/reframe-hpc/reframe/issues/2245
     select_options.add_argument(
         '-p', '--prgenv', action='append', default=[r'.*'],  metavar='PATTERN',
         configvar='general/valid_env_names',
@@ -368,6 +370,12 @@ def main():
     run_options.add_argument(
         '--disable-hook', action='append', metavar='NAME', dest='hooks',
         default=[], help='Disable a pipeline hook for this run'
+    )
+    run_options.add_argument(
+        '--distribute', action='store', metavar='{all|STATE}',
+        nargs='?', const='idle',
+        help=('Distribute the selected single-node jobs on every node that'
+              'is in STATE (default: "idle"')
     )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
@@ -523,6 +531,29 @@ def main():
     )
 
     # Options not associated with command-line arguments
+    argparser.add_argument(
+        dest='autodetect_fqdn',
+        envvar='RFM_AUTODETECT_FQDN',
+        action='store',
+        default=True,
+        type=typ.Bool,
+        help='Use FQDN as host name'
+    )
+    argparser.add_argument(
+        dest='autodetect_method',
+        envvar='RFM_AUTODETECT_METHOD',
+        action='store',
+        default='hostname',
+        help='Method to detect the system'
+    )
+    argparser.add_argument(
+        dest='autodetect_xthostname',
+        envvar='RFM_AUTODETECT_XTHOSTNAME',
+        action='store',
+        default=True,
+        type=typ.Bool,
+        help="Use Cray's xthostname file to find the host name"
+    )
     argparser.add_argument(
         dest='git_timeout',
         envvar='RFM_GIT_TIMEOUT',
@@ -694,6 +725,11 @@ def main():
             site_config = config.load_config(converted)
 
         site_config.validate()
+        site_config.set_autodetect_meth(
+            options.autodetect_method,
+            use_fqdn=options.autodetect_fqdn,
+            use_xthostname=options.autodetect_xthostname
+        )
 
         # We ignore errors about unresolved sections or configuration
         # parameters here, because they might be defined at the individual
@@ -867,7 +903,9 @@ def main():
 
     loader = RegressionCheckLoader(check_search_path,
                                    check_search_recursive,
-                                   external_vars)
+                                   external_vars,
+                                   options.skip_system_check,
+                                   options.skip_prgenv_check)
 
     def print_infoline(param, value):
         param = param + ':'
@@ -877,7 +915,7 @@ def main():
         'cmdline': ' '.join(sys.argv),
         'config_file': rt.site_config.filename,
         'data_version': runreport.DATA_VERSION,
-        'hostname': socket.getfqdn(),
+        'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
@@ -902,15 +940,29 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
-        # Locate and load checks
-        checks_found = loader.load_all()
+        # Need to parse the cli options before loading the tests
+        parsed_job_options = []
+        for opt in options.job_options:
+            opt_split = opt.split('=', maxsplit=1)
+            optstr = opt_split[0]
+            valstr = opt_split[1] if len(opt_split) > 1 else ''
+            if opt.startswith('-') or opt.startswith('#'):
+                parsed_job_options.append(opt)
+            elif len(optstr) == 1:
+                parsed_job_options.append(f'-{optstr} {valstr}')
+            else:
+                parsed_job_options.append(f'--{optstr} {valstr}')
+
+        # Locate and load checks; `force=True` is not needed for normal
+        # invocations from the command line and has practically no effect, but
+        # it is needed to better emulate the behavior of running reframe's CLI
+        # from within the unit tests, which call repeatedly `main()`.
+        checks_found = loader.load_all(force=True)
         printer.verbose(f'Loaded {len(checks_found)} test(s)')
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering
-        testcases_all = generate_testcases(checks_found,
-                                           options.skip_system_check,
-                                           options.skip_prgenv_check)
+        testcases_all = generate_testcases(checks_found)
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
 
@@ -920,9 +972,7 @@ def main():
                 testcases = filter(filters.have_not_name(name), testcases)
 
         if options.names:
-            testcases = filter(
-                filters.have_name('|'.join(options.names)), testcases
-            )
+            testcases = filter(filters.have_any_name(options.names), testcases)
 
         testcases = list(testcases)
         printer.verbose(
@@ -985,6 +1035,22 @@ def main():
                 f'{len(testcases)} remaining'
             )
 
+        if options.distribute:
+            node_map = getallnodes(options.distribute, parsed_job_options)
+
+            # Remove the job options that begin with '--nodelist' and '-w', so
+            # that they do not override those set from the distribute feature.
+            #
+            # NOTE: This is Slurm-specific. When support of distributing tests
+            # is added to other scheduler backends, this needs to be updated,
+            # too.
+            parsed_job_options = [
+                x for x in parsed_job_options
+                if (not x.startswith('-w') and not x.startswith('--nodelist'))
+            ]
+            testcases = distribute_tests(testcases, node_map)
+            testcases_all = testcases
+
         # Prepare for running
         printer.debug('Building and validating the full test DAG')
         testgraph, skipped_cases = dependencies.build_deps(testcases_all)
@@ -1044,7 +1110,11 @@ def main():
             list_checks(testcases, printer)
             printer.info('[Generate CI]')
             with open(options.ci_generate, 'wt') as fp:
-                ci.emit_pipeline(fp, testcases)
+                child_pipeline_opts = []
+                if options.mode:
+                    child_pipeline_opts.append(f'--mode={options.mode}')
+
+                ci.emit_pipeline(fp, testcases, child_pipeline_opts)
 
             printer.info(
                 f'  Gitlab pipeline generated successfully '
@@ -1146,7 +1216,6 @@ def main():
             printer.error("unknown execution policy `%s': Exiting...")
             sys.exit(1)
 
-        exec_policy.skip_system_check = options.skip_system_check
         exec_policy.force_local = options.force_local
         exec_policy.strict_check = options.strict
         exec_policy.skip_sanity_check = options.skip_sanity_check
@@ -1165,18 +1234,6 @@ def main():
             sched_flex_alloc_nodes = options.flex_alloc_nodes
 
         exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
-        parsed_job_options = []
-        for opt in options.job_options:
-            opt_split = opt.split('=', maxsplit=1)
-            optstr = opt_split[0]
-            valstr = opt_split[1] if len(opt_split) > 1 else ''
-            if opt.startswith('-') or opt.startswith('#'):
-                parsed_job_options.append(opt)
-            elif len(optstr) == 1:
-                parsed_job_options.append(f'-{optstr} {valstr}')
-            else:
-                parsed_job_options.append(f'--{optstr} {valstr}')
-
         exec_policy.sched_options = parsed_job_options
         if options.maxfail < 0:
             raise errors.ConfigError(
@@ -1207,7 +1264,9 @@ def main():
             success = True
             if runner.stats.failed():
                 success = False
-                runner.stats.print_failure_report(printer)
+                runner.stats.print_failure_report(
+                    printer, not options.distribute
+                )
                 if options.failure_stats:
                     runner.stats.print_failure_stats(printer)
 

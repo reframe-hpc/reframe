@@ -7,6 +7,7 @@ import functools
 import glob
 import itertools
 import re
+import shlex
 import time
 from argparse import ArgumentParser
 from contextlib import suppress
@@ -19,7 +20,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
                                      JobError,
                                      JobSchedulerError)
-from reframe.utility import seconds_to_hms
+from reframe.utility import nodelist_abbrev, seconds_to_hms
 
 
 def slurm_state_completed(state):
@@ -178,9 +179,9 @@ class SlurmJobScheduler(sched.JobScheduler):
                 self._format_option('%d:%d:%d' % (h, m, s), '--time={0}')
             )
 
-        if job.sched_exclusive_access:
+        if job.exclusive_access:
             preamble.append(
-                self._format_option(job.sched_exclusive_access, '--exclusive')
+                self._format_option(job.exclusive_access, '--exclusive')
             )
 
         if self._use_nodes_opt:
@@ -191,6 +192,14 @@ class SlurmJobScheduler(sched.JobScheduler):
             hint = None
         else:
             hint = 'multithread' if job.use_smt else 'nomultithread'
+
+        if job.pin_nodes:
+            preamble.append(
+                self._format_option(
+                    nodelist_abbrev(job.pin_nodes),
+                    '--nodelist={0}'
+                )
+            )
 
         for opt in job.sched_access:
             if not opt.strip().startswith(('-C', '--constraint')):
@@ -297,6 +306,11 @@ class SlurmJobScheduler(sched.JobScheduler):
         # create a mutable list out of the immutable SequenceView that
         # sched_access is
         options = job.sched_access + job.options + job.cli_options
+
+        # Properly split lexically all the arguments in the options list so as
+        # to treat correctly entries such as '--option foo'.
+        options = list(itertools.chain.from_iterable(shlex.split(opt)
+                                                     for opt in options))
         option_parser = ArgumentParser()
         option_parser.add_argument('--reservation')
         option_parser.add_argument('-p', '--partition')

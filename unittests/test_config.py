@@ -261,7 +261,10 @@ def test_select_subconfig():
             [{'name': 'PrgEnv-cray', 'collection': False, 'path': None}])
     assert site_config.get('environments/@PrgEnv-gnu/extras') == {'foo': 1,
                                                                   'bar': 'x'}
+    assert site_config.get('environments/@PrgEnv-gnu/features') == ['cxx14']
     assert site_config.get('environments/@PrgEnv-cray/extras') == {}
+    assert site_config.get('environments/@PrgEnv-cray/features') == ['cxx14',
+                                                                     'mpi']
 
     assert len(site_config.get('general')) == 1
     assert site_config.get('general/0/check_search_path') == ['a:b']
@@ -286,7 +289,7 @@ def test_select_subconfig():
     assert site_config.get('general/0/check_search_path') == ['c:d']
 
     # Test default values for non-existent name-addressable objects
-    # See https://github.com/eth-cscs/reframe/issues/1339
+    # See https://github.com/reframe-hpc/reframe/issues/1339
     assert site_config.get('modes/@foo/options') == []
     assert site_config.get('modes/10/options') == []
 
@@ -387,3 +390,17 @@ def test_system_create():
     assert partition.processor.num_cores_per_socket == 4
     assert partition.processor.num_numa_nodes == 1
     assert partition.processor.num_cores_per_numa_node == 4
+
+
+def test_hostname_autodetection():
+    # This exercises only the various execution paths
+
+    # We set the autodetection method and we call `select_subconfig()` in
+    # order to trigger the auto-detection
+    site_config = config.load_config('unittests/resources/settings.py')
+    for use_xthostname in (True, False):
+        for use_fqdn in (True, False):
+            site_config.set_autodetect_meth('hostname',
+                                            use_fqdn=use_fqdn,
+                                            use_xthostname=use_xthostname)
+            site_config.select_subconfig()

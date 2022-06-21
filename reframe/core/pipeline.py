@@ -44,6 +44,19 @@ from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 
 
+# Valid systems/environments mini-language
+_N = r'(\w[-.\w]*)'         # name
+_NW = rf'(\*|{_N})'         # name or wildcard
+_F = rf'([+-]{_N})'         # feature
+_OP = r'([=<>]|!=|>=|<=)'   # relational operator (unused for the moment)
+_KV = rf'(%{_N}=\S+)'       # key/value pair
+_FKV = rf'({_F}|{_KV})'     # feature | key/value pair
+_VALID_ENV_SYNTAX = rf'^({_NW}|{_FKV}(\s+{_FKV})*)$'
+
+_S = rf'({_NW}(:{_NW})?)'   # system/partition
+_VALID_SYS_SYNTAX = rf'^({_S}|{_FKV}(\s+{_FKV})*)$'
+
+
 _PIPELINE_STAGES = (
     '__init__',
     'setup',
@@ -158,40 +171,98 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: List of programming environments supported by this test.
     #:
-    #: If ``*`` is in the list then all programming environments are supported
-    #: by this test.
+    #: The syntax of this attribute is exactly the same as of the
+    #: :attr:`valid_systems` except that the ``a:b`` entries are invalid.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``required``
     #:
-    #: .. note::
-    #:     .. versionchanged:: 2.12
-    #:        Programming environments can now be specified using wildcards.
+    #: .. seealso::
+    #:    - `Environment features
+    #:      <config_reference.html#environments-.features>`__
+    #:    - `Environment extras
+    #:      <config_reference.html#environments-.extras>`__
     #:
-    #:     .. versionchanged:: 2.17
-    #:        Support for wildcards is dropped.
+    #: .. versionchanged:: 2.12
+    #:    Programming environments can now be specified using wildcards.
     #:
-    #:     .. versionchanged:: 3.3
-    #:        Default value changed from ``[]`` to ``None``.
+    #: .. versionchanged:: 2.17
+    #:    Support for wildcards is dropped.
     #:
-    #:     .. versionchanged:: 3.6
-    #:        Default value changed from ``None`` to ``required``.
-    valid_prog_environs = variable(typ.List[str], loggable=True)
+    #: .. versionchanged:: 3.3
+    #:    Default value changed from ``[]`` to ``None``.
+    #:
+    #: .. versionchanged:: 3.6
+    #:    Default value changed from ``None`` to ``required``.
+    #:
+    #: .. versionchanged:: 3.11.0
+    #:    Extend syntax to support features and key/value pairs.
+    valid_prog_environs = variable(typ.List[typ.Str[_VALID_ENV_SYNTAX]],
+                                   loggable=True)
 
-    #: List of systems supported by this test.
-    #: The general syntax for systems is ``<sysname>[:<partname>]``.
-    #: Both <sysname> and <partname> accept the value ``*`` to mean any value.
-    #: ``*`` is an alias of ``*:*``
+    #: List of systems or system features or system properties required by this
+    #: test.
+    #:
+    #: Each entry in this list is a requirement and can have one of the
+    #: following forms:
+    #:
+    #: - ``sysname``: The test is valid for system named ``sysname``.
+    #: - ``sysname:partname``: The test is valid for the partition ``partname``
+    #:   of system ``sysname``.
+    #: - ``*``: The test is valid for any system.
+    #: - ``*:partname``: The test is valid for any partition named ``partname``
+    #:   in any system.
+    #: - ``+feat``: The test is valid for all partitions that define feature
+    #:   ``feat`` as a feature.
+    #: - ``-feat``: The test is valid for all partitions that do not define
+    #:   feature ``feat`` as a feature.
+    #: - ``%key=val``: The test is valid for all partitions that define the
+    #:   extra property ``key`` with the value ``val``.
+    #:
+    #: Multiple features and key/value pairs can be included in a single entry
+    #: of the :attr:`valid_systems` list, in which case an AND operation on
+    #: these constraints is implied. For example, the test defining the
+    #: following will be valid for all systems that have define both ``feat1``
+    #: and ``feat2`` and set ``foo=1``
+    #:
+    #: .. code-block:: python
+    #:
+    #:    valid_systems = ['+feat1 +feat2 %foo=1']
+    #:
+    #: For key/value pairs comparisons, ReFrame will automatically convert the
+    #: value in the key/value spec to the type of the value of the
+    #: corresponding entry in the partitions ``extras`` property. In the above
+    #: example, if the type of ``foo`` property is integer, ``1`` will be
+    #: converted to an integer value. If a conversion to the target type is not
+    #: possible, then the requested key/value pair is not matched.
+    #:
+    #: Multiple entries in the :attr:`valid_systems` list are implicitly ORed,
+    #: such that the following example implies that the test is valid for
+    #: either ``sys1`` or for any other system that does not define ``feat``.
+    #:
+    #: .. code-block:: python
+    #:
+    #:    valid_systems = ['sys1', '-feat']
     #:
     #: :type: :class:`List[str]`
     #: :default: ``None``
     #:
-    #:     .. versionchanged:: 3.3
-    #:        Default value changed from ``[]`` to ``None``.
+    #: .. seealso::
+    #:    - `System partition features
+    #:      <config_reference.html#systems-.partitions-.features>`__
+    #:    - `System partition extras
+    #:      <config_reference.html#systems-.partitions-.extras>`__
     #:
-    #:     .. versionchanged:: 3.6
-    #:        Default value changed from ``None`` to ``required``.
-    valid_systems = variable(typ.List[str], loggable=True)
+    #: .. versionchanged:: 3.3
+    #:    Default value changed from ``[]`` to ``None``.
+    #:
+    #: .. versionchanged:: 3.6
+    #:    Default value changed from ``None`` to ``required``.
+    #:
+    #:  .. versionchanged:: 3.11.0
+    #:     Extend syntax to support features and key/value pairs.
+    valid_systems = variable(typ.List[typ.Str[_VALID_SYS_SYNTAX]],
+                             loggable=True)
 
     #: A detailed description of the test.
     #:
@@ -535,6 +606,25 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:            'perfvar1': (40, -0.1, 0.1, 'GB/s')
     #:        }
     #:    }
+    #:
+    #: To better understand how to set the performance reference tuple, here
+    #: are some examples with both positive and negative reference values:
+    #:
+    #:   ============================== ============  ==========  ===========
+    #:   **Performance Tuple**          **Expected**  **Lowest**  **Highest**
+    #:   ``(100, -0.01, 0.02, 'MB/s')`` 100 MB/s      99 MB/s     102 MB/s
+    #:   ``(100, -0.01, None, 'MB/s')`` 100 MB/s      99 MB/s     inf MB/s
+    #:   ``(100, None, 0.02, 'MB/s')``  100 MB/s      -inf MB/s   102 MB/s
+    #:   ``(-100, -0.01, 0.02, 'C')``     -100 C        -101 C      -98 C
+    #:   ``(-100, -0.01, None, 'C')``     -100 C        -101 C      inf C
+    #:   ``(-100, None, 0.02, 'C')``      -100 C        -inf C      -98 C
+    #:   ============================== ============  ==========  ===========
+    #:
+    #: During the performance stage of the pipeline, the reference tuple
+    #: elements, except the unit, are passed to the
+    #: :func:`~reframe.utility.sanity.assert_reference` function along with the
+    #: obtained performance value in order to actually assess whether the test
+    #: passes the performance check or not.
     #:
     #: :type: A scoped dictionary with system names as scopes or :class:`None`
     #: :default: ``{}``
@@ -908,7 +998,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''Process and validate the pipeline hooks.'''
 
         _pipeline_hooks = {}
-        for stage, hooks in cls.pipeline_hooks().items():
+        for stage, hks in cls.pipeline_hooks().items():
             # Pop the stage pre_/post_ prefix
             stage_name = stage.split('_', maxsplit=1)[1]
 
@@ -928,7 +1018,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             elif stage == 'post_run':
                 stage = 'post_run_wait'
 
-            _pipeline_hooks[stage] = hooks
+            _pipeline_hooks[stage] = hks
 
         return _pipeline_hooks
 
@@ -955,11 +1045,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             raise AttributeError(
                 f'required variable {name!r} has not been set'
             ) from None
-        elif name in self._rfm_fixture_space:
-            raise AttributeError(
-                f'fixture {name!r} has not yet been resolved: '
-                f'fixtures are resolved during the setup stage'
-            )
         else:
             raise AttributeError(
                 f'{type(self).__qualname__!r} object has no attribute {name!r}'
@@ -1302,23 +1387,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return ret
 
-    def supports_system(self, name):
-        if name.find(':') != -1:
-            system, partition = name.split(':')
-        else:
-            system, partition = self.current_system.name, name
-
-        valid_matches = ['*', '*:*', system, f'{system}:*',
-                         f'*:{partition}', f'{system}:{partition}']
-
-        return any(n in self.valid_systems for n in valid_matches)
-
-    def supports_environ(self, env_name):
-        if '*' in self.valid_prog_environs:
-            return True
-
-        return env_name in self.valid_prog_environs
-
     def is_local(self):
         '''Check if the test will execute locally.
 
@@ -1449,9 +1517,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           launcher,
                           name=name,
                           workdir=self._stagedir,
-                          max_pending_time=self.max_pending_time,
                           sched_access=self._current_partition.access,
-                          sched_exclusive_access=self.exclusive_access,
                           **job_opts)
 
     def _setup_perf_logging(self):
@@ -1703,6 +1769,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.job.time_limit = (self.time_limit or rt.runtime().get_option(
             f'systems/0/partitions/@{self.current_partition.name}/time_limit')
         )
+        self.job.max_pending_time = self.max_pending_time
+        self.job.exclusive_access = self.exclusive_access
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
 

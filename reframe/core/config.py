@@ -60,6 +60,26 @@ def _normalize_syntax(conv):
     return _do_normalize
 
 
+def _hostname(use_fqdn, use_xthostname):
+    '''Return hostname'''
+    if use_xthostname:
+        try:
+            xthostname_file = '/etc/xthostname'
+            getlogger().debug(f'Trying {xthostname_file!r}...')
+            with open(xthostname_file) as fp:
+                return fp.read()
+        except OSError as e:
+            '''Log the error and continue to the next method'''
+            getlogger().debug(f'Failed to read {xthostname_file!r}')
+
+    if use_fqdn:
+        getlogger().debug('Using FQDN...')
+        return socket.getfqdn()
+
+    getlogger().debug('Using standard hostname...')
+    return socket.gethostname()
+
+
 class _SiteConfig:
     def __init__(self, site_config, filename):
         self._site_config = copy.deepcopy(site_config)
@@ -67,6 +87,13 @@ class _SiteConfig:
         self._subconfigs = {}
         self._local_system = None
         self._sticky_options = {}
+        self._autodetect_meth = 'hostname'
+        self._autodetect_opts = {
+            'hostname': {
+                'use_fqdn': False,
+                'use_xthostname': False,
+            }
+        }
 
         # Open and store the JSON schema for later validation
         schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
@@ -103,6 +130,15 @@ class _SiteConfig:
 
     def __getattr__(self, attr):
         return getattr(self._pick_config(), attr)
+
+    def set_autodetect_meth(self, method, **opts):
+        self._autodetect_meth = method
+        try:
+            self._autodetect_opts[method].update(opts)
+        except KeyError:
+            raise ConfigError(
+                f'unknown auto-detection method: {method!r}'
+            ) from None
 
     @property
     def schema(self):
@@ -263,21 +299,15 @@ class _SiteConfig:
         return _SiteConfig(config, filename)
 
     def _detect_system(self):
-        getlogger().debug('Detecting system')
-        if os.path.exists('/etc/xthostname'):
-            # Get the cluster name on Cray systems
-            getlogger().debug(
-                "Found '/etc/xthostname': will use this to get the system name"
-            )
-            with open('/etc/xthostname') as fp:
-                hostname = fp.read()
-        else:
-            hostname = socket.getfqdn()
-
         getlogger().debug(
-            f'Looking for a matching configuration entry '
-            f'for system {hostname!r}'
+            f'Detecting system using method: {self._autodetect_meth!r}'
         )
+        hostname = _hostname(
+            self._autodetect_opts[self._autodetect_meth]['use_fqdn'],
+            self._autodetect_opts[self._autodetect_meth]['use_xthostname'],
+        )
+        getlogger().debug(f'Retrieved hostname: {hostname!r}')
+        getlogger().debug(f'Looking for a matching configuration entry')
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
                 if re.match(patt, hostname):
