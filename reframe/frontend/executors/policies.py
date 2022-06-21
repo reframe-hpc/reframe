@@ -132,6 +132,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 if task.run_complete():
                     break
 
+                self._pollctl.snooze()
+
             task.run_wait()
             if not self.skip_sanity_check:
                 task.sanity()
