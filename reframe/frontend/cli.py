@@ -1041,10 +1041,15 @@ def main():
             )
 
         if options.repeat is not None:
-            num_repeats = int(options.repeat)
-            if num_repeats <= 0:
-                raise ValueError('the number of repetitions '
-                                 'must be a positive integer')
+            try:
+                num_repeats = int(options.repeat)
+                if num_repeats <= 0:
+                    raise ValueError
+            except ValueError:
+                raise errors.CommandLineError(
+                    "argument to '--repeat' option must be "
+                    "a non-negative integer"
+                ) from None
 
             testcases = repeat_tests(testcases, num_repeats)
             testcases_all = testcases
@@ -1241,7 +1246,7 @@ def main():
             errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
             sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
             if sched_flex_alloc_nodes <= 0:
-                raise errors.ConfigError(
+                raise errors.CommandLineError(
                     errmsg.format(options.flex_alloc_nodes)
                 )
         except ValueError:
@@ -1250,7 +1255,7 @@ def main():
         exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
         exec_policy.sched_options = parsed_job_options
         if options.maxfail < 0:
-            raise errors.ConfigError(
+            raise errors.CommandLineError(
                 f'--maxfail should be a non-negative integer: '
                 f'{options.maxfail!r}'
             )

@@ -808,6 +808,42 @@ def test_maxfail_negative(run_reframe):
     assert returncode == 1
 
 
+def test_repeat_option(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--repeat', '2', '-n', 'HelloTest'],
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert ('Ran 2/2 test case(s) from 2 check(s) '
+            '(0 failure(s), 0 skipped)') in stdout
+    assert returncode == 0
+
+
+def test_repeat_invalid_option(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--repeat', 'foo'],
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    errmsg = "argument to '--repeat' option must be a non-negative integer"
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert errmsg in stdout
+    assert returncode == 1
+
+
+def test_repeat_negative(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--repeat', 'foo'],
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    errmsg = "argument to '--repeat' option must be a non-negative integer"
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert errmsg in stdout
+    assert returncode == 1
+
+
 def test_detect_host_topology(run_reframe):
     from reframe.utility.cpuinfo import cpuinfo
 
