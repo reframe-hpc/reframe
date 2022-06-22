@@ -244,11 +244,16 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/0/scheduler') == 'local'
     assert site_config.get('systems/0/partitions/0/launcher') == 'local'
     assert (site_config.get('systems/0/partitions/0/environs') ==
-            ['PrgEnv-cray', 'PrgEnv-gnu'])
+            ['PrgEnv-cray', 'PrgEnv-gnu']
+            )
     assert site_config.get('systems/0/partitions/0/descr') == 'Login nodes'
     assert site_config.get('systems/0/partitions/0/resources') == []
     assert site_config.get('systems/0/partitions/0/access') == []
-    assert site_config.get('systems/0/partitions/0/container_platforms') == []
+    assert site_config.get('systems/0/partitions/0/container_platforms') == [
+        {'type': 'Sarus'},
+        {'type': 'Docker', 'default': True},
+        {'type': 'Singularity'}
+    ]
     assert site_config.get('systems/0/partitions/0/modules') == []
     assert site_config.get('systems/0/partitions/0/variables') == []
     assert site_config.get('systems/0/partitions/0/max_jobs') == 8
@@ -258,7 +263,8 @@ def test_select_subconfig():
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
     assert site_config.get('environments/1/cxx') == 'CC'
     assert (site_config.get('environments/@PrgEnv-cray/modules') ==
-            [{'name': 'PrgEnv-cray', 'collection': False, 'path': None}])
+            [{'name': 'PrgEnv-cray', 'collection': False, 'path': None}]
+            )
     assert site_config.get('environments/@PrgEnv-gnu/extras') == {'foo': 1,
                                                                   'bar': 'x'}
     assert site_config.get('environments/@PrgEnv-gnu/features') == ['cxx14']
@@ -355,7 +361,8 @@ def test_system_create():
     assert partition.scheduler.registered_name == 'slurm'
     assert partition.launcher_type.registered_name == 'srun'
     assert partition.access == []
-    assert partition.container_environs == {}
+    assert len(partition.container_environs) == 1
+    assert partition.container_runtime == 'Sarus'
     assert partition.local_env.modules == ['foogpu']
     assert partition.local_env.modules_detailed == [{
         'name': 'foogpu', 'collection': False, 'path': '/foo'
@@ -390,6 +397,12 @@ def test_system_create():
     assert partition.processor.num_cores_per_socket == 4
     assert partition.processor.num_numa_nodes == 1
     assert partition.processor.num_cores_per_numa_node == 4
+
+    # Select another subconfig and check that the default selection of
+    # container runtime is done properly
+    site_config.select_subconfig('testsys:login')
+    system = System.create(site_config)
+    assert system.partitions[0].container_runtime == 'Docker'
 
 
 def test_hostname_autodetection():
