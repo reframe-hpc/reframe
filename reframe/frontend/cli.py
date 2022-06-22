@@ -210,6 +210,11 @@ def main():
 
     # Output directory options
     output_options.add_argument(
+        '--compress-report', action='store_true',
+        help='Compress the run report file',
+        envvar='RFM_COMPRESS_REPORT', configvar='general/compress_report'
+    )
+    output_options.add_argument(
         '--dont-restage', action='store_false', dest='clean_stagedir',
         help='Reuse the test stage directory',
         envvar='RFM_CLEAN_STAGEDIR', configvar='general/clean_stagedir'
@@ -1299,8 +1304,11 @@ def main():
             report_file = runreport.next_report_filename(report_file)
             try:
                 with open(report_file, 'w') as fp:
-                    jsonext.dump(json_report, fp, indent=2)
-                    fp.write('\n')
+                    if rt.get_option('general/0/compress_report'):
+                        jsonext.dump(json_report, fp)
+                    else:
+                        jsonext.dump(json_report, fp, indent=2)
+                        fp.write('\n')
 
                 printer.info(f'Run report saved in {report_file!r}')
             except OSError as e:
