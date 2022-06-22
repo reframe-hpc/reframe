@@ -490,6 +490,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :attr:`~reframe.core.containers.ContainerPlatform.command` will be used
     #: instead.
     #:
+    #: .. note::
+    #:
+    #:    Only the run phase of the test will run inside the container.
+    #:    If you enable the containerized run in a non run-only test, the
+    #:    compilation phase will still run natively.
+    #:
     #: :type: :class:`str` or
     #:     :class:`~reframe.core.containers.ContainerPlatform`.
     #: :default: the container runtime specified in the current system
