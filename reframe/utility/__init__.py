@@ -925,6 +925,23 @@ def nodelist_abbrev(nodes):
     return ','.join(str(ng) for ng in node_groups)
 
 
+class temp_setattr:
+    '''Context manager to temporarily change the attribute value of an
+    object.'''
+
+    def __init__(self, obj, attr, val):
+        self._obj = obj
+        self._attr = attr
+        self._newval = val
+        self._saved = getattr(obj, attr)
+
+    def __enter__(self):
+        setattr(self._obj, self._attr, self._newval)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        setattr(self._obj, self._attr, self._saved)
+
+
 class ScopedDict(UserDict):
     '''This is a special dictionary that imposes scopes on its keys.
 

@@ -1715,7 +1715,9 @@ def container_test(tmp_path):
 
             @run_after('init')
             def setup_container_platf(self):
-                self.container_platform = platform
+                if platform:
+                    self.container_platform = platform
+
                 self.container_platform.image = image
                 self.container_platform.command = (
                     f"bash -c 'cd {_STAGEDIR_MOUNT}; pwd; ls; "
@@ -1776,17 +1778,9 @@ def test_unknown_container_platform(container_test, local_exec_ctx):
 
 def test_not_configured_container_platform(container_test, local_exec_ctx):
     partition, environ = local_exec_ctx
-    platform = None
-    for cp in ['Docker', 'Singularity', 'Sarus', 'ShifterNG']:
-        if cp not in partition.container_environs.keys():
-            platform = cp
-            break
-
-    if platform is None:
-        pytest.skip('cannot find a supported platform that is not configured')
 
     with pytest.raises(PipelineError):
-        _run(container_test(platform, 'ubuntu:18.04'), *local_exec_ctx)
+        _run(container_test(None, 'ubuntu:18.04'), *local_exec_ctx)
 
 
 def test_skip_if_no_topo(HelloTest, local_exec_ctx):
