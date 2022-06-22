@@ -1346,6 +1346,17 @@ General Configuration
    .. versionadded:: 3.9.0
 
 
+.. js:attribute:: .general[].compress_report
+
+   :required: No
+   :default: ``false``
+
+   Compress the generated run report file.
+   See the documentation of the :option:`--compress-report` option for more information.
+
+   .. versionadded:: 3.12.0
+
+
 .. js:attribute:: .general[].git_timeout
 
   :required: No

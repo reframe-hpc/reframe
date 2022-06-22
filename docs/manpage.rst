@@ -263,6 +263,16 @@ If more than one action options are specified, the precedence order is the follo
 Options controlling ReFrame output
 ----------------------------------
 
+.. option:: --compress-report
+
+   Compress the generated run report (see :option:`--report-file`).
+   The generated report is a JSON file formatted in a human readable form.
+   If this option is enabled, the generated JSON file will be a single stream of text without additional spaces or new lines.
+
+   This option can also be set using the :envvar:`RFM_COMPRESS_REPORT` environment variable or the :js:attr:`compress_report` general configuration parameter.
+
+   .. versionadded:: 3.12.0
+
 .. option:: --dont-restage
 
    Do not restage a test if its stage directory exists.
@@ -1102,6 +1112,20 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
    .. versionadded:: 3.9.0
 
+
+.. envvar:: RFM_COMPRESS_REPORT
+
+   Compress the generated run report file.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--compress-report`
+      Associated configuration parameter :js:attr:`compress_report` general configuration parameter
+      ================================== ==================
+
+   .. versionadded:: 3.12.0
 
 .. envvar:: RFM_CONFIG_FILE
 
