@@ -30,7 +30,8 @@ import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
 
-from reframe.frontend.distribute import distribute_tests, getallnodes
+from reframe.frontend.testgenerators import (distribute_tests,
+                                             getallnodes, repeat_tests)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
@@ -412,6 +413,10 @@ def main():
     )
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use'
+    )
+    run_options.add_argument(
+        '--repeat', action='store', metavar='N',
+        help='Repeat selected tests N times'
     )
     run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
@@ -1040,6 +1045,20 @@ def main():
                 f'{len(testcases)} remaining'
             )
 
+        if options.repeat is not None:
+            try:
+                num_repeats = int(options.repeat)
+                if num_repeats <= 0:
+                    raise ValueError
+            except ValueError:
+                raise errors.CommandLineError(
+                    "argument to '--repeat' option must be "
+                    "a non-negative integer"
+                ) from None
+
+            testcases = repeat_tests(testcases, num_repeats)
+            testcases_all = testcases
+
         if options.distribute:
             node_map = getallnodes(options.distribute, parsed_job_options)
 
@@ -1232,7 +1251,7 @@ def main():
             errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
             sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
             if sched_flex_alloc_nodes <= 0:
-                raise errors.ConfigError(
+                raise errors.CommandLineError(
                     errmsg.format(options.flex_alloc_nodes)
                 )
         except ValueError:
@@ -1241,7 +1260,7 @@ def main():
         exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
         exec_policy.sched_options = parsed_job_options
         if options.maxfail < 0:
-            raise errors.ConfigError(
+            raise errors.CommandLineError(
                 f'--maxfail should be a non-negative integer: '
                 f'{options.maxfail!r}'
             )
