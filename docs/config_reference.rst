@@ -1295,9 +1295,8 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    :required: No
    :default: ``["*"]``
 
-   A list of systems or system/partitions combinations that this execution mode is valid for.
+   A list of systems *only* that this execution mode is valid for.
    For a detailed description of this property, you may refer `here <#.environments[].target_systems>`__.
-
 
 
 General Configuration
