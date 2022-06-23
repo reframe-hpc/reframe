@@ -472,6 +472,16 @@ ReFrame can launch containerized applications, but you need to configure properl
    - ``Singularity``: The `Singularity <https://sylabs.io/>`__ container runtime.
 
 
+.. js:attribute:: .systems[].partitions[].container_platforms[].default
+
+   :required: No
+
+   If set to ``true``, this is the default container platform of this partition.
+   If not specified, the default container platform is assumed to be the first in the list of :js:attr:`container_platforms`.
+
+   .. versionadded:: 3.12.0
+
+
 .. js:attribute:: .systems[].partitions[].container_platforms[].modules
 
    :required: No

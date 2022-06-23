@@ -271,19 +271,14 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "type": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "Docker", "Sarus",
-                                                    "Shifter", "Singularity"
-                                                ]
-                                            },
+                                            "type": {"type": "string"},
                                             "modules": {
                                                 "$ref": "#/defs/modules_list"
                                             },
                                             "variables": {
                                                 "$ref": "#/defs/envvar_list"
-                                            }
+                                            },
+                                            "default": {"type": "boolean"}
                                         },
                                         "required": ["type"]
                                     }
@@ -578,6 +573,7 @@
         "systems/partitions/descr": "",
         "systems/partitions/access": [],
         "systems/partitions/environs": [],
+        "systems/partitions/container_runtime": null,
         "systems/partitions/container_platforms": [],
         "systems/partitions/container_platforms/*modules": [],
         "systems/partitions/container_platforms/*variables": [],

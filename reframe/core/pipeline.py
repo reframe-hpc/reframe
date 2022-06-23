@@ -22,7 +22,6 @@ import numbers
 import os
 import shutil
 
-import reframe.core.environments as env
 import reframe.core.fields as fields
 import reframe.core.hooks as hooks
 import reframe.core.logging as logging
@@ -35,9 +34,10 @@ import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.containers import ContainerPlatformField
+from reframe.core.containers import (ContainerPlatform, ContainerPlatformField)
 from reframe.core.deferrable import (_DeferredExpression,
                                      _DeferredPerformanceExpression)
+from reframe.core.environments import Environment
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
                                      SanityError, SkipTestError,
@@ -46,6 +46,20 @@ from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.variables import DEPRECATE_WR
 from reframe.core.warnings import user_deprecation_warning
+
+
+class _NoRuntime(ContainerPlatform):
+    '''Proxy container runtime for storing container platform info early enough.
+
+    This will be replaced by the framework with a concrete implementation
+    based on the current partition info.
+    '''
+
+    def emit_prepare_commands(self, stagedir):
+        raise NotImplementedError
+
+    def launch_command(self, stagedir):
+        raise NotImplementedError
 
 
 # Dependency kinds
@@ -458,26 +472,41 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: The container platform to be used for launching this test.
     #:
-    #: If this field is set, the test will run inside a container using the
-    #: specified container runtime. Container-specific options must be defined
-    #: additionally after this field is set:
+    #: This field is set automatically by the default container runtime
+    #: associated with the current system partition. Users may also set this,
+    #: explicitly overriding any partition setting. If the
+    #: :attr:`~reframe.core.containers.ContainerPlatform.image` attribute of
+    #: :attr:`container_platform` is set, then the test will run inside a
+    #: container using the specified container runtime.
     #:
     #: .. code:: python
     #:
     #:    self.container_platform = 'Singularity'
     #:    self.container_platform.image = 'docker://ubuntu:18.04'
-    #:    self.container_platform.commands = ['cat /etc/os-release']
+    #:    self.container_platform.command = 'cat /etc/os-release'
     #:
-    #: If this field is set, :attr:`executable` and :attr:`executable_opts`
-    #: attributes are ignored. The container platform's :attr:`commands
-    #: <reframe.core.containers.ContainerPlatform.commands>` will be used
+    #: If the test will run inside a container, the :attr:`executable` and
+    #: :attr:`executable_opts` attributes are ignored. The container platform's
+    #: :attr:`~reframe.core.containers.ContainerPlatform.command` will be used
     #: instead.
     #:
+    #: .. note::
+    #:
+    #:    Only the run phase of the test will run inside the container.
+    #:    If you enable the containerized run in a non run-only test, the
+    #:    compilation phase will still run natively.
+    #:
     #: :type: :class:`str` or
-    #:     :class:`reframe.core.containers.ContainerPlatform`.
-    #: :default: :class:`None`.
-    container_platform = variable(type(None),
-                                  field=ContainerPlatformField, value=None)
+    #:     :class:`~reframe.core.containers.ContainerPlatform`.
+    #: :default: the container runtime specified in the current system
+    #:   partition's configuration (see also
+    #:   :ref:`container-platform-configuration`).
+    #:
+    #: .. versionchanged:: 3.12.0
+    #:    This field is now set automatically from the current partition's
+    #:    configuration.
+    container_platform = variable(field=ContainerPlatformField,
+                                  value=_NoRuntime())
 
     #: .. versionadded:: 3.0
     #:
@@ -1054,7 +1083,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._case = None
 
         if rt.runtime().get_option('general/0/non_default_craype'):
-            self._cdt_environ = env.Environment(
+            self._cdt_environ = Environment(
                 name='__rfm_cdt_environ',
                 variables={
                     'LD_LIBRARY_PATH': '$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH'
@@ -1062,7 +1091,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
         else:
             # Just an empty environment
-            self._cdt_environ = env.Environment('__rfm_cdt_environ')
+            self._cdt_environ = Environment('__rfm_cdt_environ')
 
         # Disabled hooks
         self._disabled_hooks = set()
@@ -1564,7 +1593,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _setup_job(self, name, force_local=False, **job_opts):
+    def _create_job(self, name, force_local=False, **job_opts):
         '''Setup the job related to this check.'''
 
         if force_local:
@@ -1586,8 +1615,30 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           sched_access=self._current_partition.access,
                           **job_opts)
 
+    def _setup_build_job(self, **job_opts):
+        self._build_job = self._create_job(f'rfm_{self.unique_name}_build',
+                                           self.local or self.build_locally,
+                                           **job_opts)
+
+    def _setup_run_job(self, **job_opts):
+        self._job = self._create_job(f'rfm_{self.unique_name}_job',
+                                     self.local, **job_opts)
+
     def _setup_perf_logging(self):
         self._perf_logger = logging.getperflogger(self)
+
+    def _setup_container_platform(self):
+        try:
+            self.container_platform.emit_prepare_commands(self.stagedir)
+        except NotImplementedError:
+            cplatf_name = self.current_partition.container_runtime
+            if cplatf_name:
+                try:
+                    self.container_platform = ContainerPlatform.create_from(
+                        cplatf_name, self.container_platform
+                    )
+                except ValueError:
+                    pass
 
     @final
     def setup(self, partition, environ, **job_opts):
@@ -1617,13 +1668,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
+        self._setup_build_job(**job_opts)
+        self._setup_run_job(**job_opts)
+        self._setup_container_platform()
         self._resolve_fixtures()
-        self._job = self._setup_job(f'rfm_{self.unique_name}_job',
-                                    self.local,
-                                    **job_opts)
-        self._build_job = self._setup_job(f'rfm_{self.unique_name}_build',
-                                          self.local or self.build_locally,
-                                          **job_opts)
 
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
@@ -1662,8 +1710,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
-        if not self._current_environ:
-            raise PipelineError('no programming environment set')
 
         # Copy the check's resources to the stage directory
         if self.sourcesdir:
@@ -1724,8 +1770,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
-        user_environ = env.Environment(type(self).__name__,
-                                       self.modules, self.variables.items())
+        user_environ = Environment(self.unique_name,
+                                   self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
         self._build_job.time_limit = (
@@ -1803,28 +1849,30 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
-        if not self.current_system or not self._current_partition:
-            raise PipelineError('no system or system partition is set')
 
-        if self.container_platform:
+        def _get_cp_env():
+            '''Retrieve the container platform environment.'''
             try:
-                cp_name = type(self.container_platform).__name__
-                cp_env = self._current_partition.container_environs[cp_name]
-            except KeyError as e:
-                raise PipelineError(
-                    'container platform not configured '
-                    'on the current partition: %s' % e) from None
+                cp_name = self.container_platform.name
+                return self.current_partition.container_environs[cp_name]
+            except KeyError:
+                return None
 
-            self.container_platform.validate()
-
+        cp = self.container_platform
+        if cp.image:
             # We replace executable and executable_opts in case of containers
-            self.executable = self.container_platform.launch_command(
-                self.stagedir)
-            self.executable_opts = []
-            prepare_container = self.container_platform.emit_prepare_commands(
-                self.stagedir)
-            if prepare_container:
-                self.prerun_cmds += prepare_container
+            try:
+                self.executable = cp.launch_command(self.stagedir)
+                self.executable_opts = []
+                prepare_container = cp.emit_prepare_commands(self.stagedir)
+                if prepare_container:
+                    self.prerun_cmds += prepare_container
+            except NotImplementedError:
+                raise PipelineError(
+                    "no container runtime was configured; "
+                    "consider setting the 'container_platform' test attribute "
+                    "or the corresponding partition configuration setting"
+                )
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
@@ -1851,22 +1899,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             ' '.join(exec_cmd).strip(),
             *self.postrun_cmds
         ]
-        user_environ = env.Environment(type(self).__name__,
-                                       self.modules, self.variables.items())
+        user_environ = Environment(self.unique_name,
+                                   self.modules, self.variables.items())
         environs = [
             self._current_partition.local_env,
             self._current_environ,
             user_environ,
             self._cdt_environ
         ]
-        if self.container_platform and cp_env:
-            environs = [
-                self._current_partition.local_env,
-                self._current_environ,
-                cp_env,
-                user_environ,
-                self._cdt_environ
-            ]
+        if self.container_platform.image:
+            cp_env = _get_cp_env()
+            if cp_env:
+                environs.insert(2, cp_env)
 
         # num_gpus_per_node is a managed resource
         if self.num_gpus_per_node > 0:
@@ -2495,8 +2539,8 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._job = self._setup_job(f'rfm_{self.unique_name}_job',
-                                    self.local, **job_opts)
+        self._setup_run_job(**job_opts)
+        self._setup_container_platform()
         self._resolve_fixtures()
 
     def compile(self):
@@ -2552,9 +2596,8 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._build_job = self._setup_job(f'rfm_{self.unique_name}_build',
-                                          self.local or self.build_locally,
-                                          **job_opts)
+        self._setup_build_job(**job_opts)
+        self._setup_container_platform()
         self._resolve_fixtures()
 
     @property
