@@ -1210,7 +1210,7 @@ def test_require_deps(HelloTest, local_exec_ctx):
         def setz(self, T0):
             self.z = T0().x + 2
 
-    cases = executors.generate_testcases([T0(), T1()])
+    cases = executors.generate_testcases([T0(), T1()], prepare=True)
     deps, _ = dependencies.build_deps(cases)
     for c in dependencies.toposort(deps):
         _run(*c)

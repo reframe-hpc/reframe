@@ -513,7 +513,7 @@
         "environments/features": [],
         "environments/target_systems": ["*"],
         "general/dump_pipeline_progress": false,
-        "general/pipeline_timeout": null,
+        "general/pipeline_timeout": 3,
         "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
         "general/check_search_recursive": false,
         "general/clean_stagedir": true,
