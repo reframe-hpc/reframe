@@ -37,8 +37,8 @@ class TestCase:
     def __init__(self, check, partition, environ):
         self._check_orig = check
         self._check = copy.deepcopy(check)
-        self._partition = copy.deepcopy(partition)
-        self._environ = copy.deepcopy(environ)
+        self._partition = partition
+        self._environ = environ
         self._check._case = weakref.ref(self)
         self._deps = []
 
