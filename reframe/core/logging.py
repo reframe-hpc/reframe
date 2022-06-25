@@ -20,6 +20,7 @@ import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
+from reframe.utility.profile import TimeProfiler
 
 
 # Global configuration options for logging
@@ -726,3 +727,11 @@ def getlogger():
 
 def getperflogger(check):
     return LoggerAdapter(_perf_logger, check)
+
+
+# Global framework profiler
+_profiler = TimeProfiler()
+
+
+def getprofiler():
+    return _profiler
