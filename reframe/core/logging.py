@@ -735,3 +735,23 @@ _profiler = TimeProfiler()
 
 def getprofiler():
     return _profiler
+
+
+def time_function(fn):
+    '''Decorator for timing a function using the global profiler'''
+
+    def _fn(*args, **kwargs):
+        with _profiler.time_region(fn.__qualname__):
+            return fn(*args, **kwargs)
+
+    return _fn
+
+
+def time_function_noexit(fn):
+    '''Decorator for timing a function using the global profiler'''
+
+    def _fn(*args, **kwargs):
+        _profiler.enter_region(fn.__qualname__)
+        return fn(*args, **kwargs)
+
+    return _fn

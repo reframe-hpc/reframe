@@ -18,7 +18,7 @@ import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
-from reframe.core.logging import getlogger
+from reframe.core.logging import getlogger, time_function
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
@@ -267,6 +267,7 @@ class RegressionCheckLoader:
 
         return checks
 
+    @time_function
     def load_all(self, force=False):
         '''Load all checks in self._load_path.
 

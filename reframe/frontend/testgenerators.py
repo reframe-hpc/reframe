@@ -9,12 +9,13 @@ import reframe.core.runtime as runtime
 import reframe.utility as util
 
 from reframe.core.decorators import TestRegistry
-from reframe.core.logging import getlogger
+from reframe.core.logging import getlogger, getprofiler, time_function
 from reframe.core.meta import make_test
 from reframe.core.schedulers import Job
 from reframe.frontend.executors import generate_testcases
 
 
+@time_function
 def getallnodes(state='all', jobs_cli_options=None):
     rt = runtime.runtime()
     nodes = {}
@@ -72,6 +73,7 @@ def make_valid_systems_hook(systems):
     return _rfm_set_valid_systems
 
 
+@time_function
 def distribute_tests(testcases, node_map):
     '''Returns new testcases that will be parameterized to run in node of
     their partitions based on the nodemap
@@ -126,6 +128,7 @@ def distribute_tests(testcases, node_map):
     return generate_testcases(new_checks)
 
 
+@time_function
 def repeat_tests(testcases, num_repeats):
     '''Returns new test cases parameterized over their repetition number'''
 

@@ -75,7 +75,7 @@ class TimeProfiler:
         if print_fn is None:
             print_fn = print
 
-        print_fn('>>> timing report [start] <<<')
+        print_fn('>>> profiler report [start] <<<')
         for name, t_info in self._region_times.items():
             # Remove the root prefix
             levels = name.count(':')
@@ -87,4 +87,4 @@ class TimeProfiler:
 
             print_fn(msg)
 
-        print_fn('>>> timing report [ end ] <<<')
+        print_fn('>>> profiler report [ end ] <<<')
