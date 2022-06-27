@@ -9,7 +9,7 @@ import reframe.core.runtime as runtime
 import reframe.utility as util
 
 from reframe.core.decorators import TestRegistry
-from reframe.core.logging import getlogger, getprofiler, time_function
+from reframe.core.logging import getlogger, time_function
 from reframe.core.meta import make_test
 from reframe.core.schedulers import Job
 from reframe.frontend.executors import generate_testcases

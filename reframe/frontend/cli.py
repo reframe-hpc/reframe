@@ -27,7 +27,6 @@ import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
-import reframe.utility.profile as prof
 import reframe.utility.typecheck as typ
 
 
