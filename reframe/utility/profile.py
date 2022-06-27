@@ -6,6 +6,9 @@
 # A lightweight time profiler
 
 import time
+import sys
+
+from collections import OrderedDict
 
 
 class ProfilerError(Exception):
@@ -30,7 +33,10 @@ class time_region:
 class TimeProfiler:
     def __init__(self):
         self._region_stack = ['root']
-        self._region_times = {}
+        if sys.version_info[:2] < (3, 8):
+            self._region_times = OrderedDict()
+        else:
+            self._region_times = {}
 
     @property
     def current_region(self):
@@ -55,7 +61,7 @@ class TimeProfiler:
         self._region_stack.pop()
 
     def total_time(self, region_name):
-        for region in reversed(self._region_times):
+        for region in reversed(self._region_times.keys()):
             if (region == region_name or
                 region.rsplit(':', maxsplit=1)[-1] == region_name):
                 timestamp, elapsed = self._region_times[region]
