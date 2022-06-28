@@ -110,7 +110,7 @@ def generate_testcases(checks, prepare=False):
     '''Generate concrete test cases from checks.
 
     If `prepare` is true then each of the cases will also be prepared for
-    being sent to the test pipeline. Note that setting this true may slow down
+    being sent to the test pipeline. Note that setting this to true may slow down
     the test case generation.
 
     '''
