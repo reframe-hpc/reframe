@@ -196,7 +196,10 @@ class TestStats:
                 test_cls = type(check)
                 for name, var in test_cls.var_space.items():
                     if var.is_loggable():
-                        entry['check_vars'][name] = getattr(check, name)
+                        try:
+                            entry['check_vars'][name] = getattr(check, name)
+                        except AttributeError:
+                            entry['check_vars'][name] = '<undefined>'
 
                 entry['check_params'] = {}
                 test_cls = type(check)
