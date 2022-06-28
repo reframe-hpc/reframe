@@ -191,6 +191,22 @@ class TestStats:
                             'value': val
                         })
 
+                # Add any loggable variables and parameters
+                entry['check_vars'] = {}
+                test_cls = type(check)
+                for name, var in test_cls.var_space.items():
+                    if var.is_loggable():
+                        try:
+                            entry['check_vars'][name] = getattr(check, name)
+                        except AttributeError:
+                            entry['check_vars'][name] = '<undefined>'
+
+                entry['check_params'] = {}
+                test_cls = type(check)
+                for name, param in test_cls.param_space.items():
+                    if param.is_loggable():
+                        entry['check_params'][name] = getattr(check, name)
+
                 testcases.append(entry)
 
             self._run_data.append({

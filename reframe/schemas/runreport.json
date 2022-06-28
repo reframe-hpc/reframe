@@ -8,6 +8,8 @@
             "properties": {
                 "build_stderr": {"type": ["string", "null"]},
                 "build_stdout": {"type": ["string", "null"]},
+                "check_params": {"type": "object"},
+                "check_vars": {"type": "object"},
                 "dependencies_actual": {
                     "type": "array",
                     "items": {
