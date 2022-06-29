@@ -62,20 +62,25 @@ class stream_test(rfm.RunOnlyRegressionTest):
 
 def threads_per_part():
     for p in rt.runtime().system.partitions:
+        nthr = 1
+        while nthr < p.processor.num_cores:
+            yield (p.fullname, nthr)
+            nthr <<= 1
+
         yield (p.fullname, p.processor.num_cores)
 
 
 @rfm.simple_test
 class stream_scale_test(stream_test):
-    num_threads = parameter([1, 2, 4, 8, 16, 32])
+    threading = parameter(threads_per_part(), fmt=lambda x: x[1])
     reference = {}
+
+    @run_after('init')
+    def setup_thread_config(self):
+        self.valid_systems = [self.threading[0]]
+        self.num_threads = self.threading[1]
 
     @run_before('run')
     def set_cpus_per_task(self):
         self.num_cpus_per_task = self.num_threads
         self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
-
-    @run_after('setup')
-    def skip_if_too_large(self):
-        procinfo = self.current_partition.processor
-        self.skip_if(self.num_threads > procinfo.num_cores, 'not enough cores')
