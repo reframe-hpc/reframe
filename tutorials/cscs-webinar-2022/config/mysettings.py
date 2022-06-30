@@ -23,6 +23,34 @@ site_configuration = {
             ]
         },
         {
+            'name': 'daint',
+            'descr': 'Piz Daint supercomputer',
+            'hostnames': ['daint', 'dom'],
+            'modules_system': 'tmod32',
+            'partitions': [
+                {
+                    'name': 'login',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['gnu', 'cray', 'intel', 'nvidia']
+                },
+                {
+                    'name': 'hybrid',
+                    'scheduler': 'slurm',
+                    'launcher': 'srun',
+                    'access': ['-Cgpu', '-Acsstaff'],
+                    'environs': ['gnu', 'cray', 'intel', 'nvidia']
+                },
+                {
+                    'name': 'multicore',
+                    'scheduler': 'slurm',
+                    'launcher': 'srun',
+                    'access': ['-Cmc', '-Acsstaff'],
+                    'environs': ['gnu', 'cray', 'intel', 'nvidia']
+                }
+            ]
+        },
+        {
             'name': 'generic',
             'descr': 'Generic example system',
             'hostnames': ['.*'],
@@ -44,6 +72,45 @@ site_configuration = {
             'ftn': '',
             'features': ['openmp'],
             'extras': {'ompflag': '-fopenmp'}
+        },
+        {
+            'name': 'gnu',
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran',
+            'features': ['openmp'],
+            'extras': {'ompflag': '-fopenmp'},
+            'target_systems': ['daint']
+        },
+        {
+            'name': 'intel',
+            'modules': ['PrgEnv-intel'],
+            'cc': 'icc',
+            'cxx': 'icpc',
+            'ftn': 'ifort',
+            'features': ['openmp'],
+            'extras': {'ompflag': '-qopenmp'},
+            'target_systems': ['daint']
+        },
+        {
+            'name': 'nvidia',
+            'modules': ['PrgEnv-nvidia'],
+            'cc': 'nvc',
+            'cxx': 'nvc++',
+            'ftn': 'nvfortran',
+            'features': ['openmp'],
+            'extras': {'ompflag': '-mp'},
+            'target_systems': ['daint']
+        },
+        {
+            'name': 'cray',
+            'modules': ['PrgEnv-cray'],
+            'cc': 'craycc',
+            'cxx': 'craycxx',
+            'ftn': 'crayftn',
+            'features': ['openmp'],
+            'extras': {'ompflag': '-fopenmp'},
+            'target_systems': ['daint']
         },
         {
             'name': 'clang',
