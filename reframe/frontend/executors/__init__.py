@@ -36,11 +36,11 @@ class TestCase:
 
     def __init__(self, check, partition, environ):
         self._check_orig = check
-        self._check = copy.deepcopy(check)
-        self._partition = copy.deepcopy(partition)
-        self._environ = copy.deepcopy(environ)
-        self._check._case = weakref.ref(self)
+        self._check = check
+        self._partition = partition
+        self._environ = environ
         self._deps = []
+        self._is_ready = False
 
         # Incoming dependencies
         self.in_degree = 0
@@ -72,6 +72,15 @@ class TestCase:
         e = self.environ.name if self.environ else None
         return f'({c!r}, {p!r}, {e!r})'
 
+    def prepare(self):
+        '''Prepare test case for sending down the test pipeline'''
+        if self._is_ready:
+            return
+
+        self._check = copy.deepcopy(self._check)
+        self._check._case = weakref.ref(self)
+        self._is_ready = True
+
     @property
     def check(self):
         return self._check
@@ -97,8 +106,14 @@ class TestCase:
         return TestCase(self._check_orig, self._partition, self._environ)
 
 
-def generate_testcases(checks):
-    '''Generate concrete test cases from checks.'''
+def generate_testcases(checks, prepare=False):
+    '''Generate concrete test cases from checks.
+
+    If `prepare` is true then each of the cases will also be prepared for
+    being sent to the test pipeline. Note that setting this to true may slow down
+    the test case generation.
+
+    '''
 
     rt = runtime.runtime()
     cases = []
@@ -107,7 +122,11 @@ def generate_testcases(checks):
                                                c.valid_prog_environs)
         for part, environs in valid_comb.items():
             for env in environs:
-                cases.append(TestCase(c, part, env))
+                case = TestCase(c, part, env)
+                if prepare:
+                    case.prepare()
+
+                cases.append(case)
 
     return cases
 
@@ -295,6 +314,7 @@ class RegressionTask:
             raise TaskExit from e
 
     def setup(self, *args, **kwargs):
+        self.testcase.prepare()
         self._safe_call(self.check.setup, *args, **kwargs)
         self._notify_listeners('on_task_setup')
 
