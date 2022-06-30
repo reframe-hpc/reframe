@@ -106,6 +106,7 @@ class TestCase:
         return TestCase(self._check_orig, self._partition, self._environ)
 
 
+@logging.time_function
 def generate_testcases(checks, prepare=False):
     '''Generate concrete test cases from checks.
 
@@ -313,22 +314,27 @@ class RegressionTask:
             self.fail()
             raise TaskExit from e
 
+    @logging.time_function
     def setup(self, *args, **kwargs):
         self.testcase.prepare()
         self._safe_call(self.check.setup, *args, **kwargs)
         self._notify_listeners('on_task_setup')
 
+    @logging.time_function
     def compile(self):
         self._safe_call(self.check.compile)
         self._notify_listeners('on_task_compile')
 
+    @logging.time_function
     def compile_wait(self):
         self._safe_call(self.check.compile_wait)
 
+    @logging.time_function
     def run(self):
         self._safe_call(self.check.run)
         self._notify_listeners('on_task_run')
 
+    @logging.time_function
     def run_complete(self):
         done = self._safe_call(self.check.run_complete)
         if done:
@@ -337,6 +343,7 @@ class RegressionTask:
 
         return done
 
+    @logging.time_function
     def compile_complete(self):
         done = self._safe_call(self.check.compile_complete)
         if done:
@@ -344,16 +351,20 @@ class RegressionTask:
 
         return done
 
+    @logging.time_function
     def run_wait(self):
         self._safe_call(self.check.run_wait)
         self.zombie = False
 
+    @logging.time_function
     def sanity(self):
         self._safe_call(self.check.sanity)
 
+    @logging.time_function
     def performance(self):
         self._safe_call(self.check.performance)
 
+    @logging.time_function
     def finalize(self):
         try:
             jsonfile = os.path.join(self.check.stagedir, '.rfm_testcase.json')
@@ -367,6 +378,7 @@ class RegressionTask:
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
 
+    @logging.time_function
     def cleanup(self, *args, **kwargs):
         self._safe_call(self.check.cleanup, *args, **kwargs)
 
@@ -479,6 +491,7 @@ class Runner:
     def stats(self):
         return self._stats
 
+    @logging.time_function
     def runall(self, testcases, restored_cases=None):
         num_checks = len({tc.check.unique_name for tc in testcases})
         self._printer.separator('short double line',

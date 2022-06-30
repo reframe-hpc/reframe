@@ -47,6 +47,7 @@ def format_env(envvars):
     return ret
 
 
+@logging.time_function
 def list_checks(testcases, printer, detailed=False, concretized=False):
     printer.info('[List of matched checks]')
     unique_checks = set()
@@ -114,6 +115,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
         printer.info(f'Found {len(unique_checks)} check(s)\n')
 
 
+@logging.time_function
 def describe_checks(testcases, printer):
     records = []
     unique_names = set()
@@ -186,6 +188,7 @@ def calc_verbosity(site_config, quiesce):
     return curr_verbosity - quiesce
 
 
+@logging.time_function_noexit
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
@@ -950,6 +953,8 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
+        logging.getprofiler().enter_region('test processing')
+
         # Need to parse the cli options before loading the tests
         parsed_job_options = []
         for opt in options.job_options:
@@ -1369,6 +1374,7 @@ def main():
         sys.exit(1)
     finally:
         try:
+            logging.getprofiler().exit_region()     # region: 'test processing'
             log_files = logging.log_files()
             if site_config.get('general/0/save_log_files'):
                 log_files = logging.save_log_files(rt.output_prefix)
@@ -1379,3 +1385,6 @@ def main():
         finally:
             if not restrict_logging():
                 printer.info(logfiles_message())
+
+            logging.getprofiler().exit_region()     # region: 'main'
+            logging.getprofiler().print_report(printer.debug)

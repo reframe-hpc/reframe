@@ -23,7 +23,7 @@ import reframe.core.warnings as warn
 import reframe.core.hooks as hooks
 from reframe.core.exceptions import ReframeSyntaxError, SkipTestError, what
 from reframe.core.fixtures import FixtureRegistry
-from reframe.core.logging import getlogger
+from reframe.core.logging import getlogger, time_function
 from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import VersionValidator
 
@@ -64,6 +64,7 @@ class TestRegistry:
         '''Add a test to the skip set.'''
         self._skip_tests.add(test)
 
+    @time_function
     def instantiate_all(self, reset_sysenv=0):
         '''Instantiate all the registered tests.
 
