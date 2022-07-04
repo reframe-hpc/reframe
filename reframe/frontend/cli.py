@@ -47,6 +47,7 @@ def format_env(envvars):
     return ret
 
 
+@logging.time_function
 def list_checks(testcases, printer, detailed=False, concretized=False):
     printer.info('[List of matched checks]')
     unique_checks = set()
@@ -114,6 +115,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
         printer.info(f'Found {len(unique_checks)} check(s)\n')
 
 
+@logging.time_function
 def describe_checks(testcases, printer):
     records = []
     unique_names = set()
@@ -186,6 +188,7 @@ def calc_verbosity(site_config, quiesce):
     return curr_verbosity - quiesce
 
 
+@logging.time_function_noexit
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
@@ -210,6 +213,11 @@ def main():
     misc_options = argparser.add_argument_group('Miscellaneous options')
 
     # Output directory options
+    output_options.add_argument(
+        '--compress-report', action='store_true',
+        help='Compress the run report file',
+        envvar='RFM_COMPRESS_REPORT', configvar='general/compress_report'
+    )
     output_options.add_argument(
         '--dont-restage', action='store_false', dest='clean_stagedir',
         help='Reuse the test stage directory',
@@ -948,6 +956,8 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
+        logging.getprofiler().enter_region('test processing')
+
         # Need to parse the cli options before loading the tests
         parsed_job_options = []
         for opt in options.job_options:
@@ -1321,8 +1331,11 @@ def main():
             report_file = runreport.next_report_filename(report_file)
             try:
                 with open(report_file, 'w') as fp:
-                    jsonext.dump(json_report, fp, indent=2)
-                    fp.write('\n')
+                    if rt.get_option('general/0/compress_report'):
+                        jsonext.dump(json_report, fp)
+                    else:
+                        jsonext.dump(json_report, fp, indent=2)
+                        fp.write('\n')
 
                 printer.info(f'Run report saved in {report_file!r}')
             except OSError as e:
@@ -1364,6 +1377,7 @@ def main():
         sys.exit(1)
     finally:
         try:
+            logging.getprofiler().exit_region()     # region: 'test processing'
             log_files = logging.log_files()
             if site_config.get('general/0/save_log_files'):
                 log_files = logging.save_log_files(rt.output_prefix)
@@ -1374,3 +1388,6 @@ def main():
         finally:
             if not restrict_logging():
                 printer.info(logfiles_message())
+
+            logging.getprofiler().exit_region()     # region: 'main'
+            logging.getprofiler().print_report(printer.debug)
