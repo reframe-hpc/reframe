@@ -81,9 +81,9 @@ def _hostname(use_fqdn, use_xthostname):
 
 
 class _SiteConfig:
-    def __init__(self, site_config, filename):
-        self._site_config = copy.deepcopy(site_config)
-        self._filename = filename
+    def __init__(self):
+        self._site_config = None
+        self._filenames = []
         self._subconfigs = {}
         self._local_system = None
         self._sticky_options = {}
@@ -106,6 +106,23 @@ class _SiteConfig:
                     f'invalid configuration schema: {schema_filename!r}'
                 ) from e
 
+    def add_config(self, config, filename):
+        self._filenames.append(filename)
+        nc = copy.deepcopy(config)
+        if self._site_config is None:
+            self._site_config = nc
+            return self
+
+        for i in ['systems', 'environments', 'scheduler', 'logging',
+                  'modes', 'general']:
+            if i in nc:
+                if i in self._site_config:
+                    self._site_config[i] += nc[i]
+                else:
+                    self._site_config[i] = nc[i]
+
+        return self
+
     def _pick_config(self):
         if self._local_system:
             return self._subconfigs[self._local_system]
@@ -114,7 +131,7 @@ class _SiteConfig:
 
     def __repr__(self):
         return (f'{type(self).__name__}(site_config={self._site_config!r}, '
-                f'filename={self._filename!r})')
+                f'filenames={self._filenames!r})')
 
     def __str__(self):
         return json.dumps(self._pick_config(), indent=2)
@@ -242,25 +259,14 @@ class _SiteConfig:
         return value
 
     @property
-    def filename(self):
-        return self._filename
+    def filenames(self):
+        return self._filenames
 
     @property
     def subconfig_system(self):
         return self._local_system
 
-    @classmethod
-    def create(cls, filename):
-        _, ext = os.path.splitext(filename)
-        if ext == '.py':
-            return cls._create_from_python(filename)
-        elif ext == '.json':
-            return cls._create_from_json(filename)
-        else:
-            raise ConfigError(f"unknown configuration file type: '{filename}'")
-
-    @classmethod
-    def _create_from_python(cls, filename):
+    def add_python_config(self, filename):
         try:
             mod = util.import_module_from_file(filename)
         except ImportError as e:
@@ -284,10 +290,9 @@ class _SiteConfig:
                 f"not a valid Python configuration file: '{filename}'"
             )
 
-        return _SiteConfig(mod.site_configuration, filename)
+        return self.add_config(mod.site_configuration, filename)
 
-    @classmethod
-    def _create_from_json(cls, filename):
+    def add_json_config(self, filename):
         with open(filename) as fp:
             try:
                 config = json.loads(fp.read())
@@ -296,7 +301,7 @@ class _SiteConfig:
                     f"invalid JSON syntax in configuration file '{filename}'"
                 ) from e
 
-        return _SiteConfig(config, filename)
+        self.add_config(config, filename)
 
     def _detect_system(self):
         getlogger().debug(
@@ -325,27 +330,8 @@ class _SiteConfig:
         try:
             jsonschema.validate(site_config, self._schema)
         except jsonschema.ValidationError as e:
-            raise ConfigError(f"could not validate configuration file: "
-                              f"'{self._filename}'") from e
-
-        # Make sure that system and partition names are unique
-        system_names = set()
-        for system in self._site_config['systems']:
-            sysname = system['name']
-            if sysname in system_names:
-                raise ConfigError(f"system '{sysname}' already defined")
-
-            system_names.add(sysname)
-            partition_names = set()
-            for part in system['partitions']:
-                partname = part['name']
-                if partname in partition_names:
-                    raise ConfigError(
-                        f"partition '{partname}' already defined "
-                        f"for system '{sysname}'"
-                    )
-
-                partition_names.add(partname)
+            raise ConfigError(f"could not validate configuration files: "
+                              f"'{self._filenames}'") from e
 
     def select_subconfig(self, system_fullname=None,
                          ignore_resolve_errors=False):
@@ -457,6 +443,7 @@ class _SiteConfig:
 
 
 def convert_old_config(filename, newfilename=None):
+    #TODO fix this to get many files
     old_config = util.import_module_from_file(filename).settings
     converted = {
         'systems': [],
@@ -632,37 +619,21 @@ def convert_old_config(filename, newfilename=None):
     return fp.name
 
 
-def _find_config_file():
-    # The order of elements is important, since it defines the priority
-    homedir = os.getenv('HOME')
-    prefixes = [os.path.join(homedir, '.reframe')] if homedir else []
-    prefixes += [
-        reframe.INSTALL_PREFIX,
-        '/etc/reframe.d'
-    ]
-    valid_exts = ['py', 'json']
-    getlogger().debug('Looking for a suitable configuration file')
-    for d in prefixes:
-        if not d:
-            continue
 
-        for ext in valid_exts:
-            filename = os.path.join(d, f'settings.{ext}')
-            getlogger().debug(f'Trying {filename!r}')
-            if os.path.exists(filename):
-                return filename
+def load_config(filenames=None):
+    ret = _SiteConfig()
+    getlogger().debug('Loading the generic configuration')
+    ret.add_config(settings.site_configuration, '<builtin>')
+    if filenames:
+        getlogger().debug(f'Loading configuration files: {filenames!r}')
+        for filename in filenames:
+            _, ext = os.path.splitext(filename)
+            if ext == '.py':
+                ret.add_python_config(filename)
+            elif ext == '.json':
+                ret.add_json_config(filename)
+            else:
+                raise ConfigError(f"unknown configuration file type: "
+                                    f"'{filename}'")
 
-    return None
-
-
-def load_config(filename=None):
-    if filename is None:
-        filename = _find_config_file()
-        if filename is None:
-            # Return the generic configuration
-            getlogger().debug('No configuration found; '
-                              'falling back to a generic one')
-            return _SiteConfig(settings.site_configuration, '<builtin>')
-
-    getlogger().debug(f'Loading configuration file: {filename!r}')
-    return _SiteConfig.create(filename)
+    return ret

@@ -108,7 +108,7 @@
             "type": "object",
             "properties": {
                 "cmdline": {"type": "string"},
-                "config_file": {"type": ["string", "null"]},
+                "config_files": {"type": ["string", "null"]},
                 "data_version": {"type": "string"},
                 "hostname": {"type": "string"},
                 "num_cases": {"type": "number"},

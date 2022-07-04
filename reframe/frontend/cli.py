@@ -488,8 +488,8 @@ def main():
 
     # Miscellaneous options
     misc_options.add_argument(
-        '-C', '--config-file', action='store',
-        dest='config_file', metavar='FILE',
+        '-C', '--config-file', action='append', metavar='FILE',
+        dest='config_file',
         help='Set configuration file',
         envvar='RFM_CONFIG_FILE'
     )
@@ -680,7 +680,7 @@ def main():
     # to print pretty messages; logging will be reconfigured by user's
     # configuration later
     site_config = config.load_config(
-        os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py')
+        [os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py')]
     )
     site_config.select_subconfig('generic')
     options.update_config(site_config)
@@ -719,7 +719,10 @@ def main():
     try:
         try:
             printer.debug('Loading user configuration')
-            site_config = config.load_config(options.config_file)
+            if options.config_file is None:
+                site_config = config.load_config(None)
+            else:
+                site_config = config.load_config(options.config_file)
         except warnings.ReframeDeprecationWarning as e:
             printer.warning(e)
             converted = config.convert_old_config(options.config_file)
@@ -727,7 +730,7 @@ def main():
                 f"configuration file has been converted "
                 f"to the new syntax here: '{converted}'"
             )
-            site_config = config.load_config(converted)
+            site_config = config.load_config([converted])
 
         site_config.validate()
         site_config.set_autodetect_meth(
@@ -918,7 +921,7 @@ def main():
 
     session_info = {
         'cmdline': ' '.join(sys.argv),
-        'config_file': rt.site_config.filename,
+        'config_files': rt.site_config.filenames,
         'data_version': runreport.DATA_VERSION,
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
@@ -937,7 +940,7 @@ def main():
         f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
     )
     print_infoline('working directory', repr(session_info['workdir']))
-    print_infoline('settings file', f"{session_info['config_file']!r}")
+    print_infoline('settings files', f"{session_info['config_files']!r}")
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")

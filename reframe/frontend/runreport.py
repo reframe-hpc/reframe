@@ -18,7 +18,7 @@ import reframe.utility.jsonext as jsonext
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
 
-DATA_VERSION = '2.1'
+DATA_VERSION = '3.0'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
 
 

@@ -22,8 +22,8 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
     verbosity = 'v' * config.get('general/0/verbose')
 
     def rfm_command(testcase):
-        if config.filename != '<builtin>':
-            config_opt = f'-C {config.filename}'
+        if config.filenames != ['<builtin>']:
+            config_opt = f'-C {config.filenames}'
         else:
             config_opt = ''
 
