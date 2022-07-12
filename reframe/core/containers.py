@@ -6,7 +6,6 @@
 import abc
 
 import reframe.core.fields as fields
-import reframe.core.warnings as warn
 import reframe.utility as util
 import reframe.utility.typecheck as typ
 
