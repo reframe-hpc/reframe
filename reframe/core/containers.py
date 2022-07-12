@@ -136,11 +136,6 @@ class ContainerPlatform(abc.ABC):
         new.options = other.options
         new.pull_image = other.pull_image
         new.workdir = other.workdir
-
-        # Update deprecated fields
-        with warn.suppress_deprecations():
-            new.commands = other.commands
-
         return new
 
     @property

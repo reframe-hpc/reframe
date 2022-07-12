@@ -270,16 +270,6 @@ def expected_run_with_workdir(container_variant_noopt):
                 '--foo image:tag cmd1')
 
 
-def test_run_with_commands(container_platform_with_opts,
-                           expected_run_with_commands):
-    container_platform_with_opts.workdir = None
-    with pytest.warns(warn.ReframeDeprecationWarning):
-        container_platform_with_opts.commands = ['cmd1', 'cmd2']
-
-    found_commands = container_platform_with_opts.launch_command('/foo')
-    assert found_commands == expected_run_with_commands
-
-
 def test_run_with_workdir(container_platform_with_opts,
                           expected_run_with_workdir):
     container_platform_with_opts.command = 'cmd1'
