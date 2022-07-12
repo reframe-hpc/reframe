@@ -13,9 +13,10 @@ import sys
 
 import reframe.utility as util
 from reframe.core.exceptions import DependencyError
-from reframe.core.logging import getlogger
+from reframe.core.logging import getlogger, time_function
 
 
+@time_function
 def build_deps(cases, default_cases=None):
     '''Build dependency graph from test cases.
 
@@ -139,6 +140,7 @@ def _reduce_deps(graph):
     return ret
 
 
+@time_function
 def validate_deps(graph):
     '''Validate dependency graph.'''
 
@@ -181,6 +183,7 @@ def validate_deps(graph):
         sources -= visited
 
 
+@time_function
 def prune_deps(graph, testcases, max_depth=None):
     '''Prune the graph so that it contains only the specified cases and their
     dependencies up to max_depth.
@@ -205,6 +208,7 @@ def prune_deps(graph, testcases, max_depth=None):
     return pruned_graph
 
 
+@time_function
 def toposort(graph, is_subgraph=False):
     '''Return a list of the graph nodes topologically sorted.
 
