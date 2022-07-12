@@ -1782,7 +1782,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Get job options from managed resources and prepend them to
         # build_job_opts. We want any user supplied options to be able to
         # override those set by the framework.
-        resources_opts = self._map_resources_to_options()
+        resources_opts = self._map_resources_to_jobopts()
         self._build_job.options = resources_opts + self._build_job.options
         with osext.change_dir(self._stagedir):
             # Prepare build job
@@ -1926,7 +1926,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Get job options from managed resources and prepend them to
         # job_opts. We want any user supplied options to be able to
         # override those set by the framework.
-        resources_opts = self._map_resources_to_options()
+        resources_opts = self._map_resources_to_jobopts()
         self._job.options = resources_opts + self._job.options
         with osext.change_dir(self._stagedir):
             try:
@@ -1950,11 +1950,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
 
-    def _map_resources_to_options(self):
+    def _map_resources_to_jobopts(self):
         resources_opts = []
         for r, v in self.extra_resources.items():
-            resources_opts.extend(
-                self._current_partition.get_resource(r, **v))
+            resources_opts += self._current_partition.get_resource(r, **v)
 
         return resources_opts
 
