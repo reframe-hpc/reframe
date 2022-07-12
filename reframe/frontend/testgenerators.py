@@ -9,12 +9,13 @@ import reframe.core.runtime as runtime
 import reframe.utility as util
 
 from reframe.core.decorators import TestRegistry
-from reframe.core.logging import getlogger
+from reframe.core.logging import getlogger, time_function
 from reframe.core.meta import make_test
 from reframe.core.schedulers import Job
 from reframe.frontend.executors import generate_testcases
 
 
+@time_function
 def getallnodes(state='all', jobs_cli_options=None):
     rt = runtime.runtime()
     nodes = {}
@@ -72,12 +73,13 @@ def make_valid_systems_hook(systems):
     return _rfm_set_valid_systems
 
 
+@time_function
 def distribute_tests(testcases, node_map):
     '''Returns new testcases that will be parameterized to run in node of
     their partitions based on the nodemap
     '''
     tmp_registry = TestRegistry()
-    new_checks = []
+
     # We don't want to register the same check for every environment
     # per partition
     check_part_combs = set()
@@ -112,13 +114,47 @@ def distribute_tests(testcases, node_map):
                 ),
             ]
         )
+
         # We have to set the prefix manually
         nc._rfm_custom_prefix = check.prefix
-
         for i in range(nc.num_variants):
             # Check if this variant should be instantiated
             vinfo = nc.get_variant_info(i, recurse=True)
             vinfo['params'].pop('$nid')
+            if vinfo == variant_info:
+                tmp_registry.add(nc, variant_num=i)
+
+    new_checks = tmp_registry.instantiate_all()
+    return generate_testcases(new_checks)
+
+
+@time_function
+def repeat_tests(testcases, num_repeats):
+    '''Returns new test cases parameterized over their repetition number'''
+
+    tmp_registry = TestRegistry()
+    unique_checks = set()
+    for tc in testcases:
+        check = tc.check
+        if check.is_fixture() or check in unique_checks:
+            continue
+
+        unique_checks.add(check)
+        cls = type(check)
+        variant_info = cls.get_variant_info(
+            check.variant_num, recurse=True
+        )
+        nc = make_test(
+            f'{cls.__name__}', (cls,),
+            {
+                '$repeat_no': builtins.parameter(range(num_repeats))
+            }
+        )
+        nc._rfm_custom_prefix = check.prefix
+        for i in range(nc.num_variants):
+            # Check if this variant should be instantiated
+            vinfo = nc.get_variant_info(i, recurse=True)
+            vinfo['params'].pop('$repeat_no')
             if vinfo == variant_info:
                 tmp_registry.add(nc, variant_num=i)
 

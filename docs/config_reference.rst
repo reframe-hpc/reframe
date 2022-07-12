@@ -472,6 +472,16 @@ ReFrame can launch containerized applications, but you need to configure properl
    - ``Singularity``: The `Singularity <https://sylabs.io/>`__ container runtime.
 
 
+.. js:attribute:: .systems[].partitions[].container_platforms[].default
+
+   :required: No
+
+   If set to ``true``, this is the default container platform of this partition.
+   If not specified, the default container platform is assumed to be the first in the list of :js:attr:`container_platforms`.
+
+   .. versionadded:: 3.12.0
+
+
 .. js:attribute:: .systems[].partitions[].container_platforms[].modules
 
    :required: No
@@ -1285,9 +1295,8 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    :required: No
    :default: ``["*"]``
 
-   A list of systems or system/partitions combinations that this execution mode is valid for.
+   A list of systems *only* that this execution mode is valid for.
    For a detailed description of this property, you may refer `here <#.environments[].target_systems>`__.
-
 
 
 General Configuration
@@ -1344,6 +1353,17 @@ General Configuration
       The default value will be changed to ``true`` in version 4.0.0.
 
    .. versionadded:: 3.9.0
+
+
+.. js:attribute:: .general[].compress_report
+
+   :required: No
+   :default: ``false``
+
+   Compress the generated run report file.
+   See the documentation of the :option:`--compress-report` option for more information.
+
+   .. versionadded:: 3.12.0
 
 
 .. js:attribute:: .general[].git_timeout

@@ -164,8 +164,8 @@ class SystemPartition(jsonext.JSONSerializable):
     '''
 
     def __init__(self, *, parent, name, sched_type, launcher_type,
-                 descr, access, container_environs, resources,
-                 local_env, environs, max_jobs, prepare_cmds,
+                 descr, access, container_runtime, container_environs,
+                 resources, local_env, environs, max_jobs, prepare_cmds,
                  processor, devices, extras, features, time_limit):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
@@ -175,6 +175,7 @@ class SystemPartition(jsonext.JSONSerializable):
         self._launcher_type = launcher_type
         self._descr = descr
         self._access = access
+        self._container_runtime = container_runtime
         self._container_environs = container_environs
         self._local_env = local_env
         self._environs = environs
@@ -211,6 +212,14 @@ class SystemPartition(jsonext.JSONSerializable):
         '''
 
         return util.SequenceView(self._environs)
+
+    @property
+    def container_runtime(self):
+        '''The default container runtime of this partition.
+
+        :type: :class:`str` or ``None``
+        '''
+        return self._container_runtime
 
     @property
     def container_environs(self):
@@ -480,9 +489,10 @@ class System(jsonext.JSONSerializable):
             part_sched = getscheduler(site_config.get(f'{partid}/scheduler'))
             part_launcher = getlauncher(site_config.get(f'{partid}/launcher'))
             part_container_environs = {}
-            for i, p in enumerate(
-                    site_config.get(f'{partid}/container_platforms')
-            ):
+            part_container_runtime = None
+            container_platforms = site_config.get(
+                f'{partid}/container_platforms')
+            for i, p in enumerate(container_platforms):
                 ctype = p['type']
                 part_container_environs[ctype] = Environment(
                     name=f'__rfm_env_{ctype}',
@@ -493,6 +503,12 @@ class System(jsonext.JSONSerializable):
                         f'{partid}/container_platforms/{i}/variables'
                     )
                 )
+                if p.get('default', None):
+                    part_container_runtime = ctype
+
+            if not part_container_runtime and container_platforms:
+                # No default set, pick the first one
+                part_container_runtime = container_platforms[0]['type']
 
             env_patt = site_config.get('general/0/valid_env_names') or [r'.*']
             part_environs = [
@@ -523,6 +539,7 @@ class System(jsonext.JSONSerializable):
                     access=site_config.get(f'{partid}/access'),
                     resources=site_config.get(f'{partid}/resources'),
                     environs=part_environs,
+                    container_runtime=part_container_runtime,
                     container_environs=part_container_environs,
                     local_env=Environment(
                         name=f'__rfm_env_{part_name}',

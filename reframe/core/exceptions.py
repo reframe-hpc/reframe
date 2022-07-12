@@ -154,6 +154,10 @@ class ContainerError(ReframeError):
     '''Raised when a container platform is not configured properly.'''
 
 
+class CommandLineError(ReframeError):
+    '''Raised when an error in command-line arguments occurs.'''
+
+
 class BuildError(ReframeError):
     '''Raised when a build fails.'''
 

@@ -319,7 +319,11 @@ def test_dependecies_how_functions_undoc():
 
 def test_build_deps(loader, default_exec_ctx):
     checks = loader.load_all(force=True)
-    cases = executors.generate_testcases(checks)
+
+    # We need to prepare the test cases as if we were about to run them,
+    # because we want to test `getdep()` as well, which normally gets resolved
+    # during the `setup` phase of the pipeline
+    cases = executors.generate_testcases(checks, prepare=True)
 
     # Test calling getdep() before having built the graph
     t = find_check('Test1_fully', checks)

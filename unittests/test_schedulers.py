@@ -616,6 +616,7 @@ def _read_pid(job, attempts=3):
                 f'{attempts} attempts')
 
 
+@pytest.mark.flaky(reruns=3)
 def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # This test emulates a spawned process that ignores the SIGTERM signal
     # and also spawns another process:

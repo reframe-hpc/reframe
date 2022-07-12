@@ -59,7 +59,12 @@ site_configuration = {
                     'launcher': 'local',
                     'environs': ['PrgEnv-cray', 'PrgEnv-gnu'],
                     'descr': 'Login nodes',
-                    'features': ['cross_compile']
+                    'features': ['cross_compile'],
+                    'container_platforms': [
+                        {'type': 'Sarus'},
+                        {'type': 'Docker', 'default': True},
+                        {'type': 'Singularity'}
+                    ]
                 },
                 {
                     'name': 'gpu',
@@ -89,6 +94,7 @@ site_configuration = {
                     'extras': {
                         'gpu_arch': 'a100'
                     },
+                    'container_platforms': [{'type': 'Sarus'}],
                     'environs': ['PrgEnv-gnu', 'builtin'],
                     'max_jobs': 10,
                     'processor': {
