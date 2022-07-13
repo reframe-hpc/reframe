@@ -1178,7 +1178,7 @@ An example configuration of this handler for performance logging is shown here:
 
    {
        'type': 'httpjson',
-       'address': 'http://httpjson-server:12345/rfm',
+       'url': 'http://httpjson-server:12345/rfm',
        'level': 'info',
        'extras': {
            'facility': 'reframe',
@@ -1279,7 +1279,7 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    :required: Yes
 
    The name of this execution mode.
-   This can be used with the ``-mode`` command line option to invoke this mode.
+   This can be used with the :option:`--mode` command line option to invoke this mode.
 
 
 .. js:attribute:: .modes[].options
