@@ -413,8 +413,7 @@ Options controlling ReFrame execution
       Currently, only single-node jobs can be distributed and only local or the Slurm-based backends support this feature.
 
    .. note::
-      Distributing tests with dependencies is not supported.
-      However, you can distribute tests that use fixtures.
+      Distributing tests with dependencies is not supported, but you can distribute tests that use fixtures.
 
 
    .. versionadded:: 3.11.0
@@ -468,6 +467,9 @@ Options controlling ReFrame execution
 
    Repeat the selected tests ``N`` times.
    This option can be used in conjunction with the :option:`--distribute` option in which case the selected tests will be repeated multiple times and distributed on individual nodes of the system's partitions.
+
+   .. note::
+      Repeating tests with dependencies is not supported, but you can repeat tests that use fixtures.
 
    .. versionadded:: 3.12.0
 
