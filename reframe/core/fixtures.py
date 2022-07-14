@@ -336,10 +336,7 @@ class FixtureRegistry:
     def _filter_valid_environs(self, part, candidate_environs):
         ret = []
         environs = self._env_by_part[part]
-        for e in candidate_environs:
-            if e in environs:
-                ret.append(e)
-
+        ret = list(filter(lambda e:e in environs, candidate_environs))
         return ret
 
     def _is_registry(self, other):
