@@ -75,6 +75,7 @@ site_configuration = {
         },
         {
             'name': 'gnu',
+            'modules': ['PrgEnv-gnu'],
             'cc': 'gcc',
             'cxx': 'g++',
             'ftn': 'gfortran',
