@@ -83,7 +83,7 @@ def _hostname(use_fqdn, use_xthostname):
 class _SiteConfig:
     def __init__(self):
         self._site_config = None
-        self._filenames = []
+        self._sources = []
         self._subconfigs = {}
         self._local_system = None
         self._sticky_options = {}
@@ -106,22 +106,21 @@ class _SiteConfig:
                     f'invalid configuration schema: {schema_filename!r}'
                 ) from e
 
-    def add_config(self, config, filename):
-        self._filenames.append(filename)
+    def update_config(self, config, filename):
+        self._sources.append(filename)
         nc = copy.deepcopy(config)
         if self._site_config is None:
             self._site_config = nc
             return self
 
-        for i in ['systems', 'environments', 'scheduler', 'logging',
-                  'modes', 'general']:
-            if i in nc:
-                if i in self._site_config:
-                    self._site_config[i] += nc[i]
-                else:
-                    self._site_config[i] = nc[i]
-
-        return self
+        for sec in nc.keys():
+            if sec not in self._site_config:
+                self._site_config[sec] = nc[sec]
+            elif sec == 'systems':
+                # Systems have to be inserted in the beginning of the list
+                self._site_config[sec] = nc[sec] + self._site_config[sec]
+            else:
+                self._site_config[sec] += nc[sec]
 
     def _pick_config(self):
         if self._local_system:
@@ -131,7 +130,7 @@ class _SiteConfig:
 
     def __repr__(self):
         return (f'{type(self).__name__}(site_config={self._site_config!r}, '
-                f'filenames={self._filenames!r})')
+                f'sources={self._sources!r})')
 
     def __str__(self):
         return json.dumps(self._pick_config(), indent=2)
@@ -259,14 +258,14 @@ class _SiteConfig:
         return value
 
     @property
-    def filenames(self):
-        return self._filenames
+    def sources(self):
+        return self._sources
 
     @property
     def subconfig_system(self):
         return self._local_system
 
-    def add_python_config(self, filename):
+    def load_python_config(self, filename):
         try:
             mod = util.import_module_from_file(filename)
         except ImportError as e:
@@ -290,9 +289,9 @@ class _SiteConfig:
                 f"not a valid Python configuration file: '{filename}'"
             )
 
-        return self.add_config(mod.site_configuration, filename)
+        self.update_config(mod.site_configuration, filename)
 
-    def add_json_config(self, filename):
+    def load_json_config(self, filename):
         with open(filename) as fp:
             try:
                 config = json.loads(fp.read())
@@ -301,7 +300,7 @@ class _SiteConfig:
                     f"invalid JSON syntax in configuration file '{filename}'"
                 ) from e
 
-        self.add_config(config, filename)
+        self.update_config(config, filename)
 
     def _detect_system(self):
         getlogger().debug(
@@ -331,7 +330,7 @@ class _SiteConfig:
             jsonschema.validate(site_config, self._schema)
         except jsonschema.ValidationError as e:
             raise ConfigError(f"could not validate configuration files: "
-                              f"'{self._filenames}'") from e
+                              f"'{self._sources}'") from e
 
     def select_subconfig(self, system_fullname=None,
                          ignore_resolve_errors=False):
@@ -442,198 +441,18 @@ class _SiteConfig:
         self._subconfigs[system_fullname] = local_config
 
 
-def convert_old_config(filename, newfilename=None):
-    #TODO fix this to get many files
-    old_config = util.import_module_from_file(filename).settings
-    converted = {
-        'systems': [],
-        'environments': [],
-        'logging': [],
-    }
-    perflogdir = {}
-    old_systems = old_config.site_configuration['systems'].items()
-    for sys_name, sys_spec in old_systems:
-        sys_dict = {'name': sys_name}
-
-        system_perflogdir = sys_spec.pop('perflogdir', None)
-        perflogdir.setdefault(system_perflogdir, [])
-        perflogdir[system_perflogdir].append(sys_name)
-
-        sys_dict.update(sys_spec)
-
-        # hostnames is now a required property
-        if 'hostnames' not in sys_spec:
-            sys_dict['hostnames'] = []
-
-        # Make variables dictionary into a list of lists
-        if 'variables' in sys_spec:
-            sys_dict['variables'] = [
-                [vname, v] for vname, v in sys_dict['variables'].items()
-            ]
-
-        # Make partitions dictionary into a list
-        if 'partitions' in sys_spec:
-            sys_dict['partitions'] = []
-            for pname, p in sys_spec['partitions'].items():
-                new_p = {'name': pname}
-                new_p.update(p)
-                if p['scheduler'] == 'nativeslurm':
-                    new_p['scheduler'] = 'slurm'
-                    new_p['launcher'] = 'srun'
-                elif p['scheduler'] == 'local':
-                    new_p['scheduler'] = 'local'
-                    new_p['launcher'] = 'local'
-                else:
-                    sched, launcher, *_ = p['scheduler'].split('+')
-                    new_p['scheduler'] = sched
-                    new_p['launcher'] = launcher
-
-                # Make resources dictionary into a list
-                if 'resources' in p:
-                    new_p['resources'] = [
-                        {'name': rname, 'options': r}
-                        for rname, r in p['resources'].items()
-                    ]
-
-                # Make variables dictionary into a list of lists
-                if 'variables' in p:
-                    new_p['variables'] = [
-                        [vname, v] for vname, v in p['variables'].items()
-                    ]
-
-                if 'container_platforms' in p:
-                    new_p['container_platforms'] = []
-                    for cname, c in p['container_platforms'].items():
-                        new_c = {'type': cname}
-                        new_c.update(c)
-                        if 'variables' in c:
-                            new_c['variables'] = [
-                                [vn, v] for vn, v in c['variables'].items()
-                            ]
-
-                        new_p['container_platforms'].append(new_c)
-
-                sys_dict['partitions'].append(new_p)
-
-        converted['systems'].append(sys_dict)
-
-    old_environs = old_config.site_configuration['environments'].items()
-    for env_target, env_entries in old_environs:
-        for ename, e in env_entries.items():
-            new_env = {'name': ename}
-            if env_target != '*':
-                new_env['target_systems'] = [env_target]
-
-            new_env.update(e)
-
-            # Convert variables dictionary to a list of lists
-            if 'variables' in e:
-                new_env['variables'] = [
-                    [vname, v] for vname, v in e['variables'].items()
-                ]
-
-            # Type attribute is not used anymore
-            if 'type' in new_env:
-                del new_env['type']
-
-            converted['environments'].append(new_env)
-
-    if 'modes' in old_config.site_configuration:
-        converted['modes'] = []
-        old_modes = old_config.site_configuration['modes'].items()
-        for target_mode, mode_entries in old_modes:
-            for mname, m in mode_entries.items():
-                new_mode = {'name': mname, 'options': m}
-                if target_mode != '*':
-                    new_mode['target_systems'] = [target_mode]
-
-                converted['modes'].append(new_mode)
-
-    def handler_list(handler_config, basedir=None):
-        ret = []
-        for h in handler_config:
-            new_h = h.copy()
-            new_h['level'] = h['level'].lower()
-            if h['type'] == 'graylog':
-                # `host` and `port` attribute are converted to `address`
-                new_h['address'] = h['host']
-                if 'port' in h:
-                    new_h['address'] += ':' + h['port']
-            elif h['type'] == 'filelog' and basedir is not None:
-                new_h['basedir'] = basedir
-
-            ret.append(new_h)
-
-        return ret
-
-    for basedir, target_systems in perflogdir.items():
-        converted['logging'].append(
-            {
-                'level': old_config.logging_config['level'].lower(),
-                'handlers': handler_list(
-                    old_config.logging_config['handlers']
-                ),
-                'handlers_perflog': handler_list(
-                    old_config.perf_logging_config['handlers'],
-                    basedir=basedir
-                ),
-                'target_systems': target_systems
-            }
-        )
-        if basedir is None:
-            del converted['logging'][-1]['target_systems']
-
-    converted['general'] = [{}]
-    if hasattr(old_config, 'checks_path'):
-        converted['general'][0][
-            'check_search_path'
-        ] = old_config.checks_path
-
-    if hasattr(old_config, 'checks_path_recurse'):
-        converted['general'][0][
-            'check_search_recursive'
-        ] = old_config.checks_path_recurse
-
-    if converted['general'] == [{}]:
-        del converted['general']
-
-    contents = (f"#\n# This file was automatically generated "
-                f"by ReFrame based on '{filename}'.\n#\n\n"
-                f"site_configuration = {util.ppretty(converted)}\n")
-
-    contents = '\n'.join(l if len(l) < 80 else f'{l}  # noqa: E501'
-                         for l in contents.split('\n'))
-
-    if newfilename:
-        with open(newfilename, 'w') as fp:
-            if newfilename.endswith('.json'):
-                json.dump(converted, fp, indent=4)
-            else:
-                fp.write(contents)
-
-    else:
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py',
-                                         delete=False) as fp:
-            fp.write(contents)
-
-    return fp.name
-
-
-
-def load_config(filenames=None):
+def load_config(*filenames):
     ret = _SiteConfig()
     getlogger().debug('Loading the generic configuration')
-    ret.add_config(settings.site_configuration, '<builtin>')
-    if filenames:
-        getlogger().debug(f'Loading configuration files: {filenames!r}')
-        for filename in filenames:
-            _, ext = os.path.splitext(filename)
-            if ext == '.py':
-                ret.add_python_config(filename)
-            elif ext == '.json':
-                ret.add_json_config(filename)
-            else:
-                raise ConfigError(f"unknown configuration file type: "
-                                    f"'{filename}'")
+    ret.update_config(settings.site_configuration, '<builtin>')
+    for f in filenames:
+        getlogger().debug(f'Loading configuration file: {filenames!r}')
+        _, ext = os.path.splitext(f)
+        if ext == '.py':
+            ret.load_python_config(f)
+        elif ext == '.json':
+            ret.load_json_config(f)
+        else:
+            raise ConfigError(f"unknown configuration file type: '{f}'")
 
     return ret

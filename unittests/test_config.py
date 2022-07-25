@@ -13,12 +13,7 @@ from reframe.core.systems import System
 
 
 def test_load_config_python():
-    config.load_config(['reframe/core/settings.py'])
-
-
-def test_load_config_python_old_syntax():
-    with pytest.raises(ConfigError):
-        config.load_config(['unittests/resources/settings_old_syntax.py'])
+    config.load_config('reframe/core/settings.py')
 
 
 def test_load_config_nouser(monkeypatch):
@@ -33,27 +28,12 @@ def test_load_config_nouser(monkeypatch):
     config.load_config()
 
 
-def test_convert_old_config():
-    converted = config.convert_old_config(
-        'unittests/resources/settings_old_syntax.py'
-    )
-    site_config = config.load_config([converted])
-    site_config.validate()
-    assert len(site_config.get('systems')) == 4
-    assert len(site_config.get('logging')) == 3
-
-    site_config.select_subconfig('testsys')
-    assert len(site_config.get('systems/0/partitions')) == 2
-    assert len(site_config.get('modes')) == 1
-    assert len(site_config['environments']) == 6
-
-
 def test_load_config_python_invalid(tmp_path):
     pyfile = tmp_path / 'settings.py'
     pyfile.write_text('x = 1\n')
     with pytest.raises(ConfigError,
                        match=r'not a valid Python configuration file'):
-        config.load_config([pyfile])
+        config.load_config(pyfile)
 
 
 def test_load_config_json(tmp_path):
@@ -61,20 +41,20 @@ def test_load_config_json(tmp_path):
 
     json_file = tmp_path / 'settings.json'
     json_file.write_text(json.dumps(settings.site_configuration, indent=4))
-    site_config = config.load_config([json_file])
-    assert site_config.filenames == ['<builtin>', json_file]
+    site_config = config.load_config(json_file)
+    assert site_config.sources == ['<builtin>', json_file]
 
 
 def test_load_config_json_invalid_syntax(tmp_path):
     json_file = tmp_path / 'settings.json'
     json_file.write_text('foo')
     with pytest.raises(ConfigError, match=r'invalid JSON syntax'):
-        config.load_config([json_file])
+        config.load_config(json_file)
 
 
 def test_load_config_unknown_file(tmp_path):
     with pytest.raises(OSError):
-        config.load_config([tmp_path / 'foo.json'])
+        config.load_config(tmp_path / 'foo.json')
 
 
 def test_load_config_import_error():
@@ -82,7 +62,7 @@ def test_load_config_import_error():
     # raised, which should be wrapped inside ConfigError
     with pytest.raises(ConfigError,
                        match=r'could not load Python configuration file'):
-        config.load_config(['reframe/core/foo.py'])
+        config.load_config('reframe/core/foo.py')
 
 
 def test_load_config_unknown_filetype(tmp_path):
@@ -91,21 +71,21 @@ def test_load_config_unknown_filetype(tmp_path):
     json_file = tmp_path / 'foo'
     json_file.write_text(json.dumps(settings.site_configuration, indent=4))
     with pytest.raises(ConfigError, match=r'unknown configuration file type'):
-        config.load_config([json_file])
+        config.load_config(json_file)
 
 
 def test_validate_fallback_config():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config.validate()
 
 
 def test_validate_unittest_config():
-    site_config = config.load_config(['unittests/resources/settings.py'])
+    site_config = config.load_config('unittests/resources/settings.py')
     site_config.validate()
 
 
 def test_validate_config_invalid_syntax():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config['systems'][0]['name'] = 123
     with pytest.raises(ConfigError,
                        match=r'could not validate configuration file'):
@@ -113,13 +93,13 @@ def test_validate_config_invalid_syntax():
 
 
 def test_select_subconfig_autodetect():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config.select_subconfig()
     assert site_config['systems'][0]['name'] == 'generic'
 
 
 def test_select_subconfig_autodetect_failure():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config['systems'][0]['hostnames'] = ['$^']
     site_config['systems'][1]['hostnames'] = ['$^']
     with pytest.raises(
@@ -131,7 +111,7 @@ def test_select_subconfig_autodetect_failure():
 
 
 def test_select_subconfig_unknown_system():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     with pytest.raises(
             ConfigError,
             match=(r'could not find a configuration entry '
@@ -141,7 +121,7 @@ def test_select_subconfig_unknown_system():
 
 
 def test_select_subconfig_unknown_partition():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     with pytest.raises(
             ConfigError,
             match=(r'could not find a configuration entry '
@@ -151,7 +131,7 @@ def test_select_subconfig_unknown_partition():
 
 
 def test_select_subconfig_no_logging():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config['logging'][0]['target_systems'] = ['foo']
     site_config['logging'][1]['target_systems'] = ['foo']
     with pytest.raises(ConfigError, match=r"section 'logging' not defined"):
@@ -159,7 +139,7 @@ def test_select_subconfig_no_logging():
 
 
 def test_select_subconfig_no_environments():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config['environments'][0]['target_systems'] = ['foo']
     site_config['environments'][1]['target_systems'] = ['foo']
     with pytest.raises(ConfigError,
@@ -168,7 +148,7 @@ def test_select_subconfig_no_environments():
 
 
 def test_select_subconfig_undefined_environment():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config['systems'][0]['partitions'][0]['environs'] += ['foo', 'bar']
     with pytest.raises(
             ConfigError,
@@ -178,19 +158,19 @@ def test_select_subconfig_undefined_environment():
 
 
 def test_select_subconfig_ignore_resolve_errors():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config['systems'][0]['partitions'][0]['environs'] += ['foo', 'bar']
     site_config.select_subconfig(ignore_resolve_errors=True)
 
 
 def test_select_subconfig_ignore_no_section_errors():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config['environments'][0]['target_systems'] = ['foo']
     site_config.select_subconfig(ignore_resolve_errors=True)
 
 
 def test_select_subconfig():
-    site_config = config.load_config(['unittests/resources/settings.py'])
+    site_config = config.load_config('unittests/resources/settings.py')
     site_config.select_subconfig('testsys')
     assert len(site_config['systems']) == 1
     assert len(site_config['systems'][0]['partitions']) == 2
@@ -293,7 +273,7 @@ def test_select_subconfig():
 
 
 def test_select_subconfig_optional_section_absent():
-    site_config = config.load_config(['reframe/core/settings.py'])
+    site_config = config.load_config('reframe/core/settings.py')
     site_config.select_subconfig()
     assert site_config.get('general/0/colorize') is True
     assert site_config.get('general/0/git_timeout') == 5
@@ -301,7 +281,7 @@ def test_select_subconfig_optional_section_absent():
 
 
 def test_sticky_options():
-    site_config = config.load_config(['unittests/resources/settings.py'])
+    site_config = config.load_config('unittests/resources/settings.py')
     site_config.select_subconfig('testsys:login')
     site_config.add_sticky_option('environments/cc', 'clang')
     site_config.add_sticky_option('modes/options', ['foo'])
@@ -319,7 +299,7 @@ def test_sticky_options():
 
 
 def test_system_create():
-    site_config = config.load_config(['unittests/resources/settings.py'])
+    site_config = config.load_config('unittests/resources/settings.py')
     site_config.select_subconfig('testsys:gpu')
     system = System.create(site_config)
     assert system.name == 'testsys'
@@ -390,7 +370,7 @@ def test_hostname_autodetection():
 
     # We set the autodetection method and we call `select_subconfig()` in
     # order to trigger the auto-detection
-    site_config = config.load_config(['unittests/resources/settings.py'])
+    site_config = config.load_config('unittests/resources/settings.py')
     for use_xthostname in (True, False):
         for use_fqdn in (True, False):
             site_config.set_autodetect_meth('hostname',

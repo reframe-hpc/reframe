@@ -38,7 +38,7 @@ USER_SYSTEM = None
 
 
 def init_runtime():
-    site_config = config.load_config(['unittests/resources/settings.py'])
+    site_config = config.load_config('unittests/resources/settings.py')
     site_config.select_subconfig('generic')
     rt.init_runtime(site_config)
 

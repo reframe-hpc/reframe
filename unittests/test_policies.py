@@ -214,7 +214,7 @@ def _generate_runreport(run_stats, time_start, time_end):
     return {
         'session_info': {
             'cmdline': ' '.join(sys.argv),
-            'config_files': rt.runtime().site_config.filenames,
+            'config_files': rt.runtime().site_config.sources,
             'data_version': runreport.DATA_VERSION,
             'hostname': socket.gethostname(),
             'num_cases': run_stats[0]['num_cases'],

@@ -527,10 +527,6 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
-        '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
-        help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
-    )
-    misc_options.add_argument(
         '-V', '--version', action='version', version=osext.reframe_version()
     )
     misc_options.add_argument(
@@ -688,7 +684,7 @@ def main():
     # to print pretty messages; logging will be reconfigured by user's
     # configuration later
     site_config = config.load_config(
-        [os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py')]
+        os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py')
     )
     site_config.select_subconfig('generic')
     options.update_config(site_config)
@@ -705,41 +701,10 @@ def main():
         )
         os.environ['RFM_GRAYLOG_ADDRESS'] = os.getenv('RFM_GRAYLOG_SERVER')
 
-    if options.upgrade_config_file is not None:
-        old_config, *new_config = options.upgrade_config_file.split(
-            ':', maxsplit=1
-        )
-        new_config = new_config[0] if new_config else None
-
-        try:
-            new_config = config.convert_old_config(old_config, new_config)
-        except Exception as e:
-            printer.error(f'could not convert file: {e}')
-            sys.exit(1)
-
-        printer.info(
-            f'Conversion successful! '
-            f'The converted file can be found at {new_config!r}.'
-        )
-        sys.exit(0)
-
     # Now configure ReFrame according to the user configuration file
     try:
-        try:
-            printer.debug('Loading user configuration')
-            if options.config_file is None:
-                site_config = config.load_config(None)
-            else:
-                site_config = config.load_config(options.config_file)
-        except warnings.ReframeDeprecationWarning as e:
-            printer.warning(e)
-            converted = config.convert_old_config(options.config_file)
-            printer.warning(
-                f"configuration file has been converted "
-                f"to the new syntax here: '{converted}'"
-            )
-            site_config = config.load_config([converted])
-
+        printer.debug('Loading user configuration')
+        site_config = config.load_config(*options.config_file)
         site_config.validate()
         site_config.set_autodetect_meth(
             options.autodetect_method,
@@ -929,7 +894,7 @@ def main():
 
     session_info = {
         'cmdline': ' '.join(sys.argv),
-        'config_files': rt.site_config.filenames,
+        'config_files': rt.site_config.sources,
         'data_version': runreport.DATA_VERSION,
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,

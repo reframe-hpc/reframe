@@ -420,7 +420,7 @@ class temp_runtime:
         if config_file is None:
             _runtime_context = None
         else:
-            site_config = config.load_config([config_file])
+            site_config = config.load_config(config_file)
             site_config.select_subconfig(sysname, ignore_resolve_errors=True)
             for opt, value in options.items():
                 site_config.add_sticky_option(opt, value)
