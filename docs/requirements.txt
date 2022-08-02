@@ -1,5 +1,5 @@
 archspec==0.1.4
-docutils==0.17.1 # https://github.com/sphinx-doc/sphinx/issues/9001
+docutils==0.19 # https://github.com/sphinx-doc/sphinx/issues/9001
 jsonschema==3.2.0
 semver==2.13.0
 Sphinx==5.1.1
