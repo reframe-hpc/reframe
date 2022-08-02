@@ -334,13 +334,7 @@ class FixtureRegistry:
         return [p for p in candidate_parts if p in self._env_by_part]
 
     def _filter_valid_environs(self, part, candidate_environs):
-        ret = []
-        environs = self._env_by_part[part]
-        for e in candidate_environs:
-            if e in environs:
-                ret.append(e)
-
-        return ret
+        return [e for e in cadidate_environs if e in self._env_by_part[part]]
 
     def _is_registry(self, other):
         if not isinstance(other, FixtureRegistry):
