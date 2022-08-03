@@ -1892,27 +1892,3 @@ def test_set_var_default():
     x = _X()
     assert x.foo == 10
     assert x.bar == 100
-
-
-def test_set_name_deprecation():
-    from reframe.core.warnings import ReframeDeprecationWarning
-
-    with pytest.warns(ReframeDeprecationWarning):
-        class _X(rfm.RegressionTest):
-            @run_after('init')
-            def set_name(self):
-                self.name = 'foo'
-
-        x = _X()
-
-    assert x.name == 'foo'
-    assert x.unique_name == 'foo'
-
-    with pytest.warns(ReframeDeprecationWarning):
-        class _X(rfm.RegressionTest):
-            name = 'foo'
-
-        x = _X()
-
-    assert x.name == 'foo'
-    assert x.unique_name == 'foo'
