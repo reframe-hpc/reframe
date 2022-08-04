@@ -195,17 +195,6 @@ def test_simple_test_decorator():
         assert test.P2 is not None
 
 
-@pytest.mark.filterwarnings(
-    'ignore::reframe.core.warnings.ReframeDeprecationWarning'
-)
-def test_parameterized_test_is_incompatible():
-    with pytest.raises(ReframeSyntaxError):
-        @rfm.parameterized_test(['var'])
-        class MyTest(TwoParams):
-            def __init__(self, var):
-                pass
-
-
 def test_param_space_clash():
     class Spam(rfm.RegressionMixin):
         P0 = parameter([1])

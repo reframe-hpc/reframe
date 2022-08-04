@@ -21,10 +21,6 @@ Test Base Classes
 Test Decorators
 ---------------
 
-.. autodecorator:: reframe.core.decorators.parameterized_test(*inst)
-
-.. autodecorator:: reframe.core.decorators.required_version(*versions)
-
 .. autodecorator:: reframe.core.decorators.simple_test
 
 
@@ -150,6 +146,9 @@ In the following example, :func:`BaseTest.x` will execute before :func:`DerivedT
    .. versionchanged:: 3.7.0
       Declaring pipeline hooks using the same name functions from the :py:mod:`reframe` or :py:mod:`reframe.core.decorators` modules is now deprecated.
       You should use the builtin functions described in the :ref:`builtins` section..
+
+   .. versionchanged:: 4.0.0
+      Pipeline hooks can only be defined through the built-in functions described in this section.
 
 .. warning::
    .. versionchanged:: 3.9.2
@@ -316,49 +315,6 @@ The :py:mod:`reframe` module offers direct access to the basic test classes, con
 .. py:class:: reframe.RunOnlyRegressionTest
 
    See :class:`reframe.core.pipeline.RunOnlyRegressionTest`.
-
-.. py:attribute:: reframe.DEPEND_BY_ENV
-
-   See :attr:`reframe.core.pipeline.DEPEND_BY_ENV`.
-
-
-.. py:attribute:: reframe.DEPEND_EXACT
-
-   See :attr:`reframe.core.pipeline.DEPEND_EXACT`.
-
-
-.. py:attribute:: reframe.DEPEND_FULLY
-
-   See :attr:`reframe.core.pipeline.DEPEND_FULLY`.
-
-
-.. py:decorator:: reframe.parameterized_test
-
-   See :func:`@reframe.core.decorators.parameterized_test <reframe.core.decorators.parameterized_test>`.
-
-
-.. py:decorator:: reframe.require_deps
-
-   .. deprecated:: 3.7.0
-      Please use the :func:`@require_deps <reframe.core.builtins.require_deps>` builtin decorator.
-
-
-.. py:decorator:: reframe.required_version
-
-   See :func:`@reframe.core.decorators.required_version <reframe.core.decorators.required_version>`.
-
-
-.. py:decorator:: reframe.run_after
-
-   .. deprecated:: 3.7.0
-      Please use the :func:`~reframe.core.builtins.run_after` built-in function
-
-
-.. py:decorator:: reframe.run_before
-
-   .. deprecated:: 3.7.0
-      Please use the :func:`~reframe.core.builtins.run_before` built-in function
-
 
 .. py:decorator:: reframe.simple_test
 
