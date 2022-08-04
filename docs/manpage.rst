@@ -418,6 +418,23 @@ Options controlling ReFrame execution
 
    .. versionadded:: 3.11.0
 
+
+.. option:: --exec-order=ORDER
+
+   Impose an execution order for the independent tests.
+   The ``ORDER`` argument can take one of the following values:
+
+   - ``name``: Order tests by their display name.
+   - ``rname``: Order tests by their display name in reverse order.
+   - ``uid``: Order tests by their unique name.
+   - ``ruid``: Order tests by their unique name in reverse order.
+   - ``random``: Randomize the order of execution.
+
+   If this option is not specified the order of execution of independent tests is implementation defined.
+   This option can be combined with any of the listing options (:option:`-l` or :option:`-L`) to list the tests in the order.
+
+   .. versionadded:: 4.0.0
+
 .. option:: --exec-policy=POLICY
 
    The execution policy to be used for running tests.
