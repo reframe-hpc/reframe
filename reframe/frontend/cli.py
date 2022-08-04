@@ -7,6 +7,7 @@ import inspect
 import itertools
 import json
 import os
+import random
 import shlex
 import socket
 import sys
@@ -25,6 +26,7 @@ import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
+import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
@@ -385,6 +387,11 @@ def main():
         nargs='?', const='idle',
         help=('Distribute the selected single-node jobs on every node that'
               'is in STATE (default: "idle"')
+    )
+    run_options.add_argument(
+        '--exec-order', metavar='ORDER', action='store',
+        choices=['name', 'random', 'rname', 'ruid', 'uid'],
+        help='Impose an execution order for tests'
     )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
@@ -1061,8 +1068,8 @@ def main():
                     "a non-negative integer"
                 ) from None
 
-            testcases = repeat_tests(testcases, num_repeats)
-            testcases_all = testcases
+            testcases_all = repeat_tests(testcases, num_repeats)
+            testcases = testcases_all
 
         if options.distribute:
             node_map = getallnodes(options.distribute, parsed_job_options)
@@ -1077,15 +1084,31 @@ def main():
                 x for x in parsed_job_options
                 if (not x.startswith('-w') and not x.startswith('--nodelist'))
             ]
-            testcases = distribute_tests(testcases, node_map)
-            testcases_all = testcases
+            testcases_all = distribute_tests(testcases, node_map)
+            testcases = testcases_all
+
+        @logging.time_function
+        def _sort_testcases(testcases):
+            if options.exec_order in ('name', 'rname'):
+                testcases.sort(key=lambda c: c.check.display_name,
+                               reverse=(options.exec_order == 'rname'))
+            elif options.exec_order in ('uid', 'ruid'):
+                testcases.sort(key=lambda c: c.check.unique_name,
+                               reverse=(options.exec_order == 'ruid'))
+            elif options.exec_order == 'random':
+                random.shuffle(testcases)
+
+        _sort_testcases(testcases)
+        if testcases_all is not testcases:
+            _sort_testcases(testcases_all)
 
         # Prepare for running
         printer.debug('Building and validating the full test DAG')
         testgraph, skipped_cases = dependencies.build_deps(testcases_all)
         if skipped_cases:
             # Some cases were skipped, so adjust testcases
-            testcases = list(set(testcases) - set(skipped_cases))
+            testcases = list(util.OrderedSet(testcases) -
+                             util.OrderedSet(skipped_cases))
             printer.verbose(
                 f'Filtering test case(s) due to unresolved dependencies: '
                 f'{len(testcases)} remaining'
