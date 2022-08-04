@@ -391,7 +391,7 @@ def main():
     run_options.add_argument(
         '--exec-order', metavar='ORDER', action='store',
         choices=['name', 'random', 'rname', 'ruid', 'uid'],
-        help='Impose an execution order for tests'
+        help='Impose an execution order for independent tests'
     )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
