@@ -973,7 +973,6 @@ def test_dynamic_tests(run_reframe, tmp_path):
 
 
 def test_dynamic_tests_filtering(run_reframe, tmp_path):
-    # Target sys1 that has compact_test_names==True
     returncode, stdout, _ = run_reframe(
         system='sys1',
         environs=[],

@@ -111,11 +111,6 @@ class FixtureRegistry:
             p.fullname: {e.name for e in p.environs} for p in sys_part
         }
 
-        # Compact naming switch
-        self._hash = runtime.runtime().get_option(
-            'general/0/compact_test_names'
-        )
-
         # Store the system name for name-mangling purposes
         self._sys_name = runtime.runtime().system.name
 
@@ -177,10 +172,7 @@ class FixtureRegistry:
                 (f'%{k}={utils.toalphanum(str(v))}' for k, v
                  in sorted(variables.items()))
             )
-            if self._hash:
-                vname = '_' + sha256(vname.encode('utf-8')).hexdigest()[:8]
-
-            fname += vname
+            fname += '_' + sha256(vname.encode('utf-8')).hexdigest()[:8]
 
         # Select only the valid partitions
         try:
