@@ -10,7 +10,6 @@
 __all__ = ['simple_test']
 
 
-import collections
 import inspect
 import sys
 import traceback
