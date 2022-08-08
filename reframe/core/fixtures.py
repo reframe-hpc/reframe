@@ -111,11 +111,6 @@ class FixtureRegistry:
             p.fullname: {e.name for e in p.environs} for p in sys_part
         }
 
-        # Compact naming switch
-        self._hash = runtime.runtime().get_option(
-            'general/0/compact_test_names'
-        )
-
         # Store the system name for name-mangling purposes
         self._sys_name = runtime.runtime().system.name
 
@@ -177,10 +172,7 @@ class FixtureRegistry:
                 (f'%{k}={utils.toalphanum(str(v))}' for k, v
                  in sorted(variables.items()))
             )
-            if self._hash:
-                vname = '_' + sha256(vname.encode('utf-8')).hexdigest()[:8]
-
-            fname += vname
+            fname += '_' + sha256(vname.encode('utf-8')).hexdigest()[:8]
 
         # Select only the valid partitions
         try:
@@ -334,13 +326,7 @@ class FixtureRegistry:
         return [p for p in candidate_parts if p in self._env_by_part]
 
     def _filter_valid_environs(self, part, candidate_environs):
-        ret = []
-        environs = self._env_by_part[part]
-        for e in candidate_environs:
-            if e in environs:
-                ret.append(e)
-
-        return ret
+        return [e for e in cadidate_environs if e in self._env_by_part[part]]
 
     def _is_registry(self, other):
         if not isinstance(other, FixtureRegistry):

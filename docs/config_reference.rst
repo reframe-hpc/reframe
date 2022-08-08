@@ -1178,7 +1178,7 @@ An example configuration of this handler for performance logging is shown here:
 
    {
        'type': 'httpjson',
-       'address': 'http://httpjson-server:12345/rfm',
+       'url': 'http://httpjson-server:12345/rfm',
        'level': 'info',
        'extras': {
            'facility': 'reframe',
@@ -1279,7 +1279,7 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    :required: Yes
 
    The name of this execution mode.
-   This can be used with the ``-mode`` command line option to invoke this mode.
+   This can be used with the :option:`--mode` command line option to invoke this mode.
 
 
 .. js:attribute:: .modes[].options
@@ -1338,21 +1338,6 @@ General Configuration
 
    Use colors in output.
    The command-line option sets the configuration option to ``false``.
-
-
-.. js:attribute:: .general[].compact_test_names
-
-   :required: No
-   :default: ``false``
-
-   Use a compact test naming scheme.
-   When set to ``true``, the test parameter values will not be encoded into the test name.
-   Instead, the several test variants are differentiated by including the unique variant number into the test name.
-
-   .. warning::
-      The default value will be changed to ``true`` in version 4.0.0.
-
-   .. versionadded:: 3.9.0
 
 
 .. js:attribute:: .general[].compress_report

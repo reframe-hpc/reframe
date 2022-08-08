@@ -305,10 +305,6 @@ site_configuration = {
             'target_systems': ['testsys']
         },
         {
-            'compact_test_names': True,
-            'target_systems': ['sys1']
-        },
-        {
             'git_timeout': 10,
             'target_systems': ['generic2:part1']
         },

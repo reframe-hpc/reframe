@@ -195,17 +195,6 @@ def test_simple_test_decorator():
         assert test.P2 is not None
 
 
-@pytest.mark.filterwarnings(
-    'ignore::reframe.core.warnings.ReframeDeprecationWarning'
-)
-def test_parameterized_test_is_incompatible():
-    with pytest.raises(ReframeSyntaxError):
-        @rfm.parameterized_test(['var'])
-        class MyTest(TwoParams):
-            def __init__(self, var):
-                pass
-
-
 def test_param_space_clash():
     class Spam(rfm.RegressionMixin):
         P0 = parameter([1])
@@ -325,21 +314,6 @@ def test_override_parameter():
         class Foo(rfm.RegressionTest):
             p = parameter([1, 2])
             p += 1
-
-
-def test_parameter_space_order():
-    '''FIXME: This can be removed when the old naming scheme is dropped.
-
-    The order of the parameters is only relevant for the old naming scheme.
-    This test simply ensures that these legacy options are not broken.
-    '''
-
-    class MyTest(rfm.RegressionTest):
-        p0 = parameter([0])
-        p1 = parameter([0])
-        p2 = parameter([0])
-
-    assert ['p0', 'p1', 'p2'] == [p for p in MyTest.param_space.params]
 
 
 def test_local_paramspace_is_empty():

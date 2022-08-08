@@ -413,8 +413,7 @@ Options controlling ReFrame execution
       Currently, only single-node jobs can be distributed and only local or the Slurm-based backends support this feature.
 
    .. note::
-      Distributing tests with dependencies is not supported.
-      However, you can distribute tests that use fixtures.
+      Distributing tests with dependencies is not supported, but you can distribute tests that use fixtures.
 
 
    .. versionadded:: 3.11.0
@@ -468,6 +467,9 @@ Options controlling ReFrame execution
 
    Repeat the selected tests ``N`` times.
    This option can be used in conjunction with the :option:`--distribute` option in which case the selected tests will be repeated multiple times and distributed on individual nodes of the system's partitions.
+
+   .. note::
+      Repeating tests with dependencies is not supported, but you can repeat tests that use fixtures.
 
    .. versionadded:: 3.12.0
 
@@ -870,8 +872,8 @@ Test Naming Scheme
 
 .. versionadded:: 3.10.0
 
-This section describes the new test naming scheme which will replace the current one in ReFrame 4.0.
-It can be enabled by setting the :envvar:`RFM_COMPACT_TEST_NAMES` environment variable.
+This section describes the test naming scheme.
+This scheme has superseded the old one in ReFrame 4.0.
 
 Each ReFrame test is assigned a unique name, which will be used internally by the framework to reference the test.
 Any test-specific path component will use that name, too.
@@ -973,9 +975,6 @@ It did so by taking the string representation of the value and replacing any non
 This could lead to very large and hard to read names when a test defined multiple parameters or the parameter type was more complex.
 Very large test names meant also very large path names which could also lead to problems and random failures.
 Fixtures followed a similar naming pattern making them hard to debug.
-
-The old naming scheme is still the default for parameterized tests (but not for fixtures) and will remain so until ReFrame 4.0, in order to ensure backward compatibility.
-However, users are advised to enable the new naming scheme by setting the :envvar:`RFM_COMPACT_TEST_NAMES` environment variable.
 
 
 Environment
@@ -1103,21 +1102,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated command line option     :option:`--nocolor`
       Associated configuration parameter :js:attr:`colorize` general configuration parameter
       ================================== ==================
-
-
-.. envvar:: RFM_COMPACT_TEST_NAMES
-
-   Enable the new test naming scheme.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     N/A
-      Associated configuration parameter :js:attr:`compact_test_names` general configuration parameter
-      ================================== ==================
-
-   .. versionadded:: 3.9.0
 
 
 .. envvar:: RFM_COMPRESS_REPORT
