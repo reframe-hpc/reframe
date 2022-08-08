@@ -498,7 +498,7 @@ def main():
         '-C', '--config-file', action='append', metavar='FILE',
         dest='config_file',
         help='Set configuration file',
-        envvar='RFM_CONFIG_FILE'
+        envvar='RFM_CONFIG_FILE :'
     )
     misc_options.add_argument(
         '--detect-host-topology', action='store', nargs='?', const='-',
@@ -703,7 +703,10 @@ def main():
     # Now configure ReFrame according to the user configuration file
     try:
         printer.debug('Loading user configuration')
-        site_config = config.load_config(*options.config_file)
+        # Cannot set the variable to [] in the argparser because it won't take
+        # into account the environmane variable
+        conf_file = options.config_file if options.config_file else []
+        site_config = config.load_config(*conf_file)
         site_config.validate()
         site_config.set_autodetect_meth(
             options.autodetect_method,
