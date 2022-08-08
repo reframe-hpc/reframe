@@ -12,7 +12,6 @@ import jsonschema
 import os
 import re
 import socket
-import tempfile
 
 import reframe
 import reframe.core.settings as settings

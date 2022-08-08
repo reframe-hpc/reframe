@@ -18,7 +18,6 @@ import reframe.core.config as config
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
-import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.autodetect as autodetect
 import reframe.frontend.ci as ci
