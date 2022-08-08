@@ -914,8 +914,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Prepare initialization of test defaults (variables and parameters are
         # injected after __new__ has returned, so we schedule this function
         # call as a pre-init hook).
-        obj.__deferred_rfm_init = obj.__rfm_init__(*args,
-                                                   prefix=prefix, **kwargs)
+        obj.__deferred_rfm_init = obj.__rfm_init__(prefix)
 
         # Build pipeline hook registry and add the pre-init hook
         cls._rfm_pipeline_hooks = cls._process_hook_registry()
@@ -959,16 +958,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
 
     @deferrable
-    def __rfm_init__(self, *args, prefix=None, **kwargs):
+    def __rfm_init__(self, prefix=None):
         if not self.is_fixture() and not hasattr(self, '_rfm_unique_name'):
             self._rfm_unique_name = type(self).variant_name(self.variant_num)
-
-            # Add the parameters from the parameterized_test decorator.
-            if args or kwargs:
-                arg_names = map(lambda x: util.toalphanum(str(x)),
-                                itertools.chain(args, kwargs.values()))
-                self._rfm_unique_name += '_' + '_'.join(arg_names)
-                self._rfm_old_style_params = True
 
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):
@@ -1092,6 +1084,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return self._rfm_unique_name
 
+    @loggable
     @property
     def name(self):
         '''The name of the test.
@@ -1135,9 +1128,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     name += f'{prefix}{f}.{var}={val}'
 
             return name
-
-        if hasattr(self, '_rfm_old_style_params'):
-            return self.unique_name
 
         if hasattr(self, '_rfm_display_name'):
             return self._rfm_display_name

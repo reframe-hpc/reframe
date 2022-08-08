@@ -316,21 +316,6 @@ def test_override_parameter():
             p += 1
 
 
-def test_parameter_space_order():
-    '''FIXME: This can be removed when the old naming scheme is dropped.
-
-    The order of the parameters is only relevant for the old naming scheme.
-    This test simply ensures that these legacy options are not broken.
-    '''
-
-    class MyTest(rfm.RegressionTest):
-        p0 = parameter([0])
-        p1 = parameter([0])
-        p2 = parameter([0])
-
-    assert ['p0', 'p1', 'p2'] == [p for p in MyTest.param_space.params]
-
-
 def test_local_paramspace_is_empty():
     class MyTest(rfm.RegressionTest):
         p = parameter([1, 2, 3])
