@@ -603,13 +603,6 @@ def main():
         help='Graylog server address'
     )
     argparser.add_argument(
-        dest='compact_test_names',
-        envvar='RFM_COMPACT_TEST_NAMES',
-        configvar='general/compact_test_names',
-        action='store_true',
-        help='Use a compact test naming scheme'
-    )
-    argparser.add_argument(
         dest='dump_pipeline_progress',
         envvar='RFM_DUMP_PIPELINE_PROGRESS',
         configvar='general/dump_pipeline_progress',

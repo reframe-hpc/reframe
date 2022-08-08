@@ -10,7 +10,6 @@
 __all__ = ['simple_test']
 
 
-import collections
 import inspect
 import sys
 import traceback
@@ -42,7 +41,6 @@ class TestRegistry:
 
     def __init__(self):
         self._tests = dict()
-        self._skip_tests = set()
 
     @classmethod
     def create(cls, test, *args, **kwargs):
@@ -53,11 +51,6 @@ class TestRegistry:
     def add(self, test, *args, **kwargs):
         self._tests.setdefault(test, [])
         self._tests[test].append((args, kwargs))
-
-    # FIXME: To drop with the required_version decorator
-    def skip(self, test):
-        '''Add a test to the skip set.'''
-        self._skip_tests.add(test)
 
     @time_function
     def instantiate_all(self, reset_sysenv=0):
@@ -75,9 +68,6 @@ class TestRegistry:
 
         leaf_tests = []
         for test, variants in self._tests.items():
-            if test in self._skip_tests:
-                continue
-
             for args, kwargs in variants:
                 try:
                     kwargs['reset_sysenv'] = reset_sysenv
@@ -136,54 +126,6 @@ def _register_test(cls, *args, **kwargs):
         mod._rfm_test_registry = TestRegistry.create(cls, *args, **kwargs)
     else:
         mod._rfm_test_registry.add(cls, *args, **kwargs)
-
-
-def _register_parameterized_test(cls, args=None):
-    '''Register the test.
-
-    Register the test with _rfm_use_params=True. This additional argument flags
-    this case to consume the parameter space. Otherwise, the regression test
-    parameters would simply be initialized to None.
-    '''
-    def _instantiate(cls, args):
-        if isinstance(args, collections.abc.Sequence):
-            return cls(*args)
-        elif isinstance(args, collections.abc.Mapping):
-            return cls(**args)
-        elif args is None:
-            return cls()
-
-    def _instantiate_all():
-        ret = []
-        for cls, args in mod.__rfm_test_registry:
-            try:
-                if cls in mod.__rfm_skip_tests:
-                    continue
-            except AttributeError:
-                mod.__rfm_skip_tests = set()
-
-            try:
-                ret.append(_instantiate(cls, args))
-            except SkipTestError as e:
-                getlogger().warning(f'skipping test {cls.__qualname__!r}: {e}')
-            except Exception:
-                exc_info = sys.exc_info()
-                getlogger().warning(
-                    f"skipping test {cls.__qualname__!r}: {what(*exc_info)} "
-                    f"(rerun with '-v' for more information)"
-                )
-                getlogger().verbose(traceback.format_exc())
-
-        return ret
-
-    mod = inspect.getmodule(cls)
-    if not hasattr(mod, '_rfm_gettests'):
-        mod._rfm_gettests = _instantiate_all
-
-    try:
-        mod.__rfm_test_registry.append((cls, args))
-    except AttributeError:
-        mod.__rfm_test_registry = [(cls, args)]
 
 
 def _validate_test(cls):

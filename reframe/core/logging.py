@@ -580,10 +580,6 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra[f'check_{extra_name}'] = val
 
         # Add special extras
-
-        # FIXME: As soon as `name` becomes a read-only property in 4.0, the
-        # following assignment will not be needed.
-        self.extra['check_name'] = self.extra['check_unique_name']
         self.extra['check_info'] = self.check.info()
         self.extra['check_job_completion_time'] = _format_time_rfc3339(
             time.localtime(self.extra['check_job_completion_time_unix']),
