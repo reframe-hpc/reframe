@@ -849,11 +849,8 @@ def exec_order(request):
     return request.param
 
 
-def test_exec_order(run_reframe, exec_order, monkeypatch):
+def test_exec_order(run_reframe, exec_order):
     import reframe.utility.sanity as sn
-
-    # FIXME: Remove this as soon as GH #2574 is merged
-    monkeypatch.setenv('RFM_COMPACT_TEST_NAMES', '1')
 
     returncode, stdout, stderr = run_reframe(
         more_options=['--repeat', '11', '-n', 'HelloTest',
