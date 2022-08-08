@@ -80,7 +80,7 @@ def test_validate_fallback_config():
 
 
 def test_validate_unittest_config():
-    site_config = config.load_config('unittests/resources/settings.py')
+    site_config = config.load_config('unittests/resources/config/settings.py')
     site_config.validate()
 
 
@@ -170,7 +170,7 @@ def test_select_subconfig_ignore_no_section_errors():
 
 
 def test_select_subconfig():
-    site_config = config.load_config('unittests/resources/settings.py')
+    site_config = config.load_config('unittests/resources/config/settings.py')
     site_config.select_subconfig('testsys')
     assert len(site_config['systems']) == 1
     assert len(site_config['systems'][0]['partitions']) == 2
@@ -281,7 +281,7 @@ def test_select_subconfig_optional_section_absent():
 
 
 def test_sticky_options():
-    site_config = config.load_config('unittests/resources/settings.py')
+    site_config = config.load_config('unittests/resources/config/settings.py')
     site_config.select_subconfig('testsys:login')
     site_config.add_sticky_option('environments/cc', 'clang')
     site_config.add_sticky_option('modes/options', ['foo'])
@@ -299,7 +299,7 @@ def test_sticky_options():
 
 
 def test_system_create():
-    site_config = config.load_config('unittests/resources/settings.py')
+    site_config = config.load_config('unittests/resources/config/settings.py')
     site_config.select_subconfig('testsys:gpu')
     system = System.create(site_config)
     assert system.name == 'testsys'
@@ -370,7 +370,7 @@ def test_hostname_autodetection():
 
     # We set the autodetection method and we call `select_subconfig()` in
     # order to trigger the auto-detection
-    site_config = config.load_config('unittests/resources/settings.py')
+    site_config = config.load_config('unittests/resources/config/settings.py')
     for use_xthostname in (True, False):
         for use_fqdn in (True, False):
             site_config.set_autodetect_meth('hostname',
