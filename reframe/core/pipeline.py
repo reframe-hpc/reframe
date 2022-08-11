@@ -281,8 +281,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: A detailed description of the test.
     #:
     #: :type: :class:`str`
-    #: :default: ``self.display_name``
-    descr = variable(str, loggable=True)
+    #: :default: ``''``
+    #:
+    #: .. versionchanged:: 4.0
+    #:    The default value is now the empty string.
+    descr = variable(str, value='', loggable=True)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -959,10 +962,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @deferrable
     def __rfm_init__(self, prefix=None):
-        # Pass if descr is a required variable.
-        if not hasattr(self, 'descr'):
-            self.descr = self.display_name
-
         self._perfvalues = {}
 
         # Static directories of the regression check
