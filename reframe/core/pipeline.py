@@ -959,9 +959,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @deferrable
     def __rfm_init__(self, prefix=None):
-        if not self.is_fixture() and not hasattr(self, '_rfm_unique_name'):
-            self._rfm_unique_name = type(self).variant_name(self.variant_num)
-
         # Pass if descr is a required variable.
         if not hasattr(self, 'descr'):
             self.descr = self.display_name

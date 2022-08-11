@@ -423,6 +423,8 @@ class RegressionTestMeta(type):
             obj._rfm_unique_name = fixt_name
             obj._rfm_fixt_data = fixt_data
             obj._rfm_is_fixture = True
+        else:
+            obj._rfm_unique_name = cls.variant_name(variant_num)
 
         # Set the variables passed to the constructor
         for k, v in fixt_vars.items():
