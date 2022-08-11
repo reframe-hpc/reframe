@@ -36,7 +36,7 @@ class stream_test(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['+openmp']
     reference = {
         'tresa': {
-            'triad_bandwidth': (19000, -0.05, None, 'MB/s')
+            'copy_bandwidth': (23000, -0.05, None, 'MB/s')
         }
     }
 
@@ -55,5 +55,5 @@ class stream_test(rfm.RunOnlyRegressionTest):
         return sn.assert_found(r'Solution Validates', self.stdout)
 
     @performance_function('MB/s')
-    def triad_bandwidth(self):
-        return sn.extractsingle(r'Triad:\s+(\S+)\s+.*', self.stdout, 1, float)
+    def copy_bandwidth(self):
+        return sn.extractsingle(r'Copy:\s+(\S+)\s+.*', self.stdout, 1, float)
