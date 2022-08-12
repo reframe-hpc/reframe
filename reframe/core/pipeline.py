@@ -14,6 +14,7 @@ __all__ = [
 
 
 import glob
+import hashlib
 import inspect
 import itertools
 import numbers
@@ -1085,9 +1086,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def name(self):
         '''The name of the test.
 
-        This is an alias of :attr:`unique_name`.
+        This is an alias of :attr:`display_name`.
         '''
-        return self.unique_name
+        return self.display_name
 
     @loggable
     @property
@@ -1141,6 +1142,32 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self._rfm_display_name += suffix
 
         return self._rfm_display_name
+
+    @loggable
+    @property
+    def hashcode(self):
+        if hasattr(self, '_rfm_hashcode'):
+            return self._rfm_hashcode
+
+        m = hashlib.sha256()
+        if self.is_fixture:
+            m.update(self.unique_name.encode('utf-8'))
+        else:
+            basename, *params = self.display_name.split(' %')
+            m.update(basename.encode('utf-8'))
+            for p in sorted(params):
+                m.update(p.encode('utf-8'))
+
+        self._rfm_hashcode = m.hexdigest()[:8]
+        return self._rfm_hashcode
+
+    @loggable
+    @property
+    def fs_name(self):
+        if self.unique_name != self.display_name:
+            return f'{type(self).__name__}_{self.hashcode}'
+        else:
+            return self.unique_name
 
     @property
     def current_environ(self):
@@ -1393,7 +1420,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            method may be called at any point of the test's lifetime.
         '''
 
-        ret = self.display_name
+        ret = f'{self.display_name} /{self.hashcode}'
         if self.current_partition:
             ret += f' @{self.current_partition.fullname}'
 
@@ -1504,11 +1531,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             runtime = rt.runtime()
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.unique_name
+                self._current_environ.name, self.fs_name
             )
             self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.unique_name
+                self._current_environ.name, self.fs_name
             )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
@@ -1536,13 +1563,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           **job_opts)
 
     def _setup_build_job(self, **job_opts):
-        self._build_job = self._create_job(f'rfm_{self.unique_name}_build',
+        self._build_job = self._create_job(f'rfm_build',
                                            self.local or self.build_locally,
                                            **job_opts)
 
     def _setup_run_job(self, **job_opts):
-        self._job = self._create_job(f'rfm_{self.unique_name}_job',
-                                     self.local, **job_opts)
+        self._job = self._create_job(f'rfm_job', self.local, **job_opts)
 
     def _setup_perf_logging(self):
         self._perf_logger = logging.getperflogger(self)

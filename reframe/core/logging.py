@@ -148,7 +148,7 @@ class MultiFileHandler(logging.FileHandler):
             raise LoggingError('logging failed') from e
 
         self.baseFilename = os.path.join(dirname,
-                                         f'{record.__rfm_check__.name}.log')
+                                         f'{record.__rfm_check__.fs_name}.log')
         self.stream = self._streams.get(self.baseFilename, None)
         super().emit(record)
         self._streams[self.baseFilename] = self.stream
