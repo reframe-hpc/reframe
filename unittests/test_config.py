@@ -12,8 +12,32 @@ from reframe.core.systems import System
 
 
 
+@pytest.fixture(params=['full', 'parts'])
+def site_config(request):
+    # `unittests/resources/config/settings.py` should be equivalent to loading
+    # the `unittests/resources/config/settings-part*.py` files
+    if request.param == 'full':
+        return config.load_config('unittests/resources/config/settings.py')
+    else:
+        return config.load_config(
+            'unittests/resources/config/settings-part1.py',
+            'unittests/resources/config/settings-part2.py',
+            'unittests/resources/config/settings-part3.py'
+        )
+
+
 def test_load_config_python():
     config.load_config('reframe/core/settings.py')
+
+
+def test_load_multiple_configs():
+    site1 = config.load_config('unittests/resources/config/settings.py')
+    site2 = config.load_config(
+        'unittests/resources/config/settings-part1.py',
+        'unittests/resources/config/settings-part2.py',
+        'unittests/resources/config/settings-part3.py'
+    )
+    assert site1._site_config == site2._site_config
 
 
 def test_load_config_nouser(monkeypatch):
@@ -79,8 +103,7 @@ def test_validate_fallback_config():
     site_config.validate()
 
 
-def test_validate_unittest_config():
-    site_config = config.load_config('unittests/resources/config/settings.py')
+def test_validate_unittest_config(site_config):
     site_config.validate()
 
 
@@ -169,8 +192,7 @@ def test_select_subconfig_ignore_no_section_errors():
     site_config.select_subconfig(ignore_resolve_errors=True)
 
 
-def test_select_subconfig():
-    site_config = config.load_config('unittests/resources/config/settings.py')
+def test_select_subconfig(site_config):
     site_config.select_subconfig('testsys')
     assert len(site_config['systems']) == 1
     assert len(site_config['systems'][0]['partitions']) == 2
@@ -280,8 +302,7 @@ def test_select_subconfig_optional_section_absent():
     assert site_config.get('general/verbose') == 0
 
 
-def test_sticky_options():
-    site_config = config.load_config('unittests/resources/config/settings.py')
+def test_sticky_options(site_config):
     site_config.select_subconfig('testsys:login')
     site_config.add_sticky_option('environments/cc', 'clang')
     site_config.add_sticky_option('modes/options', ['foo'])
@@ -298,8 +319,7 @@ def test_sticky_options():
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
 
 
-def test_system_create():
-    site_config = config.load_config('unittests/resources/config/settings.py')
+def test_system_create(site_config):
     site_config.select_subconfig('testsys:gpu')
     system = System.create(site_config)
     assert system.name == 'testsys'
@@ -365,12 +385,11 @@ def test_system_create():
     assert system.partitions[0].container_runtime == 'Docker'
 
 
-def test_hostname_autodetection():
+def test_hostname_autodetection(site_config):
     # This exercises only the various execution paths
 
     # We set the autodetection method and we call `select_subconfig()` in
     # order to trigger the auto-detection
-    site_config = config.load_config('unittests/resources/config/settings.py')
     for use_xthostname in (True, False):
         for use_fqdn in (True, False):
             site_config.set_autodetect_meth('hostname',
