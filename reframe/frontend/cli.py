@@ -562,6 +562,12 @@ def main():
         help='Method to detect the system'
     )
     argparser.add_argument(
+        dest='config_path',
+        envvar='RFM_CONFIG_PATH :',
+        action='append',
+        help='Directories where ReFrame will look for base configuration'
+    )
+    argparser.add_argument(
         dest='autodetect_xthostname',
         envvar='RFM_AUTODETECT_XTHOSTNAME',
         action='store',
@@ -705,7 +711,25 @@ def main():
         printer.debug('Loading user configuration')
         # Cannot set the variable to [] in the argparser because it won't take
         # into account the environmane variable
-        conf_file = options.config_file if options.config_file else []
+        conf_file = []
+        if options.config_path:
+            for p in options.config_path:
+                if os.path.exists(p + '/settings.py'):
+                    conf_file.append(p + '/settings.py')
+                elif os.path.exists(p + '/settings.json'):
+                    conf_file.append(p + '/settings.json')
+
+        if options.config_file:
+            for f in options.config_file:
+                # If the user sets RFM_CONFIG_FILE=:conf1:conf2 the list will
+                # include one empty string in the beginning
+                if f == '':
+                    conf_file = []
+                elif f.startswith(':'):
+                    conf_file = [f[1:]]
+                else:
+                    conf_file.append(f)
+
         site_config = config.load_config(*conf_file)
         site_config.validate()
         site_config.set_autodetect_meth(
