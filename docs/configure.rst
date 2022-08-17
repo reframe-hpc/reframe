@@ -10,7 +10,7 @@ This section will guide you through configuring ReFrame for your site.
 If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the :doc:`migration_2_to_3` page.
 
 
-ReFrame's configuration file can be either a JSON file or a Python file storing the site configuration in a JSON-formatted string.
+ReFrame's configuration files can be either JSON files or a Python files storing the site configuration in a JSON-formatted string.
 The latter format is useful in cases that you want to generate configuration parameters on-the-fly, since ReFrame will import that Python file and the load the resulting configuration.
 In the following we will use a Python-based configuration file also for historical reasons, since it was the only way to configure ReFrame in versions prior to 3.0.
 
@@ -18,16 +18,8 @@ In the following we will use a Python-based configuration file also for historic
 Locating the Configuration File
 -------------------------------
 
-ReFrame looks for a configuration file in the following locations in that order:
-
-1. ``${HOME}/.reframe/settings.{py,json}``
-2. ``${RFM_INSTALL_PREFIX}/settings.{py,json}``
-3. ``/etc/reframe.d/settings.{py,json}``
-
-If both ``settings.py`` and ``settings.json`` are found, the Python file is preferred.
-The ``RFM_INSTALL_PREFIX`` variable refers to the installation directory of ReFrame or the top-level source directory if you are running ReFrame from source.
-Users have no control over this variable.
-It is always set by the framework upon startup.
+ReFrame looks for the configuration files in ``${RFM_CONFIG_PATH}/settings.{py,json}`` and if both ``settings.py`` and ``settings.json`` are found, the Python file is preferred.
+The ``RFM_CONFIG_PATH`` variable can have many paths seperated by ``:`` and all the paths will be considered and added to the configuration as long as there is a ``settings.{py,json}`` file there.
 
 If no configuration file is found in any of the predefined locations, ReFrame will fall back to a generic configuration that allows it to run on any system.
 You can find this generic configuration file `here <https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py>`__.
@@ -39,6 +31,11 @@ There are two ways to provide a custom configuration file to ReFrame:
 2. Specify it using the ``RFM_CONFIG_FILE`` environment variable.
 
 Command line options take always precedence over their respective environment variables.
+In order to replace the configuration files from the ``RFM_CONFIG_PATH`` variable you can pass the option ``-C :config-file.py``.
+
+.. note::
+   .. versionadded:: 3.0.0
+      ReFrame accepts multiple configuration files and always uses `the base configuration <https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py>`__ as a base.
 
 
 Anatomy of the Configuration File
@@ -56,8 +53,7 @@ For the complete listing and description of all configuration options, you shoul
    :start-after: # rfmdocstart: site-configuration
    :end-before: # rfmdocend: site-configuration
 
-There are three required sections that each configuration file must provide: ``systems``, ``environments`` and ``logging``.
-We will first cover these and then move on to the optional ones.
+The most important sections are: ``systems``, ``environments`` and ``logging``.
 
 
 ---------------------
