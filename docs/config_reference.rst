@@ -1007,9 +1007,9 @@ The additional properties for the ``filelog`` handler are the following:
      {basedir}/
         system1/
             partition1/
-                test_name.log
+                test_short_name.log
             partition2/
-                test_name.log
+                test_short_name.log
             ...
         system2/
         ...
