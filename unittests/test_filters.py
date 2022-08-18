@@ -65,6 +65,8 @@ def test_have_any_name(sample_cases):
                              sample_cases)
     assert 2 == count_checks(filters.have_any_name(['(?i)check1|CHECK2']),
                              sample_cases)
+    assert 1 == count_checks(filters.have_any_name(['/e2ae5cc6']),
+                             sample_cases)
 
 
 def test_have_any_name_param_test(sample_param_cases):
@@ -80,6 +82,8 @@ def test_have_any_name_param_test(sample_param_cases):
     assert 1 == count_checks(filters.have_any_name(['_X@002']),
                              sample_param_cases)
     assert 0 == count_checks(filters.have_any_name(['_X@12']),
+                             sample_param_cases)
+    assert 2 == count_checks(filters.have_any_name(['/023313dc', '/efddbc6c']),
                              sample_param_cases)
     assert 2 == count_checks(filters.have_any_name(['_X@0', '_X@1']),
                              sample_param_cases)
