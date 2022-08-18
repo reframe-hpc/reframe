@@ -1163,7 +1163,17 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @loggable
     @property
-    def fs_name(self):
+    def short_name(self):
+        '''A short version of the test's display name.
+
+        The shortened version coincides with the :attr:`unique_name` for
+        simple tests and combines the test's class name and a hash code for
+        parameterised tests.
+
+        .. versionadded:: 4.0.0
+
+        '''
+
         if self.unique_name != self.display_name:
             return f'{type(self).__name__}_{self.hashcode}'
         else:
@@ -1531,11 +1541,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             runtime = rt.runtime()
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.fs_name
+                self._current_environ.name, self.short_name
             )
             self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.fs_name
+                self._current_environ.name, self.short_name
             )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
