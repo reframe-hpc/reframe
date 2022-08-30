@@ -255,7 +255,7 @@ class Singularity(ContainerPlatform):
             run_opts.append('--nv')
 
         if self.workdir:
-            run_opts.append(f'-W {self.workdir}')
+            run_opts.append(f'--pwd {self.workdir}')
 
         run_opts += self.options
         if self.command:

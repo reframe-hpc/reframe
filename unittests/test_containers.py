@@ -104,15 +104,15 @@ def expected_cmd_mount_points(container_variant):
     elif container_variant in {'Singularity', 'Singularity+nopull'}:
         return ('singularity exec -B"/path/one:/one" '
                 '-B"/path/two:/two" -B"/foo:/rfm_workdir" '
-                '-W /rfm_workdir image:tag cmd')
+                '--pwd /rfm_workdir image:tag cmd')
     elif container_variant == 'Singularity+cuda':
         return ('singularity exec -B"/path/one:/one" '
                 '-B"/path/two:/two" -B"/foo:/rfm_workdir" --nv '
-                '-W /rfm_workdir image:tag cmd')
+                '--pwd /rfm_workdir image:tag cmd')
     elif container_variant == 'Singularity+nocommand':
         return ('singularity run -B"/path/one:/one" '
                 '-B"/path/two:/two" -B"/foo:/rfm_workdir" '
-                '-W /rfm_workdir image:tag')
+                '--pwd /rfm_workdir image:tag')
 
 
 @pytest.fixture
@@ -265,7 +265,7 @@ def expected_run_with_workdir(container_variant_noopt):
             '--foo image:tag cmd1'
         )
     elif container_variant_noopt == 'Singularity':
-        return ('singularity exec -B\"/foo:/rfm_workdir\" -W foodir '
+        return ('singularity exec -B\"/foo:/rfm_workdir\" --pwd foodir '
                 '--foo image:tag cmd1')
 
 
