@@ -41,13 +41,16 @@ def have_not_name(patt):
 
 def have_any_name(names):
     rt = runtime()
-    exact_matches = []
+    variant_matches = []
+    hash_matches = []
     regex_matches = []
     for n in names:
         if '@' in n:
             test, _, variant = n.rpartition('@')
             if variant.isdigit():
-                exact_matches.append((test, int(variant)))
+                variant_matches.append((test, int(variant)))
+        elif n.startswith('/'):
+            hash_matches.append(n[1:])
         else:
             regex_matches.append(n)
 
@@ -57,10 +60,15 @@ def have_any_name(names):
         regex = None
 
     def _fn(case):
-        # Check if we have an exact match
-        for m in exact_matches:
+        # Check the variant matches
+        for m in variant_matches:
             cls_name = type(case.check).__name__
             if (cls_name, case.check.variant_num) == m:
+                return True
+
+        # Check hash matches
+        for m in hash_matches:
+            if m == case.check.hashcode:
                 return True
 
         display_name = case.check.display_name.replace(' ', '')

@@ -37,7 +37,7 @@ class Node:
                     self.ename == other.ename)
 
         if isinstance(other, executors.TestCase):
-            return (self.cname == other.check.name and
+            return (self.cname == other.check.unique_name and
                     self.pname == other.partition.fullname and
                     self.ename == other.environ.name)
 
@@ -450,9 +450,9 @@ def test_build_deps(loader, default_exec_ctx):
     check_e0._current_environ = Environment('e0')
     check_e1._current_environ = Environment('e1')
 
-    assert check_e0.getdep('Test0', 'e0', 'p0').name == 'Test0'
-    assert check_e0.getdep('Test0', 'e1', 'p0').name == 'Test0'
-    assert check_e1.getdep('Test0', 'e1', 'p0').name == 'Test0'
+    assert check_e0.getdep('Test0', 'e0', 'p0').unique_name == 'Test0'
+    assert check_e0.getdep('Test0', 'e1', 'p0').unique_name == 'Test0'
+    assert check_e1.getdep('Test0', 'e1', 'p0').unique_name == 'Test0'
     with pytest.raises(DependencyError):
         check_e0.getdep('TestX_deprecated', 'e0', 'p0')
 
@@ -605,7 +605,7 @@ def test_skip_unresolved_deps(make_exec_ctx):
     )
     assert len(skipped_cases) == 6
 
-    skipped_tests = {c.check.name for c in skipped_cases}
+    skipped_tests = {c.check.unique_name for c in skipped_cases}
     assert skipped_tests == {'t1', 't2', 't3'}
 
 
@@ -615,9 +615,9 @@ def assert_topological_order(cases, graph):
     tests = util.OrderedSet()
     for c in cases:
         check, part, env = c
-        cases_order.append((check.name, part.fullname, env.name))
-        tests.add(check.name)
-        visited_tests.add(check.name)
+        cases_order.append((check.unique_name, part.fullname, env.name))
+        tests.add(check.unique_name)
+        visited_tests.add(check.unique_name)
 
         # Assert that all dependencies of c have been visited before
         for d in graph[c]:
@@ -625,7 +625,7 @@ def assert_topological_order(cases, graph):
                 # dependency points outside the subgraph
                 continue
 
-            assert d.check.name in visited_tests
+            assert d.check.unique_name in visited_tests
 
     # Check the order of systems and prog. environments
     # We are checking against all possible orderings
@@ -739,7 +739,7 @@ def test_toposort(default_exec_ctx):
     cases_by_level = {}
     for c in cases:
         cases_by_level.setdefault(c.level, set())
-        cases_by_level[c.level].add(c.check.name)
+        cases_by_level[c.level].add(c.check.unique_name)
 
     assert cases_by_level[0] == {'t0', 't5'}
     assert cases_by_level[1] == {'t1', 't6', 't7'}
@@ -784,7 +784,7 @@ def test_toposort_subgraph(default_exec_ctx):
     cases_by_level = {}
     for c in cases:
         cases_by_level.setdefault(c.level, set())
-        cases_by_level[c.level].add(c.check.name)
+        cases_by_level[c.level].add(c.check.unique_name)
 
     assert cases_by_level[1] == {'t3'}
     assert cases_by_level[2] == {'t4'}

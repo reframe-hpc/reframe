@@ -73,6 +73,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
                 unique_checks.add(v.check.unique_name)
 
         if depth:
+            name_info = f'{u.check.display_name} /{u.check.hashcode}'
             tc_info = ''
             details = ''
             if concretized:
@@ -80,17 +81,16 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
             location = inspect.getfile(type(u.check))
             if detailed:
-                details = f' [id: {u.check.unique_name}, file: {location!r}]'
+                details = f' [variant: {u.check.variant_num}, file: {location!r}]'
 
-            lines.append(
-                f'{prefix}^{u.check.display_name}{tc_info}{details}'
-            )
+            lines.append(f'{prefix}^{name_info}{tc_info}{details}')
 
         return lines
 
     # We need the leaf test cases to be printed at the leftmost
     leaf_testcases = list(t for t in testcases if t.in_degree == 0)
     for t in leaf_testcases:
+        name_info = f'{t.check.display_name} /{t.check.hashcode}'
         tc_info = ''
         details = ''
         if concretized:
@@ -98,12 +98,12 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
         location = inspect.getfile(type(t.check))
         if detailed:
-            details = f' [id: {t.check.unique_name}, file: {location!r}]'
+            details = f' [variant: {t.check.variant_num}, file: {location!r}]'
 
         # if not concretized and t.check.name not in unique_checks:
         if concretized or (not concretized and
                            t.check.unique_name not in unique_checks):
-            printer.info(f'- {t.check.display_name}{tc_info}{details}')
+            printer.info(f'- {name_info}{tc_info}{details}')
 
         if not t.check.is_fixture():
             unique_checks.add(t.check.unique_name)
