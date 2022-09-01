@@ -467,7 +467,7 @@ def test_logging_context_check(default_exec_ctx, logfile, fake_check):
 
     rlog.getlogger().error('error outside context')
     assert _found_in_logfile(
-        f'_FakeCheck_1: {sys.argv[0]}: error from context', logfile
+        f'_FakeCheck %param=10: {sys.argv[0]}: error from context', logfile
     )
     assert _found_in_logfile(
         f'reframe: {sys.argv[0]}: error outside context', logfile

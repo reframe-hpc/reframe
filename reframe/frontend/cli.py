@@ -7,6 +7,7 @@ import inspect
 import itertools
 import json
 import os
+import random
 import shlex
 import socket
 import sys
@@ -25,6 +26,7 @@ import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
+import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
@@ -47,6 +49,7 @@ def format_env(envvars):
     return ret
 
 
+@logging.time_function
 def list_checks(testcases, printer, detailed=False, concretized=False):
     printer.info('[List of matched checks]')
     unique_checks = set()
@@ -70,6 +73,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
                 unique_checks.add(v.check.unique_name)
 
         if depth:
+            name_info = f'{u.check.display_name} /{u.check.hashcode}'
             tc_info = ''
             details = ''
             if concretized:
@@ -77,17 +81,16 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
             location = inspect.getfile(type(u.check))
             if detailed:
-                details = f' [id: {u.check.unique_name}, file: {location!r}]'
+                details = f' [variant: {u.check.variant_num}, file: {location!r}]'
 
-            lines.append(
-                f'{prefix}^{u.check.display_name}{tc_info}{details}'
-            )
+            lines.append(f'{prefix}^{name_info}{tc_info}{details}')
 
         return lines
 
     # We need the leaf test cases to be printed at the leftmost
     leaf_testcases = list(t for t in testcases if t.in_degree == 0)
     for t in leaf_testcases:
+        name_info = f'{t.check.display_name} /{t.check.hashcode}'
         tc_info = ''
         details = ''
         if concretized:
@@ -95,12 +98,12 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
         location = inspect.getfile(type(t.check))
         if detailed:
-            details = f' [id: {t.check.unique_name}, file: {location!r}]'
+            details = f' [variant: {t.check.variant_num}, file: {location!r}]'
 
         # if not concretized and t.check.name not in unique_checks:
         if concretized or (not concretized and
                            t.check.unique_name not in unique_checks):
-            printer.info(f'- {t.check.display_name}{tc_info}{details}')
+            printer.info(f'- {name_info}{tc_info}{details}')
 
         if not t.check.is_fixture():
             unique_checks.add(t.check.unique_name)
@@ -114,6 +117,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
         printer.info(f'Found {len(unique_checks)} check(s)\n')
 
 
+@logging.time_function
 def describe_checks(testcases, printer):
     records = []
     unique_names = set()
@@ -186,6 +190,7 @@ def calc_verbosity(site_config, quiesce):
     return curr_verbosity - quiesce
 
 
+@logging.time_function_noexit
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
@@ -382,6 +387,11 @@ def main():
         nargs='?', const='idle',
         help=('Distribute the selected single-node jobs on every node that'
               'is in STATE (default: "idle"')
+    )
+    run_options.add_argument(
+        '--exec-order', metavar='ORDER', action='store',
+        choices=['name', 'random', 'rname', 'ruid', 'uid'],
+        help='Impose an execution order for independent tests'
     )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
@@ -591,13 +601,6 @@ def main():
         configvar='schedulers/ignore_reqnodenotavail',
         action='store_true',
         help='Graylog server address'
-    )
-    argparser.add_argument(
-        dest='compact_test_names',
-        envvar='RFM_COMPACT_TEST_NAMES',
-        configvar='general/compact_test_names',
-        action='store_true',
-        help='Use a compact test naming scheme'
     )
     argparser.add_argument(
         dest='dump_pipeline_progress',
@@ -950,6 +953,8 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     printer.info('')
     try:
+        logging.getprofiler().enter_region('test processing')
+
         # Need to parse the cli options before loading the tests
         parsed_job_options = []
         for opt in options.job_options:
@@ -1056,8 +1061,8 @@ def main():
                     "a non-negative integer"
                 ) from None
 
-            testcases = repeat_tests(testcases, num_repeats)
-            testcases_all = testcases
+            testcases_all = repeat_tests(testcases, num_repeats)
+            testcases = testcases_all
 
         if options.distribute:
             node_map = getallnodes(options.distribute, parsed_job_options)
@@ -1072,15 +1077,31 @@ def main():
                 x for x in parsed_job_options
                 if (not x.startswith('-w') and not x.startswith('--nodelist'))
             ]
-            testcases = distribute_tests(testcases, node_map)
-            testcases_all = testcases
+            testcases_all = distribute_tests(testcases, node_map)
+            testcases = testcases_all
+
+        @logging.time_function
+        def _sort_testcases(testcases):
+            if options.exec_order in ('name', 'rname'):
+                testcases.sort(key=lambda c: c.check.display_name,
+                               reverse=(options.exec_order == 'rname'))
+            elif options.exec_order in ('uid', 'ruid'):
+                testcases.sort(key=lambda c: c.check.unique_name,
+                               reverse=(options.exec_order == 'ruid'))
+            elif options.exec_order == 'random':
+                random.shuffle(testcases)
+
+        _sort_testcases(testcases)
+        if testcases_all is not testcases:
+            _sort_testcases(testcases_all)
 
         # Prepare for running
         printer.debug('Building and validating the full test DAG')
         testgraph, skipped_cases = dependencies.build_deps(testcases_all)
         if skipped_cases:
             # Some cases were skipped, so adjust testcases
-            testcases = list(set(testcases) - set(skipped_cases))
+            testcases = list(util.OrderedSet(testcases) -
+                             util.OrderedSet(skipped_cases))
             printer.verbose(
                 f'Filtering test case(s) due to unresolved dependencies: '
                 f'{len(testcases)} remaining'
@@ -1369,6 +1390,7 @@ def main():
         sys.exit(1)
     finally:
         try:
+            logging.getprofiler().exit_region()     # region: 'test processing'
             log_files = logging.log_files()
             if site_config.get('general/0/save_log_files'):
                 log_files = logging.save_log_files(rt.output_prefix)
@@ -1379,3 +1401,6 @@ def main():
         finally:
             if not restrict_logging():
                 printer.info(logfiles_message())
+
+            logging.getprofiler().exit_region()     # region: 'main'
+            logging.getprofiler().print_report(printer.debug)

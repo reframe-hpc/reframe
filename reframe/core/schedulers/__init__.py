@@ -258,7 +258,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:
     #:    from reframe.core.backends import getlauncher
     #:
-    #:    @rfm.run_after('setup')
+    #:    @run_after('setup')
     #:    def set_launcher(self):
     #:        self.job.launcher = getlauncher('local')()
     #:

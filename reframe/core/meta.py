@@ -20,7 +20,6 @@ import reframe.core.hooks as hooks
 import reframe.utility as utils
 
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.runtime import runtime
 
 
 class RegressionTestMeta(type):
@@ -424,6 +423,8 @@ class RegressionTestMeta(type):
             obj._rfm_unique_name = fixt_name
             obj._rfm_fixt_data = fixt_data
             obj._rfm_is_fixture = True
+        else:
+            obj._rfm_unique_name = cls.variant_name(variant_num)
 
         # Set the variables passed to the constructor
         for k, v in fixt_vars.items():
@@ -799,20 +800,9 @@ class RegressionTestMeta(type):
         if variant_num is None:
             return name
 
-        if runtime().get_option('general/0/compact_test_names'):
-            if cls.num_variants > 1:
-                width = utils.count_digits(cls.num_variants)
-                name += f'_{variant_num:0{width}}'
-        else:
-            pid, fid = cls._map_variant_num(variant_num)
-
-            # Append the parameters to the name
-            if cls.param_space.params:
-                name += '_' + '_'.join(utils.toalphanum(str(v))
-                                       for v in cls.param_space[pid].values())
-
-            if len(cls.fixture_space) > 1:
-                name += f'_{fid}'
+        if cls.num_variants > 1:
+            width = utils.count_digits(cls.num_variants)
+            name += f'_{variant_num:0{width}}'
 
         return name
 

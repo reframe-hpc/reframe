@@ -125,6 +125,8 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
 
    If the special notation ``<test_name>@<variant_num>`` is passed as the ``NAME`` argument, then an exact match will be performed selecting the variant ``variant_num`` of the test ``test_name``.
 
+   You may also select a test by its hash code using the notation ``/<test-hash>`` for the ``NAME`` argument.
+
    .. note::
 
       Fixtures cannot be selected.
@@ -132,6 +134,11 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    .. versionchanged:: 3.10.0
 
       The option's behaviour was adapted and extended in order to work with the updated test naming scheme.
+
+   .. versionchanged:: 4.0.0
+
+      Support selecting tests by their hash code.
+
 
 .. option:: -p, --prgenv=NAME
 
@@ -413,11 +420,27 @@ Options controlling ReFrame execution
       Currently, only single-node jobs can be distributed and only local or the Slurm-based backends support this feature.
 
    .. note::
-      Distributing tests with dependencies is not supported.
-      However, you can distribute tests that use fixtures.
+      Distributing tests with dependencies is not supported, but you can distribute tests that use fixtures.
 
 
    .. versionadded:: 3.11.0
+
+
+.. option:: --exec-order=ORDER
+
+   Impose an execution order for the independent tests.
+   The ``ORDER`` argument can take one of the following values:
+
+   - ``name``: Order tests by their display name.
+   - ``rname``: Order tests by their display name in reverse order.
+   - ``uid``: Order tests by their unique name.
+   - ``ruid``: Order tests by their unique name in reverse order.
+   - ``random``: Randomize the order of execution.
+
+   If this option is not specified the order of execution of independent tests is implementation defined.
+   This option can be combined with any of the listing options (:option:`-l` or :option:`-L`) to list the tests in the order.
+
+   .. versionadded:: 4.0.0
 
 .. option:: --exec-policy=POLICY
 
@@ -468,6 +491,9 @@ Options controlling ReFrame execution
 
    Repeat the selected tests ``N`` times.
    This option can be used in conjunction with the :option:`--distribute` option in which case the selected tests will be repeated multiple times and distributed on individual nodes of the system's partitions.
+
+   .. note::
+      Repeating tests with dependencies is not supported, but you can repeat tests that use fixtures.
 
    .. versionadded:: 3.12.0
 
@@ -870,8 +896,8 @@ Test Naming Scheme
 
 .. versionadded:: 3.10.0
 
-This section describes the new test naming scheme which will replace the current one in ReFrame 4.0.
-It can be enabled by setting the :envvar:`RFM_COMPACT_TEST_NAMES` environment variable.
+This section describes the test naming scheme.
+This scheme has superseded the old one in ReFrame 4.0.
 
 Each ReFrame test is assigned a unique name, which will be used internally by the framework to reference the test.
 Any test-specific path component will use that name, too.
@@ -934,26 +960,26 @@ Here is how this test is listed where the various components of the display name
 
 .. code-block:: console
 
-   - TestA %x=4 %l.foo=10 %t.p=2
-       ^MyFixture %p=1 ~TestA_4_1
-       ^MyFixture %p=2 ~TestA_4_1
-       ^X %foo=10 ~generic:default+builtin
-   - TestA %x=3 %l.foo=10 %t.p=2
-       ^MyFixture %p=1 ~TestA_3_1
-       ^MyFixture %p=2 ~TestA_3_1
-       ^X %foo=10 ~generic:default+builtin
-   - TestA %x=4 %l.foo=10 %t.p=1
-       ^MyFixture %p=2 ~TestA_4_0
-       ^MyFixture %p=1 ~TestA_4_0
-       ^X %foo=10 ~generic:default+builtin
-   - TestA %x=3 %l.foo=10 %t.p=1
-       ^MyFixture %p=2 ~TestA_3_0
-       ^MyFixture %p=1 ~TestA_3_0
-       ^X %foo=10 ~generic:default+builtin
+   - TestA %x=4 %l.foo=10 %t.p=2 /1c51609b
+       ^Myfixture %p=1 ~TestA_3 /f027ee75
+       ^MyFixture %p=2 ~TestA_3 /830323a4
+       ^X %foo=10 ~generic:default+builtin /7dae3cc5
+   - TestA %x=3 %l.foo=10 %t.p=2 /707b752c
+       ^MyFixture %p=1 ~TestA_2 /02368516
+       ^MyFixture %p=2 ~TestA_2 /854b99b5
+       ^X %foo=10 ~generic:default+builtin /7dae3cc5
+   - TestA %x=4 %l.foo=10 %t.p=1 /c65657d5
+       ^MyFixture %p=2 ~TestA_1 /f0383f7f
+       ^MyFixture %p=1 ~TestA_1 /d07f4281
+       ^X %foo=10 ~generic:default+builtin /7dae3cc5
+   - TestA %x=3 %l.foo=10 %t.p=1 /1b9f44df
+       ^MyFixture %p=2 ~TestA_0 /b894ab05
+       ^MyFixture %p=1 ~TestA_0 /ca376ca8
+       ^X %foo=10 ~generic:default+builtin /7dae3cc5
    Found 4 check(s)
 
 Display names may not always be unique.
-In the following example:
+Assume the following test:
 
 .. code-block:: python
 
@@ -962,6 +988,19 @@ In the following example:
 
 This generates three different tests with different unique names, but their display name is the same for all: ``MyTest %p=1``.
 Notice that this example leads to a name conflict with the old naming scheme, since all tests would be named ``MyTest_1``.
+
+Each test is also associated with a hash code that is derived from the test name, its parameters and their values.
+As in the example listing above, the hash code of each test is printed with the :option:`-l` option and individual tests can be selected by their hash using the :option:`-n` option, e.g., ``-n /1c51609b``.
+The stage and output directories, as well as the performance log file of the ``filelog`` `performance log handler <config_reference.html#the-filelog-log-handler>`__ will use the hash code for the test-specific directories and files.
+This might lead to conflicts for tests as the one above when executing them with the asynchronous execution policy, but ensures consistency of performance record files when parameter values are added to or deleted from a test parameter.
+More specifically, the test's hash will not change if a new parameter value is added or deleted or even if the parameter values are shuffled.
+Test variants on the other side are more volatile and can change with such changes.
+Also users should not rely on how the variant numbers are assigned to a test, as this is an implementation detail.
+
+
+.. versionchanged:: 4.0.0
+
+   A hash code is associated with each test.
 
 
 --------------------------------------
@@ -973,9 +1012,6 @@ It did so by taking the string representation of the value and replacing any non
 This could lead to very large and hard to read names when a test defined multiple parameters or the parameter type was more complex.
 Very large test names meant also very large path names which could also lead to problems and random failures.
 Fixtures followed a similar naming pattern making them hard to debug.
-
-The old naming scheme is still the default for parameterized tests (but not for fixtures) and will remain so until ReFrame 4.0, in order to ensure backward compatibility.
-However, users are advised to enable the new naming scheme by setting the :envvar:`RFM_COMPACT_TEST_NAMES` environment variable.
 
 
 Environment
@@ -1103,21 +1139,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated command line option     :option:`--nocolor`
       Associated configuration parameter :js:attr:`colorize` general configuration parameter
       ================================== ==================
-
-
-.. envvar:: RFM_COMPACT_TEST_NAMES
-
-   Enable the new test naming scheme.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     N/A
-      Associated configuration parameter :js:attr:`compact_test_names` general configuration parameter
-      ================================== ==================
-
-   .. versionadded:: 3.9.0
 
 
 .. envvar:: RFM_COMPRESS_REPORT

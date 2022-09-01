@@ -9,7 +9,6 @@ import shutil
 
 import reframe as rfm
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.frontend.loader import RegressionCheckLoader
 
 
@@ -67,12 +66,6 @@ def test_load_all(loader_with_path):
 def test_load_error(loader):
     with pytest.raises(OSError):
         loader.load_from_file('unittests/resources/checks/foo.py')
-
-
-def test_load_bad_required_version(loader):
-    with pytest.warns(ReframeDeprecationWarning):
-        loader.load_from_file('unittests/resources/checks_unlisted/'
-                              'no_required_version.py')
 
 
 def test_load_bad_init(loader):
@@ -147,10 +140,3 @@ def test_special_test():
         class TestSpecialDerived(TestSpecial):
             def setup(self, partition, environ, **job_opts):
                 super().setup(partition, environ, **job_opts)
-
-    with pytest.warns(ReframeDeprecationWarning):
-        @rfm.simple_test
-        class TestFinal(rfm.RegressionTest):
-            @rfm.final
-            def my_new_final(self):
-                pass

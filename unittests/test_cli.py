@@ -834,7 +834,7 @@ def test_repeat_invalid_option(run_reframe):
 
 def test_repeat_negative(run_reframe):
     returncode, stdout, stderr = run_reframe(
-        more_options=['--repeat', 'foo'],
+        more_options=['--repeat', '-1'],
         checkpath=['unittests/resources/checks/hellocheck.py']
     )
     errmsg = "argument to '--repeat' option must be a non-negative integer"
@@ -842,6 +842,44 @@ def test_repeat_negative(run_reframe):
     assert 'Traceback' not in stderr
     assert errmsg in stdout
     assert returncode == 1
+
+
+@pytest.fixture(params=['name', 'rname', 'uid', 'ruid', 'random'])
+def exec_order(request):
+    return request.param
+
+
+def test_exec_order(run_reframe, exec_order):
+    import reframe.utility.sanity as sn
+
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--repeat', '11', '-n', 'HelloTest',
+                      f'--exec-order={exec_order}'],
+        checkpath=['unittests/resources/checks/hellocheck.py'],
+        action='list_detailed',
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 11 check(s)' in stdout
+    assert returncode == 0
+
+    # Verify the order
+    if exec_order == 'name':
+        repeat_no = sn.extractsingle_s(r'- HelloTest.*repeat_no=(\d+)',
+                                       stdout, 1, int, 2).evaluate()
+        assert repeat_no == 10
+    elif exec_order == 'rname':
+        repeat_no = sn.extractsingle_s(r'- HelloTest.*repeat_no=(\d+)',
+                                       stdout, 1, int, -3).evaluate()
+        assert repeat_no == 10
+    elif exec_order == 'uid':
+        repeat_no = sn.extractsingle_s(r'- HelloTest.*repeat_no=(\d+)',
+                                       stdout, 1, int, -1).evaluate()
+        assert repeat_no == 10
+    elif exec_order == 'ruid':
+        repeat_no = sn.extractsingle_s(r'- HelloTest.*repeat_no=(\d+)',
+                                       stdout, 1, int, 0).evaluate()
+        assert repeat_no == 10
 
 
 def test_detect_host_topology(run_reframe):
@@ -973,7 +1011,6 @@ def test_dynamic_tests(run_reframe, tmp_path):
 
 
 def test_dynamic_tests_filtering(run_reframe, tmp_path):
-    # Target sys1 that has compact_test_names==True
     returncode, stdout, _ = run_reframe(
         system='sys1',
         environs=[],

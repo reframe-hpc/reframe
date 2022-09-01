@@ -18,7 +18,7 @@ import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
-from reframe.core.logging import getlogger
+from reframe.core.logging import getlogger, time_function
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
@@ -166,20 +166,8 @@ class RegressionCheckLoader:
         This method tries to load the test registry from a given module and
         instantiates all the tests in the registry. The instantiated checks
         are validated before return.
-
-        For legacy reasons, a module might have the additional legacy registry
-        `_rfm_gettests`, which is a method that instantiates all the tests
-        registered with the deprecated `parameterized_test` decorator.
         '''
-        from reframe.core.pipeline import RegressionTest
-
-        # FIXME: Remove the legacy_registry after dropping parameterized_test
         registry = getattr(module, '_rfm_test_registry', None)
-        legacy_registry = getattr(module, '_rfm_gettests', None)
-        if not any((registry, legacy_registry)):
-            getlogger().debug('No tests registered')
-            return []
-
         self._set_defaults(registry)
         reset_sysenv = self._skip_prgenv_check << 1 | self._skip_system_check
         if registry:
@@ -187,32 +175,9 @@ class RegressionCheckLoader:
         else:
             candidate_tests = []
 
-        legacy_tests = legacy_registry() if legacy_registry else []
-        if self._external_vars and legacy_tests:
-            getlogger().warning(
-                "variables of tests using the deprecated "
-                "'@parameterized_test' decorator cannot be set externally; "
-                "please use the 'parameter' builtin in your tests"
-            )
-
-        # Reset valid_systems and valid_prog_environs in all legacy tests
-        if reset_sysenv:
-            for t in legacy_tests:
-                if self._skip_system_check:
-                    t.valid_systems = ['*']
-
-                if self._skip_prgenv_check:
-                    t.valid_prog_environs = ['*']
-
-        # Merge tests
-        candidate_tests += legacy_tests
-
         # Post-instantiation validation of the candidate tests
         final_tests = []
         for c in candidate_tests:
-            if not isinstance(c, RegressionTest):
-                continue
-
             if not self._validate_check(c):
                 continue
 
@@ -267,6 +232,7 @@ class RegressionCheckLoader:
 
         return checks
 
+    @time_function
     def load_all(self, force=False):
         '''Load all checks in self._load_path.
 

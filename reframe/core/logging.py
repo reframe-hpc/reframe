@@ -20,6 +20,7 @@ import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
+from reframe.utility.profile import TimeProfiler
 
 
 # Global configuration options for logging
@@ -146,8 +147,9 @@ class MultiFileHandler(logging.FileHandler):
         except OSError as e:
             raise LoggingError('logging failed') from e
 
-        self.baseFilename = os.path.join(dirname,
-                                         f'{record.__rfm_check__.name}.log')
+        self.baseFilename = os.path.join(
+            dirname, f'{record.__rfm_check__.short_name}.log'
+        )
         self.stream = self._streams.get(self.baseFilename, None)
         super().emit(record)
         self._streams[self.baseFilename] = self.stream
@@ -579,10 +581,6 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra[f'check_{extra_name}'] = val
 
         # Add special extras
-
-        # FIXME: As soon as `name` becomes a read-only property in 4.0, the
-        # following assignment will not be needed.
-        self.extra['check_name'] = self.extra['check_unique_name']
         self.extra['check_info'] = self.check.info()
         self.extra['check_job_completion_time'] = _format_time_rfc3339(
             time.localtime(self.extra['check_job_completion_time_unix']),
@@ -726,3 +724,31 @@ def getlogger():
 
 def getperflogger(check):
     return LoggerAdapter(_perf_logger, check)
+
+
+# Global framework profiler
+_profiler = TimeProfiler()
+
+
+def getprofiler():
+    return _profiler
+
+
+def time_function(fn):
+    '''Decorator for timing a function using the global profiler'''
+
+    def _fn(*args, **kwargs):
+        with _profiler.time_region(fn.__qualname__):
+            return fn(*args, **kwargs)
+
+    return _fn
+
+
+def time_function_noexit(fn):
+    '''Decorator for timing a function using the global profiler'''
+
+    def _fn(*args, **kwargs):
+        _profiler.enter_region(fn.__qualname__)
+        return fn(*args, **kwargs)
+
+    return _fn

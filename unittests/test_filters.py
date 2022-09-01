@@ -45,26 +45,7 @@ def sample_cases():
 
 
 @pytest.fixture
-def use_compact_names(make_exec_ctx_g):
-    yield from make_exec_ctx_g(options={'general/compact_test_names': True})
-
-
-@pytest.fixture
-def sample_param_cases(use_compact_names):
-    class _X(rfm.RegressionTest):
-        p = parameter([1] + list(range(11)))
-        valid_systems = ['*']
-        valid_prog_environs = ['*']
-
-    return [executors.TestCase(_X(variant_num=v), None, None)
-            for v in range(_X.num_variants)]
-
-
-@pytest.fixture
-def sample_param_cases_compat():
-    # Param cases with the old naming scheme; i.e., with
-    # `general/compact_test_names=False`
-
+def sample_param_cases():
     class _X(rfm.RegressionTest):
         p = parameter([1] + list(range(11)))
         valid_systems = ['*']
@@ -84,6 +65,8 @@ def test_have_any_name(sample_cases):
                              sample_cases)
     assert 2 == count_checks(filters.have_any_name(['(?i)check1|CHECK2']),
                              sample_cases)
+    assert 1 == count_checks(filters.have_any_name(['/e2ae5cc6']),
+                             sample_cases)
 
 
 def test_have_any_name_param_test(sample_param_cases):
@@ -100,28 +83,12 @@ def test_have_any_name_param_test(sample_param_cases):
                              sample_param_cases)
     assert 0 == count_checks(filters.have_any_name(['_X@12']),
                              sample_param_cases)
+    assert 2 == count_checks(filters.have_any_name(['/023313dc', '/efddbc6c']),
+                             sample_param_cases)
     assert 2 == count_checks(filters.have_any_name(['_X@0', '_X@1']),
                              sample_param_cases)
     assert 12 == count_checks(filters.have_any_name(['_X@0', '_X.*']),
-                             sample_param_cases)
-
-
-def test_have_any_name_param_test_compat(sample_param_cases_compat):
-    assert 0 == count_checks(filters.have_any_name(['.*%p=1']),
-                             sample_param_cases_compat)
-    assert 0 == count_checks(filters.have_any_name(['_X%p=3']),
-                             sample_param_cases_compat)
-    assert 0 == count_checks(filters.have_any_name(['_X@2']),
-                             sample_param_cases_compat)
-    # The regex will match "_X_1" as well as "_X_10"
-    assert 3 == count_checks(filters.have_any_name(['_X_1']),
-                             sample_param_cases_compat)
-    assert 2 == count_checks(filters.have_any_name(['_X_1$']),
-                             sample_param_cases_compat)
-    assert 0 == count_checks(filters.have_any_name(['_X@0', '_X@1']),
-                             sample_param_cases_compat)
-    assert 12 == count_checks(filters.have_any_name(['_X@0', '_X.*']),
-                             sample_param_cases_compat)
+                              sample_param_cases)
 
 
 def test_have_not_name(sample_cases):

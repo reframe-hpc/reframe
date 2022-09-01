@@ -9,13 +9,12 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final',
     'RegressionMixin'
 ]
 
 
-import functools
 import glob
+import hashlib
 import inspect
 import itertools
 import numbers
@@ -44,8 +43,6 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
-from reframe.core.variables import DEPRECATE_WR
-from reframe.core.warnings import user_deprecation_warning
 
 
 class _NoRuntime(ContainerPlatform):
@@ -60,40 +57,6 @@ class _NoRuntime(ContainerPlatform):
 
     def launch_command(self, stagedir):
         raise NotImplementedError
-
-
-# Dependency kinds
-
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`~RegressionTest.depends_on` method. It denotes that test case
-#: dependencies will be explicitly specified by the user.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_EXACT = 1
-
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
-#: the current test will depend only on the corresponding test cases of the
-#: target test that use the same programming environment.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_BY_ENV = 2
-
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that each test case of
-#: this test depends on all the test cases of the target test.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_FULLY = 3
 
 
 # Valid systems/environments mini-language
@@ -123,21 +86,6 @@ _PIPELINE_STAGES = (
 _USER_PIPELINE_STAGES = (
     'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
 )
-
-
-def final(fn):
-    fn._rfm_final = True
-    user_deprecation_warning(
-        'using the @rfm.final decorator from the rfm module is '
-        'deprecated; please use the built-in decorator @final instead.',
-        from_version='3.7.0'
-    )
-
-    @functools.wraps(fn)
-    def _wrapped(*args, **kwargs):
-        return fn(*args, **kwargs)
-
-    return _wrapped
 
 
 _RFM_TEST_KIND_MIXIN = 0
@@ -236,28 +184,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return ret
 
-    #: The name of the test.
-    #:
-    #: This is an alias of :attr:`unique_name`.
-    #:
-    #: .. warning::
-    #:
-    #:   Setting the name of a test is deprecated and will be disabled in the
-    #:   future. If you were setting the name of a test to circumvent the old
-    #:   long parameterized test names in order to reference them in
-    #:   dependency chains, please refer to :ref:`param_deps` for more details
-    #:   on how to achieve this.
-    #:
-    #: .. versionchanged:: 3.10.0
-    #:    Setting the :attr:`name` attribute is deprecated.
-    #:
-    name = deprecate(variable(typ.Str[r'[^\/]+'],
-                              attr_name='_rfm_unique_name', loggable=True),
-                     "setting the 'name' attribute is deprecated and "
-                     "will be disabled in the future", DEPRECATE_WR)
-
-    #: List of environments or environment features or environment properties
-    #: required by this test.
+    #: List of programming environments supported by this test.
     #:
     #: The syntax of this attribute is exactly the same as of the
     #: :attr:`valid_systems` except that the ``a:b`` entries are invalid.
@@ -355,8 +282,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: A detailed description of the test.
     #:
     #: :type: :class:`str`
-    #: :default: ``self.display_name``
-    descr = variable(str, loggable=True)
+    #: :default: ``''``
+    #:
+    #: .. versionchanged:: 4.0
+    #:    The default value is now the empty string.
+    descr = variable(str, value='', loggable=True)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -988,8 +918,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Prepare initialization of test defaults (variables and parameters are
         # injected after __new__ has returned, so we schedule this function
         # call as a pre-init hook).
-        obj.__deferred_rfm_init = obj.__rfm_init__(*args,
-                                                   prefix=prefix, **kwargs)
+        obj.__deferred_rfm_init = obj.__rfm_init__(prefix)
 
         # Build pipeline hook registry and add the pre-init hook
         cls._rfm_pipeline_hooks = cls._process_hook_registry()
@@ -1033,21 +962,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
 
     @deferrable
-    def __rfm_init__(self, *args, prefix=None, **kwargs):
-        if not self.is_fixture() and not hasattr(self, '_rfm_unique_name'):
-            self._rfm_unique_name = type(self).variant_name(self.variant_num)
-
-            # Add the parameters from the parameterized_test decorator.
-            if args or kwargs:
-                arg_names = map(lambda x: util.toalphanum(str(x)),
-                                itertools.chain(args, kwargs.values()))
-                self._rfm_unique_name += '_' + '_'.join(arg_names)
-                self._rfm_old_style_params = True
-
-        # Pass if descr is a required variable.
-        if not hasattr(self, 'descr'):
-            self.descr = self.display_name
-
+    def __rfm_init__(self, prefix=None):
         self._perfvalues = {}
 
         # Static directories of the regression check
@@ -1168,6 +1083,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @loggable
     @property
+    def name(self):
+        '''The name of the test.
+
+        This is an alias of :attr:`display_name`.
+        '''
+        return self.display_name
+
+    @loggable
+    @property
     def display_name(self):
         '''A human-readable version of the name this test.
 
@@ -1202,9 +1126,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
             return name
 
-        if hasattr(self, '_rfm_old_style_params'):
-            return self.unique_name
-
         if hasattr(self, '_rfm_display_name'):
             return self._rfm_display_name
 
@@ -1221,6 +1142,42 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self._rfm_display_name += suffix
 
         return self._rfm_display_name
+
+    @loggable
+    @property
+    def hashcode(self):
+        if hasattr(self, '_rfm_hashcode'):
+            return self._rfm_hashcode
+
+        m = hashlib.sha256()
+        if self.is_fixture:
+            m.update(self.unique_name.encode('utf-8'))
+        else:
+            basename, *params = self.display_name.split(' %')
+            m.update(basename.encode('utf-8'))
+            for p in sorted(params):
+                m.update(p.encode('utf-8'))
+
+        self._rfm_hashcode = m.hexdigest()[:8]
+        return self._rfm_hashcode
+
+    @loggable
+    @property
+    def short_name(self):
+        '''A short version of the test's display name.
+
+        The shortened version coincides with the :attr:`unique_name` for
+        simple tests and combines the test's class name and a hash code for
+        parameterised tests.
+
+        .. versionadded:: 4.0.0
+
+        '''
+
+        if self.unique_name != self.display_name:
+            return f'{type(self).__name__}_{self.hashcode}'
+        else:
+            return self.unique_name
 
     @property
     def current_environ(self):
@@ -1473,7 +1430,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            method may be called at any point of the test's lifetime.
         '''
 
-        ret = self.display_name
+        ret = f'{self.display_name} /{self.hashcode}'
         if self.current_partition:
             ret += f' @{self.current_partition.fullname}'
 
@@ -1584,11 +1541,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             runtime = rt.runtime()
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.unique_name
+                self._current_environ.name, self.short_name
             )
             self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.unique_name
+                self._current_environ.name, self.short_name
             )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
@@ -1616,13 +1573,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           **job_opts)
 
     def _setup_build_job(self, **job_opts):
-        self._build_job = self._create_job(f'rfm_{self.unique_name}_build',
+        self._build_job = self._create_job(f'rfm_build',
                                            self.local or self.build_locally,
                                            **job_opts)
 
     def _setup_run_job(self, **job_opts):
-        self._job = self._create_job(f'rfm_{self.unique_name}_job',
-                                     self.local, **job_opts)
+        self._job = self._create_job(f'rfm_job', self.local, **job_opts)
 
     def _setup_perf_logging(self):
         self._perf_logger = logging.getperflogger(self)
@@ -1779,6 +1735,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 f'systems/0/partitions/@{self.current_partition.name}'
                 f'/time_limit')
         )
+        # Get job options from managed resources and prepend them to
+        # build_job_opts. We want any user supplied options to be able to
+        # override those set by the framework.
+        resources_opts = self._map_resources_to_jobopts()
+        self._build_job.options = resources_opts + self._build_job.options
         with osext.change_dir(self._stagedir):
             # Prepare build job
             build_commands = [
@@ -1921,11 +1882,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Get job options from managed resources and prepend them to
         # job_opts. We want any user supplied options to be able to
         # override those set by the framework.
-        resources_opts = []
-        for r, v in self.extra_resources.items():
-            resources_opts.extend(
-                self._current_partition.get_resource(r, **v))
-
+        resources_opts = self._map_resources_to_jobopts()
         self._job.options = resources_opts + self._job.options
         with osext.change_dir(self._stagedir):
             try:
@@ -1948,6 +1905,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Update num_tasks if test is flexible
         if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
+
+    def _map_resources_to_jobopts(self):
+        resources_opts = []
+        for r, v in self.extra_resources.items():
+            resources_opts += self._current_partition.get_resource(r, **v)
+
+        return resources_opts
 
     @final
     def compile_complete(self):
@@ -1996,17 +1960,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._job.finished()
 
     @final
-    def poll(self):
-        '''See :func:`run_complete`.
-
-        .. deprecated:: 3.2
-
-        '''
-        user_deprecation_warning('calling poll() is deprecated; '
-                                 'please use run_complete() instead')
-        return self.run_complete()
-
-    @final
     def run_wait(self):
         '''Wait for the run phase of this test to finish.
 
@@ -2025,16 +1978,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
         self._job.wait()
-
-    @final
-    def wait(self):
-        '''See :func:`run_wait`.
-
-        .. deprecated:: 3.2
-        '''
-        user_deprecation_warning('calling wait() is deprecated; '
-                                 'please use run_wait() instead')
-        self.run_wait()
 
     @final
     def sanity(self):
@@ -2309,42 +2252,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
-    def _depends_on_func(self, how, subdeps=None, *args, **kwargs):
-        if args or kwargs:
-            raise ValueError('invalid arguments passed')
-
-        user_deprecation_warning("passing 'how' as an integer or passing "
-                                 "'subdeps' is deprecated; please have a "
-                                 "look at the user documentation")
-
-        if (subdeps is not None and
-            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
-            raise TypeError("subdeps argument must be of type "
-                            "`Dict[str, List[str]]' or `None'")
-
-        # Now return a proper when function
-        def exact(src, dst):
-            if not subdeps:
-                return False
-
-            p0, e0 = src
-            p1, e1 = dst
-
-            # DEPEND_EXACT allows dependencies inside the same partition
-            return ((p0 == p1) and (e0 in subdeps) and (e1 in subdeps[e0]))
-
-        # Follow the old definitions
-        # DEPEND_BY_ENV used to mean same env and same partition
-        if how == DEPEND_BY_ENV:
-            return udeps.by_case
-        # DEPEND_BY_ENV used to mean same partition
-        elif how == DEPEND_FULLY:
-            return udeps.by_part
-        elif how == DEPEND_EXACT:
-            return exact
-        else:
-            raise ValueError(f"unknown value passed to 'how' argument: {how}")
-
     def depends_on(self, target, how=None, *args, **kwargs):
         '''Add a dependency to another test.
 
@@ -2404,14 +2311,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             Passing an integer to the ``how`` argument as well as using the
             ``subdeps`` argument is deprecated.
 
+        .. versionchanged:: 4.0.0
+           Passing an integer to the ``how`` argument is no longer supported.
+
         '''
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
-
-        if (isinstance(how, int)):
-            # We are probably using the old syntax; try to get a
-            # proper how function
-            how = self._depends_on_func(how, *args, **kwargs)
 
         if how is None:
             how = udeps.by_case
