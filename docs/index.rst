@@ -36,7 +36,7 @@ Publications
 Webinars
 ========
 
-* "ReFrame – Efficient System and Application Performance Testing", CSCS Webinar, Aug. 29, 2022 [`slides <https://drive.google.com/file/d/1nOS_daleR79ZB1IaToVdW5mDpJQYRcY2/view?usp=sharing>`__] [`recording <>`__].
+* "ReFrame – Efficient System and Application Performance Testing," CSCS Webinar, Aug. 29, 2022 [`slides <https://drive.google.com/file/d/1nOS_daleR79ZB1IaToVdW5mDpJQYRcY2/view?usp=sharing>`__] [`recording <https://youtu.be/NDxlKATEcQk>`__] [`demo run <https://asciinema.org/a/517693>`__].
 
 
 
