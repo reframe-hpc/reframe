@@ -623,7 +623,7 @@ This is what we do exactly with the :js:attr:`access` partition configuration op
 
    System partitions in ReFrame do not necessarily correspond to real job scheduler partitions.
 
-Piz Daint's programming environment offers four compilers: Cray, GNU, Intel and PGI.
+Piz Daint's programming environment offers four compilers: Cray, GNU, Intel and NVIDIA.
 We want to test all of them, so we include them in the :js:attr:`environs` lists.
 Notice that we do not include Clang in the list, since there is no such compiler on this particular system.
 On the other hand, we include a different version of the ``builtin`` environment, which corresponds to the default login environment without loading any modules.

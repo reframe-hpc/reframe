@@ -11,7 +11,7 @@ site_configuration = {
     'systems': [
         {
             'name': 'tresa',
-            'descr': 'My laptopp',
+            'descr': 'My laptop',
             'hostnames': ['tresa\.local'],
             'partitions': [
                 {

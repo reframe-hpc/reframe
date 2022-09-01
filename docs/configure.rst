@@ -301,7 +301,7 @@ Let's see some concrete examples:
          "environs": [
            "gnu",
            "intel",
-           "pgi",
+           "nvidia",
            "cray"
          ],
          "max_jobs": 10
@@ -318,7 +318,7 @@ Let's see some concrete examples:
          "environs": [
            "gnu",
            "intel",
-           "pgi",
+           "nvidia",
            "cray"
          ],
          "max_jobs": 100
@@ -335,7 +335,7 @@ Let's see some concrete examples:
          "environs": [
            "gnu",
            "intel",
-           "pgi",
+           "nvidia",
            "cray"
          ],
          "max_jobs": 100
@@ -360,7 +360,7 @@ Let's see some concrete examples:
          "environs": [
            "gnu",
            "intel",
-           "pgi",
+           "nvidia",
            "cray"
          ],
          "max_jobs": 10

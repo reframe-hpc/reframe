@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class StreamMultiSysTest(rfm.RegressionTest):
     valid_systems = ['*']
-    valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
+    valid_prog_environs = ['cray', 'gnu', 'intel', 'nvidia']
     prebuild_cmds = [
         'wget https://raw.githubusercontent.com/jeffhammond/STREAM/master/stream.c'  # noqa: E501
     ]
@@ -35,7 +35,7 @@ class StreamMultiSysTest(rfm.RegressionTest):
         'cray':  ['-fopenmp', '-O3', '-Wall'],
         'gnu':   ['-fopenmp', '-O3', '-Wall'],
         'intel': ['-qopenmp', '-O3', '-Wall'],
-        'pgi':   ['-mp', '-O3']
+        'nvidia':   ['-mp', '-O3']
     })
 
     # Number of cores for each system

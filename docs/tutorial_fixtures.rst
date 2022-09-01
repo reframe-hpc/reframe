@@ -130,19 +130,19 @@ when :class:`osu_bandwidth_test` runs on the ``daint:gpu`` partition using the `
 The second thing to notice is where the :class:`fetch_osu_benchmarks~daint` fixture will run.
 Since this is a *session* fixture, ReFrame has arbitrarily chosen to run it on ``daint:gpu`` using the ``gnu`` environment.
 A session fixture can run on any combination of valid partitions and environments.
-The following listing and figure show how the test dependency DAG is concretized when we scope the valid programming environments from the command line using ``-p pgi``.
+The following listing and figure show how the test dependency DAG is concretized when we scope the valid programming environments from the command line using ``-p nvidia``.
 
 .. code-block:: bash
 
-   reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC -p pgi
+   reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC -p nvidia
 
-.. literalinclude:: listings/osu_bandwidth_concretized_daint_pgi.txt
+.. literalinclude:: listings/osu_bandwidth_concretized_daint_nvidia.txt
    :language: console
 
 .. figure:: _static/img/fixtures-actual-deps-scoped.svg
   :align: center
 
-  :sub:`The dependency graph concretized for the 'pgi' environment only.`
+  :sub:`The dependency graph concretized for the 'nvidia' environment only.`
 
 
 Notice how the :class:`fetch_osu_benchmarks~daint` fixture is selected to run in the only valid partition/environment combination.
