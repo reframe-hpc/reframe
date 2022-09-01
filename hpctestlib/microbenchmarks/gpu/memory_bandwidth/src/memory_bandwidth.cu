@@ -127,11 +127,11 @@ int main(int argc, char ** argv)
     }
     else if (str == "--size")
     {
-      copy_size = std::stoi((std::string)argv[++i]);
+      copy_size = std::stol((std::string)argv[++i]);
     }
     else if (str == "--copies")
     {
-      num_copies = std::stoi((std::string)argv[++i]);
+      num_copies = std::stol((std::string)argv[++i]);
     }
     else if (str == "--multi-gpu")
     {
