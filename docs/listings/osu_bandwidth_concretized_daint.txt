@@ -15,8 +15,8 @@
 - osu_bandwidth_test @daint:gpu+intel
     ^build_osu_benchmarks ~daint:gpu+intel @daint:gpu+intel
       ^fetch_osu_benchmarks ~daint @daint:gpu+gnu
-- osu_bandwidth_test @daint:gpu+pgi
-    ^build_osu_benchmarks ~daint:gpu+pgi @daint:gpu+pgi
+- osu_bandwidth_test @daint:gpu+nvidia
+    ^build_osu_benchmarks ~daint:gpu+nvidia @daint:gpu+nvidia
       ^fetch_osu_benchmarks ~daint @daint:gpu+gnu
 Concretized 7 test case(s)
 

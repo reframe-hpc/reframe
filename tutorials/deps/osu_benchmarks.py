@@ -15,7 +15,7 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
     '''Base class of OSU benchmarks runtime tests'''
 
     valid_systems = ['daint:gpu']
-    valid_prog_environs = ['gnu', 'pgi', 'intel']
+    valid_prog_environs = ['gnu', 'nvidia', 'intel']
     sourcesdir = None
     num_tasks = 2
     num_tasks_per_node = 1
@@ -98,7 +98,7 @@ class OSUAllreduceTest(OSUBenchmarkTestBase):
 class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     descr = 'OSU benchmarks build test'
     valid_systems = ['daint:gpu']
-    valid_prog_environs = ['gnu', 'pgi', 'intel']
+    valid_prog_environs = ['gnu', 'nvidia', 'intel']
     build_system = 'Autotools'
 
     # rfmdocstart: inject_deps

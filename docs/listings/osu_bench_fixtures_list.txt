@@ -14,42 +14,42 @@
       ^fetch_osu_benchmarks ~daint
     ^build_osu_benchmarks ~daint:gpu+intel
       ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
+    ^build_osu_benchmarks ~daint:gpu+nvidia
       ^fetch_osu_benchmarks ~daint
 - osu_allreduce_test %mpi_tasks=8
     ^build_osu_benchmarks ~daint:gpu+gnu
       ^fetch_osu_benchmarks ~daint
     ^build_osu_benchmarks ~daint:gpu+intel
       ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
+    ^build_osu_benchmarks ~daint:gpu+nvidia
       ^fetch_osu_benchmarks ~daint
 - osu_allreduce_test %mpi_tasks=4
     ^build_osu_benchmarks ~daint:gpu+gnu
       ^fetch_osu_benchmarks ~daint
     ^build_osu_benchmarks ~daint:gpu+intel
       ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
+    ^build_osu_benchmarks ~daint:gpu+nvidia
       ^fetch_osu_benchmarks ~daint
 - osu_allreduce_test %mpi_tasks=2
     ^build_osu_benchmarks ~daint:gpu+gnu
       ^fetch_osu_benchmarks ~daint
     ^build_osu_benchmarks ~daint:gpu+intel
       ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
+    ^build_osu_benchmarks ~daint:gpu+nvidia
       ^fetch_osu_benchmarks ~daint
 - osu_bandwidth_test
     ^build_osu_benchmarks ~daint:gpu+gnu
       ^fetch_osu_benchmarks ~daint
     ^build_osu_benchmarks ~daint:gpu+intel
       ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
+    ^build_osu_benchmarks ~daint:gpu+nvidia
       ^fetch_osu_benchmarks ~daint
 - osu_latency_test
     ^build_osu_benchmarks ~daint:gpu+gnu
       ^fetch_osu_benchmarks ~daint
     ^build_osu_benchmarks ~daint:gpu+intel
       ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
+    ^build_osu_benchmarks ~daint:gpu+nvidia
       ^fetch_osu_benchmarks ~daint
 Found 6 check(s)
 
