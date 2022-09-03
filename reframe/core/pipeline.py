@@ -1268,7 +1268,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @loggable
     @property
     def perfvalues(self):
-        return util.MappingView(self._perfvalues)
+        return self._perfvalues
+        # return util.MappingView(self._perfvalues)
 
     @property
     def job(self):
