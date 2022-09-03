@@ -702,9 +702,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: Patterns for verifying the performance of this test.
     #:
-    #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
-    #: examples.
-    #:
     #: If set to :class:`None`, no performance checking will be performed.
     #:
     #: :type: A dictionary with keys of type :class:`str` and deferrable
@@ -712,6 +709,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     </deferrable_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
+    #:
+    #: .. warning::
+    #:
+    #:    You are advised to follow the new syntax for defining performance
+    #:    variables in your tests using either the :func:`@performance_function
+    #:    <reframe.core.builtins.performance_function>` builtin or the
+    #:    :attr:`perf_variables`, as :attr:`perf_patterns` will likely be
+    #:    deprecated in the future.
     perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None))
 
     #: The performance variables associated with the test.
@@ -725,7 +730,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: By default, ReFrame will populate this field during the test's
     #: instantiation with all the member functions decorated with the
     #: :func:`@performance_function
-    #: <reframe.core.pipeline.RegressionMixin.performance_function>` decorator.
+    #: <reframe.core.builtins.performance_function>` decorator.
     #: If no performance functions are present in the class, no performance
     #: checking or reporting will be carried out.
     #:
@@ -743,7 +748,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     :ref:`deferrable-performance-functions`).
     #: :default: Collection of performance variables associated to each of
     #:     the member functions decorated with the :func:`@performance_function
-    #:     <reframe.core.pipeline.RegressionMixin.performance_function>`
+    #:     <reframe.core.builtins.performance_function>`
     #:     decorator.
     #:
     #: .. versionadded:: 3.8.0
