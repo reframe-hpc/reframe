@@ -4,98 +4,50 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 #
-# Tutorial settings
+# Generic fallback configuration
 #
 
-# rfmdocstart: site-configuration
 site_configuration = {
-    # rfmdocstart: systems
     'systems': [
         {
-            'name': 'catalina',
-            'descr': 'My Mac',
-            'hostnames': ['tresa'],
-            'modules_system': 'nomod',
+            'name': 'tresa',
+            'descr': 'My laptop',
+            'hostnames': ['tresa\.local'],
             'partitions': [
                 {
                     'name': 'default',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['gnu', 'clang'],
-                }
-            ]
-        },
-        {
-            'name': 'tutorials-docker',
-            'descr': 'Container for running the build system tutorials',
-            'hostnames': ['docker'],
-            'modules_system': 'lmod',
-            'partitions': [
-                {
-                    'name': 'default',
-                    'scheduler': 'local',
-                    'launcher': 'local',
-                    'environs': ['builtin'],
+                    'environs': ['gnu', 'clang']
                 }
             ]
         },
         {
             'name': 'daint',
-            'descr': 'Piz Daint Supercomputer',
-            'hostnames': ['daint'],
+            'descr': 'Piz Daint supercomputer',
+            'hostnames': ['daint', 'dom'],
             'modules_system': 'tmod32',
             'partitions': [
                 {
                     'name': 'login',
-                    'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['builtin', 'gnu', 'intel', 'nvidia', 'cray'],
+                    'environs': ['gnu', 'cray', 'intel', 'nvidia']
                 },
-                # rfmdocstart: all-partitions
-                # rfmdocstart: gpu-partition
                 {
-                    'name': 'gpu',
-                    'descr': 'Hybrid nodes',
+                    'name': 'hybrid',
                     'scheduler': 'slurm',
                     'launcher': 'srun',
-                    'access': ['-C gpu', '-A csstaff'],
-                    'environs': ['gnu', 'intel', 'nvidia', 'cray'],
-                    'max_jobs': 100,
-                    'resources': [
-                        {
-                            'name': 'memory',
-                            'options': ['--mem={size}']
-                        }
-                    ],
-                    'container_platforms': [
-                        {
-                            'type': 'Sarus',
-                            'modules': ['sarus']
-                        },
-                        {
-                            'type': 'Singularity',
-                            'modules': ['singularity']
-                        }
-                    ]
+                    'access': ['-Cgpu', '-Acsstaff'],
+                    'environs': ['gnu', 'cray', 'intel', 'nvidia']
                 },
-                # rfmdocend: gpu-partition
                 {
-                    'name': 'mc',
-                    'descr': 'Multicore nodes',
+                    'name': 'multicore',
                     'scheduler': 'slurm',
                     'launcher': 'srun',
-                    'access': ['-C mc', '-A csstaff'],
-                    'environs': ['gnu', 'intel', 'nvidia', 'cray'],
-                    'max_jobs': 100,
-                    'resources': [
-                        {
-                            'name': 'memory',
-                            'options': ['--mem={size}']
-                        }
-                    ]
+                    'access': ['-Cmc', '-Acsstaff'],
+                    'environs': ['gnu', 'cray', 'intel', 'nvidia']
                 }
-                # rfmdocend: all-partitions
             ]
         },
         {
@@ -112,45 +64,53 @@ site_configuration = {
             ]
         },
     ],
-    # rfmdocend: systems
-    # rfmdocstart: environments
     'environments': [
         {
             'name': 'gnu',
             'cc': 'gcc-9',
             'cxx': 'g++-9',
-            'ftn': 'gfortran-9'
+            'ftn': '',
+            'features': ['openmp'],
+            'extras': {'ompflag': '-fopenmp'}
         },
         {
             'name': 'gnu',
             'modules': ['PrgEnv-gnu'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        },
-        {
-            'name': 'cray',
-            'modules': ['PrgEnv-cray'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran',
+            'features': ['openmp'],
+            'extras': {'ompflag': '-fopenmp'},
             'target_systems': ['daint']
         },
         {
             'name': 'intel',
             'modules': ['PrgEnv-intel'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
+            'cc': 'icc',
+            'cxx': 'icpc',
+            'ftn': 'ifort',
+            'features': ['openmp'],
+            'extras': {'ompflag': '-qopenmp'},
             'target_systems': ['daint']
         },
         {
             'name': 'nvidia',
             'modules': ['PrgEnv-nvidia'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
+            'cc': 'nvc',
+            'cxx': 'nvc++',
+            'ftn': 'nvfortran',
+            'features': ['openmp'],
+            'extras': {'ompflag': '-mp'},
+            'target_systems': ['daint']
+        },
+        {
+            'name': 'cray',
+            'modules': ['PrgEnv-cray'],
+            'cc': 'craycc',
+            'cxx': 'craycxx',
+            'ftn': 'crayftn',
+            'features': ['openmp'],
+            'extras': {'ompflag': '-fopenmp'},
             'target_systems': ['daint']
         },
         {
@@ -165,19 +125,9 @@ site_configuration = {
             'cxx': '',
             'ftn': ''
         },
-        {
-            'name': 'builtin',
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        }
     ],
-    # rfmdocend: environments
-    # rfmdocstart: logging
     'logging': [
         {
-            'level': 'debug',
             'handlers': [
                 {
                     'type': 'stream',
@@ -211,6 +161,4 @@ site_configuration = {
             ]
         }
     ],
-    # rfmdocend: logging
 }
-# rfmdocend: site-configuration

@@ -416,9 +416,10 @@ class RegressionTask:
     def info(self):
         '''Return an info string about this task.'''
         name = self.check.display_name
+        hashcode = self.check.hashcode
         part = self.testcase.partition.fullname
         env  = self.testcase.environ.name
-        return f'{name} @{part}+{env}'
+        return f'{name} /{hashcode} @{part}+{env}'
 
 
 class TaskEventListener(abc.ABC):

@@ -10,21 +10,21 @@
 
 ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'gnu') -> 'OSUDownloadTest'
 ./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'intel') -> 'OSUDownloadTest'
-./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'pgi') -> 'OSUDownloadTest'
+./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'nvidia') -> 'OSUDownloadTest'
 ./bin/reframe: skipping all dependent test cases
-  - ('OSUBuildTest', 'daint:gpu', 'pgi')
+  - ('OSUBuildTest', 'daint:gpu', 'nvidia')
   - ('OSUBuildTest', 'daint:gpu', 'intel')
-  - ('OSUAllreduceTest_8', 'daint:gpu', 'pgi')
-  - ('OSUAllreduceTest_16', 'daint:gpu', 'pgi')
+  - ('OSUAllreduceTest_8', 'daint:gpu', 'nvidia')
+  - ('OSUAllreduceTest_16', 'daint:gpu', 'nvidia')
   - ('OSUBuildTest', 'daint:gpu', 'gnu')
   - ('OSUAllreduceTest_4', 'daint:gpu', 'intel')
   - ('OSUAllreduceTest_8', 'daint:gpu', 'intel')
-  - ('OSUAllreduceTest_4', 'daint:gpu', 'pgi')
+  - ('OSUAllreduceTest_4', 'daint:gpu', 'nvidia')
   - ('OSUAllreduceTest_16', 'daint:gpu', 'intel')
-  - ('OSULatencyTest', 'daint:gpu', 'pgi')
+  - ('OSULatencyTest', 'daint:gpu', 'nvidia')
   - ('OSUAllreduceTest_8', 'daint:gpu', 'gnu')
-  - ('OSUAllreduceTest_2', 'daint:gpu', 'pgi')
-  - ('OSUBandwidthTest', 'daint:gpu', 'pgi')
+  - ('OSUAllreduceTest_2', 'daint:gpu', 'nvidia')
+  - ('OSUBandwidthTest', 'daint:gpu', 'nvidia')
   - ('OSUAllreduceTest_16', 'daint:gpu', 'gnu')
   - ('OSUBandwidthTest', 'daint:gpu', 'intel')
   - ('OSULatencyTest', 'daint:gpu', 'intel')

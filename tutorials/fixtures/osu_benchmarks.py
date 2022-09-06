@@ -59,7 +59,7 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
     '''Base class of OSU benchmarks runtime tests'''
 
     valid_systems = ['daint:gpu']
-    valid_prog_environs = ['gnu', 'pgi', 'intel']
+    valid_prog_environs = ['gnu', 'nvidia', 'intel']
     num_tasks = 2
     num_tasks_per_node = 1
     # rfmdocstart: osu-binaries

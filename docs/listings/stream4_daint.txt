@@ -14,27 +14,27 @@
 [----------] start processing checks
 [ RUN      ] StreamMultiSysTest @daint:login+gnu
 [ RUN      ] StreamMultiSysTest @daint:login+intel
-[ RUN      ] StreamMultiSysTest @daint:login+pgi
+[ RUN      ] StreamMultiSysTest @daint:login+nvidia
 [ RUN      ] StreamMultiSysTest @daint:login+cray
 [ RUN      ] StreamMultiSysTest @daint:gpu+gnu
 [ RUN      ] StreamMultiSysTest @daint:gpu+intel
-[ RUN      ] StreamMultiSysTest @daint:gpu+pgi
+[ RUN      ] StreamMultiSysTest @daint:gpu+nvidia
 [ RUN      ] StreamMultiSysTest @daint:gpu+cray
 [ RUN      ] StreamMultiSysTest @daint:mc+gnu
 [ RUN      ] StreamMultiSysTest @daint:mc+intel
-[ RUN      ] StreamMultiSysTest @daint:mc+pgi
+[ RUN      ] StreamMultiSysTest @daint:mc+nvidia
 [ RUN      ] StreamMultiSysTest @daint:mc+cray
 [       OK ] ( 1/12) StreamMultiSysTest @daint:login+gnu
 [       OK ] ( 2/12) StreamMultiSysTest @daint:login+intel
-[       OK ] ( 3/12) StreamMultiSysTest @daint:login+pgi
+[       OK ] ( 3/12) StreamMultiSysTest @daint:login+nvidia
 [       OK ] ( 4/12) StreamMultiSysTest @daint:login+cray
 [       OK ] ( 5/12) StreamMultiSysTest @daint:gpu+gnu
-[       OK ] ( 6/12) StreamMultiSysTest @daint:gpu+pgi
+[       OK ] ( 6/12) StreamMultiSysTest @daint:gpu+nvidia
 [       OK ] ( 7/12) StreamMultiSysTest @daint:gpu+cray
 [       OK ] ( 8/12) StreamMultiSysTest @daint:gpu+intel
 [       OK ] ( 9/12) StreamMultiSysTest @daint:mc+gnu
 [       OK ] (10/12) StreamMultiSysTest @daint:mc+cray
-[       OK ] (11/12) StreamMultiSysTest @daint:mc+pgi
+[       OK ] (11/12) StreamMultiSysTest @daint:mc+nvidia
 [       OK ] (12/12) StreamMultiSysTest @daint:mc+intel
 [----------] all spawned checks have finished
 
@@ -57,7 +57,7 @@ StreamMultiSysTest
       * Scale: 81330.6 MB/s
       * Add: 72076.0 MB/s
       * Triad: 101808.5 MB/s
-   - pgi
+   - nvidia
       * num_tasks: 1
       * Copy: 94336.0 MB/s
       * Scale: 69096.9 MB/s
@@ -82,7 +82,7 @@ StreamMultiSysTest
       * Scale: 54131.1 MB/s
       * Add: 58918.8 MB/s
       * Triad: 59048.6 MB/s
-   - pgi
+   - nvidia
       * num_tasks: 1
       * Copy: 50472.9 MB/s
       * Scale: 39545.5 MB/s
@@ -107,7 +107,7 @@ StreamMultiSysTest
       * Scale: 48545.9 MB/s
       * Add: 57150.3 MB/s
       * Triad: 57272.4 MB/s
-   - pgi
+   - nvidia
       * num_tasks: 1
       * Copy: 46123.6 MB/s
       * Scale: 40552.5 MB/s
