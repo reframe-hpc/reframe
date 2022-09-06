@@ -1473,6 +1473,9 @@ class SequenceView(collections.abc.Sequence):
     def __str__(self):
         return str(self.__container)
 
+    def __rfm_json_encode__(self):
+        return self.__container
+
 
 class MappingView(collections.abc.Mapping):
     '''A read-only view of a mapping.
@@ -1535,3 +1538,6 @@ class MappingView(collections.abc.Mapping):
 
     def __str__(self):
         return str(self.__mapping)
+
+    def __rfm_json_encode__(self):
+        return self.__mapping
