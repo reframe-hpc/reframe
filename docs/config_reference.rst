@@ -862,8 +862,10 @@ All logging handlers share the following set of common attributes:
       ``%(check_executable)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable` attribute.
       ``%(check_executable_opts)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attribute.
       ``%(check_extra_resources)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute.
-      ``%(check_job_completion_time_unix)s``, The completion time of the associated run job (see :attr:`reframe.core.schedulers.Job.completion_time`).
+      ``%(check_hashcode)s``, The unique hash associated with this test.
+      ``%(check_info)s``, Various information about this test; essentially the return value of the test's :func:`~reframe.core.pipeline.RegressionTest.info` function.
       ``%(check_job_completion_time)s``, Same as the ``(check_job_completion_time_unix)s`` but formatted according to ``datefmt``.
+      ``%(check_job_completion_time_unix)s``, The completion time of the associated run job (see :attr:`reframe.core.schedulers.Job.completion_time`).
       ``%(check_job_exitcode)s``, The exit code of the associated run job.
       ``%(check_job_nodelist)s``, The list of nodes that the associated run job has run on.
       ``%(check_jobid)s``, The ID of the associated run job.
@@ -881,13 +883,20 @@ All logging handlers share the following set of common attributes:
       ``%(check_num_tasks_per_socket)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_tasks_per_socket` attribute.
       ``%(check_outputdir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.outputdir` attribute.
       ``%(check_partition)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_partition`.
-      ``%(check_perfvalues)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.perfvalues` attribute.
+      ``%(check_perf_lower_thres)s``, The lower threshold of the logged performance variable.
+      ``%(check_perf_ref)s``, The reference value of the logged performance variable.
+      ``%(check_perf_unit)s``, The measurement unit of the logged performance variable.
+      ``%(check_perf_upper)s``, The upper thresholds of the logged performance variable.
+      ``%(check_perf_value)s``, The actual value of the logged performance variable.
+      ``%(check_perf_var)s``, The name of the logged performance variable.
+      ``%(check_perfvalues)s``, All the performance variables of the test combined along with their values, references and thresholds.
       ``%(check_postbuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postbuild_cmds` attribute.
       ``%(check_postrun_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postrun_cmds` attribute.
       ``%(check_prebuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute.
       ``%(check_prefix)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prefix` attribute.
       ``%(check_prerun_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prerun_cmds` attribute.
       ``%(check_readonly_files)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.readonly_files` attribute.
+      ``%(check_short_name)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.short_name` attribute.
       ``%(check_sourcepath)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.sourcepath` attribute.
       ``%(check_sourcesdir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir` attribute.
       ``%(check_stagedir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.stagedir` attribute.
