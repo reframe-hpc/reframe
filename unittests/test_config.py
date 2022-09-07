@@ -7,36 +7,59 @@ import json
 import pytest
 
 import reframe.core.config as config
+import reframe.utility as util
 from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
 
 
+@pytest.fixture
+def part_config_files(tmp_path):
+    part1 = tmp_path / 'settings-part1.py'
+    part2 = tmp_path / 'settings-part2.py'
+    part3 = tmp_path / 'settings-part3.py'
+    mod = util.import_module_from_file('unittests/resources/config/settings.py')
+    full_config = mod.site_configuration
+
+    config_1 = {
+        'systems': full_config['systems'][-2:],
+        'environments': full_config['environments'][:3],
+        'modes': full_config['modes'],
+        'general': full_config['general'][0:1],
+    }
+    config_2 = {
+        'systems': full_config['systems'][-3:-2],
+        'environments': full_config['environments'][3:],
+        'general': full_config['general'][1:3],
+    }
+    config_3 = {
+        'systems': full_config['systems'][:-3],
+        'logging': full_config['logging'],
+        'general': full_config['general'][3:],
+    }
+    part1.write_text(f'site_configuration = {config_1!r}')
+    part2.write_text(f'site_configuration = {config_2!r}')
+    part3.write_text(f'site_configuration = {config_3!r}')
+
+    return part1, part2, part3
+
 
 @pytest.fixture(params=['full', 'parts'])
-def site_config(request):
+def site_config(request, part_config_files):
     # `unittests/resources/config/settings.py` should be equivalent to loading
     # the `unittests/resources/config/settings-part*.py` files
     if request.param == 'full':
         return config.load_config('unittests/resources/config/settings.py')
     else:
-        return config.load_config(
-            'unittests/resources/config/settings-part1.py',
-            'unittests/resources/config/settings-part2.py',
-            'unittests/resources/config/settings-part3.py'
-        )
+        return config.load_config(*part_config_files)
 
 
 def test_load_config_python():
     config.load_config('reframe/core/settings.py')
 
 
-def test_load_multiple_configs():
+def test_load_multiple_configs(part_config_files):
     site1 = config.load_config('unittests/resources/config/settings.py')
-    site2 = config.load_config(
-        'unittests/resources/config/settings-part1.py',
-        'unittests/resources/config/settings-part2.py',
-        'unittests/resources/config/settings-part3.py'
-    )
+    site2 = config.load_config(*part_config_files)
     assert site1._site_config == site2._site_config
 
 

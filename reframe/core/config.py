@@ -278,8 +278,7 @@ class _SiteConfig:
             # Looks like an old style config
             raise ConfigError(
                 f"the syntax of the configuration file {filename!r} "
-                f"is no longer supported; please convert it using the "
-                f"'--upgrade-config-file' option"
+                f"is no longer supported"
             )
 
         mod = util.import_module_from_file(filename)
@@ -438,6 +437,31 @@ class _SiteConfig:
                 )
 
         self._subconfigs[system_fullname] = local_config
+
+
+def find_config_files(config_path=None, config_file=None):
+    res = []
+    if config_path:
+        for p in config_path:
+            if os.path.exists(p + '/settings.py'):
+                res.append(p + '/settings.py')
+            elif os.path.exists(p + '/settings.json'):
+                res.append(p + '/settings.json')
+            else:
+                getlogger().debug('Loading the generic configuration')
+
+    if config_file:
+        for f in config_file:
+            # If the user sets RFM_CONFIG_FILE=:conf1:conf2 the list will
+            # include one empty string in the beginning
+            if f == '':
+                res = []
+            elif f.startswith(':'):
+                res = [f[1:]]
+            else:
+                res.append(f)
+
+    return res
 
 
 def load_config(*filenames):

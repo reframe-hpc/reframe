@@ -709,28 +709,10 @@ def main():
     # Now configure ReFrame according to the user configuration file
     try:
         printer.debug('Loading user configuration')
-        # Cannot set the variable to [] in the argparser because it won't take
-        # into account the environmane variable
-        conf_file = []
-        if options.config_path:
-            for p in options.config_path:
-                if os.path.exists(p + '/settings.py'):
-                    conf_file.append(p + '/settings.py')
-                elif os.path.exists(p + '/settings.json'):
-                    conf_file.append(p + '/settings.json')
-
-        if options.config_file:
-            for f in options.config_file:
-                # If the user sets RFM_CONFIG_FILE=:conf1:conf2 the list will
-                # include one empty string in the beginning
-                if f == '':
-                    conf_file = []
-                elif f.startswith(':'):
-                    conf_file = [f[1:]]
-                else:
-                    conf_file.append(f)
-
-        site_config = config.load_config(*conf_file)
+        conf_files = config.find_config_files(
+            options.config_path, options.config_file
+        )
+        site_config = config.load_config(*conf_files)
         site_config.validate()
         site_config.set_autodetect_meth(
             options.autodetect_method,
