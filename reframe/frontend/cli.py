@@ -550,9 +550,9 @@ def main():
         dest='autodetect_fqdn',
         envvar='RFM_AUTODETECT_FQDN',
         action='store',
-        default=True,
+        default=False,
         type=typ.Bool,
-        help='Use FQDN as host name'
+        help='Use the full qualified domain name as host name'
     )
     argparser.add_argument(
         dest='autodetect_method',
@@ -571,9 +571,9 @@ def main():
         dest='autodetect_xthostname',
         envvar='RFM_AUTODETECT_XTHOSTNAME',
         action='store',
-        default=True,
+        default=False,
         type=typ.Bool,
-        help="Use Cray's xthostname file to find the host name"
+        help="Use Cray's xthostname file to retrieve the host name"
     )
     argparser.add_argument(
         dest='git_timeout',

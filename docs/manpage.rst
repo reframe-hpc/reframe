@@ -1032,7 +1032,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 .. envvar:: RFM_AUTODETECT_FQDN
 
    Use the fully qualified domain name as the hostname.
-   This is a boolean variable and defaults to ``1``.
+   This is a boolean variable and defaults to ``0``.
 
 
    .. table::
@@ -1045,6 +1045,9 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
 
    .. versionadded:: 3.11.0
+
+   .. versionchanged:: 4.0.0
+      This variable now defaults to ``0``.
 
 
 .. envvar:: RFM_AUTODETECT_METHOD
@@ -1071,7 +1074,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
    Use ``/etc/xthostname`` file, if present, to retrieve the current system's name.
    If the file cannot be found, the hostname will be retrieved using the ``hostname`` command.
-   This is a boolean variable and defaults to ``1``.
+   This is a boolean variable and defaults to ``0``.
 
    This option meaningful for Cray systems.
 
@@ -1086,6 +1089,8 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
    .. versionadded:: 3.11.0
 
+   .. versionchanged:: 4.0.0
+      This variable now defaults to ``0``.
 
 .. envvar:: RFM_CHECK_SEARCH_PATH
 
