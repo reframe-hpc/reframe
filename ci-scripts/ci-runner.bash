@@ -41,6 +41,7 @@ checked_exec()
 
 run_tutorial_checks()
 {
+    export RFM_AUTODETECT_XTHOSTNAME=1
     cmd="./bin/reframe -C tutorials/config/settings.py -J account=jenscscs \
 --save-log-files --flex-alloc-nodes=2 -r -x HelloThreadedExtendedTest|BZip2.*Check $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
@@ -157,6 +158,7 @@ else
     # Run unit tests with the scheduler backends
     tempdir=$(mktemp -d -p $SCRATCH)
     echo "[INFO] Using temporary directory: $tempdir"
+    export RFM_AUTODETECT_XTHOSTNAME=1
     if [[ $(hostname) =~ dom ]]; then
         PATH_save=$PATH
         export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
