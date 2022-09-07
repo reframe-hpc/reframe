@@ -54,13 +54,13 @@ def site_config(request, part_config_files):
 
 
 def test_load_config_python():
-    config.load_config('reframe/core/settings.py')
+    site = config.load_config('reframe/core/settings.py')
+    assert len(site.sources) == 2
 
 
 def test_load_multiple_configs(part_config_files):
-    site1 = config.load_config('unittests/resources/config/settings.py')
-    site2 = config.load_config(*part_config_files)
-    assert site1._site_config == site2._site_config
+    site = config.load_config(*part_config_files)
+    assert len(site.sources) == 4
 
 
 def test_load_config_nouser(monkeypatch):
