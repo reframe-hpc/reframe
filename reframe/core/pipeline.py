@@ -759,7 +759,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: These modules will be loaded during the :func:`setup` phase.
     #:
-    #: :type: :class:`List[str]`
+    #: :type: :class:`List[str]` or :class:`Dict[str, object]`
     #: :default: ``[]``
     modules = variable(typ.List[str], typ.List[typ.Dict[str, object]],
                        value=[], loggable=True)
