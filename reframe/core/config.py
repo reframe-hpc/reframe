@@ -116,7 +116,9 @@ class _SiteConfig:
             if sec not in self._site_config:
                 self._site_config[sec] = nc[sec]
             elif sec == 'systems':
-                # Systems have to be inserted in the beginning of the list
+                # Systems have to be inserted in the beginning of the list,
+                # since they are selected by the first matching entry in
+                # `hostnames`.
                 self._site_config[sec] = nc[sec] + self._site_config[sec]
             else:
                 self._site_config[sec] += nc[sec]
@@ -264,7 +266,7 @@ class _SiteConfig:
     def subconfig_system(self):
         return self._local_system
 
-    def load_python_config(self, filename):
+    def load_config_python(self, filename):
         try:
             mod = util.import_module_from_file(filename)
         except ImportError as e:
@@ -289,7 +291,7 @@ class _SiteConfig:
 
         self.update_config(mod.site_configuration, filename)
 
-    def load_json_config(self, filename):
+    def load_config_json(self, filename):
         with open(filename) as fp:
             try:
                 config = json.loads(fp.read())
@@ -472,9 +474,9 @@ def load_config(*filenames):
         getlogger().debug(f'Loading configuration file: {filenames!r}')
         _, ext = os.path.splitext(f)
         if ext == '.py':
-            ret.load_python_config(f)
+            ret.load_config_python(f)
         elif ext == '.json':
-            ret.load_json_config(f)
+            ret.load_config_json(f)
         else:
             raise ConfigError(f"unknown configuration file type: '{f}'")
 

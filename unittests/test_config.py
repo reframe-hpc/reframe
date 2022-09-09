@@ -13,7 +13,7 @@ from reframe.core.systems import System
 
 
 @pytest.fixture
-def part_config_files(tmp_path):
+def generate_partial_configs(tmp_path):
     part1 = tmp_path / 'settings-part1.py'
     part2 = tmp_path / 'settings-part2.py'
     part3 = tmp_path / 'settings-part3.py'
@@ -39,18 +39,17 @@ def part_config_files(tmp_path):
     part1.write_text(f'site_configuration = {config_1!r}')
     part2.write_text(f'site_configuration = {config_2!r}')
     part3.write_text(f'site_configuration = {config_3!r}')
-
     return part1, part2, part3
 
 
 @pytest.fixture(params=['full', 'parts'])
-def site_config(request, part_config_files):
+def site_config(request, generate_partial_configs):
     # `unittests/resources/config/settings.py` should be equivalent to loading
     # the `unittests/resources/config/settings-part*.py` files
     if request.param == 'full':
         return config.load_config('unittests/resources/config/settings.py')
     else:
-        return config.load_config(*part_config_files)
+        return config.load_config(*generate_partial_configs)
 
 
 def test_load_config_python():
@@ -58,8 +57,8 @@ def test_load_config_python():
     assert len(site.sources) == 2
 
 
-def test_load_multiple_configs(part_config_files):
-    site = config.load_config(*part_config_files)
+def test_load_multiple_configs(generate_partial_configs):
+    site = config.load_config(*generate_partial_configs)
     assert len(site.sources) == 4
 
 
