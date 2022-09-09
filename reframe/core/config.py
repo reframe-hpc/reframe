@@ -450,7 +450,8 @@ def find_config_files(config_path=None, config_file=None):
             elif os.path.exists(p + '/settings.json'):
                 res.append(p + '/settings.json')
             else:
-                getlogger().debug('Loading the generic configuration')
+                getlogger().debug(f"No 'settings.py' or 'settings.json' "
+                                  f"found in {p!r}, path will be ignored")
 
     if config_file:
         for f in config_file:
