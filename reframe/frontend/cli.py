@@ -921,7 +921,10 @@ def main():
         f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
     )
     print_infoline('working directory', repr(session_info['workdir']))
-    print_infoline('settings files', f"{session_info['config_files']!r}")
+    print_infoline(
+        'settings files',
+        f"{', '.join(map(lambda x: repr(x), session_info['config_files']))}"
+    )
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")
