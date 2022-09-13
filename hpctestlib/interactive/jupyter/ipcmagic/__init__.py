@@ -16,7 +16,7 @@ class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     `ipcmagic <https://github.com/eth-cscs/ipcluster_magic>`__ is a Python
     package and collection of CLI scripts for controlling clusters for
     Jupyter. For more information, please have a look
-    `here <https://user.cscs.ch/tools/interactive/jupyterlab/#ipython>`__.
+    `here <https://user.cscs.ch/tools/interactive/jupyterlab/>`__.
 
     This test checks the ipcmagic performance.
     To do this, a single-layer neural network is trained against a noisy linear
