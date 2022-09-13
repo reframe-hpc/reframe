@@ -27,7 +27,7 @@ Publications
 * Slides [`pdf <https://fosdem.org/2019/schedule/event/reframe/attachments/slides/3226/export/events/attachments/reframe/slides/3226/FOSDEM_2019.pdf>`__] & `Talk <https://fosdem.org/2019/schedule/event/reframe/>`__ @ `FOSDEM'19 <https://fosdem.org/2019/>`__.
 * Slides [`pdf <https://indico.cism.ucl.ac.be/event/4/contributions/24/attachments/30/62/ReFrame_EUM_2019.pdf>`__] @ `4th EasyBuild User Meeting <https://github.com/easybuilders/easybuild/wiki/4th-EasyBuild-User-Meeting>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1bSykDrl1e2gPflf4jFJ8kfe_SZAtrJ_Q>`__] @ `HUST 2018 <https://sc18.supercomputing.org/>`__, SC'18.
-* Slides [`pdf <https://github.com/reframe-hpc/UserLabDay/blob/master/2018/slides/ci_and_regression/ReFrame_CI.pdf>`__] @ `CSCS User Lab Day 2018 <https://github.com/reframe-hpc/UserLabDay>`__.
+* Slides [`pdf <https://github.com/eth-cscs/UserLabDay/blob/master/2018/slides/ci_and_regression/ReFrame_CI.pdf>`__] @ `CSCS User Lab Day 2018 <https://github.com/eth-cscs/UserLabDay>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1sZhibvUlGlT670aOHPdMlWFffWptYzLX>`__] @ `HPC Advisory Council 2018 <http://www.hpcadvisorycouncil.com/events/2018/swiss-workshop/>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1EyJ-siupkgLeVT54A4WlFpQtrJaU0xOy>`__] @ `SC17 <https://sc17.supercomputing.org/>`__.
 * Slides [`pdf <https://drive.google.com/open?id=18VrCy0MTplGo67uxVbzYZicQChor9VSY>`__] @ `CUG 2017 <https://cug.org/cug-2017/>`__.

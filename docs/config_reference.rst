@@ -552,7 +552,7 @@ ReFrame allows you to define custom scheduler resources for each partition that 
 
    A resource specification may also start with ``#PREFIX``, in which case ``#PREFIX`` will replace the standard job script prefix of the backend scheduler of this partition.
    This is useful in cases of job schedulers like Slurm, that allow alternative prefixes for certain features.
-   An example is the `DataWarp <https://www.cray.com/datawarp>`__ functionality of Slurm which is supported by the ``#DW`` prefix.
+   An example is the `DataWarp <https://www.nersc.gov/assets/Uploads/dw-overview-overby.pdf>`__ functionality of Slurm which is supported by the ``#DW`` prefix.
    One could then define DataWarp related resources as follows:
 
    .. code:: python
