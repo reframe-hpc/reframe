@@ -925,6 +925,27 @@ def nodelist_abbrev(nodes):
     return ','.join(str(ng) for ng in node_groups)
 
 
+def cache_return_value(fn):
+    '''Decorator that caches the return value of the decorated function.
+
+    The function will only be called once and then the cached value will be
+    returned each time.
+    '''
+
+    undefined = []  # Any mutable object should do the job
+    cached = undefined
+
+    def _replace_fn(*args, **kwargs):
+        nonlocal cached
+
+        if cached is undefined:
+            cached = fn(*args, **kwargs)
+
+        return cached
+
+    return _replace_fn
+
+
 class temp_setattr:
     '''Context manager to temporarily change the attribute value of an
     object.'''
