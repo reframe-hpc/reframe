@@ -542,7 +542,7 @@ def shortest(*iterables):
     :arg iterables: The iterables to check.
     :returns: The shortest iterable.
 
-    .. _Sized: https://docs.python.org/3/library/collections.abc.html#collections.abc.Sized # noqa: E501
+    .. _Sized: https://bit.ly/3QqJlmw
     .. |Sized| replace:: :class:`Sized`
     '''
 

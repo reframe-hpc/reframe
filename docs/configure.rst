@@ -418,8 +418,8 @@ Auto-detecting processor information
 .. _devices: config_reference.html#.systems[].partitions[].devices
 .. |processor| replace:: :attr:`processor`
 .. _processor: config_reference.html#.systems[].partitions[].processor
-.. |detect_remote_system_topology| replace:: :attr:`detect_remote_system_topology`
-.. _detect_remote_system_topology: config_reference.html#.general[].detect_remote_system_topology
+.. |detect_remote_system_topology| replace:: :attr:`remote_detect`
+.. _detect_remote_system_topology: config_reference.html#.general[].remote_detect
 
 ReFrame is able to detect the processor topology of both local and remote partitions automatically.
 The processor and device information are made available to the tests through the corresponding attributes of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` allowing a test to modify its behavior accordingly.
