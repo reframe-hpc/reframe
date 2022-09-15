@@ -23,6 +23,7 @@ import tempfile
 from urllib.parse import urlparse
 
 import reframe
+import reframe.utility as util
 from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
                                      SpawnedProcessTimeout)
 from . import OrderedSet
@@ -480,6 +481,7 @@ def git_repo_hash(commit='HEAD', short=True, wd=None):
         return None
 
 
+@util.cache_return_value
 def reframe_version():
     '''Return ReFrame version.
 
