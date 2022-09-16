@@ -25,9 +25,18 @@ from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
 def launcher():
     return getlauncher('local')
 
+params = ['local', 'lsf', 'oar', 'pbs', 'sge', 'slurm', 'squeue', 'torque']
 
-@pytest.fixture(params=['local', 'lsf', 'oar', 'pbs',
-                        'sge', 'slurm', 'squeue', 'torque'])
+# Add flux if we have it available
+try:
+    import flux
+    assert flux
+    params = ['flux'] + params
+except ImportError:
+    pass
+
+@pytest.fixture(params=params)
+
 def scheduler(request):
     return getscheduler(request.param)
 
@@ -147,6 +156,12 @@ def _expected_lsf_directives(job):
         f'#DW jobdw capacity=100GB',
         f'#DW stage_in source=/foo',
     ])
+
+def _expected_flux_directives(job):
+    return set()
+
+def _expected_flux_directives_minimal(job):
+    return set()
 
 
 def _expected_lsf_directives_minimal(job):
@@ -381,11 +396,12 @@ def test_submit(make_job, exec_ctx):
 
     # Additional scheduler-specific checks
     sched_name = minimal_job.scheduler.registered_name
+
     if sched_name == 'local':
         assert [socket.gethostname()] == minimal_job.nodelist
         assert minimal_job.exitcode == 0
         assert minimal_job.state == 'SUCCESS'
-    elif sched_name == ('slurm', 'squeue', 'pbs', 'torque'):
+    elif sched_name == ('slurm', 'squeue', 'pbs', 'torque', 'flux'):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
         assert num_nodes == len(minimal_job.nodelist)
@@ -432,7 +448,8 @@ def test_cancel(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'sleep 30')
     t_job = time.time()
-    minimal_job.submit()
+
+    minimal_job.submit()    
     minimal_job.cancel()
 
     # We give some time to the local scheduler for the TERM signal to be
@@ -449,7 +466,7 @@ def test_cancel(make_job, exec_ctx):
 
     # Additional scheduler-specific checks
     sched_name = minimal_job.scheduler.registered_name
-    if sched_name in ('slurm', 'squeue'):
+    if sched_name in ('slurm', 'squeue', 'flux'):
         assert minimal_job.state == 'CANCELLED'
     elif sched_name == 'local':
         assert minimal_job.state == 'FAILURE'
@@ -573,7 +590,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
     # Monkey-patch the Job's state property to pretend that the job is always
     # pending
     def state(self):
-        if scheduler.registered_name in ('slurm', 'squeue'):
+        if scheduler.registered_name in ('slurm', 'squeue', 'flux'):
             return 'PENDING'
         elif scheduler.registered_name in ('pbs', 'torque'):
             return 'QUEUED'
