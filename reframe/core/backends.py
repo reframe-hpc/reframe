@@ -17,6 +17,7 @@ _launcher_backend_modules = [
 ]
 _launchers = {}
 _scheduler_backend_modules = [
+    'reframe.core.schedulers.flux',
     'reframe.core.schedulers.local',
     'reframe.core.schedulers.lsf',
     'reframe.core.schedulers.pbs',
