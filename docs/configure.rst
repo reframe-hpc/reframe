@@ -10,32 +10,30 @@ This section will guide you through configuring ReFrame for your site.
 If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the :doc:`migration_2_to_3` page.
 
 
-ReFrame's configuration files can be either JSON files or a Python files storing the site configuration in a JSON-formatted string.
-The latter format is useful in cases that you want to generate configuration parameters on-the-fly, since ReFrame will import that Python file and the load the resulting configuration.
-In the following we will use a Python-based configuration file also for historical reasons, since it was the only way to configure ReFrame in versions prior to 3.0.
+ReFrame's configuration can be either in JSON or in Python format and can be split into multiple files.
+The Python format is useful in cases that you want to generate configuration parameters on-the-fly, since ReFrame will import that Python file and the load the resulting configuration.
+In the following we will use a single Python-based configuration file also for historical reasons, since it was the only way to configure ReFrame in versions prior to 3.0.
 
 
-Locating the Configuration File
--------------------------------
+.. versionchanged:: 4.0.0
+   The configuration can now be split into multiple files.
 
-ReFrame looks for the configuration files in ``${RFM_CONFIG_PATH}/settings.{py,json}`` and if both ``settings.py`` and ``settings.json`` are found, the Python file is preferred.
-The ``RFM_CONFIG_PATH`` variable can have many paths seperated by ``:`` and all the paths will be considered and added to the configuration as long as there is a ``settings.{py,json}`` file there.
 
-If no configuration file is found in any of the predefined locations, ReFrame will fall back to a generic configuration that allows it to run on any system.
-You can find this generic configuration file `here <https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py>`__.
-Users may *not* modify this file.
 
-There are two ways to provide a custom configuration file to ReFrame:
+Loading the configuration
+-------------------------
 
-1. Pass it through the ``-C`` or ``--config-file`` option.
-2. Specify it using the ``RFM_CONFIG_FILE`` environment variable.
+ReFrame builds its final configuration gradually by combining multiple configuration files.
+Each one can have different parts of the configuration, for example different systems, different environments etc.
+This technique allows users to avoid having a single huge configuration file.
 
-Command line options take always precedence over their respective environment variables.
-In order to replace the configuration files from the ``RFM_CONFIG_PATH`` variable you can pass the option ``-C :config-file.py``.
+The first configuration file loaded in this chain is always the generic builtin configuration located under ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
+This contains everything that ReFrame needs to run on a generic system, as well as basic settings for logging, so subsequent configuration files may skip defining some configuration sections altogether, if they are not relevant.
 
-.. note::
-   .. versionadded:: 3.0.0
-      ReFrame accepts multiple configuration files and always uses `the base configuration <https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py>`__ as a base.
+ReFrame continues on looking for configuration files in the directories defined in :envvar:`RFM_CONFIG_PATH`.
+For each directory, will look within it for a ``settings.py`` or ``settings.json`` file (in that order), and if it finds one, it will load it.
+
+Finally, ReFrame processes the :option:`--config-files` option or the :envvar:`RFM_CONFIG_FILES` to load any specific configuration files passed from the command line.
 
 
 Anatomy of the Configuration File
@@ -53,8 +51,12 @@ For the complete listing and description of all configuration options, you shoul
    :start-after: # rfmdocstart: site-configuration
    :end-before: # rfmdocend: site-configuration
 
-The most important sections are: ``systems``, ``environments`` and ``logging``.
+There are three required sections that each configuration must provide: ``systems``, ``environments`` and ``logging``.
+We will first cover these and then move on to the optional ones.
 
+.. tip::
+
+   These configuration sections may not all be defined in the same configuration file, but can reside in any configuration file that is being loaded.
 
 ---------------------
 Systems Configuration
