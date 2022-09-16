@@ -923,7 +923,7 @@ def main():
     print_infoline('working directory', repr(session_info['workdir']))
     print_infoline(
         'settings files',
-        f"{', '.join(map(lambda x: repr(x), session_info['config_files']))}"
+        ', '.join(repr(x) for x in session_info['config_files'])
     )
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
