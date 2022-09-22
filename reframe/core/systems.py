@@ -10,6 +10,7 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import (Environment, ProgEnvironment)
+from reframe.core.exceptions import ConfigError
 from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
 
@@ -486,8 +487,21 @@ class System(jsonext.JSONSerializable):
             site_config.select_subconfig(f'{sysname}:{p["name"]}')
             partid = f"systems/0/partitions/@{p['name']}"
             part_name = site_config.get(f'{partid}/name')
-            part_sched = getscheduler(site_config.get(f'{partid}/scheduler'))
-            part_launcher = getlauncher(site_config.get(f'{partid}/launcher'))
+            try:
+                part_sched = getscheduler(
+                    site_config.get(f'{partid}/scheduler')
+                )
+                part_launcher = getlauncher(
+                    site_config.get(f'{partid}/launcher')
+                )
+            except ConfigError as err:
+                # Re-raise with more information
+                sys_name = site_config.get('systems/0/name')
+                part_fullname = f'{sys_name}:{part_name}'
+                raise ConfigError(
+                    f'failed to initialize partition {part_fullname!r}'
+                ) from err
+
             part_container_environs = {}
             part_container_runtime = None
             container_platforms = site_config.get(

@@ -6,7 +6,8 @@ USER root
 ENV PATH=/opt/conda/bin:$PATH
 WORKDIR /code
 COPY . /code
-RUN /bin/bash /code/bootstrap.sh
+RUN /bin/bash /code/bootstrap.sh && \
+    python3 -m pip install pytest
 ENV PATH=/code/bin:$PATH
 # If you want to develop, you'll need to comment this
 # USER fluxuser
