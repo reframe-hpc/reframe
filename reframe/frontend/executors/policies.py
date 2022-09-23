@@ -85,12 +85,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def runcase(self, case):
         super().runcase(case)
         check, partition, environ = case
-
-        self.printer.status(
-            'RUN',
-            f'{check.name} @{partition.fullname}+{environ.name}'
-        )
         task = RegressionTask(case, self.task_listeners)
+        self.printer.status('RUN', task.info())
         self._task_index[case] = task
         self.stats.add_task(task)
         try:
