@@ -40,5 +40,4 @@ jobs:
           which reframe   
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py -l
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py --run
-          flux mini run python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv unittests/test_schedulers.py::test_cancel_term_ignore unittests/test_schedulers.py::test_cancel_with_grace
-          flux mini run --env SKIP_FLAKY_CANCEL=true python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv
+          flux start --test-size=1 python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv

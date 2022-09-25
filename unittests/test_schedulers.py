@@ -629,10 +629,6 @@ def _read_pid(job, attempts=3):
                 f'{attempts} attempts')
 
 
-@pytest.mark.skipif(
-    os.environ.get('SKIP_FLAKY_CANCEL') is not None,
-    reason="Local cancel tests are flaky when running with Flux."
-)
 @pytest.mark.flaky(reruns=3)
 def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # This test emulates a spawned process that ignores the SIGTERM signal
@@ -676,10 +672,6 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     assert_process_died(sleep_pid)
 
 
-@pytest.mark.skipif(
-    os.environ.get('SKIP_FLAKY_CANCEL') is not None,
-    reason="Local cancel tests are flaky when running with Flux."
-)
 @pytest.mark.flaky(reruns=3)
 def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     # This test emulates a descendant process of the spawned job that
