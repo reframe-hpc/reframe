@@ -322,6 +322,39 @@ System Partition Configuration
    - ``upcrun``: Parallel programs will be launched using the `UPC <https://upc.lbl.gov/>`__ ``upcrun`` command.
    - ``upcxx-run``: Parallel programs will be launched using the `UPC++ <https://bitbucket.org/berkeleylab/upcxx/wiki/Home>`__ ``upcxx-run`` command.
 
+   .. tip::
+
+      ReFrame also allows you to register your own custom launchers simply by defining them in the configuration.
+      Here is an example:
+
+      .. code:: python
+
+         import reframe.core.launchers.mpi as mpi
+
+         @mpi.register_launcher('custom_launcher')
+         class MyLauncher(mpi.SrunLauncher):
+             def command(self, job):
+                 return super().command(job) + [...]
+
+         site_configuration = {
+             'systems': [
+                 {
+                     'name': 'my_system',
+                     'partitions': [
+                         {
+                             'name': 'my_partition',
+                             'launcher': 'custom_launcher'
+                             ...
+                         }
+                     ],
+                     ...
+                 },
+                 ...
+             ],
+             ...
+         }
+
+
 .. js:attribute:: .systems[].partitions[].access
 
    :required: No
