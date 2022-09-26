@@ -14,7 +14,7 @@ jobs:
 
     container:
       image: ${{ matrix.container }}
-      options: "--platform=linux/amd64 --user root -it"
+      options: "--platform=linux/amd64 --user root -it --init"
 
     name: ${{ matrix.container }}
     steps:
@@ -29,7 +29,6 @@ jobs:
       - name: Install Reframe
         run: |
           /bin/bash ./bootstrap.sh
-          python3 -m pip install pytest
           export PATH=$PWD/bin:$PATH
           which reframe
 
@@ -40,11 +39,4 @@ jobs:
           which reframe   
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py -l
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py --run
-          # For unit tests, start flux in the background
-          flux start sleep inf & FLUX_URI=$(flux uri pid:$!)
-          echo "Flux is running at URI: ${FLUX_URI}"
-          export FLUX_URI
-          flux resource info
-          python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv
-          # force stop flux instance
-          flux shutdown
+          flux start python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv
