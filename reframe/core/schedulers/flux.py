@@ -41,9 +41,9 @@ class _FluxJob(Job):
         # This is set by the scheduler when both the job's state is
         # 'COMPLETED' and the job's stdout and stderr are written back
         self._completed = False
-        self.create_job(**kwargs)
+        self.create_job()
 
-    def create_job(self, **kwargs):
+    def create_job(self):
         """
         Create the flux job (and future) to watch.
         """
@@ -115,7 +115,6 @@ class FluxJobScheduler(JobScheduler):
         # Job is inactive
         except EnvironmentError:
             pass
-        job._is_cancelling = True
 
     def poll(self, *jobs):
         """
@@ -162,12 +161,7 @@ class FluxJobScheduler(JobScheduler):
                 job._state = "RUNNING"
 
     def allnodes(self):
-        """
-        Return a set of all free nodes.
-        """
-        rpc = flux.resource.list.resource_list(flux.Flux())
-        listing = rpc.get()
-        return {str(node) for node in listing.free.nodelist}
+        raise NotImplementedError("flux backend does not support node listing")
 
     def filternodes(self, job, nodes):
         raise NotImplementedError("flux backend does not support node filtering")
