@@ -27,8 +27,8 @@ Users may *not* modify this file.
 
 There are two ways to provide a custom configuration file to ReFrame:
 
-1. Pass it through the ``-C`` or ``--config-file`` option.
-2. Specify it using the ``RFM_CONFIG_FILE`` environment variable.
+1. Pass it through the ``-C`` or ``--config-files`` option.
+2. Specify it using the ``RFM_CONFIG_FILES`` environment variable.
 
 Command line options take always precedence over their respective environment variables.
 In order to replace the configuration files from the ``RFM_CONFIG_PATH`` variable you can pass the option ``-C :config-file.py``.

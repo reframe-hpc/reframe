@@ -775,11 +775,11 @@ It does so by leveraging the selected system's environment modules system.
 Miscellaneous options
 ---------------------
 
-.. option:: -C --config-file=FILE
+.. option:: -C --config-files=FILE
 
    Use ``FILE`` as configuration file for ReFrame.
 
-   This option can also be set using the :envvar:`RFM_CONFIG_FILE` environment variable.
+   This option can also be set using the :envvar:`RFM_CONFIG_FILES` environment variable.
 
 .. _--detect-host-topology:
 
@@ -1160,7 +1160,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
    .. versionadded:: 3.12.0
 
-.. envvar:: RFM_CONFIG_FILE
+.. envvar:: RFM_CONFIG_FILES
 
    Set the configuration file for ReFrame.
 
