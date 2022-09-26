@@ -1241,9 +1241,10 @@ def main():
                 rt.modules_system.load_module(**m, force=True)
             except errors.EnvironError as e:
                 printer.error(
-                    f'could not load module {m["name"]!r} correctly'
+                    f'could not load module {m["name"]!r} correctly; rerun '
+                    f'with -vv for more information'
                 )
-                printer.error(str(e))
+                printer.debug(str(e))
                 sys.exit(1)
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
