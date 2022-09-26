@@ -40,4 +40,11 @@ jobs:
           which reframe   
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py -l
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py --run
-          flux start --test-size=1 python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv
+          # For unit tests, start flux in the background
+          flux start sleep inf & FLUX_URI=$(flux uri pid:$!)
+          echo "Flux is running at URI: ${FLUX_URI}"
+          export FLUX_URI
+          flux resource info
+          python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv
+          # force stop flux instance
+          flux shutdown
