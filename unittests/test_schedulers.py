@@ -669,7 +669,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # Verify that the spawned sleep is killed, too, but back off a bit in
     # order to allow the sleep process to wake up and get the signal
     # This was increased from 0.1 to 10 for Flux
-    time.sleep(10)
+    time.sleep(5)
     assert_process_died(sleep_pid)
 
 
@@ -713,7 +713,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     # Verify that the spawned sleep is killed, too, but back off a bit in
     # order to allow the sleep process to wake up and get the signal
     # This was increased from 0.1 to 10 for Flux
-    time.sleep(10)
+    time.sleep(5)
     assert_process_died(sleep_pid)
 
 
