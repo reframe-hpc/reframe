@@ -153,7 +153,7 @@ def test_option_precedence(default_exec_ctx, extended_parser):
         assert options.recursive is None
         assert options.timestamp == '%FT%T'
         assert options.non_default_craype is True
-        assert options.config_file is None
+        assert options.config_files is None
         assert options.prefix is None
         assert options.stagedir == '/foo'
         assert options.module == ['a', 'b', 'c']
