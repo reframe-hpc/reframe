@@ -14,12 +14,12 @@ jobs:
 
     container:
       image: ${{ matrix.container }}
-      options: "--platform=linux/amd64 --user root -it --init"
+      options: "--platform=linux/amd64 --user root -it"
 
     name: ${{ matrix.container }}
     steps:
       - name: Make Space
-        run: |        
+        run: |
           rm -rf /usr/share/dotnet
           rm -rf /opt/ghc
 
@@ -28,6 +28,8 @@ jobs:
 
       - name: Install Reframe
         run: |
+          uname -a
+          ps aux
           /bin/bash ./bootstrap.sh
           export PATH=$PWD/bin:$PATH
           which reframe
@@ -35,8 +37,10 @@ jobs:
       # Any additional examples added here will be tested
       - name: Start Flux and Run Test
         run: |
+          uname -a
+          ps aux
           export PATH=$PWD/bin:$PATH
-          which reframe   
+          which reframe
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py -l
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py --run
           flux start python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv
