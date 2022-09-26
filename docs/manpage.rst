@@ -778,8 +778,15 @@ Miscellaneous options
 .. option:: -C --config-files=FILE
 
    Use ``FILE`` as configuration file for ReFrame.
+   The user can pass multiple configuration files that will be added on top of the ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
+   To ignore previous configuration files you need to pass ``-C :new_config.py``
 
    This option can also be set using the :envvar:`RFM_CONFIG_FILES` environment variable.
+
+   ReFrame first loads the builtin config unconditionally and then starts to look for configs in the :envvar:`RFM_CONFIG_PATH` and starts chaining them.
+   :envvar:`RFM_CONFIG_PATH` containe directories where a file named ``setting.py`` or ``setting.json`` is.
+   If both ``settings.py`` and ``settings.json`` are found, the Python file is preferred.
+   Then accumulates the configs of the command line option, potentially replacing completely those from the :envvar:`RFM_CONFIG_PATH`.
 
 .. _--detect-host-topology:
 
