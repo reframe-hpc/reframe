@@ -552,7 +552,7 @@ ReFrame allows you to define custom scheduler resources for each partition that 
 
    A resource specification may also start with ``#PREFIX``, in which case ``#PREFIX`` will replace the standard job script prefix of the backend scheduler of this partition.
    This is useful in cases of job schedulers like Slurm, that allow alternative prefixes for certain features.
-   An example is the `DataWarp <https://www.cray.com/datawarp>`__ functionality of Slurm which is supported by the ``#DW`` prefix.
+   An example is the `DataWarp <https://www.nersc.gov/assets/Uploads/dw-overview-overby.pdf>`__ functionality of Slurm which is supported by the ``#DW`` prefix.
    One could then define DataWarp related resources as follows:
 
    .. code:: python
@@ -1483,13 +1483,15 @@ General Configuration
 .. js:attribute:: .general[].report_file
 
    :required: No
-   :default: ``"${HOME}/.reframe/reports/run-report.json"``
+   :default: ``"${HOME}/.reframe/reports/run-report-{sessionid}.json"``
 
    The file where ReFrame will store its report.
 
    .. versionadded:: 3.1
    .. versionchanged:: 3.2
       Default value has changed to avoid generating a report file per session.
+   .. versionchanged:: 4.0.0
+      Default value was reverted back to generate a new file per run.
 
 
 .. js:attribute:: .general[].report_junit

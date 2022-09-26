@@ -528,7 +528,7 @@
         "general/purge_environment": false,
         "general/remote_detect": false,
         "general/remote_workdir": ".",
-        "general/report_file": "${HOME}/.reframe/reports/run-report.json",
+        "general/report_file": "${HOME}/.reframe/reports/run-report-{sessionid}.json",
         "general/report_junit": null,
         "general/resolve_module_conflicts": true,
         "general/save_log_files": false,

@@ -759,7 +759,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: These modules will be loaded during the :func:`setup` phase.
     #:
-    #: :type: :class:`List[str]`
+    #: :type: :class:`List[str]` or :class:`Dict[str, object]`
     #: :default: ``[]``
     modules = variable(typ.List[str], typ.List[typ.Dict[str, object]],
                        value=[], loggable=True)
@@ -775,9 +775,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Time limit for this test.
     #:
     #: Time limit is specified as a string in the form
-    #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
-    #: If set to :class:`None`, the |time_limit|_
-    #: of the current system partition will be used.
+    #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds. If set
+    #: to :class:`None`, the
+    #: :attr:`~reframe.core.systems.SystemPartition.time_limit` of the current
+    #: system partition will be used.
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: :class:`None`
@@ -798,9 +799,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    .. versionchanged:: 3.5.1
     #:       The default value is now :class:`None` and it can be set globally
     #:       per partition via the configuration.
-    #:
-    #:    .. |time_limit| replace:: :attr:`time_limit`
-    #:    .. _time_limit: #.systems[].partitions[].time_limit
     time_limit = variable(type(None), field=fields.TimerField,
                           value=None, loggable=True)
 

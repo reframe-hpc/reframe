@@ -1805,3 +1805,19 @@ def test_nodelist_abbrev():
 
     with pytest.raises(TypeError, match='nodes argument cannot be a string'):
         nodelist('foo')
+
+
+def test_cached_return_value():
+
+    @util.cache_return_value
+    def calc():
+        time.sleep(.2)
+        return 10
+
+    t_start = time.time()
+    for _ in range(5):
+        r = calc()
+
+    t_elapsed = time.time() - t_start
+    assert r == 10
+    assert t_elapsed >= 0.2 and t_elapsed < 0.4
