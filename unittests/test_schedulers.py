@@ -397,7 +397,7 @@ def test_submit(make_job, exec_ctx):
         assert [socket.gethostname()] == minimal_job.nodelist
         assert minimal_job.exitcode == 0
         assert minimal_job.state == 'SUCCESS'
-    elif sched_name in ('slurm', 'squeue', 'pbs', 'torque', 'flux'):
+    elif sched_name in ('slurm', 'squeue', 'pbs', 'torque'):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
         assert num_nodes == len(minimal_job.nodelist)
@@ -667,8 +667,12 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     assert minimal_job.signal == signal.SIGKILL
 
     # Verify that the spawned sleep is killed, too, but back off a bit in
-    # order to allow the sleep process to wake up and get the signal
-    time.sleep(0.1)
+    # order to allow the init process to reap it.
+    #
+    # NOTE: If this unit test is run inside a container, make sure that the
+    # PID 1 process is able to reap zombie processes; if not, make sure that
+    # the container is launched with the proper options, e.g., `docker --init`.
+    time.sleep(0.2)
     assert_process_died(sleep_pid)
 
 
@@ -710,8 +714,12 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     assert minimal_job.signal == signal.SIGKILL
 
     # Verify that the spawned sleep is killed, too, but back off a bit in
-    # order to allow the sleep process to wake up and get the signal
-    time.sleep(0.1)
+    # order to allow the init process to reap it.
+    #
+    # NOTE: If this unit test is run inside a container, make sure that the
+    # PID 1 process is able to reap zombie processes; if not, make sure that
+    # the container is launched with the proper options, e.g., `docker --init`.
+    time.sleep(0.2)
     assert_process_died(sleep_pid)
 
 
