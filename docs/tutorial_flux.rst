@@ -32,7 +32,7 @@ And then reframe will again be in the local ``bin`` directory:
    # which reframe
    /code/bin/reframe
 
-Then we can run reframe with the custom config `config.py <config.py>`__
+Then we can run ReFrame with the custom config `config.py <config.py>`__
 for flux.
 
 .. code:: bash

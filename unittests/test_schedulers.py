@@ -397,7 +397,7 @@ def test_submit(make_job, exec_ctx):
         assert [socket.gethostname()] == minimal_job.nodelist
         assert minimal_job.exitcode == 0
         assert minimal_job.state == 'SUCCESS'
-    elif sched_name == ('slurm', 'squeue', 'pbs', 'torque', 'flux'):
+    elif sched_name in ('slurm', 'squeue', 'pbs', 'torque', 'flux'):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
         assert num_nodes == len(minimal_job.nodelist)
