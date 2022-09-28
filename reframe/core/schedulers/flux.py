@@ -35,7 +35,6 @@ WAITING_STATES = ('QUEUED', 'HELD', 'WAITING', 'PENDING')
 class _FluxJob(Job):
     def __init__(self, *args, **kwargs):
         '''Create the flux job (and future) to watch.'''
-
         super().__init__(*args, **kwargs)
 
         # Generate the flux job
@@ -55,10 +54,11 @@ class _FluxJob(Job):
         self.fluxjob.stderr = err
         self.fluxjob.cwd = os.path.abspath(self.workdir)
         self.fluxjob.environment = dict(os.environ)
+        self._completed = False
 
     @property
     def completed(self):
-        return not self.state in WAITING_STATES
+        return self._completed
 
 
 @register_scheduler('flux', error=error)
@@ -105,8 +105,9 @@ class FluxJobScheduler(JobScheduler):
         # Loop through active jobs and act on status
         for job in jobs:
             if job._flux_future.done():
-                # The exit code can help us determine if the job was successful
                 try:
+                    # The exit code can help us determine if the job was
+                    # successful
                     exit_code = job._flux_future.result(0)
                 except flux.job.JobException:
                     # Currently the only state we see is cancelled here
@@ -118,12 +119,11 @@ class FluxJobScheduler(JobScheduler):
                     job._state = 'SUSPENDED'
                 else:
                     # the job finished (but possibly with nonzero exit code)
+                    job._state = 'COMPLETED'
                     if exit_code != 0:
                         self.log(
                             f'Job {job.jobid} did not finish successfully'
                         )
-
-                    job._state = 'COMPLETED'
 
                 job._completed = True
             elif job.state in WAITING_STATES and job.max_pending_time:
