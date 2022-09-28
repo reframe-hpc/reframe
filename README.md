@@ -3,7 +3,6 @@
  <img src="docs/_static/img/reframe-logo-dark-bg.png#gh-dark-mode-only" width="400px">
 </div>
 
-[![ReFrame Logo](https://raw.githubusercontent.com/reframe-hpc/reframe/master/docs/_static/img/reframe_logo-width400p.png)](https://github.com/reframe-hpc/reframe)<br/>
 [![Build Status](https://github.com/reframe-hpc/reframe/workflows/ReFrame%20CI/badge.svg)](https://github.com/reframe-hpc/reframe/actions?query=workflow%3A%22ReFrame+CI%22)
 [![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/reframe-hpc/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/reframe-hpc/reframe)<br/>
