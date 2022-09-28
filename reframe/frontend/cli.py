@@ -1240,11 +1240,12 @@ def main():
             try:
                 rt.modules_system.load_module(**m, force=True)
             except errors.EnvironError as e:
-                printer.warning(
-                    f'could not load module {m["name"]!r} correctly; '
-                    f'skipping...'
+                printer.error(
+                    f'could not load module {m["name"]!r} correctly; rerun '
+                    f'with -vv for more information'
                 )
                 printer.debug(str(e))
+                sys.exit(1)
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
 
