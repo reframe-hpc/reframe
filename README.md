@@ -1,4 +1,4 @@
-<div align="center">
+<div align="left">
  <img src="docs/_static/img/reframe_logo-width400p.png#gh-light-mode-only" width="400px">
  <img src="docs/_static/img/reframe-logo-dark-bg.png#gh-dark-mode-only" width="400px">
 </div>
