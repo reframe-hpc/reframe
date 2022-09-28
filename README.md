@@ -1,7 +1,8 @@
-<div align="left">
- <img src="docs/_static/img/reframe_logo-width400p.png#gh-light-mode-only" width="400px">
- <img src="docs/_static/img/reframe-logo-dark-bg.png#gh-dark-mode-only" width="400px">
-</div>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/_static/img/reframe-logo-dark-bg.png" width="400px">
+  <source media="(prefers-color-scheme: light)" srcset="docs/_static/img/reframe_logo-full.png" width="400px">
+  <img alt="ReFrame logo" src="https://raw.githubusercontent.com/reframe-hpc/reframe/master/docs/_static/img/reframe_logo-full.png">
+</picture>
 
 [![Build Status](https://github.com/reframe-hpc/reframe/workflows/ReFrame%20CI/badge.svg)](https://github.com/reframe-hpc/reframe/actions?query=workflow%3A%22ReFrame+CI%22)
 [![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
