@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: light)" srcset="docs/_static/img/reframe-logo-dark-bg.png" width="400px">
-  <source media="(prefers-color-scheme: dark)" srcset="docs/_static/img/reframe_logo-full.png" width="400px">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/_static/img/reframe-logo-dark-bg.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/_static/img/reframe_logo-full.png">
   <img alt="ReFrame logo" src="https://raw.githubusercontent.com/reframe-hpc/reframe/master/docs/_static/img/reframe_logo-full.png">
 </picture>
 
