@@ -769,7 +769,7 @@ def main():
         logging.configure_logging(site_config)
     except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
-        printer.error(logfiles_message())
+        printer.info(logfiles_message())
         sys.exit(1)
 
     printer.colorize = site_config.get('general/0/colorize')
@@ -781,7 +781,7 @@ def main():
         runtime.init_runtime(site_config)
     except errors.ConfigError as e:
         printer.error(f'failed to initialize runtime: {e}')
-        printer.error(logfiles_message())
+        printer.info(logfiles_message())
         sys.exit(1)
 
     if site_config.get('general/0/ignore_check_conflicts'):
@@ -810,7 +810,7 @@ def main():
         printer.error("stage and output refer to the same directory; "
                       "if this is on purpose, please use the "
                       "'--keep-stage-files' option.")
-        printer.error(logfiles_message())
+        printer.info(logfiles_message())
         sys.exit(1)
 
     # Show configuration after everything is set up
