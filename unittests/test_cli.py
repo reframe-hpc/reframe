@@ -721,7 +721,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx):
     ms.searchpath_remove(module_path)
     assert "could not load module 'testmod_foo' correctly" in stdout
     assert 'Traceback' not in stderr
-    assert returncode == 0
+    assert returncode == 1
 
 
 def test_use_module_path(run_reframe, user_exec_ctx):
