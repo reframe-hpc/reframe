@@ -453,7 +453,7 @@ def test_cancel(make_job, exec_ctx):
     prepare_job(minimal_job, 'sleep 30')
     t_job = time.time()
 
-    submit_job(job)
+    submit_job(minimal_job)
     minimal_job.cancel()
 
     # We give some time to the local scheduler for the TERM signal to be
