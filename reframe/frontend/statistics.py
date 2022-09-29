@@ -254,11 +254,7 @@ class TestStats:
             printer.info(f"  * Maintainers: {r['maintainers']}")
             printer.info(f"  * Failing phase: {r['fail_phase']}")
             if rerun_info and not r['fixture']:
-                cls = r['display_name'].split(' ')[0]
-                variant = r['unique_name'].replace(cls, '')
-                variant = variant.replace('_', '@')
-                nameoptarg = cls + variant
-                printer.info(f"  * Rerun with '-n {nameoptarg}"
+                printer.info(f"  * Rerun with '-n /{r['hash']}"
                              f" -p {r['environment']} --system "
                              f"{r['system']} -r'")
 
