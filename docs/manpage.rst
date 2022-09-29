@@ -788,6 +788,8 @@ Miscellaneous options
    If both ``settings.py`` and ``settings.json`` are found, the Python file is preferred.
    Then accumulates the configs of the command line option, potentially replacing completely those from the :envvar:`RFM_CONFIG_PATH`.
 
+   .. versionchanged:: 4.0.0
+
 .. _--detect-host-topology:
 
 .. option:: --detect-host-topology[=FILE]
