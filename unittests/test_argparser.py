@@ -120,7 +120,7 @@ def extended_parser():
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
     foo_options.add_argument(
-        '-C', '--config-files', action='store', envvar='RFM_CONFIG_FILES'
+        '-C', '--config-file', action='store', envvar='RFM_CONFIG_FILE'
     )
     foo_options.add_argument(
         '--check-path', action='append', envvar='RFM_CHECK_SEARCH_PATH :'
@@ -153,7 +153,7 @@ def test_option_precedence(default_exec_ctx, extended_parser):
         assert options.recursive is None
         assert options.timestamp == '%FT%T'
         assert options.non_default_craype is True
-        assert options.config_files is None
+        assert options.config_file is None
         assert options.prefix is None
         assert options.stagedir == '/foo'
         assert options.module == ['a', 'b', 'c']

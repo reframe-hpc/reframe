@@ -775,13 +775,13 @@ It does so by leveraging the selected system's environment modules system.
 Miscellaneous options
 ---------------------
 
-.. option:: -C --config-files=FILE
+.. option:: -C --config-file=FILE
 
    Use ``FILE`` as configuration file for ReFrame.
    The user can pass multiple configuration files that will be added on top of the ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
    To ignore previous configuration files you need to pass ``-C :new_config.py``
 
-   This option can also be set using the :envvar:`RFM_CONFIG_FILES` environment variable.
+   This option can also be set using the :envvar:`RFM_CONFIG_FILE` environment variable.
 
    ReFrame first loads the builtin config unconditionally and then starts to look for configs in the :envvar:`RFM_CONFIG_PATH` and starts chaining them.
    :envvar:`RFM_CONFIG_PATH` containe directories where a file named ``setting.py`` or ``setting.json`` is.
@@ -1167,7 +1167,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
    .. versionadded:: 3.12.0
 
-.. envvar:: RFM_CONFIG_FILES
+.. envvar:: RFM_CONFIG_FILE
 
    Set the configuration file for ReFrame.
 

@@ -1,0 +1,2995 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "REFRAME.SETTINGS" "8" "Sep 29, 2022" "4.0.0-dev.1" "ReFrame"
+.SH NAME
+reframe.settings \- ReFrame Configuration Manual
+.sp
+ReFrame’s behavior can be configured through its configuration file (see \fI\%Configuring ReFrame for Your Site\fP), environment variables and command\-line options.
+An option can be specified via multiple paths (e.g., a configuration file parameter and an environment variable), in which case command\-line options precede environment variables, which in turn precede configuration file options.
+This section provides a complete reference guide of the configuration options of ReFrame that can be set in its configuration file or specified using environment variables.
+.sp
+ReFrame’s configuration is in JSON syntax.
+The full schema describing it can be found in \fI\%reframe/schemas/config.json\fP file.
+Any configuration file given to ReFrame is validated against this schema.
+.sp
+The syntax we use in the following to describe the different configuration object attributes is a valid query string for the \fI\%jq(1)\fP command\-line processor.
+.SH TOP-LEVEL CONFIGURATION
+.sp
+The top\-level configuration object is essentially the full configuration of ReFrame.
+It consists of the following properties:
+.INDENT 0.0
+.TP
+.B \&.systems
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+A list of \fI\%system configuration objects\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+A list of \fI\%environment configuration objects\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+A list of \fI\%logging configuration objects\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.schedulers
+.INDENT 7.0
+.TP
+.B Required
+No
+.UNINDENT
+.sp
+A list of \fI\%scheduler configuration objects\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.modes
+.INDENT 7.0
+.TP
+.B Required
+No
+.UNINDENT
+.sp
+A list of \fI\%execution mode configuration objects\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general
+.INDENT 7.0
+.TP
+.B Required
+No
+.UNINDENT
+.sp
+A list of \fI\%general configuration objects\fP\&.
+.UNINDENT
+.SH SYSTEM CONFIGURATION
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.name
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The name of this system.
+Only alphanumeric characters, dashes (\fB\-\fP) and underscores (\fB_\fP) are allowed.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.descr
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB""\fP
+.UNINDENT
+.sp
+The description of this system.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.hostnames
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+A list of hostname regular expression patterns in Python \fI\%syntax\fP, which will be used by the framework in order to automatically select a system configuration.
+For the auto\-selection process, see \fI\%here\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.max_local_jobs
+The maximum number of forced local build or run jobs allowed.
+.sp
+Forced local jobs run within the execution context of ReFrame.
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB8\fP
+.UNINDENT
+.sp
+New in version 3.10.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.modules_system
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"nomod"\fP
+.UNINDENT
+.sp
+The modules system that should be used for loading environment modules on this system.
+Available values are the following:
+.INDENT 7.0
+.IP \(bu 2
+\fBtmod\fP: The classic Tcl implementation of the \fI\%environment modules\fP (version 3.2).
+.IP \(bu 2
+\fBtmod31\fP: The classic Tcl implementation of the \fI\%environment modules\fP (version 3.1).
+A separate backend is required for Tmod 3.1, because Python bindings are different from Tmod 3.2.
+.IP \(bu 2
+\fBtmod32\fP: A synonym of \fBtmod\fP\&.
+.IP \(bu 2
+\fBtmod4\fP: The \fI\%new environment modules\fP implementation (versions older than 4.1 are not supported).
+.IP \(bu 2
+\fBlmod\fP: The \fI\%Lua implementation\fP of the environment modules.
+.IP \(bu 2
+\fBspack\fP: \fI\%Spack\fP’s built\-in mechanism for managing modules.
+.IP \(bu 2
+\fBnomod\fP: This is to denote that no modules system is used by this system.
+.UNINDENT
+.sp
+New in version 3.4: The \fBspack\fP backend is added.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.modules
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of \fI\%environment module objects\fP to be loaded always when running on this system.
+These modules modify the ReFrame environment.
+This is useful in cases where a particular module is needed, for example, to submit jobs on a specific system.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.variables
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of environment variables to be set always when running on this system.
+These variables modify the ReFrame environment.
+Each environment variable is specified as a two\-element list containing the variable name and its value.
+You may reference other environment variables when defining an environment variable here.
+ReFrame will expand its value.
+Variables are set after the environment modules are loaded.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.prefix
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"."\fP
+.UNINDENT
+.sp
+Directory prefix for a ReFrame run on this system.
+Any directories or files produced by ReFrame will use this prefix, if not specified otherwise.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.stagedir
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"${RFM_PREFIX}/stage"\fP
+.UNINDENT
+.sp
+Stage directory prefix for this system.
+This is the directory prefix, where ReFrame will create the stage directories for each individual test case.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.outputdir
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"${RFM_PREFIX}/output"\fP
+.UNINDENT
+.sp
+Output directory prefix for this system.
+This is the directory prefix, where ReFrame will save information about the successful tests.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.resourcesdir
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"."\fP
+.UNINDENT
+.sp
+Directory prefix where external test resources (e.g., large input files) are stored.
+You may reference this prefix from within a regression test by accessing the \fI\%reframe.core.systems.System.resourcesdir\fP attribute of the current system.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+A list of \fI\%system partition configuration objects\fP\&.
+This list must have at least one element.
+.UNINDENT
+.SS System Partition Configuration
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.name
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The name of this partition.
+Only alphanumeric characters, dashes (\fB\-\fP) and underscores (\fB_\fP) are allowed.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.descr
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB""\fP
+.UNINDENT
+.sp
+The description of this partition.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.scheduler
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The job scheduler that will be used to launch jobs on this partition.
+Supported schedulers are the following:
+.INDENT 7.0
+.IP \(bu 2
+\fBlocal\fP: Jobs will be launched locally without using any job scheduler.
+.IP \(bu 2
+\fBoar\fP: Jobs will be launched using the \fI\%OAR\fP scheduler.
+.IP \(bu 2
+\fBpbs\fP: Jobs will be launched using the \fI\%PBS Pro\fP scheduler.
+.IP \(bu 2
+\fBsge\fP: Jobs will be launched using the \fI\%Sun Grid Engine\fP scheduler.
+.IP \(bu 2
+\fBslurm\fP: Jobs will be launched using the \fI\%Slurm\fP scheduler.
+This backend requires job accounting to be enabled in the target system.
+If not, you should consider using the \fBsqueue\fP backend below.
+.IP \(bu 2
+\fBsqueue\fP: Jobs will be launched using the \fI\%Slurm\fP scheduler.
+This backend does not rely on job accounting to retrieve job statuses, but ReFrame does its best to query the job state as reliably as possible.
+.IP \(bu 2
+\fBtorque\fP: Jobs will be launched using the \fI\%Torque\fP scheduler.
+.IP \(bu 2
+\fBlsf\fP: Jobs will be launched using the \fI\%LSF\fP scheduler.
+.UNINDENT
+.sp
+New in version 3.7.2: Support for the SGE scheduler is added.
+
+.sp
+New in version 3.8.2: Support for the OAR scheduler is added.
+
+.sp
+New in version 3.11.0: Support for the LSF scheduler is added.
+
+.sp
+\fBNOTE:\fP
+.INDENT 7.0
+.INDENT 3.5
+The way that multiple node jobs are submitted using the SGE scheduler can be very site\-specific.
+For this reason, the \fBsge\fP scheduler backend does not try to interpret any related arguments, e.g., \fBnum_tasks\fP, \fBnum_tasks_per_node\fP etc.
+Users must specify how these resources are to be requested by setting the \fBresources\fP partition configuration parameter and then request them from inside a test using the \fI\%extra_resources\fP test attribute.
+Here is an example configuration for a system partition named \fBfoo\fP that defines different ways for submitting MPI\-only, OpenMP\-only and MPI+OpenMP jobs:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+{
+    \(aqname\(aq: \(aqfoo\(aq,
+    \(aqscheduler\(aq: \(aqsge\(aq,
+    \(aqresources\(aq: [
+        {
+            \(aqname\(aq: \(aqsmp\(aq,
+            \(aqoptions\(aq: [\(aq\-pe smp {num_slots}\(aq]
+        },
+        {
+            \(aqname\(aq: \(aqmpi\(aq,
+            \(aqoptions\(aq: [\(aq\-pe mpi {num_slots}\(aq]
+        },
+        {
+            \(aqname\(aq: \(aqmpismp\(aq,
+            \(aqoptions\(aq: [\(aq\-pe mpismp {num_slots}\(aq]
+        }
+    ]
+}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Each test then can request the different type of slots as follows:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+self.extra_resouces = {
+    \(aqsmp\(aq: {\(aqnum_slots\(aq: self.num_cpus_per_task},
+    \(aqmpi\(aq: {\(aqnum_slots\(aq: self.num_tasks},
+    \(aqmpismp\(aq: {\(aqnum_slots\(aq: self.num_tasks*self.num_cpus_per_task}
+}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Notice that defining \fI\%extra_resources\fP does not make the test non\-portable to other systems that have different schedulers;
+the \fBextra_resources\fP will be simply ignored in this case and the scheduler backend will interpret the different test fields in the appropriate way.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.launcher
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The parallel job launcher that will be used in this partition to launch parallel programs.
+Available values are the following:
+.INDENT 7.0
+.IP \(bu 2
+\fBalps\fP: Parallel programs will be launched using the \fI\%Cray ALPS\fP \fBaprun\fP command.
+.IP \(bu 2
+\fBibrun\fP: Parallel programs will be launched using the \fBibrun\fP command.
+This is a custom parallel program launcher used at \fI\%TACC\fP\&.
+.IP \(bu 2
+\fBlocal\fP: No parallel program launcher will be used.
+The program will be launched locally.
+.IP \(bu 2
+\fBlrun\fP: Parallel programs will be launched using \fI\%LC Launcher\fP’s \fBlrun\fP command.
+.IP \(bu 2
+\fBlrun\-gpu\fP: Parallel programs will be launched using \fI\%LC Launcher\fP’s \fBlrun \-M "\-gpu"\fP command that enables the CUDA\-aware Spectrum MPI.
+.IP \(bu 2
+\fBmpirun\fP: Parallel programs will be launched using the \fBmpirun\fP command.
+.IP \(bu 2
+\fBmpiexec\fP: Parallel programs will be launched using the \fBmpiexec\fP command.
+.IP \(bu 2
+\fBsrun\fP: Parallel programs will be launched using \fI\%Slurm\fP’s \fBsrun\fP command.
+.IP \(bu 2
+\fBsrunalloc\fP: Parallel programs will be launched using \fI\%Slurm\fP’s \fBsrun\fP command, but job allocation options will also be emitted.
+This can be useful when combined with the \fBlocal\fP job scheduler.
+.IP \(bu 2
+\fBssh\fP: Parallel programs will be launched using SSH.
+This launcher uses the partition’s \fI\%access\fP property in order to determine the remote host and any additional options to be passed to the SSH client.
+The ssh command will be launched in “batch mode,” meaning that password\-less access to the remote host must be configured.
+Here is an example configuration for the ssh launcher:
+.INDENT 2.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+{
+    \(aqname\(aq: \(aqfoo\(aq
+    \(aqscheduler\(aq: \(aqlocal\(aq,
+    \(aqlauncher\(aq: \(aqssh\(aq
+    \(aqaccess\(aq: [\(aq\-l admin\(aq, \(aqremote.host\(aq],
+    \(aqenvirons\(aq: [\(aqbuiltin\(aq],
+}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.IP \(bu 2
+\fBupcrun\fP: Parallel programs will be launched using the \fI\%UPC\fP \fBupcrun\fP command.
+.IP \(bu 2
+\fBupcxx\-run\fP: Parallel programs will be launched using the \fI\%UPC++\fP \fBupcxx\-run\fP command.
+.UNINDENT
+.sp
+\fBTIP:\fP
+.INDENT 7.0
+.INDENT 3.5
+New in version 4.0.0: ReFrame also allows you to register your own custom launchers simply by defining them in the configuration.
+You can follow a small tutorial \fI\%here\fP\&.
+
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.access
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of job scheduler options that will be passed to the generated job script for gaining access to that logical partition.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.environs
+.INDENT 7.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+.B required
+No
+.TP
+.B default
+\fB[]\fP
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+A list of environment names that ReFrame will use to run regression tests on this partition.
+Each environment must be defined in the \fI\%environments\fP section of the configuration and the definition of the environment must be valid for this partition.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.container_platforms
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list for \fI\%container platform configuration objects\fP\&.
+This will allow launching regression tests that use containers on this partition.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.modules
+.INDENT 7.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+.B required
+No
+.TP
+.B default
+\fB[]\fP
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+A list of \fI\%environment module objects\fP to be loaded before running a regression test on this partition.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.time_limit
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBnull\fP
+.UNINDENT
+.sp
+The time limit for the jobs submitted on this partition.
+When the value is \fBnull\fP, no time limit is applied.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.variables
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of environment variables to be set before running a regression test on this partition.
+Each environment variable is specified as a two\-element list containing the variable name and its value.
+You may reference other environment variables when defining an environment variable here.
+ReFrame will expand its value.
+Variables are set after the environment modules are loaded.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.max_jobs
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB8\fP
+.UNINDENT
+.sp
+The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
+This option is relevant only when ReFrame executes with the \fI\%asynchronous execution policy\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.prepare_cmds
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+List of shell commands to be emitted before any environment loading commands are emitted.
+.sp
+New in version 3.5.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.resources
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of job scheduler \fI\%resource specification\fP objects.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.processor
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB{}\fP
+.UNINDENT
+.sp
+Processor information for this partition stored in a \fI\%processor info object\fP\&.
+If not set, ReFrame will try to auto\-detect this information (see \fI\%Auto\-detecting processor information\fP for more information).
+.sp
+New in version 3.5.0.
+
+.sp
+Changed in version 3.7.0: ReFrame is now able to detect the processor information automatically.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.devices
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list with \fI\%device info objects\fP for this partition.
+.sp
+New in version 3.5.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.features
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+User defined features of the partition.
+These are accessible through the \fI\%features\fP attribute of the \fI\%current_partition\fP and can also be selected through the extended syntax of \fI\%valid_systems\fP\&.
+The values of this list must be alphanumeric strings starting with a non\-digit character and may also contain a \fB\-\fP\&.
+.sp
+New in version 3.11.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.extras
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB{}\fP
+.UNINDENT
+.sp
+User defined attributes of the partition.
+These are accessible through the \fI\%extras\fP attribute of the \fI\%current_partition\fP and can also be selected through the extended syntax of \fI\%valid_systems\fP\&.
+The attributes of this object must be alphanumeric strings starting with a non\-digit character and their values can be of any type.
+.sp
+New in version 3.5.0.
+
+.UNINDENT
+.SS Container Platform Configuration
+.sp
+ReFrame can launch containerized applications, but you need to configure properly a system partition in order to do that by defining a container platform configuration.
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.container_platforms[]\&.type
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The type of the container platform.
+Available values are the following:
+.INDENT 7.0
+.IP \(bu 2
+\fBDocker\fP: The \fI\%Docker\fP container runtime.
+.IP \(bu 2
+\fBSarus\fP: The \fI\%Sarus\fP container runtime.
+.IP \(bu 2
+\fBShifter\fP: The \fI\%Shifter\fP container runtime.
+.IP \(bu 2
+\fBSingularity\fP: The \fI\%Singularity\fP container runtime.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.container_platforms[]\&.default
+.INDENT 7.0
+.TP
+.B Required
+No
+.UNINDENT
+.sp
+If set to \fBtrue\fP, this is the default container platform of this partition.
+If not specified, the default container platform is assumed to be the first in the list of \fBcontainer_platforms\fP\&.
+.sp
+New in version 3.12.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.container_platforms[]\&.modules
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of \fI\%environment module objects\fP to be loaded when running containerized tests using this container platform.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.container_platforms[]\&.variables
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+List of environment variables to be set when running containerized tests using this container platform.
+Each environment variable is specified as a two\-element list containing the variable name and its value.
+You may reference other environment variables when defining an environment variable here.
+ReFrame will expand its value.
+Variables are set after the environment modules are loaded.
+.UNINDENT
+.SS Custom Job Scheduler Resources
+.sp
+ReFrame allows you to define custom scheduler resources for each partition that you can then transparently access through the \fBextra_resources\fP attribute of a regression test.
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.resources[]\&.name
+.INDENT 7.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+.B required
+Yes
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+The name of this resources.
+This name will be used to request this resource in a regression test’s \fBextra_resources\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.systems[]\&.partitions[]\&.resources[]\&.options
+.INDENT 7.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+.B required
+No
+.TP
+.B default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of options to be passed to this partition’s job scheduler.
+The option strings can contain placeholders of the form \fB{placeholder_name}\fP\&.
+These placeholders may be replaced with concrete values by a regression test through the \fBextra_resources\fP attribute.
+.sp
+For example, one could define a \fBgpu\fP resource for a multi\-GPU system that uses Slurm as follows:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\(aqresources\(aq: [
+    {
+        \(aqname\(aq: \(aqgpu\(aq,
+        \(aqoptions\(aq: [\(aq\-\-gres=gpu:{num_gpus_per_node}\(aq]
+    }
+]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+A regression test then may request this resource as follows:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+self.extra_resources = {\(aqgpu\(aq: {\(aqnum_gpus_per_node\(aq: \(aq8\(aq}}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+And the generated job script will have the following line in its preamble:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+#SBATCH \-\-gres=gpu:8
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+A resource specification may also start with \fB#PREFIX\fP, in which case \fB#PREFIX\fP will replace the standard job script prefix of the backend scheduler of this partition.
+This is useful in cases of job schedulers like Slurm, that allow alternative prefixes for certain features.
+An example is the \fI\%DataWarp\fP functionality of Slurm which is supported by the \fB#DW\fP prefix.
+One could then define DataWarp related resources as follows:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\(aqresources\(aq: [
+    {
+        \(aqname\(aq: \(aqdatawarp\(aq,
+        \(aqoptions\(aq: [
+            \(aq#DW jobdw capacity={capacity} access_mode={mode} type=scratch\(aq,
+            \(aq#DW stage_out source={out_src} destination={out_dst} type={stage_filetype}\(aq
+        ]
+    }
+]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+A regression test that wants to make use of that resource, it can set its \fBextra_resources\fP as follows:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+self.extra_resources = {
+    \(aqdatawarp\(aq: {
+        \(aqcapacity\(aq: \(aq100GB\(aq,
+        \(aqmode\(aq: \(aqstriped\(aq,
+        \(aqout_src\(aq: \(aq$DW_JOB_STRIPED/name\(aq,
+        \(aqout_dst\(aq: \(aq/my/file\(aq,
+        \(aqstage_filetype\(aq: \(aqfile\(aq
+    }
+}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.sp
+\fBNOTE:\fP
+.INDENT 7.0
+.INDENT 3.5
+For the \fBpbs\fP and \fBtorque\fP backends, options accepted in the \fI\%access\fP and \fI\%resources\fP attributes may either refer to actual \fBqsub\fP options or may be just resources specifications to be passed to the \fB\-l\fP option.
+The backend assumes a \fBqsub\fP option, if the options passed in these attributes start with a \fB\-\fP\&.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH ENVIRONMENT CONFIGURATION
+.sp
+Environments defined in this section will be used for running regression tests.
+They are associated with \fI\%system partitions\fP\&.
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.name
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The name of this environment.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.modules
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of \fI\%environment module objects\fP to be loaded when this environment is loaded.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.variables
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of environment variables to be set when loading this environment.
+Each environment variable is specified as a two\-element list containing the variable name and its value.
+You may reference other environment variables when defining an environment variable here.
+ReFrame will expand its value.
+Variables are set after the environment modules are loaded.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.features
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+User defined features of the environment.
+These are accessible through the \fI\%features\fP attribute of the \fI\%current_environ\fP and can also be selected through the extended syntax of \fI\%valid_prog_environs\fP\&.
+The values of this list must be alphanumeric strings starting with a non\-digit character and may also contain a \fB\-\fP\&.
+.sp
+New in version 3.11.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.extras
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB{}\fP
+.UNINDENT
+.sp
+User defined attributes of the environment.
+These are accessible through the \fI\%extras\fP attribute of the \fI\%current_environ\fP and can also be selected through the extended syntax of \fI\%valid_prog_environs\fP\&.
+The attributes of this object must be alphanumeric strings starting with a non\-digit character and their values can be of any type.
+.sp
+New in version 3.9.1.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.cc
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"cc"\fP
+.UNINDENT
+.sp
+The C compiler to be used with this environment.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.cxx
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"CC"\fP
+.UNINDENT
+.sp
+The C++ compiler to be used with this environment.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.ftn
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"ftn"\fP
+.UNINDENT
+.sp
+The Fortran compiler to be used with this environment.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.cppflags
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of C preprocessor flags to be used with this environment by default.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.cflags
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of C flags to be used with this environment by default.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.cxxflags
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of C++ flags to be used with this environment by default.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.fflags
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of Fortran flags to be used with this environment by default.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.ldflags
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of linker flags to be used with this environment by default.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.environments[]\&.target_systems
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB["*"]\fP
+.UNINDENT
+.sp
+A list of systems or system/partitions combinations that this environment definition is valid for.
+A \fB*\fP entry denotes any system.
+In case of multiple definitions of an environment, the most specific to the current system partition will be used.
+For example, if the current system/partition combination is \fBdaint:mc\fP, the second definition of the \fBPrgEnv\-gnu\fP environment will be used:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\(aqenvironments\(aq: [
+    {
+        \(aqname\(aq: \(aqPrgEnv\-gnu\(aq,
+        \(aqmodules\(aq: [\(aqPrgEnv\-gnu\(aq]
+    },
+    {
+        \(aqname\(aq: \(aqPrgEnv\-gnu\(aq,
+        \(aqmodules\(aq: [\(aqPrgEnv\-gnu\(aq, \(aqopenmpi\(aq],
+        \(aqcc\(aq:  \(aqmpicc\(aq,
+        \(aqcxx\(aq: \(aqmpicxx\(aq,
+        \(aqftn\(aq: \(aqmpif90\(aq,
+        \(aqtarget_systems\(aq: [\(aqdaint:mc\(aq]
+    }
+]
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+However, if the current system was \fBdaint:gpu\fP, the first definition would be selected, despite the fact that the second definition is relevant for another partition of the same system.
+To better understand this, ReFrame resolves definitions in a hierarchical way.
+It first looks for definitions for the current partition, then for the containing system and, finally, for global definitions (the \fB*\fP pseudo\-system).
+.UNINDENT
+.SH LOGGING CONFIGURATION
+.sp
+Logging in ReFrame is handled by logger objects which further delegate message to \fIlogging handlers\fP which are eventually responsible for emitting or sending the log records to their destinations.
+You may define different logger objects per system but \fInot\fP per partition.
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.level
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"undefined"\fP
+.UNINDENT
+.sp
+The level associated with this logger object.
+There are the following levels in decreasing severity order:
+.INDENT 7.0
+.IP \(bu 2
+\fBcritical\fP: Catastrophic errors; the framework cannot proceed with its execution.
+.IP \(bu 2
+\fBerror\fP: Normal errors; the framework may or may not proceed with its execution.
+.IP \(bu 2
+\fBwarning\fP: Warning messages.
+.IP \(bu 2
+\fBinfo\fP: Informational messages.
+.IP \(bu 2
+\fBverbose\fP: More informational messages.
+.IP \(bu 2
+\fBdebug\fP: Debug messages.
+.IP \(bu 2
+\fBdebug2\fP: Further debug messages.
+.IP \(bu 2
+\fBundefined\fP: This is the lowest level; do not filter any message.
+.UNINDENT
+.sp
+If a message is logged by the framework, its severity level will be checked by the logger and if it is higher from the logger’s level, it will be passed down to its handlers.
+.sp
+New in version 3.3: The \fBdebug2\fP and \fBundefined\fP levels are added.
+
+.sp
+Changed in version 3.3: The default level is now \fBundefined\fP\&.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+A list of logging handlers responsible for handling normal framework output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers_perflog
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+A list of logging handlers responsible for handling performance data from tests.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.target_systems
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB["*"]\fP
+.UNINDENT
+.sp
+A list of systems or system/partitions combinations that this logging configuration is valid for.
+For a detailed description of this property, you may refer \fI\%here\fP\&.
+.UNINDENT
+.SS Common logging handler properties
+.sp
+All logging handlers share the following set of common attributes:
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.type
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers_perflog[]\&.type
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The type of handler.
+There are the following types available:
+.INDENT 7.0
+.IP \(bu 2
+\fBfile\fP: This handler sends log records to file.
+See \fI\%here\fP for more details.
+.IP \(bu 2
+\fBfilelog\fP: This handler sends performance log records to files.
+See \fI\%here\fP for more details.
+.IP \(bu 2
+\fBgraylog\fP: This handler sends performance log records to Graylog.
+See \fI\%here\fP for more details.
+.IP \(bu 2
+\fBstream\fP: This handler sends log records to a file stream.
+See \fI\%here\fP for more details.
+.IP \(bu 2
+\fBsyslog\fP: This handler sends log records to a Syslog facility.
+See \fI\%here\fP for more details.
+.IP \(bu 2
+\fBhttpjson\fP: This handler sends log records in JSON format using HTTP post requests.
+See \fI\%here\fP for more details.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.level
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers_perflog[]\&.level
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"info"\fP
+.UNINDENT
+.sp
+The \fI\%log level\fP associated with this handler.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.format
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers_perflog[]\&.format
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"%(message)s"\fP
+.UNINDENT
+.sp
+Log record format string.
+ReFrame accepts all log record attributes from Python’s \fI\%logging\fP mechanism and adds the following:
+.TS
+center;
+|l|l|l|.
+_
+T{
+Log record attribute
+T}	T{
+Description
+T}	T{
+T}
+_
+T{
+\fB%(check_build_locally)s\fP
+T}	T{
+The value of the \fI\%build_locally\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_build_time_limit)s\fP
+T}	T{
+The value of the \fI\%build_time_limit\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_descr)s\fP
+T}	T{
+The value of the \fI\%descr\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_display_name)s\fP
+T}	T{
+The value of the \fI\%display_name\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_environ)s\fP
+T}	T{
+The name of the test’s \fI\%current_environ\fP\&.
+T}	T{
+T}
+_
+T{
+\fB%(check_exclusive_access)s\fP
+T}	T{
+The value of the \fI\%exclusive_access\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_executable)s\fP
+T}	T{
+The value of the \fI\%executable\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_executable_opts)s\fP
+T}	T{
+The value of the \fI\%executable_opts\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_extra_resources)s\fP
+T}	T{
+The value of the \fI\%extra_resources\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_hashcode)s\fP
+T}	T{
+The unique hash associated with this test.
+T}	T{
+T}
+_
+T{
+\fB%(check_info)s\fP
+T}	T{
+Various information about this test; essentially the return value of the test’s \fI\%info()\fP function.
+T}	T{
+T}
+_
+T{
+\fB%(check_job_completion_time)s\fP
+T}	T{
+Same as the \fB(check_job_completion_time_unix)s\fP but formatted according to \fBdatefmt\fP\&.
+T}	T{
+T}
+_
+T{
+\fB%(check_job_completion_time_unix)s\fP
+T}	T{
+The completion time of the associated run job (see \fI\%reframe.core.schedulers.Job.completion_time\fP).
+T}	T{
+T}
+_
+T{
+\fB%(check_job_exitcode)s\fP
+T}	T{
+The exit code of the associated run job.
+T}	T{
+T}
+_
+T{
+\fB%(check_job_nodelist)s\fP
+T}	T{
+The list of nodes that the associated run job has run on.
+T}	T{
+T}
+_
+T{
+\fB%(check_jobid)s\fP
+T}	T{
+The ID of the associated run job.
+T}	T{
+T}
+_
+T{
+\fB%(check_keep_files)s\fP
+T}	T{
+The value of the \fI\%keep_files\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_local)s\fP
+T}	T{
+The value of the \fI\%local\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_maintainers)s\fP
+T}	T{
+The value of the \fI\%maintainers\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_max_pending_time)s\fP
+T}	T{
+The value of the \fI\%max_pending_time\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_modules)s\fP
+T}	T{
+The value of the \fI\%modules\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_name)s\fP
+T}	T{
+The value of the \fI\%name\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_num_cpus_per_task)s\fP
+T}	T{
+The value of the \fI\%num_cpus_per_task\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_num_gpus_per_node)s\fP
+T}	T{
+The value of the \fI\%num_gpus_per_node\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_num_tasks)s\fP
+T}	T{
+The value of the \fI\%num_tasks\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_num_tasks_per_core)s\fP
+T}	T{
+The value of the \fI\%num_tasks_per_core\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_num_tasks_per_node)s\fP
+T}	T{
+The value of the \fI\%num_tasks_per_node\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_num_tasks_per_socket)s\fP
+T}	T{
+The value of the \fI\%num_tasks_per_socket\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_outputdir)s\fP
+T}	T{
+The value of the \fI\%outputdir\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_partition)s\fP
+T}	T{
+The name of the test’s \fI\%current_partition\fP\&.
+T}	T{
+T}
+_
+T{
+\fB%(check_perf_lower_thres)s\fP
+T}	T{
+The lower threshold of the logged performance variable.
+T}	T{
+T}
+_
+T{
+\fB%(check_perf_ref)s\fP
+T}	T{
+The reference value of the logged performance variable.
+T}	T{
+T}
+_
+T{
+\fB%(check_perf_unit)s\fP
+T}	T{
+The measurement unit of the logged performance variable.
+T}	T{
+T}
+_
+T{
+\fB%(check_perf_upper)s\fP
+T}	T{
+The upper thresholds of the logged performance variable.
+T}	T{
+T}
+_
+T{
+\fB%(check_perf_value)s\fP
+T}	T{
+The actual value of the logged performance variable.
+T}	T{
+T}
+_
+T{
+\fB%(check_perf_var)s\fP
+T}	T{
+The name of the logged performance variable.
+T}	T{
+T}
+_
+T{
+\fB%(check_perfvalues)s\fP
+T}	T{
+All the performance variables of the test combined along with their values
+T}	T{
+references and thresholds.
+T}
+_
+T{
+\fB%(check_postbuild_cmds)s\fP
+T}	T{
+The value of the \fI\%postbuild_cmds\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_postrun_cmds)s\fP
+T}	T{
+The value of the \fI\%postrun_cmds\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_prebuild_cmds)s\fP
+T}	T{
+The value of the \fI\%prebuild_cmds\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_prefix)s\fP
+T}	T{
+The value of the \fI\%prefix\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_prerun_cmds)s\fP
+T}	T{
+The value of the \fI\%prerun_cmds\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_readonly_files)s\fP
+T}	T{
+The value of the \fI\%readonly_files\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_short_name)s\fP
+T}	T{
+The value of the \fI\%short_name\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_sourcepath)s\fP
+T}	T{
+The value of the \fI\%sourcepath\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_sourcesdir)s\fP
+T}	T{
+The value of the \fI\%sourcesdir\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_stagedir)s\fP
+T}	T{
+The value of the \fI\%stagedir\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_strict_check)s\fP
+T}	T{
+The value of the \fI\%strict_check\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_system)s\fP
+T}	T{
+The name of the test’s \fI\%current_system\fP\&.
+T}	T{
+T}
+_
+T{
+\fB%(check_tags)s\fP
+T}	T{
+The value of the \fI\%tags\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_time_limit)s\fP
+T}	T{
+The value of the \fI\%time_limit\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_unique_name)s\fP
+T}	T{
+The value of the \fI\%unique_name\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_use_multithreading)s\fP
+T}	T{
+The value of the \fI\%use_multithreading\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_valid_prog_environs)s\fP
+T}	T{
+The value of the \fI\%valid_prog_environs\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_valid_systems)s\fP
+T}	T{
+The value of the \fI\%valid_systems\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(check_variables)s\fP
+T}	T{
+The value of the \fI\%variables\fP attribute.
+T}	T{
+T}
+_
+T{
+\fB%(osuser)s\fP
+T}	T{
+The name of the OS user running ReFrame.
+T}	T{
+T}
+_
+T{
+\fB%(osgroup)s\fP
+T}	T{
+The name of the OS group running ReFrame.
+T}	T{
+T}
+_
+T{
+\fB%(version)s\fP
+T}	T{
+The ReFrame version.
+T}	T{
+T}
+_
+.TE
+.sp
+ReFrame allows you to log any test variable, parameter or property if they are marked as “loggable”.
+The log record attribute will have the form \fB%(check_NAME)s\fP where \fBNAME\fP is the variable name, the parameter name or the property name that is marked as loggable.
+.UNINDENT
+.sp
+New in version 3.3: Allow arbitrary test attributes to be logged.
+
+.sp
+New in version 3.4.2: Allow arbitrary job attributes to be logged.
+
+.sp
+Changed in version 3.11.0: Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as “loggable” in order to be selectable for logging.
+
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.datefmt
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].datefmt
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"%FT%T"\fP
+.UNINDENT
+.sp
+Time format to be used for printing timestamps fields.
+There are two timestamp fields available: \fB%(asctime)s\fP and \fB%(check_job_completion_time)s\fP\&.
+In addition to the format directives supported by the standard library’s \fI\%time.strftime()\fP function, ReFrame allows you to use the \fB%:z\fP directive – a GNU \fBdate\fP extension –  that will print the time zone difference in a RFC3339 compliant way, i.e., \fB+/\-HH:MM\fP instead of \fB+/\-HHMM\fP\&.
+.UNINDENT
+.SS The \fBfile\fP log handler
+.sp
+This log handler handles output to normal files.
+The additional properties for the \fBfile\fP handler are the following:
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.name
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].name
+.INDENT 7.0
+.TP
+.B Required
+No
+.UNINDENT
+.sp
+The name of the file where this handler will write log records.
+If not specified, ReFrame will create a log file prefixed with \fBrfm\-\fP in the system’s temporary directory.
+.sp
+Changed in version 3.3: The \fBname\fP parameter is no more required and the default log file resides in the system’s temporary directory.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.append
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].append
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Controls whether this handler should append to its file or not.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.timestamp
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].timestamp
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Append a timestamp to this handler’s log file.
+This property may also accept a date format as described in the \fI\%datefmt\fP property.
+If the handler’s \fI\%name\fP property is set to \fBfilename.log\fP and this property is set to \fBtrue\fP or to a specific timestamp format, the resulting log file will be \fBfilename_<timestamp>.log\fP\&.
+.UNINDENT
+.SS The \fBfilelog\fP log handler
+.sp
+This handler is meant primarily for performance logging and logs the performance of a regression test in one or more files.
+The additional properties for the \fBfilelog\fP handler are the following:
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.basedir
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].basedir
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"./perflogs"\fP
+.UNINDENT
+.sp
+The base directory of performance data log files.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.prefix
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].prefix
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+This is a directory prefix (usually dynamic), appended to the \fI\%basedir\fP, where the performance logs of a test will be stored.
+This attribute accepts any of the check\-specific \fI\%formatting placeholders\fP\&.
+This allows to create dynamic paths based on the current system, partition and/or programming environment a test executes with.
+For example, a value of \fB%(check_system)s/%(check_partition)s\fP would generate the following structure of performance log files:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+{basedir}/
+   system1/
+       partition1/
+           test_short_name.log
+       partition2/
+           test_short_name.log
+       ...
+   system2/
+   ...
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers[].append
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].append
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBtrue\fP
+.UNINDENT
+.sp
+Open each log file in append mode.
+.UNINDENT
+.SS The \fBgraylog\fP log handler
+.sp
+This handler sends log records to a \fI\%Graylog\fP server.
+The additional properties for the \fBgraylog\fP handler are the following:
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.address
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].address
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The address of the Graylog server defined as \fBhost:port\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.extras
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].extras
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB{}\fP
+.UNINDENT
+.sp
+A set of optional key/value pairs to be passed with each log record to the server.
+These may depend on the server configuration.
+.UNINDENT
+.sp
+This log handler uses internally \fI\%pygelf\fP\&.
+If \fBpygelf\fP is not available, this log handler will be ignored.
+\fI\%GELF\fP is a format specification for log messages that are sent over the network.
+The \fBgraylog\fP handler sends log messages in JSON format using an HTTP POST request to the specified address.
+More details on this log format may be found \fI\%here\fP\&.
+An example configuration of this handler for performance logging is shown here:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+{
+    \(aqtype\(aq: \(aqgraylog\(aq,
+    \(aqaddress\(aq: \(aqgraylog\-server:12345\(aq,
+    \(aqlevel\(aq: \(aqinfo\(aq,
+    \(aqformat\(aq: \(aq%(message)s\(aq,
+    \(aqextras\(aq: {
+        \(aqfacility\(aq: \(aqreframe\(aq,
+        \(aqdata\-version\(aq: \(aq1.0\(aq
+    }
+}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Although the \fBformat\fP is defined for this handler, it is not only the log message that will be transmitted the Graylog server.
+This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
+.SS The \fBstream\fP log handler
+.sp
+This handler sends log records to a file stream.
+The additional properties for the \fBstream\fP handler are the following:
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers[].name
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].name
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"stdout"\fP
+.UNINDENT
+.sp
+The name of the file stream to send records to.
+There are only two available streams:
+.INDENT 7.0
+.IP \(bu 2
+\fBstdout\fP: the standard output.
+.IP \(bu 2
+\fBstderr\fP: the standard error.
+.UNINDENT
+.UNINDENT
+.SS The \fBsyslog\fP log handler
+.sp
+This handler sends log records to UNIX syslog.
+The additional properties for the \fBsyslog\fP handler are the following:
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.socktype
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].socktype
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"udp"\fP
+.UNINDENT
+.sp
+The socket type where this handler will send log records to.
+There are two socket types:
+.INDENT 7.0
+.IP \(bu 2
+\fBudp\fP: A UDP datagram socket.
+.IP \(bu 2
+\fBtcp\fP: A TCP stream socket.
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.facility
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].facility
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"user"\fP
+.UNINDENT
+.sp
+The Syslog facility where this handler will send log records to.
+The list of supported facilities can be found \fI\%here\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers[].address
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].address
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The socket address where this handler will connect to.
+This can either be of the form \fB<host>:<port>\fP or simply a path that refers to a Unix domain socket.
+.UNINDENT
+.SS The \fBhttpjson\fP log handler
+.sp
+This handler sends log records in JSON format to a server using HTTP POST requests.
+The additional properties for the \fBhttpjson\fP handler are the following:
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.url
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].url
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The URL to be used in the HTTP(S) request server.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[]\&.handlers[]\&.extras
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.logging[].handlers_perflog[].extras
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB{}\fP
+.UNINDENT
+.sp
+A set of optional key/value pairs to be passed with each log record to the server.
+These may depend on the server configuration.
+.UNINDENT
+.sp
+The \fBhttpjson\fP handler sends log messages in JSON format using an HTTP POST request to the specified URL.
+.sp
+An example configuration of this handler for performance logging is shown here:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+{
+    \(aqtype\(aq: \(aqhttpjson\(aq,
+    \(aqurl\(aq: \(aqhttp://httpjson\-server:12345/rfm\(aq,
+    \(aqlevel\(aq: \(aqinfo\(aq,
+    \(aqextras\(aq: {
+        \(aqfacility\(aq: \(aqreframe\(aq,
+        \(aqdata\-version\(aq: \(aq1.0\(aq
+    }
+}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
+.SH SCHEDULER CONFIGURATION
+.sp
+A scheduler configuration object contains configuration options specific to the scheduler’s behavior.
+.SS Common scheduler options
+.INDENT 0.0
+.TP
+.B \&.schedulers[]\&.name
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The name of the scheduler that these options refer to.
+It can be any of the supported job scheduler \fI\%backends\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.schedulers[]\&.job_submit_timeout
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+60
+.UNINDENT
+.sp
+Timeout in seconds for the job submission command.
+If timeout is reached, the regression test issuing that command will be marked as a failure.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.schedulers[]\&.target_systems
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB["*"]\fP
+.UNINDENT
+.sp
+A list of systems or system/partitions combinations that this scheduler configuration is valid for.
+For a detailed description of this property, you may refer \fI\%here\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.schedulers[]\&.use_nodes_option
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Always emit the \fB\-\-nodes\fP Slurm option in the preamble of the job script.
+This option is relevant to Slurm backends only.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.schedulers[]\&.ignore_reqnodenotavail
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+This option is relevant to the Slurm backends only.
+.sp
+If a job associated to a test is in pending state with the Slurm reason \fBReqNodeNotAvail\fP and a list of unavailable nodes is also specified, ReFrame will check the status of the nodes and, if all of them are indeed down, it will cancel the job.
+Sometimes, however, when Slurm’s backfill algorithm takes too long to compute, Slurm will set the pending reason to \fBReqNodeNotAvail\fP and mark all system nodes as unavailable, causing ReFrame to kill the job.
+In such cases, you may set this parameter to \fBtrue\fP to avoid this.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.schedulers[]\&.resubmit_on_errors
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+This option is relevant to the Slurm backends only.
+.sp
+If any of the listed errors occur, ReFrame will try to resubmit the job after some seconds.
+As an example, you could have ReFrame trying to resubmit a job in case that the maximum submission limit per user is reached by setting this field to \fB["QOSMaxSubmitJobPerUserLimit"]\fP\&.
+You can ignore multiple errors at the same time if you add more error strings in the list.
+.sp
+New in version 3.4.1.
+
+.sp
+\fBWARNING:\fP
+.INDENT 7.0
+.INDENT 3.5
+Job submission is a synchronous operation in ReFrame.
+If this option is set, ReFrame’s execution will block until the error conditions specified in this list are resolved.
+No other test would be able to proceed.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH EXECUTION MODE CONFIGURATION
+.sp
+ReFrame allows you to define groups of command line options that are collectively called \fIexecution modes\fP\&.
+An execution mode can then be selected from the command line with the \fB\-mode\fP option.
+The options of an execution mode will be passed to ReFrame as if they were specified in the command line.
+.INDENT 0.0
+.TP
+.B \&.modes[]\&.name
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The name of this execution mode.
+This can be used with the \fI\%\-\-mode\fP command line option to invoke this mode.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.modes[]\&.options
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+The command\-line options associated with this execution mode.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.modes[]\&.target_systems
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB["*"]\fP
+.UNINDENT
+.sp
+A list of systems \fIonly\fP that this execution mode is valid for.
+For a detailed description of this property, you may refer \fI\%here\fP\&.
+.UNINDENT
+.SH GENERAL CONFIGURATION
+.INDENT 0.0
+.TP
+.B \&.general[]\&.check_search_path
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB["${RFM_INSTALL_PREFIX}/checks/"]\fP
+.UNINDENT
+.sp
+A list of paths (files or directories) where ReFrame will look for regression test files.
+If the search path is set through the environment variable, it should be a colon separated list.
+If specified from command line, the search path is constructed by specifying multiple times the command line option.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.check_search_recursive
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Search directories in the \fI\%search path\fP recursively.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.clean_stagedir
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBtrue\fP
+.UNINDENT
+.sp
+Clean stage directory of tests before populating it.
+.sp
+New in version 3.1.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.colorize
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBtrue\fP
+.UNINDENT
+.sp
+Use colors in output.
+The command\-line option sets the configuration option to \fBfalse\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.compress_report
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Compress the generated run report file.
+See the documentation of the \fI\%\-\-compress\-report\fP option for more information.
+.sp
+New in version 3.12.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.git_timeout
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+5
+.UNINDENT
+.sp
+Timeout value in seconds used when checking if a git repository exists.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.dump_pipeline_progress
+Dump pipeline progress for the asynchronous execution policy in \fBpipeline\-progress.json\fP\&.
+This option is meant for debug purposes only.
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBFalse\fP
+.UNINDENT
+.sp
+New in version 3.10.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.pipeline_timeout
+Timeout in seconds for advancing the pipeline in the asynchronous execution policy.
+.sp
+ReFrame’s asynchronous execution policy will try to advance as many tests as possible in their pipeline, but some tests may take too long to proceed (e.g., due to copying of large files) blocking the advancement of previously started tests.
+If this timeout value is exceeded and at least one test has progressed, ReFrame will stop processing new tests and it will try to further advance tests that have already started.
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB10\fP
+.UNINDENT
+.sp
+New in version 3.10.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.remote_detect
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Try to auto\-detect processor information of remote partitions as well.
+This may slow down the initialization of the framework, since it involves submitting auto\-detection jobs to the remote partitions.
+For more information on how ReFrame auto\-detects processor information, you may refer to \fI\%Auto\-detecting processor information\fP\&.
+.sp
+New in version 3.7.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.remote_workdir
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"."\fP
+.UNINDENT
+.sp
+The temporary directory prefix that will be used to create a fresh ReFrame clone, in order to auto\-detect the processor information of a remote partition.
+.sp
+New in version 3.7.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.ignore_check_conflicts
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Ignore test name conflicts when loading tests.
+.sp
+Deprecated since version 3.8.0: This option will be removed in a future version.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.trap_job_errors
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Trap command errors in the generated job scripts and let them exit immediately.
+.sp
+New in version 3.2.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.keep_stage_files
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Keep stage files of tests even if they succeed.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.module_map_file
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB""\fP
+.UNINDENT
+.sp
+File containing module mappings.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.module_mappings
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of module mappings.
+If specified through the environment variable, the mappings must be separated by commas.
+If specified from command line, multiple module mappings are defined by passing the command line option multiple times.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.non_default_craype
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Test a non\-default Cray Programming Environment.
+This will emit some special instructions in the generated build and job scripts.
+See also \fI\%\-\-non\-default\-craype\fP for more details.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.purge_environment
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Purge any loaded environment modules before running any tests.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.report_file
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB"${HOME}/.reframe/reports/run\-report\-{sessionid}.json"\fP
+.UNINDENT
+.sp
+The file where ReFrame will store its report.
+.sp
+New in version 3.1.
+
+.sp
+Changed in version 3.2: Default value has changed to avoid generating a report file per session.
+
+.sp
+Changed in version 4.0.0: Default value was reverted back to generate a new file per run.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.report_junit
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBnull\fP
+.UNINDENT
+.sp
+The file where ReFrame will store its report in JUnit format.
+The report adheres to the XSD schema \fI\%here\fP\&.
+.sp
+New in version 3.6.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.resolve_module_conflicts
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBtrue\fP
+.UNINDENT
+.sp
+ReFrame by default resolves any module conflicts and emits the right sequence of \fBmodule unload\fP and \fBmodule load\fP commands, in order to load the requested modules.
+This option disables this behavior if set to \fBfalse\fP\&.
+.sp
+You should avoid using this option for modules system that cannot handle module conflicts automatically, such as early Tmod verions.
+.sp
+Disabling the automatic module conflict resolution, however, can be useful when modules in a remote system partition are not present on the host where ReFrame runs.
+In order to resolve any module conflicts and generate the right load sequence of modules, ReFrame loads temporarily the requested modules and tracks any conflicts along the way.
+By disabling this option, ReFrame will simply emit the requested \fBmodule load\fP commands without attempting to load any module.
+.sp
+New in version 3.6.0.
+
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.save_log_files
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Save any log files generated by ReFrame to its output directory
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.target_systems
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB["*"]\fP
+.UNINDENT
+.sp
+A list of systems or system/partitions combinations that these general options are valid for.
+For a detailed description of this property, you may refer \fI\%here\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.timestamp_dirs
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB""\fP
+.UNINDENT
+.sp
+Append a timestamp to ReFrame directory prefixes.
+Valid formats are those accepted by the \fI\%time.strftime()\fP function.
+If specified from the command line without any argument, \fB"%FT%T"\fP will be used as a time format.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.unload_modules
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of \fI\%environment module objects\fP to unload before executing any test.
+If specified using an the environment variable, a space separated list of modules is expected.
+If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.use_login_shell
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+Use a login shell for the generated job scripts.
+This option will cause ReFrame to emit \fB\-l\fP in the shebang of shell scripts.
+This option, if set to \fBtrue\fP, may cause ReFrame to fail, if the shell changes permanently to a different directory during its start up.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.user_modules
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fB[]\fP
+.UNINDENT
+.sp
+A list of \fI\%environment module objects\fP to be loaded before executing any test.
+If specified using an the environment variable, a space separated list of modules is expected.
+If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.general[]\&.verbose
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+0
+.UNINDENT
+.sp
+Set the verbosity level of the output.
+The higher the number, the more verbose the output will be.
+If set to a negative number, this will decrease the verbosity level.
+.UNINDENT
+.SH MODULE OBJECTS
+.sp
+New in version 3.3.
+
+.sp
+A \fImodule object\fP in ReFrame’s configuration represents an environment module.
+It can either be a simple string or a JSON object with the following attributes:
+.INDENT 0.0
+.TP
+.B \&.name
+.INDENT 7.0
+.TP
+.B Required
+Yes
+.UNINDENT
+.sp
+The name of the module.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.collection
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBfalse\fP
+.UNINDENT
+.sp
+A boolean value indicating whether this module refers to a module collection.
+Module collections are treated differently from simple modules when loading.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B path
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBnull\fP
+.UNINDENT
+.sp
+If the module is not present in the default \fBMODULEPATH\fP, the module’s location can be specified here.
+ReFrame will make sure to set and restore the \fBMODULEPATH\fP accordingly for loading the module.
+.sp
+New in version 3.5.0.
+
+.UNINDENT
+.sp
+\fBSEE ALSO:\fP
+.INDENT 0.0
+.INDENT 3.5
+Module collections with \fI\%Environment Modules\fP and \fI\%Lmod\fP\&.
+.UNINDENT
+.UNINDENT
+.SH PROCESSOR INFO
+.sp
+New in version 3.5.0.
+
+.sp
+A \fIprocessor info object\fP in ReFrame’s configuration is used to hold information about the processor of a system partition and is made available to the tests through the \fI\%processor\fP attribute of the \fI\%current_partition\fP\&.
+.INDENT 0.0
+.TP
+.B \&.arch
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBNone\fP
+.UNINDENT
+.sp
+The microarchitecture of the processor.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.num_cpus
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBNone\fP
+.UNINDENT
+.sp
+Number of logical CPUs.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.num_cpus_per_core
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBNone\fP
+.UNINDENT
+.sp
+Number of logical CPUs per core.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.num_cpus_per_socket
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBNone\fP
+.UNINDENT
+.sp
+Number of logical CPUs per socket.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.num_sockets
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBNone\fP
+.UNINDENT
+.sp
+Number of sockets.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.topology
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBNone\fP
+.UNINDENT
+.sp
+Processor topology.
+An example follows:
+.INDENT 7.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+\(aqtopology\(aq: {
+   \(aqnuma_nodes\(aq: [\(aq0x000000ff\(aq],
+   \(aqsockets\(aq: [\(aq0x000000ff\(aq],
+   \(aqcores\(aq: [\(aq0x00000003\(aq, \(aq0x0000000c\(aq,
+             \(aq0x00000030\(aq, \(aq0x000000c0\(aq],
+   \(aqcaches\(aq: [
+      {
+            \(aqtype\(aq: \(aqL3\(aq,
+            \(aqsize\(aq: 6291456,
+            \(aqlinesize\(aq: 64,
+            \(aqassociativity\(aq: 0,
+            \(aqnum_cpus\(aq: 8,
+            \(aqcpusets\(aq: [\(aq0x000000ff\(aq]
+      },
+      {
+            \(aqtype\(aq: \(aqL2\(aq,
+            \(aqsize\(aq: 262144,
+            \(aqlinesize\(aq: 64,
+            \(aqassociativity\(aq: 4,
+            \(aqnum_cpus\(aq: 2,
+            \(aqcpusets\(aq: [\(aq0x00000003\(aq, \(aq0x0000000c\(aq,
+                        \(aq0x00000030\(aq, \(aq0x000000c0\(aq]
+      },
+      {
+            \(aqtype\(aq: \(aqL1\(aq,
+            \(aqsize\(aq: 32768,
+            \(aqlinesize\(aq: 64,
+            \(aqassociativity\(aq: 0,
+            \(aqnum_cpus\(aq: 2,
+            \(aqcpusets\(aq: [\(aq0x00000003\(aq, \(aq0x0000000c\(aq,
+                        \(aq0x00000030\(aq, \(aq0x000000c0\(aq]
+      }
+   ]
+}
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH DEVICE INFO
+.sp
+New in version 3.5.0.
+
+.sp
+A \fIdevice info object\fP in ReFrame’s configuration is used to hold information about a specific type of devices in a system partition and is made available to the tests through the \fI\%devices\fP attribute of the \fI\%current_partition\fP\&.
+.INDENT 0.0
+.TP
+.B \&.type
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBNone\fP
+.UNINDENT
+.sp
+The type of the device, for example \fB"gpu"\fP\&.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.arch
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBNone\fP
+.UNINDENT
+.sp
+The microarchitecture of the device.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \&.num_devices
+.INDENT 7.0
+.TP
+.B Required
+No
+.TP
+.B Default
+\fBNone\fP
+.UNINDENT
+.sp
+Number of devices of this type inside the system partition.
+.UNINDENT
+.SH AUTHOR
+ReFrame Project Developers
+.SH COPYRIGHT
+2016-2022, CSCS/ETH Zurich
+.\" Generated by docutils manpage writer.
+.

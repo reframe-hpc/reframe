@@ -455,7 +455,7 @@ def find_config_files(config_path=None, config_file=None):
 
     if config_file:
         for f in config_file:
-            # If the user sets RFM_CONFIG_FILES=:conf1:conf2 the list will
+            # If the user sets RFM_CONFIG_FILE=:conf1:conf2 the list will
             # include one empty string in the beginning
             if f == '':
                 res = []

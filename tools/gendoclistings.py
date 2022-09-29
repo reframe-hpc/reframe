@@ -78,8 +78,8 @@ LISTINGS = {
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -89,8 +89,8 @@ LISTINGS = {
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=True
@@ -100,8 +100,8 @@ LISTINGS = {
         {'remote', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -111,8 +111,8 @@ LISTINGS = {
         {'remote', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -122,8 +122,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -133,8 +133,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -144,8 +144,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -155,8 +155,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -166,8 +166,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -184,8 +184,8 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py')
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py')
         },
         xfail=False
     ),
@@ -194,8 +194,8 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -205,8 +205,8 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -216,8 +216,8 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -227,8 +227,8 @@ LISTINGS = {
         {'local', 'tutorial-advanced'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -238,8 +238,8 @@ LISTINGS = {
         {'local', 'tutorial-advanced'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
-                                             'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False

@@ -9,7 +9,7 @@ Finally, to avoid specifying the tutorial configuration file each time, make sur
 
 .. code:: bash
 
-   export RFM_CONFIG_FILES=$(pwd)/tutorials/config/settings.py
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
 
 
 

@@ -502,16 +502,10 @@ def main():
 
     # Miscellaneous options
     misc_options.add_argument(
-        '--config-file', action='append', metavar='FILE',
-        dest='config_file_alias',
-        help="Deprecated, alias of `--config-files'",
-        envvar='RFM_CONFIG_FILE :'
-    )
-    misc_options.add_argument(
-        '-C', '--config-files', action='append', metavar='FILE',
+        '-C', '--config-file', action='append', metavar='FILE',
         dest='config_file',
         help='Set configuration file',
-        envvar='RFM_CONFIG_FILES :'
+        envvar='RFM_CONFIG_FILE :'
     )
     misc_options.add_argument(
         '--detect-host-topology', action='store', nargs='?', const='-',
@@ -711,15 +705,6 @@ def main():
             'please use RFM_GRAYLOG_ADDRESS instead'
         )
         os.environ['RFM_GRAYLOG_ADDRESS'] = os.getenv('RFM_GRAYLOG_SERVER')
-
-    if options.config_file_alias:
-        printer.warning(
-            "`--config-file' option and RFM_CONFIG_FILE environment variable "
-            "are deprecated; please use `--config-files' and "
-            "RFM_CONFIG_FILES instead"
-        )
-        if options.config_file is None:
-            options.config_file = options.config_file_alias
 
     # Now configure ReFrame according to the user configuration file
     try:

@@ -266,7 +266,7 @@ Since we don't want to type it throughout the tutorial, we will now set it in th
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILES=$(pwd)/tutorials/config/settings.py
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
 
 
 A Multithreaded "Hello, World!"
@@ -650,7 +650,7 @@ We will only do so with the final versions of the tests from the previous sectio
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILES=$(pwd)/tutorials/config/settings.py
+   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
    ./bin/reframe -c tutorials/basics/ -R -n 'HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest' --performance-report -r
 
 .. literalinclude:: listings/alltests_daint.txt
