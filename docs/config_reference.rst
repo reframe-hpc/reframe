@@ -324,35 +324,10 @@ System Partition Configuration
 
    .. tip::
 
-      ReFrame also allows you to register your own custom launchers simply by defining them in the configuration.
-      Here is an example:
+      .. versionadded:: 4.0.0
 
-      .. code:: python
-
-         import reframe.core.launchers.mpi as mpi
-
-         @mpi.register_launcher('custom_launcher')
-         class MyLauncher(mpi.SrunLauncher):
-             def command(self, job):
-                 return super().command(job) + [...]
-
-         site_configuration = {
-             'systems': [
-                 {
-                     'name': 'my_system',
-                     'partitions': [
-                         {
-                             'name': 'my_partition',
-                             'launcher': 'custom_launcher'
-                             ...
-                         }
-                     ],
-                     ...
-                 },
-                 ...
-             ],
-             ...
-         }
+        ReFrame also allows you to register your own custom launchers simply by defining them in the configuration.
+        You can follow a small tutorial `here <tutorial_advanced.html#adding-a-custom-launcher-to-a-partition>`__.
 
 
 .. js:attribute:: .systems[].partitions[].access

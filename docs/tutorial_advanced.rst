@@ -576,8 +576,6 @@ The trick here is to replace the parallel launcher with the local one, which pra
 The :func:`~reframe.core.backends.getlauncher` function takes the `registered <config_reference.html#systems-.partitions-.launcher>`__ name of a launcher and returns the class that implements it.
 You then instantiate the launcher and assign to the :attr:`~reframe.core.schedulers.Job.launcher` attribute of the job descriptor.
 
-An alternative to this approach would be to define your own custom parallel launcher and register it with the framework.
-You could then use it as the scheduler of a system partition in the configuration, but this approach is less test-specific.
 
 Adding more parallel launch commands
 ====================================
@@ -626,6 +624,62 @@ Let's see how the generated job script looks like:
 
 
 The first three ``srun`` commands are emitted through the :attr:`prerun_cmds` whereas the last one comes from the test's :attr:`executable` attribute.
+
+
+Adding a custom launcher to a partition
+=======================================
+
+.. versionadded:: 4.0.0
+
+An alternative to the approaches above would be to define your own custom parallel launcher and register it with the framework.
+You could then use it as the launcher of a system partition in the configuration and use it in multiple tests.
+
+Each `launcher <regression_test_api.html#reframe.core.launchers.JobLauncher>`__ needs to implement the ``command`` method and can optionally change the default ``run_command`` method.
+
+Here is an example of the srun implementation to get an idea and change according to your needs:
+
+.. code:: python
+
+    from reframe.core.backends import register_launcher
+    from reframe.core.launchers import JobLauncher
+
+
+    @register_launcher('my_srun')
+    class SrunLauncher(JobLauncher):
+        def command(self, job):
+            return ['srun']
+
+
+For more advanced cases you may also want to inherit from an `already implemented launcher <https://github.com/reframe-hpc/reframe/tree/master/reframe/core/launchers>`__ and extend it. This would look like:
+
+.. code:: python
+
+   import reframe.core.launchers.mpi as mpi
+   from reframe.core.backends import register_launcher
+
+
+   @register_launcher('custom_launcher')
+   class MyLauncher(mpi.SrunLauncher):
+       def command(self, job):
+           return super().command(job) + [...]
+
+   site_configuration = {
+       'systems': [
+           {
+               'name': 'my_system',
+               'partitions': [
+                   {
+                       'name': 'my_partition',
+                       'launcher': 'custom_launcher'
+                       ...
+                   }
+               ],
+               ...
+           },
+           ...
+       ],
+       ...
+   }
 
 
 Flexible Regression Tests
