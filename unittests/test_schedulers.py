@@ -115,7 +115,7 @@ def prepare_job(job, command='hostname',
     pre_run = pre_run or ['echo prerun']
     post_run = post_run or ['echo postrun']
     prepare_cmds = prepare_cmds or ['echo prepare']
-    with rt.module_use('unittests/modules'):
+    with rt.module_use(test_util.TEST_MODULES):
         job.prepare(
             [
                 *pre_run,
@@ -125,6 +125,11 @@ def prepare_job(job, command='hostname',
             environs,
             prepare_cmds
         )
+
+
+def submit_job(job):
+    with rt.module_use(test_util.TEST_MODULES):
+        job.submit()
 
 
 def assert_job_script_sanity(job):
@@ -386,7 +391,7 @@ def test_submit(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job)
     assert minimal_job.nodelist is None
-    minimal_job.submit()
+    submit_job(minimal_job)
     assert minimal_job.jobid is not None
     minimal_job.wait()
 
@@ -403,12 +408,15 @@ def test_submit(make_job, exec_ctx):
         assert num_nodes == len(minimal_job.nodelist)
         assert 0 == minimal_job.exitcode
 
+    with open(minimal_job.stderr) as stderr:
+        assert not stderr.read().strip()
+
 
 def test_submit_timelimit(minimal_job, local_only):
     minimal_job.time_limit = '2s'
     prepare_job(minimal_job, 'sleep 10')
     t_job = time.time()
-    minimal_job.submit()
+    submit_job(minimal_job)
     assert minimal_job.jobid is not None
     minimal_job.wait()
     t_job = time.time() - t_job
@@ -430,7 +438,7 @@ def test_submit_job_array(make_job, slurm_only, exec_ctx):
     job = make_job(sched_access=exec_ctx.access)
     job.options = ['--array=0-1']
     prepare_job(job, command='echo "Task id: ${SLURM_ARRAY_TASK_ID}"')
-    job.submit()
+    submit_job(job)
     job.wait()
     if job.scheduler.registered_name == 'slurm':
         assert job.exitcode == 0
@@ -445,7 +453,7 @@ def test_cancel(make_job, exec_ctx):
     prepare_job(minimal_job, 'sleep 30')
     t_job = time.time()
 
-    minimal_job.submit()
+    submit_job(job)
     minimal_job.cancel()
 
     # We give some time to the local scheduler for the TERM signal to be
@@ -484,7 +492,7 @@ def test_wait_before_submit(minimal_job):
 def test_finished(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'sleep 2')
-    minimal_job.submit()
+    submit_job(minimal_job)
     assert not minimal_job.finished()
     minimal_job.wait()
 
@@ -498,7 +506,7 @@ def test_finished_before_submit(minimal_job):
 def test_finished_raises_error(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'echo hello')
-    minimal_job.submit()
+    submit_job(minimal_job)
     minimal_job.wait()
 
     # Emulate an error during polling and verify that it is raised correctly
@@ -555,7 +563,7 @@ def test_guess_num_tasks(minimal_job, scheduler):
         minimal_job.num_tasks = 0
         minimal_job._sched_flex_alloc_nodes = 'idle'
         prepare_job(minimal_job)
-        minimal_job.submit()
+        submit_job(minimal_job)
         minimal_job.wait()
         assert minimal_job.num_tasks == 1
     elif scheduler.registered_name in ('slurm', 'squeue'):
@@ -596,7 +604,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
 
     type(minimal_job).state = property(state)
     prepare_job(minimal_job, 'sleep 30')
-    minimal_job.submit()
+    submit_job(minimal_job)
     with pytest.raises(JobError,
                        match='maximum pending time exceeded'):
         minimal_job.wait()
@@ -649,7 +657,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
                 pre_run=['trap -- "" TERM'],
                 post_run=['echo $!', 'wait'],
                 prepare_cmds=[''])
-    minimal_job.submit()
+    submit_job(minimal_job)
 
     # Stall a bit here to let the the spawned process start and install its
     # signal handler for SIGTERM
@@ -696,7 +704,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
                 pre_run=[''],
                 post_run=[''],
                 prepare_cmds=[''])
-    minimal_job.submit()
+    submit_job(minimal_job)
 
     # Stall a bit here to let the the spawned process start and install its
     # signal handler for SIGTERM
