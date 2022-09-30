@@ -406,7 +406,9 @@ def test_submit(make_job, exec_ctx):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
         assert num_nodes == len(minimal_job.nodelist)
-        assert 0 == minimal_job.exitcode
+
+        # Handle the case where the exitcode was not reported by the scheduler
+        assert minimal_job.exitcode is None or 0 == minimal_job.exitcode
 
     with open(minimal_job.stderr) as stderr:
         assert not stderr.read().strip()
