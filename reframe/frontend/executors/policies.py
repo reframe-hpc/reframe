@@ -46,7 +46,8 @@ def _print_perf(task):
     for key, info in perfvars.items():
         name = key.split(':')[-1]
         getlogger().info(
-            f'P: {name}: {info[0]} {info[4]} (r:{info[1]}, l:{info[2]}, u:{info[3]})'
+            f'P: {name}: {info[0]} {info[4]} '
+            f'(r:{info[1]}, l:{info[2]}, u:{info[3]})'
         )
 
 
