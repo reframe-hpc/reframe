@@ -1,28 +1,29 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+c22440c1
+  version:           4.0.0-dev.1+36ffa085
   command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r'
-  launched by:       user@host
-  working directory: '/path/to/reframe'
+  launched by:       user@tresa.local
+  working directory: '/home/user/Repositories/reframe'
   settings file:     'tutorials/config/settings.py'
-  check search path: '/path/to/reframe/tutorials/basics/hello/hello2.py'
-  stage directory:   '/path/to/reframe/stage'
-  output directory:  '/path/to/reframe/output'
+  check search path: '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
+  stage directory:   '/home/user/Repositories/reframe/stage'
+  output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-48ioicki.log'
 
 [==========] Running 2 check(s)
-[==========] Started on Sat Jan 22 13:21:53 2022
+[==========] Started on Sat Oct  1 20:06:24 2022 
 
 [----------] start processing checks
-[ RUN      ] HelloMultiLangTest %lang=cpp @catalina:default+gnu
-[ RUN      ] HelloMultiLangTest %lang=cpp @catalina:default+clang
-[ RUN      ] HelloMultiLangTest %lang=c @catalina:default+gnu
-[ RUN      ] HelloMultiLangTest %lang=c @catalina:default+clang
-[       OK ] (1/4) HelloMultiLangTest %lang=c @catalina:default+gnu
-[       OK ] (2/4) HelloMultiLangTest %lang=c @catalina:default+clang
-[       OK ] (3/4) HelloMultiLangTest %lang=cpp @catalina:default+gnu
-[       OK ] (4/4) HelloMultiLangTest %lang=cpp @catalina:default+clang
+[ RUN      ] HelloMultiLangTest %lang=cpp /71bf65a3 @catalina:default+gnu
+[ RUN      ] HelloMultiLangTest %lang=cpp /71bf65a3 @catalina:default+clang
+[ RUN      ] HelloMultiLangTest %lang=c /7cfa870e @catalina:default+gnu
+[ RUN      ] HelloMultiLangTest %lang=c /7cfa870e @catalina:default+clang
+[       OK ] (1/4) HelloMultiLangTest %lang=c /7cfa870e @catalina:default+clang
+[       OK ] (2/4) HelloMultiLangTest %lang=cpp /71bf65a3 @catalina:default+clang
+[       OK ] (3/4) HelloMultiLangTest %lang=cpp /71bf65a3 @catalina:default+gnu
+[       OK ] (4/4) HelloMultiLangTest %lang=c /7cfa870e @catalina:default+gnu
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 4/4 test case(s) from 2 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 13:21:54 2022
-Run report saved in '/home/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-iehz9eub.log'
+[==========] Finished on Sat Oct  1 20:06:26 2022 
+Run report saved in '/home/user/.reframe/reports/run-report-105.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-48ioicki.log'

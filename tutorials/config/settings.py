@@ -117,8 +117,8 @@ site_configuration = {
     'environments': [
         {
             'name': 'gnu',
-            'cc': 'gcc-9',
-            'cxx': 'g++-9',
+            'cc': 'gcc-12',
+            'cxx': 'g++-12',
             'ftn': 'gfortran-9'
         },
         {

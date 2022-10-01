@@ -1,14 +1,14 @@
-FAILURE INFO for StreamWithRefTest 
+FAILURE INFO for StreamWithRefTest
   * Expanded name: StreamWithRefTest
-  * Description: StreamWithRefTest
+  * Description:
   * System partition: catalina:default
   * Environment: gnu
   * Stage directory: /Users/user/Repositories/reframe/stage/catalina/default/gnu/StreamWithRefTest
-  * Node list: vpn-39
-  * Job type: local (id=34622)
+  * Node list: tresa.localNone
+  * Job type: local (id=4576)
   * Dependencies (conceptual): []
   * Dependencies (actual): []
   * Maintainers: []
   * Failing phase: performance
-  * Rerun with '-n StreamWithRefTest -p gnu --system catalina:default -r'
-  * Reason: performance error: failed to meet reference: Copy=24584.3, expected 55200 (l=52440.0, u=57960.0)
+  * Rerun with '-n /f925207b -p gnu --system catalina:default -r'
+  * Reason: performance error: failed to meet reference: Add=19585.3, expected 18500 (l=17575.0, u=19425.0)
