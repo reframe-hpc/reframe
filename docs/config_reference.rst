@@ -467,6 +467,7 @@ ReFrame can launch containerized applications, but you need to configure properl
    The type of the container platform.
    Available values are the following:
 
+   - ``Apptainer``: The `Apptainer <https://apptainer.org/>`__ container runtime.
    - ``Docker``: The `Docker <https://www.docker.com/>`__ container runtime.
    - ``Sarus``: The `Sarus <https://sarus.readthedocs.io/>`__ container runtime.
    - ``Shifter``: The `Shifter <https://github.com/NERSC/shifter>`__ container runtime.
