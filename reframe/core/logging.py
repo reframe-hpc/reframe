@@ -371,7 +371,8 @@ def _create_httpjson_handler(site_config, config_prefix):
         return None
 
     extras = site_config.get(f'{config_prefix}/extras')
-    return HTTPJSONHandler(url, extras)
+    perflog_ignore = site_config.get(f'{config_prefix}/perflog_ignore')
+    return HTTPJSONHandler(url, extras, perflog_ignore)
 
 
 class HTTPJSONHandler(logging.Handler):
@@ -386,20 +387,30 @@ class HTTPJSONHandler(logging.Handler):
         'stack_info', 'thread', 'threadName', 'exc_text'
     }
 
-    def __init__(self, url, extras=None):
+    def __init__(self, url, extras=None, perflog_ignore=None):
         super().__init__()
         self._url = url
         self._extras = extras
+        self._perflog_ignore = perflog_ignore
 
     def _record_to_json(self, record):
+        def _log_record(key):
+            if key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS:
+                return False
+
+            if self._perflog_ignore and key in self._perflog_ignore:
+                return False
+
+            return True
+
         json_record = {
             k: v for k, v in record.__dict__.items()
-            if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
+            if _log_record(k)
         }
         if self._extras:
             json_record.update({
                 k: v for k, v in self._extras.items()
-                if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
+                if _log_record(k)
             })
 
         return _xfmt(json_record).encode('utf-8')

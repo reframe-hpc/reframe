@@ -600,7 +600,7 @@ def main():
         envvar='RFM_IGNORE_REQNODENOTAVAIL',
         configvar='schedulers/ignore_reqnodenotavail',
         action='store_true',
-        help='Graylog server address'
+        help='Ignore ReqNodeNotAvail Slurm error'
     )
     argparser.add_argument(
         dest='dump_pipeline_progress',

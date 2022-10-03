@@ -146,7 +146,11 @@
                 {
                     "properties": {
                         "url": {"type": "string"},
-                        "extras": {"type": "object"}
+                        "extras": {"type": "object"},
+                        "perflog_ignore": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        }
                     },
                     "required": ["url"]
                 }
@@ -551,6 +555,7 @@
         "logging/handlers*/filelog_basedir": "./perflogs",
         "logging/handlers*/graylog_extras": {},
         "logging/handlers*/httpjson_extras": {},
+        "logging/handlers*/httpjson_perflog_ignore": [],
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",
