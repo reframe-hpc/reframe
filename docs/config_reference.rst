@@ -1637,7 +1637,7 @@ Processor Info
 
 .. versionadded:: 3.5.0
 
-A *processor info object* in ReFrame's configuration is used to hold information about the processor of a system partition and is made available to the tests through the :attr:`processor <reframe.core.systems.SystemPartition.processor>` attribute of the :attr:`current_partition <reframe.core.pipeline.RegressionTest.current_partition>`.
+A *processor info object* in ReFrame's configuration is used to hold information about the processor of a system partition and is made available to the tests through the :attr:`processor <reframe.core.systems.SystemPartition.processor>` attribute of the :attr:`current_partition <reframe.core.pipeline.RegressionTest.current_partition>`. Note that "logical CPUs" is the number of threads, so for example :attr:`num_cpus_per_core <reframe.core.systems.SystemPartition.processor.num_cpus_per_core>` can be larger than one if a hyper-threading-like system is enabled.
 
 
 .. attribute:: .arch
