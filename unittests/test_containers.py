@@ -102,7 +102,7 @@ def expected_cmd_mount_points(container_variant):
                 '--mount=type=bind,source="/path/two",destination="/two" '
                 '--mount=type=bind,source="/foo",destination="/rfm_workdir" '
                 'load/library/image:tag cmd')
-    elif container_variant in {'Singularity'}:
+    elif container_variant == 'Singularity':
         return ('singularity exec -B"/path/one:/one" '
                 '-B"/path/two:/two" -B"/foo:/rfm_workdir" '
                 '--pwd /rfm_workdir image:tag cmd')
@@ -114,7 +114,7 @@ def expected_cmd_mount_points(container_variant):
         return ('singularity run -B"/path/one:/one" '
                 '-B"/path/two:/two" -B"/foo:/rfm_workdir" '
                 '--pwd /rfm_workdir image:tag')
-    elif container_variant in {'Apptainer'}:
+    elif container_variant == 'Apptainer':
         return ('apptainer exec -B"/path/one:/one" '
                 '-B"/path/two:/two" -B"/foo:/rfm_workdir" '
                 '--pwd /rfm_workdir image:tag cmd')
@@ -194,7 +194,7 @@ def expected_cmd_run_opts(container_variant):
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/foo",destination="/rfm_workdir" '
                 '--mpi --foo --bar image:tag cmd')
-    elif container_variant in {'Singularity'}:
+    elif container_variant == 'Singularity':
         return ('singularity exec -B"/path/one:/one" -B"/foo:/rfm_workdir" '
                 '--foo --bar image:tag cmd')
     elif container_variant == 'Singularity+cuda':
@@ -203,7 +203,7 @@ def expected_cmd_run_opts(container_variant):
     elif container_variant == 'Singularity+nocommand':
         return ('singularity run -B"/path/one:/one" -B"/foo:/rfm_workdir" '
                 '--foo --bar image:tag')
-    elif container_variant in {'Apptainer'}:
+    elif container_variant == 'Apptainer':
         return ('apptainer exec -B"/path/one:/one" -B"/foo:/rfm_workdir" '
                 '--foo --bar image:tag cmd')
     elif container_variant == 'Apptainer+cuda':

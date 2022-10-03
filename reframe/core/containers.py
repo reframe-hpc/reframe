@@ -268,7 +268,11 @@ class Singularity(ContainerPlatform):
 
 class Apptainer(Singularity):
     '''Container platform backend for running containers with `Apptainer
-    <https://apptainer.org/>`__.'''
+    <https://apptainer.org/>`__.
+
+    .. versionadded:: 4.0.0
+
+    '''
 
     def __init__(self):
         super().__init__()
