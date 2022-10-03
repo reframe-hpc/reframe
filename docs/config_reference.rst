@@ -223,6 +223,7 @@ System Partition Configuration
    Supported schedulers are the following:
 
    - ``local``: Jobs will be launched locally without using any job scheduler.
+   - ``flux``: Jobs will be launched using the `Flux Framework <https://flux-framework.org/>`_ scheduler.
    - ``oar``: Jobs will be launched using the `OAR <https://oar.imag.fr/>`__ scheduler.
    - ``pbs``: Jobs will be launched using the `PBS Pro <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
    - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
@@ -474,6 +475,7 @@ ReFrame can launch containerized applications, but you need to configure properl
    The type of the container platform.
    Available values are the following:
 
+   - ``Apptainer``: The `Apptainer <https://apptainer.org/>`__ container runtime.
    - ``Docker``: The `Docker <https://www.docker.com/>`__ container runtime.
    - ``Sarus``: The `Sarus <https://sarus.readthedocs.io/>`__ container runtime.
    - ``Shifter``: The `Shifter <https://github.com/NERSC/shifter>`__ container runtime.

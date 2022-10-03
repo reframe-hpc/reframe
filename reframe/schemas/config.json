@@ -246,7 +246,7 @@
                                 "scheduler": {
                                     "type": "string",
                                     "enum": [
-                                        "local", "lsf", "oar", "pbs",
+                                        "flux", "local", "lsf", "oar", "pbs",
                                         "sge", "slurm", "squeue", "torque"
                                     ]
                                 },
@@ -378,7 +378,7 @@
                 "properties": {
                     "name": {
                         "type": "string",
-                        "enum": ["local", "lsf", "oar", "pbs",
+                        "enum": ["flux", "local", "lsf", "oar", "pbs",
                                  "sge", "slurm", "squeue", "torque"]
                     },
                     "ignore_reqnodenotavail": {"type": "boolean"},
