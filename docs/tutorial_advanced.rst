@@ -634,9 +634,9 @@ Adding a custom launcher to a partition
 An alternative to the approaches above would be to define your own custom parallel launcher and register it with the framework.
 You could then use it as the launcher of a system partition in the configuration and use it in multiple tests.
 
-Each `launcher <regression_test_api.html#reframe.core.launchers.JobLauncher>`__ needs to implement the ``command`` method and can optionally change the default ``run_command`` method.
+Each `launcher <regression_test_api.html#reframe.core.launchers.JobLauncher>`__ needs to implement the :func:`~reframe.core.launchers.JobLauncher.command` method and can optionally change the default :func:`~reframe.core.launchers.JobLauncher.run_command` method.
 
-Here is an example of the srun implementation to get an idea and change according to your needs:
+As an example of how easy it is to define a new parallel launcher backend, here is the actual implementation of the ``mpirun`` launcher:
 
 .. code:: python
 
@@ -644,24 +644,27 @@ Here is an example of the srun implementation to get an idea and change accordin
     from reframe.core.launchers import JobLauncher
 
 
-    @register_launcher('my_srun')
-    class SrunLauncher(JobLauncher):
+    @register_launcher('mpirun')
+    class MpirunLauncher(JobLauncher):
         def command(self, job):
-            return ['srun']
+            return ['mpirun', '-np', str(job.num_tasks)]
 
 
-For more advanced cases you may also want to inherit from an `already implemented launcher <https://github.com/reframe-hpc/reframe/tree/master/reframe/core/launchers>`__ and extend it. This would look like:
+The :func:`~reframe.core.launchers.JobLauncher.command` returns a list of command tokens that will be combined with any user-supplied `options <regression_test_api.html#reframe.core.launchers.JobLauncher.options>`__ by the :func:`~reframe.core.launchers.JobLauncher.run_command` method to generate the actual launcher command line.
+Notice you can use the ``job`` argument to get job-specific information that will allow you to construct the correct launcher invocation.
+
+If you use a Python-based configuration file, you can define your custom launcher directly inside your config as follows:
 
 .. code:: python
 
-   import reframe.core.launchers.mpi as mpi
    from reframe.core.backends import register_launcher
+   from reframe.core.launchers import JobLaucher
 
 
-   @register_launcher('custom_launcher')
-   class MyLauncher(mpi.SrunLauncher):
+   @register_launcher('slrun')
+   class MySmartLauncher(JobLauncher):
        def command(self, job):
-           return super().command(job) + [...]
+           return ['slrun', ...]
 
    site_configuration = {
        'systems': [
@@ -670,7 +673,7 @@ For more advanced cases you may also want to inherit from an `already implemente
                'partitions': [
                    {
                        'name': 'my_partition',
-                       'launcher': 'custom_launcher'
+                       'launcher': 'slrun'
                        ...
                    }
                ],
