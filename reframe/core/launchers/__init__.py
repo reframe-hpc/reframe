@@ -15,11 +15,11 @@ class JobLauncher(abc.ABC):
     A job launcher is the executable that actually launches a distributed
     program to multiple nodes, e.g., ``mpirun``, ``srun`` etc.
 
-    .. warning::
-
-       Users may not create job launchers directly.
 
     .. note::
+       .. versionchanged:: 4.0.0
+          Users may create job launchers directly.
+
        .. versionchanged:: 2.8
           Job launchers do not get a reference to a job during their
           initialization.

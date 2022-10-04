@@ -323,6 +323,14 @@ System Partition Configuration
    - ``upcrun``: Parallel programs will be launched using the `UPC <https://upc.lbl.gov/>`__ ``upcrun`` command.
    - ``upcxx-run``: Parallel programs will be launched using the `UPC++ <https://bitbucket.org/berkeleylab/upcxx/wiki/Home>`__ ``upcxx-run`` command.
 
+   .. tip::
+
+      .. versionadded:: 4.0.0
+
+        ReFrame also allows you to register your own custom launchers simply by defining them in the configuration.
+        You can follow a small tutorial `here <tutorial_advanced.html#adding-a-custom-launcher-to-a-partition>`__.
+
+
 .. js:attribute:: .systems[].partitions[].access
 
    :required: No
@@ -1180,6 +1188,15 @@ The additional properties for the ``httpjson`` handler are the following:
    A set of optional key/value pairs to be passed with each log record to the server.
    These may depend on the server configuration.
 
+.. js:attribute:: .logging[].handlers[].ignore_keys
+
+.. object:: .logging[].handlers_perflog[].ignore_keys
+
+   :required: No
+   :default: ``[]``
+
+   These keys will be excluded from the log record that will be sent to the server.
+
 
 The ``httpjson`` handler sends log messages in JSON format using an HTTP POST request to the specified URL.
 
@@ -1194,7 +1211,8 @@ An example configuration of this handler for performance logging is shown here:
        'extras': {
            'facility': 'reframe',
            'data-version': '1.0'
-       }
+       },
+       'ignore_keys': ['check_perfvalues']
    }
 
 
