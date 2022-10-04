@@ -35,6 +35,7 @@ def getscheduler(name):
 
 
 # Import the schedulers modules to trigger their registration
+import reframe.core.schedulers.flux    # noqa: F401, F403
 import reframe.core.schedulers.local   # noqa: F401, F403
 import reframe.core.schedulers.lsf     # noqa: F401, F403
 import reframe.core.schedulers.oar     # noqa: F401, F403

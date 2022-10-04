@@ -576,8 +576,6 @@ The trick here is to replace the parallel launcher with the local one, which pra
 The :func:`~reframe.core.backends.getlauncher` function takes the `registered <config_reference.html#systems-.partitions-.launcher>`__ name of a launcher and returns the class that implements it.
 You then instantiate the launcher and assign to the :attr:`~reframe.core.schedulers.Job.launcher` attribute of the job descriptor.
 
-An alternative to this approach would be to define your own custom parallel launcher and register it with the framework.
-You could then use it as the scheduler of a system partition in the configuration, but this approach is less test-specific.
 
 Adding more parallel launch commands
 ====================================
@@ -626,6 +624,65 @@ Let's see how the generated job script looks like:
 
 
 The first three ``srun`` commands are emitted through the :attr:`prerun_cmds` whereas the last one comes from the test's :attr:`executable` attribute.
+
+
+Adding a custom launcher to a partition
+=======================================
+
+.. versionadded:: 4.0.0
+
+An alternative to the approaches above would be to define your own custom parallel launcher and register it with the framework.
+You could then use it as the launcher of a system partition in the configuration and use it in multiple tests.
+
+Each `launcher <regression_test_api.html#reframe.core.launchers.JobLauncher>`__ needs to implement the :func:`~reframe.core.launchers.JobLauncher.command` method and can optionally change the default :func:`~reframe.core.launchers.JobLauncher.run_command` method.
+
+As an example of how easy it is to define a new parallel launcher backend, here is the actual implementation of the ``mpirun`` launcher:
+
+.. code:: python
+
+    from reframe.core.backends import register_launcher
+    from reframe.core.launchers import JobLauncher
+
+
+    @register_launcher('mpirun')
+    class MpirunLauncher(JobLauncher):
+        def command(self, job):
+            return ['mpirun', '-np', str(job.num_tasks)]
+
+
+The :func:`~reframe.core.launchers.JobLauncher.command` returns a list of command tokens that will be combined with any user-supplied `options <regression_test_api.html#reframe.core.launchers.JobLauncher.options>`__ by the :func:`~reframe.core.launchers.JobLauncher.run_command` method to generate the actual launcher command line.
+Notice you can use the ``job`` argument to get job-specific information that will allow you to construct the correct launcher invocation.
+
+If you use a Python-based configuration file, you can define your custom launcher directly inside your config as follows:
+
+.. code:: python
+
+   from reframe.core.backends import register_launcher
+   from reframe.core.launchers import JobLaucher
+
+
+   @register_launcher('slrun')
+   class MySmartLauncher(JobLauncher):
+       def command(self, job):
+           return ['slrun', ...]
+
+   site_configuration = {
+       'systems': [
+           {
+               'name': 'my_system',
+               'partitions': [
+                   {
+                       'name': 'my_partition',
+                       'launcher': 'slrun'
+                       ...
+                   }
+               ],
+               ...
+           },
+           ...
+       ],
+       ...
+   }
 
 
 Flexible Regression Tests
