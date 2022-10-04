@@ -371,7 +371,8 @@ def _create_httpjson_handler(site_config, config_prefix):
         return None
 
     extras = site_config.get(f'{config_prefix}/extras')
-    return HTTPJSONHandler(url, extras)
+    ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
+    return HTTPJSONHandler(url, extras, ignore_keys)
 
 
 class HTTPJSONHandler(logging.Handler):
@@ -386,20 +387,25 @@ class HTTPJSONHandler(logging.Handler):
         'stack_info', 'thread', 'threadName', 'exc_text'
     }
 
-    def __init__(self, url, extras=None):
+    def __init__(self, url, extras=None, ignore_keys=None):
         super().__init__()
         self._url = url
         self._extras = extras
+        self._ignore_keys = ignore_keys
 
     def _record_to_json(self, record):
+        def _can_send(key):
+            return not (
+                key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS
+                or (self._ignore_keys and key in self._ignore_keys)
+            )
+
         json_record = {
-            k: v for k, v in record.__dict__.items()
-            if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
+            k: v for k, v in record.__dict__.items() if _can_send(k)
         }
         if self._extras:
             json_record.update({
-                k: v for k, v in self._extras.items()
-                if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
+                k: v for k, v in self._extras.items() if _can_send(k)
             })
 
         return _xfmt(json_record).encode('utf-8')
