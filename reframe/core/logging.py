@@ -394,23 +394,18 @@ class HTTPJSONHandler(logging.Handler):
         self._perflog_ignore = perflog_ignore
 
     def _record_to_json(self, record):
-        def _log_record(key):
-            if key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS:
-                return False
-
-            if self._perflog_ignore and key in self._perflog_ignore:
-                return False
-
-            return True
+        def _can_send(key):
+            return not (
+                key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS
+                or (self._perflog_ignore and key in self._perflog_ignore)
+            )
 
         json_record = {
-            k: v for k, v in record.__dict__.items()
-            if _log_record(k)
+            k: v for k, v in record.__dict__.items() if _can_send(k)
         }
         if self._extras:
             json_record.update({
-                k: v for k, v in self._extras.items()
-                if _log_record(k)
+                k: v for k, v in self._extras.items() if _can_send(k)
             })
 
         return _xfmt(json_record).encode('utf-8')
