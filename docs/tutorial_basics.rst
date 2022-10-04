@@ -266,7 +266,7 @@ Since we don't want to type it throughout the tutorial, we will now set it in th
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
+   export RFM_CONFIG_PATH=$(pwd)/tutorials/config=$(pwd)/tutorials/config
 
 
 A Multithreaded "Hello, World!"
