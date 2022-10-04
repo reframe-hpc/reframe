@@ -255,12 +255,7 @@
                                     ]
                                 },
                                 "launcher": {
-                                    "type": "string",
-                                    "enum": [
-                                        "alps",  "ibrun", "local", "mpirun",
-                                        "mpiexec", "srun", "srunalloc", "ssh",
-                                        "upcrun", "upcxx-run", "lrun", "lrun-gpu"
-                                    ]
+                                    "type": "string"
                                 },
                                 "access": {
                                     "type": "array",
