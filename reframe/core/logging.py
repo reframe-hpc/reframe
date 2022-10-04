@@ -371,8 +371,8 @@ def _create_httpjson_handler(site_config, config_prefix):
         return None
 
     extras = site_config.get(f'{config_prefix}/extras')
-    perflog_ignore = site_config.get(f'{config_prefix}/perflog_ignore')
-    return HTTPJSONHandler(url, extras, perflog_ignore)
+    ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
+    return HTTPJSONHandler(url, extras, ignore_keys)
 
 
 class HTTPJSONHandler(logging.Handler):
@@ -387,17 +387,17 @@ class HTTPJSONHandler(logging.Handler):
         'stack_info', 'thread', 'threadName', 'exc_text'
     }
 
-    def __init__(self, url, extras=None, perflog_ignore=None):
+    def __init__(self, url, extras=None, ignore_keys=None):
         super().__init__()
         self._url = url
         self._extras = extras
-        self._perflog_ignore = perflog_ignore
+        self._ignore_keys = ignore_keys
 
     def _record_to_json(self, record):
         def _can_send(key):
             return not (
                 key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS
-                or (self._perflog_ignore and key in self._perflog_ignore)
+                or (self._ignore_keys and key in self._ignore_keys)
             )
 
         json_record = {

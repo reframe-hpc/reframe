@@ -1179,9 +1179,9 @@ The additional properties for the ``httpjson`` handler are the following:
    A set of optional key/value pairs to be passed with each log record to the server.
    These may depend on the server configuration.
 
-.. js:attribute:: .logging[].handlers[].perflog_ignore
+.. js:attribute:: .logging[].handlers[].ignore_keys
 
-.. object:: .logging[].handlers_perflog[].perflog_ignore
+.. object:: .logging[].handlers_perflog[].ignore_keys
 
    :required: No
    :default: ``[]``
@@ -1203,7 +1203,7 @@ An example configuration of this handler for performance logging is shown here:
            'facility': 'reframe',
            'data-version': '1.0'
        },
-       'perflog_ignore': ['check_perfvalues']
+       'ignore_keys': ['check_perfvalues']
    }
 
 
