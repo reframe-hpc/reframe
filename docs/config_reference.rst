@@ -1658,6 +1658,10 @@ Processor Info
 
 A *processor info object* in ReFrame's configuration is used to hold information about the processor of a system partition and is made available to the tests through the :attr:`processor <reframe.core.systems.SystemPartition.processor>` attribute of the :attr:`current_partition <reframe.core.pipeline.RegressionTest.current_partition>`.
 
+.. note::
+   In the following the term *logical CPUs* refers to the smallest processing unit recognized by the OS.
+   Depending on the microarchitecture, this can either be a core or a hardware thread in processors that support simultaneous multithreading and this feature is enabled.
+   Therefore, properties such as :attr:`num_cpus_per_core` may have a value greater than one.
 
 .. attribute:: .arch
 
