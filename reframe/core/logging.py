@@ -636,14 +636,14 @@ class LoggerAdapter(logging.LoggerAdapter):
 
             _WARN_ONCE.add(message)
 
-        message = f'{sys.argv[0]}: {message}'
+        message = f'WARNING: {message}'
         if self.colorize:
             message = color.colorize(message, color.YELLOW)
 
         super().warning(message, *args, **kwargs)
 
     def error(self, message, *args, **kwargs):
-        message = f'{sys.argv[0]}: {message}'
+        message = f'ERROR: {message}'
         if self.colorize:
             message = color.colorize(message, color.RED)
 

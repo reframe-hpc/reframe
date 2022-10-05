@@ -1,22 +1,25 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+149af549
+  version:           4.0.0-dev.1+36ffa085
   command:           './bin/reframe --restore-session --keep-stage-files -n T6 -r'
-  launched by:       user@host
+  launched by:       user@tresa.local
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '<builtin>'
+  settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
   check search path: '/home/user/Repositories/reframe/unittests/resources/checks_unlisted/deps_complex.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-xwildgxp.log'
 
 [==========] Running 1 check(s)
-[==========] Started on Sat Jan 22 23:44:25 2022
+[==========] Started on Sat Oct  1 20:06:40 2022 
 
 [----------] start processing checks
-[ RUN      ] T6 @generic:default+builtin
-[       OK ] (1/1) T6 @generic:default+builtin
+[ RUN      ] T6 /6dbdaf93 @catalina:default+gnu
+[ RUN      ] T6 /6dbdaf93 @catalina:default+clang
+[       OK ] (1/2) T6 /6dbdaf93 @catalina:default+gnu
+[       OK ] (2/2) T6 /6dbdaf93 @catalina:default+clang
 [----------] all spawned checks have finished
 
-[  PASSED  ] Ran 1/1 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 23:44:25 2022
-Run report saved in '/home/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-mug0a4cb.log'
+[  PASSED  ] Ran 2/2 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
+[==========] Finished on Sat Oct  1 20:06:41 2022 
+Run report saved in '/home/user/.reframe/reports/run-report-111.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-xwildgxp.log'

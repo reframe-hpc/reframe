@@ -1,18 +1,19 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+4fc5b12c
+  version:           4.0.0-dev.1+36ffa085
   command:           './bin/reframe -c tutorials/advanced/makefiles/maketest_mixin.py -l'
-  launched by:       user@host
+  launched by:       user@tresa.local
   working directory: '/home/user/Repositories/reframe'
   settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
   check search path: '/home/user/Repositories/reframe/tutorials/advanced/makefiles/maketest_mixin.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-h0xbgysl.log'
 
 [List of matched checks]
-- MakeOnlyTestAlt %elem_type=double
-- MakeOnlyTestAlt %elem_type=float
-- MakefileTestAlt %elem_type=double
-- MakefileTestAlt %elem_type=float
+- MakeOnlyTestAlt %elem_type=double /8b62380e
+- MakeOnlyTestAlt %elem_type=float /da39ec20
+- MakefileTestAlt %elem_type=double /89aac4a2
+- MakefileTestAlt %elem_type=float /a998ce67
 Found 4 check(s)
 
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-4w95t2wt.log'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-h0xbgysl.log'

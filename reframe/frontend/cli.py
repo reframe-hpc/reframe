@@ -745,7 +745,7 @@ def main():
         logging.configure_logging(site_config)
     except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
-        printer.error(logfiles_message())
+        printer.info(logfiles_message())
         sys.exit(1)
 
     printer.colorize = site_config.get('general/0/colorize')
@@ -757,7 +757,7 @@ def main():
         runtime.init_runtime(site_config)
     except errors.ConfigError as e:
         printer.error(f'failed to initialize runtime: {e}')
-        printer.error(logfiles_message())
+        printer.info(logfiles_message())
         sys.exit(1)
 
     if site_config.get('general/0/ignore_check_conflicts'):
@@ -786,7 +786,7 @@ def main():
         printer.error("stage and output refer to the same directory; "
                       "if this is on purpose, please use the "
                       "'--keep-stage-files' option.")
-        printer.error(logfiles_message())
+        printer.info(logfiles_message())
         sys.exit(1)
 
     # Show configuration after everything is set up
@@ -930,6 +930,8 @@ def main():
                    f"{':'.join(loader.load_path)!r}")
     print_infoline('stage directory', repr(session_info['prefix_stage']))
     print_infoline('output directory', repr(session_info['prefix_output']))
+    print_infoline('log files',
+                   ', '.join(repr(s) for s in logging.log_files()))
     printer.info('')
     try:
         logging.getprofiler().enter_region('test processing')
@@ -1374,7 +1376,6 @@ def main():
             log_files = logging.log_files()
             if site_config.get('general/0/save_log_files'):
                 log_files = logging.save_log_files(rt.output_prefix)
-
         except OSError as e:
             printer.error(f'could not save log file: {e}')
             sys.exit(1)
