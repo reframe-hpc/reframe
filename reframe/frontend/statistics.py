@@ -108,9 +108,9 @@ class TestStats:
                     'description': check.descr,
                     'display_name': check.display_name,
                     'environment': None,
-                    'filename': inspect.getfile(type(check)),
                     'fail_phase': None,
                     'fail_reason': None,
+                    'filename': inspect.getfile(type(check)),
                     'fixture': check.is_fixture(),
                     'hash': check.hashcode,
                     'jobid': None,
@@ -321,7 +321,9 @@ class TestStats:
         for run in self.json():
             for tc in run['testcases']:
                 if tc['perfvars']:
-                    perf_records[tc['unique_name']] = tc
+                    key = tc['unique_name']
+                    perf_records.setdefault(key, [])
+                    perf_records[key].append(tc)
 
         if not perf_records:
             return ''
@@ -336,36 +338,38 @@ class TestStats:
             'use_multithreading'
         }
 
-        for tc in perf_records.values():
-            name = tc['display_name']
-            hash = tc['hash']
-            env  = tc['environment']
-            part = tc['system']
-            lines.append(f'[{name} /{hash} @{part}:{env}]')
-            for v in interesting_vars:
-                val = tc['check_vars'][v]
-                if val is not None:
-                    lines.append(f'  {v}: {val}')
+        for testcases in perf_records.values():
+            for tc in testcases:
+                name = tc['display_name']
+                hash = tc['hash']
+                env  = tc['environment']
+                part = tc['system']
+                lines.append(f'[{name} /{hash} @{part}:{env}]')
+                for v in interesting_vars:
+                    val = tc['check_vars'][v]
+                    if val is not None:
+                        lines.append(f'  {v}: {val}')
 
-            lines.append('  performance:')
-            for v in tc['perfvars']:
-                name = v['name']
-                val  = v['value']
-                ref  = v['reference']
-                unit = v['unit']
-                lthr = v['thres_lower']
-                uthr = v['thres_upper']
-                if lthr is not None:
-                    lthr *= 100
-                else:
-                    lthr = '-inf'
+                lines.append('  performance:')
+                for v in tc['perfvars']:
+                    name = v['name']
+                    val  = v['value']
+                    ref  = v['reference']
+                    unit = v['unit']
+                    lthr = v['thres_lower']
+                    uthr = v['thres_upper']
+                    if lthr is not None:
+                        lthr *= 100
+                    else:
+                        lthr = '-inf'
 
-                if uthr is not None:
-                    uthr *= 100
-                else:
-                    uthr = 'inf'
+                    if uthr is not None:
+                        uthr *= 100
+                    else:
+                        uthr = 'inf'
 
-                lines.append(f'    - {name}: {val} {unit} '
-                             f'(r: {ref} {unit} l: {lthr}% u: +{uthr}%)')
+                    lines.append(f'    - {name}: {val} {unit} '
+                                 f'(r: {ref} {unit} l: {lthr}% u: +{uthr}%)')
+
         lines.append(width*'-')
         return '\n'.join(lines)

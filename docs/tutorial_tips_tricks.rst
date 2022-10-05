@@ -151,10 +151,6 @@ Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
    :language: console
 
 You can see all the different phases ReFrame's frontend goes through when loading a test.
-The first "strange" thing to notice in this log is that ReFrame picked the generic system configuration.
-This happened because it couldn't find a system entry with a matching hostname pattern.
-However, it did not impact the test loading, because these tests are valid for any system, but it will affect the tests when running (see :doc:`tutorial_basics`) since the generic system does not define any C++ compiler.
-
 After loading the configuration, ReFrame will print out its relevant environment variables and will start examining the given files in order to find and load ReFrame tests.
 Before attempting to load a file, it will validate it and check if it looks like a ReFrame test.
 If it does, it will load that file by importing it.
