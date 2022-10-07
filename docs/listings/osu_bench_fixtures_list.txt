@@ -1,13 +1,13 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+6c51b548
+  version:           4.0.0-dev.1+9a4b68ae
   command:           './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -l'
   launched by:       user@daint104
   working directory: '/home/user/Devel/reframe'
-  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/settings.py'
   check search path: '/home/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
-  log files:         '/tmp/rfm-i3lzbixe.log'
+  log files:         '/tmp/rfm-522ch6rc.log'
 
 [List of matched checks]
 - osu_allreduce_test %mpi_tasks=16 /1fe48834
@@ -54,4 +54,4 @@
       ^fetch_osu_benchmarks ~daint /79cd6023
 Found 6 check(s)
 
-Log file(s) saved in '/tmp/rfm-i3lzbixe.log'
+Log file(s) saved in '/tmp/rfm-522ch6rc.log'

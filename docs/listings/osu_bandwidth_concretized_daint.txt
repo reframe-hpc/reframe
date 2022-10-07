@@ -1,13 +1,13 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+6c51b548
+  version:           4.0.0-dev.1+9a4b68ae
   command:           './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC'
   launched by:       user@daint104
   working directory: '/home/user/Devel/reframe'
-  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/settings.py'
   check search path: '/home/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
-  log files:         '/tmp/rfm-29dsnhwp.log'
+  log files:         '/tmp/rfm-ww7yfkil.log'
 
 [List of matched checks]
 - osu_bandwidth_test /026711a1 @daint:gpu+gnu
@@ -21,4 +21,4 @@
       ^fetch_osu_benchmarks ~daint /79cd6023 @daint:gpu+gnu
 Concretized 7 test case(s)
 
-Log file(s) saved in '/tmp/rfm-29dsnhwp.log'
+Log file(s) saved in '/tmp/rfm-ww7yfkil.log'

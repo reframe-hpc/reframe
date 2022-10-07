@@ -1,13 +1,13 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+6c51b548
+  version:           4.0.0-dev.1+9a4b68ae
   command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py -lC'
   launched by:       user@daint104
   working directory: '/home/user/Devel/reframe'
-  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/settings.py'
   check search path: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
-  log files:         '/tmp/rfm-ry5fdbm2.log'
+  log files:         '/tmp/rfm-j2qd_as2.log'
 
 [List of matched checks]
 - OSUAllreduceTest %mpi_tasks=16 /7f033d39 @daint:gpu+gnu
@@ -66,4 +66,4 @@
       ^OSUDownloadTest /7de668df @daint:login+builtin
 Concretized 22 test case(s)
 
-Log file(s) saved in '/tmp/rfm-ry5fdbm2.log'
+Log file(s) saved in '/tmp/rfm-j2qd_as2.log'

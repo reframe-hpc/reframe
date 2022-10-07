@@ -1,16 +1,16 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+6c51b548
+  version:           4.0.0-dev.1+9a4b68ae
   command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py -r'
   launched by:       user@daint104
   working directory: '/home/user/Devel/reframe'
-  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/settings.py'
   check search path: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
-  log files:         '/tmp/rfm-bcp1443i.log'
+  log files:         '/tmp/rfm-csrlj0_9.log'
 
 [==========] Running 8 check(s)
-[==========] Started on Wed Oct  5 15:11:25 2022
+[==========] Started on Fri Oct  7 12:42:05 2022
 
 [----------] start processing checks
 [ RUN      ] OSUDownloadTest /7de668df @daint:login+builtin
@@ -40,44 +40,44 @@
 [ RUN      ] OSULatencyTest /14f35a43 @daint:gpu+intel
 [ RUN      ] OSULatencyTest /14f35a43 @daint:gpu+nvidia
 [       OK ] ( 5/22) OSUAllreduceTest %mpi_tasks=16 /7f033d39 @daint:gpu+gnu
-P: latency: 12.25 us (r:0, l:None, u:None)
-[       OK ] ( 6/22) OSUAllreduceTest %mpi_tasks=8 /005fca19 @daint:gpu+gnu
-P: latency: 8.9 us (r:0, l:None, u:None)
-[       OK ] ( 7/22) OSUAllreduceTest %mpi_tasks=8 /005fca19 @daint:gpu+intel
-P: latency: 8.97 us (r:0, l:None, u:None)
-[       OK ] ( 8/22) OSULatencyTest /14f35a43 @daint:gpu+gnu
-P: latency: 1.15 us (r:0, l:None, u:None)
-[       OK ] ( 9/22) OSUAllreduceTest %mpi_tasks=4 /84b85d90 @daint:gpu+gnu
-P: latency: 3.33 us (r:0, l:None, u:None)
-[       OK ] (10/22) OSUAllreduceTest %mpi_tasks=2 /9d550c4f @daint:gpu+gnu
-P: latency: 1.73 us (r:0, l:None, u:None)
-[       OK ] (11/22) OSUAllreduceTest %mpi_tasks=2 /9d550c4f @daint:gpu+intel
-P: latency: 1.7 us (r:0, l:None, u:None)
-[       OK ] (12/22) OSUAllreduceTest %mpi_tasks=4 /84b85d90 @daint:gpu+intel
-P: latency: 4.66 us (r:0, l:None, u:None)
+P: latency: 21.48 us (r:0, l:None, u:None)
+[       OK ] ( 6/22) OSUAllreduceTest %mpi_tasks=8 /005fca19 @daint:gpu+intel
+P: latency: 10.72 us (r:0, l:None, u:None)
+[       OK ] ( 7/22) OSUAllreduceTest %mpi_tasks=2 /9d550c4f @daint:gpu+gnu
+P: latency: 1.69 us (r:0, l:None, u:None)
+[       OK ] ( 8/22) OSUAllreduceTest %mpi_tasks=4 /84b85d90 @daint:gpu+intel
+P: latency: 3.25 us (r:0, l:None, u:None)
+[       OK ] ( 9/22) OSUAllreduceTest %mpi_tasks=8 /005fca19 @daint:gpu+gnu
+P: latency: 12.05 us (r:0, l:None, u:None)
+[       OK ] (10/22) OSUAllreduceTest %mpi_tasks=4 /84b85d90 @daint:gpu+gnu
+P: latency: 6.28 us (r:0, l:None, u:None)
+[       OK ] (11/22) OSULatencyTest /14f35a43 @daint:gpu+gnu
+P: latency: 1.21 us (r:0, l:None, u:None)
+[       OK ] (12/22) OSUAllreduceTest %mpi_tasks=2 /9d550c4f @daint:gpu+intel
+P: latency: 1.68 us (r:0, l:None, u:None)
 [       OK ] (13/22) OSUAllreduceTest %mpi_tasks=16 /7f033d39 @daint:gpu+intel
-P: latency: 14.28 us (r:0, l:None, u:None)
+P: latency: 36.2 us (r:0, l:None, u:None)
 [       OK ] (14/22) OSUBandwidthTest /764cdb0b @daint:gpu+gnu
-P: bandwidth: 9711.67 MB/s (r:0, l:None, u:None)
-[       OK ] (15/22) OSULatencyTest /14f35a43 @daint:gpu+intel
-P: latency: 1.17 us (r:0, l:None, u:None)
-[       OK ] (16/22) OSUAllreduceTest %mpi_tasks=2 /9d550c4f @daint:gpu+nvidia
-P: latency: 1.66 us (r:0, l:None, u:None)
-[       OK ] (17/22) OSUAllreduceTest %mpi_tasks=8 /005fca19 @daint:gpu+nvidia
-P: latency: 7.84 us (r:0, l:None, u:None)
-[       OK ] (18/22) OSULatencyTest /14f35a43 @daint:gpu+nvidia
-P: latency: 1.15 us (r:0, l:None, u:None)
-[       OK ] (19/22) OSUAllreduceTest %mpi_tasks=4 /84b85d90 @daint:gpu+nvidia
-P: latency: 4.18 us (r:0, l:None, u:None)
+P: bandwidth: 8979.26 MB/s (r:0, l:None, u:None)
+[       OK ] (15/22) OSUAllreduceTest %mpi_tasks=2 /9d550c4f @daint:gpu+nvidia
+P: latency: 1.65 us (r:0, l:None, u:None)
+[       OK ] (16/22) OSULatencyTest /14f35a43 @daint:gpu+nvidia
+P: latency: 1.14 us (r:0, l:None, u:None)
+[       OK ] (17/22) OSUAllreduceTest %mpi_tasks=4 /84b85d90 @daint:gpu+nvidia
+P: latency: 4.97 us (r:0, l:None, u:None)
+[       OK ] (18/22) OSUAllreduceTest %mpi_tasks=8 /005fca19 @daint:gpu+nvidia
+P: latency: 10.16 us (r:0, l:None, u:None)
+[       OK ] (19/22) OSULatencyTest /14f35a43 @daint:gpu+intel
+P: latency: 1.18 us (r:0, l:None, u:None)
 [       OK ] (20/22) OSUAllreduceTest %mpi_tasks=16 /7f033d39 @daint:gpu+nvidia
-P: latency: 13.2 us (r:0, l:None, u:None)
-[       OK ] (21/22) OSUBandwidthTest /764cdb0b @daint:gpu+intel
-P: bandwidth: 9508.26 MB/s (r:0, l:None, u:None)
-[       OK ] (22/22) OSUBandwidthTest /764cdb0b @daint:gpu+nvidia
-P: bandwidth: 9298.19 MB/s (r:0, l:None, u:None)
+P: latency: 25.37 us (r:0, l:None, u:None)
+[       OK ] (21/22) OSUBandwidthTest /764cdb0b @daint:gpu+nvidia
+P: bandwidth: 9779.82 MB/s (r:0, l:None, u:None)
+[       OK ] (22/22) OSUBandwidthTest /764cdb0b @daint:gpu+intel
+P: bandwidth: 9429.47 MB/s (r:0, l:None, u:None)
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 22/22 test case(s) from 8 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Wed Oct  5 15:24:10 2022
-Run report saved in '/home/user/.reframe/reports/run-report-65.json'
-Log file(s) saved in '/tmp/rfm-bcp1443i.log'
+[==========] Finished on Fri Oct  7 12:51:03 2022
+Run report saved in '/home/user/.reframe/reports/run-report-76.json'
+Log file(s) saved in '/tmp/rfm-csrlj0_9.log'
