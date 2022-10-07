@@ -340,6 +340,55 @@ If we tried to run :class:`T6` without restoring the session, we would have to r
    :language: console
 
 
+Implementing test workarounds efficiently
+-----------------------------------------
+
+Sometimes you may need to add a quick workaround for a test because something in the system/environment is not setup correctly.
+Hooks are the best way to implement this because they are easy to disable from the command-line and you wouldn't need to update the test every time you want to check if the system is working properly.
+Let's use one example we saw in a previous tutorial and let's assume that there is something wrong with one of the environments, like an undefined variable.
+Instead of adding another flag in the ``set_compilation_flags`` hook, it would be better to add one more hook with the workaround, in this case ``prgenv_nvidia_workaround``.
+
+.. code-block:: python
+   :emphasize-lines: 27-33
+
+   import reframe as rfm
+   import reframe.utility.sanity as sn
+
+
+   @rfm.simple_test
+   class HelloThreadedExtended2Test(rfm.RegressionTest):
+       valid_systems = ['*']
+       valid_prog_environs = ['*']
+       sourcepath = 'hello_threads.cpp'
+       build_system = 'SingleSource'
+       executable_opts = ['16']
+
+       @run_before('compile')
+       def set_compilation_flags(self):
+           self.build_system.cppflags = ['-DSYNC_MESSAGES']
+           self.build_system.cxxflags = ['-std=c++11', '-Wall']
+           environ = self.current_environ.name
+           if environ in {'clang', 'gnu'}:
+               self.build_system.cxxflags += ['-pthread']
+
+       @sanity_function
+       def assert_num_messages(self):
+           num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
+                                         self.stdout))
+           return sn.assert_eq(num_messages, 16)
+
+       @run_before('compile')
+       def prgenv_nvidia_workaround(self):
+           ce = self.current_environ.name
+           if ce == 'nvidia':
+               self.build_system.cppflags += [
+                   '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
+               ]
+
+In this way the test will be passing and we can make sure that new issues haven't appeared while waiting for the system to be fixed.
+By running with ``--disable-hook=prgenv_nvidia_workaround`` we can run the test without this hook at any time we want to check if the issue is resolved.
+
+
 .. _generate-ci-pipeline:
 
 Integrating into a CI pipeline
