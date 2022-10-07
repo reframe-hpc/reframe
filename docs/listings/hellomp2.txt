@@ -1,27 +1,28 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+36ffa085
+  version:           4.0.0-dev.1+6c51b548
   command:           './bin/reframe -c tutorials/basics/hellomp/hellomp2.py -r'
-  launched by:       user@tresa.local
+  launched by:       user@host
   working directory: '/home/user/Repositories/reframe'
   settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
   check search path: '/home/user/Repositories/reframe/tutorials/basics/hellomp/hellomp2.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
-  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-xspkjmaz.log'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-vyh6_pki.log'
 
 [==========] Running 1 check(s)
-[==========] Started on Sat Oct  1 20:06:29 2022 
+[==========] Started on Wed Oct  5 22:28:03 2022 
 
 [----------] start processing checks
 [ RUN      ] HelloThreadedExtendedTest /4733a67d @catalina:default+gnu
 [ RUN      ] HelloThreadedExtendedTest /4733a67d @catalina:default+clang
 [     FAIL ] (1/2) HelloThreadedExtendedTest /4733a67d @catalina:default+gnu
 ==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest'
-[       OK ] (2/2) HelloThreadedExtendedTest /4733a67d @catalina:default+clang
+[     FAIL ] (2/2) HelloThreadedExtendedTest /4733a67d @catalina:default+clang
+==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest'
 [----------] all spawned checks have finished
 
-[  FAILED  ] Ran 2/2 test case(s) from 1 check(s) (1 failure(s), 0 skipped)
-[==========] Finished on Sat Oct  1 20:06:31 2022 
+[  FAILED  ] Ran 2/2 test case(s) from 1 check(s) (2 failure(s), 0 skipped)
+[==========] Finished on Wed Oct  5 22:28:04 2022 
 
 ================================================================================
 SUMMARY OF FAILURES
@@ -32,8 +33,8 @@ FAILURE INFO for HelloThreadedExtendedTest
   * System partition: catalina:default
   * Environment: gnu
   * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/gnu/HelloThreadedExtendedTest
-  * Node list: tresa.localNone
-  * Job type: local (id=91939)
+  * Node list: hostNone
+  * Job type: local (id=91535)
   * Dependencies (conceptual): []
   * Dependencies (actual): []
   * Maintainers: []
@@ -41,5 +42,20 @@ FAILURE INFO for HelloThreadedExtendedTest
   * Rerun with '-n /4733a67d -p gnu --system catalina:default -r'
   * Reason: sanity error: 12 != 16
 --------------------------------------------------------------------------------
-Run report saved in '/home/user/.reframe/reports/run-report-107.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-xspkjmaz.log'
+FAILURE INFO for HelloThreadedExtendedTest 
+  * Expanded name: HelloThreadedExtendedTest
+  * Description: 
+  * System partition: catalina:default
+  * Environment: clang
+  * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/clang/HelloThreadedExtendedTest
+  * Node list: hostNone
+  * Job type: local (id=91536)
+  * Dependencies (conceptual): []
+  * Dependencies (actual): []
+  * Maintainers: []
+  * Failing phase: sanity
+  * Rerun with '-n /4733a67d -p clang --system catalina:default -r'
+  * Reason: sanity error: 12 != 16
+--------------------------------------------------------------------------------
+Run report saved in '/home/user/.reframe/reports/run-report-119.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-vyh6_pki.log'
