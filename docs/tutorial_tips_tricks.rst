@@ -343,10 +343,13 @@ If we tried to run :class:`T6` without restoring the session, we would have to r
 Implementing test workarounds efficiently
 -----------------------------------------
 
-Sometimes you may need to add a quick workaround for a test because something in the system/environment is not setup correctly.
-Hooks are the best way to implement this because they are easy to disable from the command-line and you wouldn't need to update the test every time you want to check if the system is working properly.
-Let's use one example we saw in a previous tutorial and let's assume that there is something wrong with one of the environments, like an undefined variable.
-Instead of adding another flag in the ``set_compilation_flags`` hook, it would be better to add one more hook with the workaround, in this case ``prgenv_nvidia_workaround``.
+.. versionadded:: 3.2
+
+Sometimes you may need to add a quick workaround in a test, because something in a system or an environment broken.
+The best way to implement this is through hooks, because you can easily disable any hook from the command-line and you don't need to update the test every time you want to check if the system is fixed and the workaround is not needed anymore.
+
+Let's use one example from the `previous tutorial <tutorial_basics.html>`__ and let's assume that there is something wrong with one of the environments and a special macro needs to be defined in order for the compilation to succeed.
+Instead of adding another flag in the :func:`set_compilation_flags` hook, it is better to add another hook containing just the workaround as shown below:
 
 .. code-block:: python
    :emphasize-lines: 27-33
@@ -378,15 +381,15 @@ Instead of adding another flag in the ``set_compilation_flags`` hook, it would b
            return sn.assert_eq(num_messages, 16)
 
        @run_before('compile')
-       def prgenv_nvidia_workaround(self):
+       def fooenv_workaround(self):
            ce = self.current_environ.name
-           if ce == 'nvidia':
+           if ce == 'foo':
                self.build_system.cppflags += [
                    '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
                ]
 
-In this way the test will be passing and we can make sure that new issues haven't appeared while waiting for the system to be fixed.
-By running with ``--disable-hook=prgenv_nvidia_workaround`` we can run the test without this hook at any time we want to check if the issue is resolved.
+This way the test will start passing again allowing us to catch any new issues while waiting for the original issue to be fixed.
+Then we can run the test anytime using ``--disable-hook=fooenv_workaround`` to check if the workaround is not needed anymore.
 
 
 .. _generate-ci-pipeline:
