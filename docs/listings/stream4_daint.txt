@@ -1,5 +1,5 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+6c51b548
+  version:           4.0.0-dev.1+a4a2a15f
   command:           './bin/reframe -c tutorials/basics/stream/stream4.py -r --performance-report'
   launched by:       user@daint104
   working directory: '/home/user/Devel/reframe'
@@ -7,10 +7,10 @@
   check search path: '/home/user/Devel/reframe/tutorials/basics/stream/stream4.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
-  log files:         '/tmp/rfm-_6x826vd.log'
+  log files:         '/tmp/rfm-c9f_ne8m.log'
 
 [==========] Running 1 check(s)
-[==========] Started on Wed Oct  5 15:02:21 2022
+[==========] Started on Fri Oct  7 11:22:15 2022
 
 [----------] start processing checks
 [ RUN      ] StreamMultiSysTest /eec1c676 @daint:login+gnu
@@ -26,82 +26,181 @@
 [ RUN      ] StreamMultiSysTest /eec1c676 @daint:mc+nvidia
 [ RUN      ] StreamMultiSysTest /eec1c676 @daint:mc+cray
 [       OK ] ( 1/12) StreamMultiSysTest /eec1c676 @daint:login+gnu
-P: Copy: 94272.8 MB/s (r:0, l:None, u:None)
-P: Scale: 72207.8 MB/s (r:0, l:None, u:None)
-P: Add: 77800.3 MB/s (r:0, l:None, u:None)
-P: Triad: 77800.3 MB/s (r:0, l:None, u:None)
+P: Copy: 90564.7 MB/s (r:0, l:None, u:None)
+P: Scale: 69209.5 MB/s (r:0, l:None, u:None)
+P: Add: 74898.5 MB/s (r:0, l:None, u:None)
+P: Triad: 74036.6 MB/s (r:0, l:None, u:None)
 [       OK ] ( 2/12) StreamMultiSysTest /eec1c676 @daint:login+intel
-P: Copy: 101564.7 MB/s (r:0, l:None, u:None)
-P: Scale: 91429.0 MB/s (r:0, l:None, u:None)
-P: Add: 102027.9 MB/s (r:0, l:None, u:None)
-P: Triad: 102993.5 MB/s (r:0, l:None, u:None)
+P: Copy: 83611.7 MB/s (r:0, l:None, u:None)
+P: Scale: 72885.0 MB/s (r:0, l:None, u:None)
+P: Add: 79780.7 MB/s (r:0, l:None, u:None)
+P: Triad: 99212.3 MB/s (r:0, l:None, u:None)
 [       OK ] ( 3/12) StreamMultiSysTest /eec1c676 @daint:login+nvidia
-P: Copy: 102911.2 MB/s (r:0, l:None, u:None)
-P: Scale: 70791.3 MB/s (r:0, l:None, u:None)
-P: Add: 80034.6 MB/s (r:0, l:None, u:None)
-P: Triad: 78169.4 MB/s (r:0, l:None, u:None)
+P: Copy: 98383.4 MB/s (r:0, l:None, u:None)
+P: Scale: 70538.5 MB/s (r:0, l:None, u:None)
+P: Add: 79402.4 MB/s (r:0, l:None, u:None)
+P: Triad: 79138.3 MB/s (r:0, l:None, u:None)
 [       OK ] ( 4/12) StreamMultiSysTest /eec1c676 @daint:login+cray
-P: Copy: 100347.6 MB/s (r:0, l:None, u:None)
-P: Scale: 73706.3 MB/s (r:0, l:None, u:None)
-P: Add: 75572.2 MB/s (r:0, l:None, u:None)
-P: Triad: 79932.3 MB/s (r:0, l:None, u:None)
-[       OK ] ( 5/12) StreamMultiSysTest /eec1c676 @daint:mc+gnu
-P: Copy: 48696.0 MB/s (r:0, l:None, u:None)
-P: Scale: 38771.3 MB/s (r:0, l:None, u:None)
-P: Add: 43728.8 MB/s (r:0, l:None, u:None)
-P: Triad: 44155.2 MB/s (r:0, l:None, u:None)
+P: Copy: 63243.9 MB/s (r:0, l:None, u:None)
+P: Scale: 49733.9 MB/s (r:0, l:None, u:None)
+P: Add: 40884.8 MB/s (r:0, l:None, u:None)
+P: Triad: 56149.9 MB/s (r:0, l:None, u:None)
+[       OK ] ( 5/12) StreamMultiSysTest /eec1c676 @daint:mc+cray
+P: Copy: 47068.4 MB/s (r:0, l:None, u:None)
+P: Scale: 40086.2 MB/s (r:0, l:None, u:None)
+P: Add: 43688.6 MB/s (r:0, l:None, u:None)
+P: Triad: 44106.8 MB/s (r:0, l:None, u:None)
 [       OK ] ( 6/12) StreamMultiSysTest /eec1c676 @daint:mc+nvidia
-P: Copy: 46899.8 MB/s (r:0, l:None, u:None)
-P: Scale: 40478.9 MB/s (r:0, l:None, u:None)
-P: Add: 44157.6 MB/s (r:0, l:None, u:None)
-P: Triad: 44607.8 MB/s (r:0, l:None, u:None)
-[       OK ] ( 7/12) StreamMultiSysTest /eec1c676 @daint:mc+cray
-P: Copy: 46815.0 MB/s (r:0, l:None, u:None)
-P: Scale: 39939.7 MB/s (r:0, l:None, u:None)
-P: Add: 43610.2 MB/s (r:0, l:None, u:None)
-P: Triad: 43938.7 MB/s (r:0, l:None, u:None)
-[       OK ] ( 8/12) StreamMultiSysTest /eec1c676 @daint:mc+intel
-P: Copy: 52644.7 MB/s (r:0, l:None, u:None)
-P: Scale: 49774.8 MB/s (r:0, l:None, u:None)
-P: Add: 57252.0 MB/s (r:0, l:None, u:None)
-P: Triad: 56787.7 MB/s (r:0, l:None, u:None)
+P: Copy: 46798.4 MB/s (r:0, l:None, u:None)
+P: Scale: 40481.8 MB/s (r:0, l:None, u:None)
+P: Add: 44143.7 MB/s (r:0, l:None, u:None)
+P: Triad: 44570.7 MB/s (r:0, l:None, u:None)
+[       OK ] ( 7/12) StreamMultiSysTest /eec1c676 @daint:mc+intel
+P: Copy: 52240.0 MB/s (r:0, l:None, u:None)
+P: Scale: 49426.5 MB/s (r:0, l:None, u:None)
+P: Add: 56988.6 MB/s (r:0, l:None, u:None)
+P: Triad: 56457.3 MB/s (r:0, l:None, u:None)
+[       OK ] ( 8/12) StreamMultiSysTest /eec1c676 @daint:mc+gnu
+P: Copy: 48686.5 MB/s (r:0, l:None, u:None)
+P: Scale: 38562.8 MB/s (r:0, l:None, u:None)
+P: Add: 43707.3 MB/s (r:0, l:None, u:None)
+P: Triad: 44041.8 MB/s (r:0, l:None, u:None)
 [       OK ] ( 9/12) StreamMultiSysTest /eec1c676 @daint:gpu+gnu
-P: Copy: 42697.1 MB/s (r:0, l:None, u:None)
-P: Scale: 38615.1 MB/s (r:0, l:None, u:None)
-P: Add: 43790.6 MB/s (r:0, l:None, u:None)
-P: Triad: 43878.2 MB/s (r:0, l:None, u:None)
+P: Copy: 42724.6 MB/s (r:0, l:None, u:None)
+P: Scale: 38443.7 MB/s (r:0, l:None, u:None)
+P: Add: 43619.8 MB/s (r:0, l:None, u:None)
+P: Triad: 43258.9 MB/s (r:0, l:None, u:None)
 [       OK ] (10/12) StreamMultiSysTest /eec1c676 @daint:gpu+intel
-P: Copy: 52219.7 MB/s (r:0, l:None, u:None)
-P: Scale: 54339.2 MB/s (r:0, l:None, u:None)
-P: Add: 57969.1 MB/s (r:0, l:None, u:None)
-P: Triad: 57456.2 MB/s (r:0, l:None, u:None)
+P: Copy: 52316.4 MB/s (r:0, l:None, u:None)
+P: Scale: 54141.9 MB/s (r:0, l:None, u:None)
+P: Add: 57550.7 MB/s (r:0, l:None, u:None)
+P: Triad: 57150.4 MB/s (r:0, l:None, u:None)
 [       OK ] (11/12) StreamMultiSysTest /eec1c676 @daint:gpu+nvidia
-P: Copy: 51503.8 MB/s (r:0, l:None, u:None)
-P: Scale: 39551.1 MB/s (r:0, l:None, u:None)
-P: Add: 43970.2 MB/s (r:0, l:None, u:None)
-P: Triad: 44303.5 MB/s (r:0, l:None, u:None)
+P: Copy: 51687.1 MB/s (r:0, l:None, u:None)
+P: Scale: 39685.6 MB/s (r:0, l:None, u:None)
+P: Add: 44116.6 MB/s (r:0, l:None, u:None)
+P: Triad: 44475.0 MB/s (r:0, l:None, u:None)
 [       OK ] (12/12) StreamMultiSysTest /eec1c676 @daint:gpu+cray
-P: Copy: 51257.6 MB/s (r:0, l:None, u:None)
-P: Scale: 38929.5 MB/s (r:0, l:None, u:None)
-P: Add: 43589.4 MB/s (r:0, l:None, u:None)
-P: Triad: 43053.3 MB/s (r:0, l:None, u:None)
+P: Copy: 51184.2 MB/s (r:0, l:None, u:None)
+P: Scale: 39397.4 MB/s (r:0, l:None, u:None)
+P: Add: 43648.0 MB/s (r:0, l:None, u:None)
+P: Triad: 43898.2 MB/s (r:0, l:None, u:None)
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 12/12 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Wed Oct  5 15:11:25 2022
+[==========] Finished on Fri Oct  7 11:25:31 2022
 
 ================================================================================
 PERFORMANCE REPORT
 --------------------------------------------------------------------------------
-[StreamMultiSysTest /eec1c676 @daint:mc:cray]
-  num_cpus_per_task: 36
+[StreamMultiSysTest /eec1c676 @daint:login:gnu]
   num_tasks: 1
   num_gpus_per_node: 0
+  num_cpus_per_task: 10
   performance:
-    - Copy: 46815.0 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Scale: 39939.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Add: 43610.2 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Triad: 43938.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Copy: 90564.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 69209.5 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 74898.5 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 74036.6 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:login:intel]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 10
+  performance:
+    - Copy: 83611.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 72885.0 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 79780.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 99212.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:login:nvidia]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 10
+  performance:
+    - Copy: 98383.4 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 70538.5 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 79402.4 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 79138.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:login:cray]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 10
+  performance:
+    - Copy: 63243.9 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 49733.9 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 40884.8 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 56149.9 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:gpu:gnu]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 12
+  performance:
+    - Copy: 42724.6 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 38443.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 43619.8 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 43258.9 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:gpu:intel]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 12
+  performance:
+    - Copy: 52316.4 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 54141.9 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 57550.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 57150.4 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:gpu:nvidia]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 12
+  performance:
+    - Copy: 51687.1 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 39685.6 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 44116.6 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 44475.0 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:gpu:cray]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 12
+  performance:
+    - Copy: 51184.2 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 39397.4 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 43648.0 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 43898.2 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:mc:gnu]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 36
+  performance:
+    - Copy: 48686.5 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 38562.8 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 43707.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 44041.8 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:mc:intel]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 36
+  performance:
+    - Copy: 52240.0 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 49426.5 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 56988.6 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 56457.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:mc:nvidia]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 36
+  performance:
+    - Copy: 46798.4 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 40481.8 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 44143.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 44570.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+[StreamMultiSysTest /eec1c676 @daint:mc:cray]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  num_cpus_per_task: 36
+  performance:
+    - Copy: 47068.4 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 40086.2 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 43688.6 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 44106.8 MB/s (r: 0 MB/s l: -inf% u: +inf%)
 --------------------------------------------------------------------------------
-Run report saved in '/home/user/.reframe/reports/run-report-64.json'
-Log file(s) saved in '/tmp/rfm-_6x826vd.log'
+Run report saved in '/home/user/.reframe/reports/run-report-71.json'
+Log file(s) saved in '/tmp/rfm-c9f_ne8m.log'
