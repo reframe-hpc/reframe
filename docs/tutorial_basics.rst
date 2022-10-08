@@ -262,11 +262,14 @@ Let's now rerun our "Hello, World!" tests:
 Notice how the same tests are now tried with both the ``gnu`` and ``clang`` programming environments, without having to touch them at all!
 That's one of the powerful features of ReFrame and we shall see later on, how easily we can port our tests to an HPC cluster with minimal changes.
 In order to instruct ReFrame to use our configuration file, we use the ``-C`` command line option.
-Since we don't want to type it throughout the tutorial, we will now set it in the environment:
+Since we don't want to type it throughout the tutorial, we could set the :envvar:`RFM_CONFIG_PATH` environment variable, which sets the path where ReFrame will look for configuration files.
 
 .. code-block:: console
 
-   export RFM_CONFIG_PATH=$(pwd)/tutorials/config=$(pwd)/tutorials/config
+   export RFM_CONFIG_PATH=$(pwd)/tutorials/config
+
+
+Alternatively, we could have set the :envvar:`RFM_CONFIG_FILES` environment variable which takes a list of the configuration files to load.
 
 
 A Multithreaded "Hello, World!"
@@ -652,7 +655,7 @@ We will only do so with the final versions of the tests from the previous sectio
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
+   export RFM_CONFIG_PATH=$(pwd)/tutorials/config
    ./bin/reframe -c tutorials/basics/ -R -n 'HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest' --performance-report -r
 
 .. literalinclude:: listings/alltests_daint.txt

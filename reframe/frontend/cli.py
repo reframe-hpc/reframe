@@ -503,9 +503,9 @@ def main():
     # Miscellaneous options
     misc_options.add_argument(
         '-C', '--config-file', action='append', metavar='FILE',
-        dest='config_file',
+        dest='config_files',
         help='Set configuration file',
-        envvar='RFM_CONFIG_FILE :'
+        envvar='RFM_CONFIG_FILES :'
     )
     misc_options.add_argument(
         '--detect-host-topology', action='store', nargs='?', const='-',
@@ -708,9 +708,22 @@ def main():
 
     # Now configure ReFrame according to the user configuration file
     try:
+        # Issue a deprecation warning if the old `RFM_CONFIG_FILE` is used
+        config_file = os.getenv('RFM_CONFIG_FILE')
+        if config_file is not None:
+            printer.warning('RFM_CONFIG_FILE is deprecated; '
+                            'please use RFM_CONFIG_FILES instead')
+            if os.getenv('RFM_CONFIG_FILES'):
+                printer.warning(
+                    'both RFM_CONFIG_FILE and RFM_CONFIG_FILES are specified; '
+                    'the former will be ignored'
+                )
+            else:
+                os.environ['RFM_CONFIG_FILES'] = config_file
+
         printer.debug('Loading user configuration')
         conf_files = config.find_config_files(
-            options.config_path, options.config_file
+            options.config_path, options.config_files
         )
         site_config = config.load_config(*conf_files)
         site_config.validate()
