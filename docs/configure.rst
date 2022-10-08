@@ -153,9 +153,9 @@ Logging configuration
 
 ReFrame has a powerful logging mechanism that gives fine grained control over what information is being logged, where it is being logged and how this information is formatted.
 Additionally, it allows for logging performance data from performance tests into different channels.
-Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
+Let's see how logging is defined in the builtin configuration:
 
-.. literalinclude:: ../tutorials/config/settings.py
+.. literalinclude:: ../reframe/core/settings.py
    :start-after: # rfmdocstart: logging
    :end-before: # rfmdocend: logging
 

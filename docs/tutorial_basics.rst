@@ -210,16 +210,13 @@ In this case, the stage directory contains only the "Hello, World" source files,
 
 
 Let's go on and fix this failure by defining a new system and programming environments for the machine we are running on.
-We start off by copying the generic configuration file that ReFrame uses.
-Note that you should *not* edit this configuration file in place.
 
 .. code-block:: console
 
-   cp reframe/core/settings.py tutorials/config/mysettings.py
-
+   vi tutorials/config/mysettings.py
 
 .. note::
-   You may also use edit directly the supplied ``tutorials/config/settings.py`` file, which is the actual configuration file against which the various tutorials have been evaluated.
+   You may also edit directly the supplied ``tutorials/config/settings.py`` file, which is the actual configuration file against which the various tutorials have been evaluated.
 
 
 Here is how the new configuration file looks like with the needed additions highlighted:
