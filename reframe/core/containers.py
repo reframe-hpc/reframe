@@ -243,6 +243,7 @@ class Singularity(ContainerPlatform):
     def __init__(self):
         super().__init__()
         self.with_cuda = False
+        self._launch_command = 'singularity'
 
     def emit_prepare_commands(self, stagedir):
         return []
@@ -259,10 +260,23 @@ class Singularity(ContainerPlatform):
 
         run_opts += self.options
         if self.command:
-            return (f'singularity exec {" ".join(run_opts)} '
+            return (f'{self._launch_command} exec {" ".join(run_opts)} '
                     f'{self.image} {self.command}')
 
-        return f'singularity run {" ".join(run_opts)} {self.image}'
+        return f'{self._launch_command} run {" ".join(run_opts)} {self.image}'
+
+
+class Apptainer(Singularity):
+    '''Container platform backend for running containers with `Apptainer
+    <https://apptainer.org/>`__.
+
+    .. versionadded:: 4.0.0
+
+    '''
+
+    def __init__(self):
+        super().__init__()
+        self._launch_command = 'apptainer'
 
 
 class ContainerPlatformField(fields.TypedField):

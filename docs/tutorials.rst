@@ -11,7 +11,7 @@ ReFrame Tutorials
    tutorial_fixtures
    tutorial_build_automation
    tutorial_tips_tricks
-
+   tutorial_flux
 
 Online Tutorials
 ----------------

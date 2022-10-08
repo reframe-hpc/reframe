@@ -15,7 +15,7 @@ import unittests.utility as test_util
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import Environment
 from reframe.core.exceptions import (
-    JobError, JobNotStartedError, JobSchedulerError
+    ConfigError, JobError, JobNotStartedError, JobSchedulerError
 )
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
@@ -26,10 +26,13 @@ def launcher():
     return getlauncher('local')
 
 
-@pytest.fixture(params=['local', 'lsf', 'oar', 'pbs',
-                        'sge', 'slurm', 'squeue', 'torque'])
+@pytest.fixture(params=['flux', 'local', 'lsf', 'oar',
+                        'pbs', 'sge', 'slurm', 'squeue', 'torque'])
 def scheduler(request):
-    return getscheduler(request.param)
+    try:
+        return getscheduler(request.param)
+    except ConfigError as e:
+        pytest.skip(str(e))
 
 
 @pytest.fixture
@@ -112,7 +115,7 @@ def prepare_job(job, command='hostname',
     pre_run = pre_run or ['echo prerun']
     post_run = post_run or ['echo postrun']
     prepare_cmds = prepare_cmds or ['echo prepare']
-    with rt.module_use('unittests/modules'):
+    with rt.module_use(test_util.TEST_MODULES):
         job.prepare(
             [
                 *pre_run,
@@ -122,6 +125,11 @@ def prepare_job(job, command='hostname',
             environs,
             prepare_cmds
         )
+
+
+def submit_job(job):
+    with rt.module_use(test_util.TEST_MODULES):
+        job.submit()
 
 
 def assert_job_script_sanity(job):
@@ -147,6 +155,14 @@ def _expected_lsf_directives(job):
         f'#DW jobdw capacity=100GB',
         f'#DW stage_in source=/foo',
     ])
+
+
+def _expected_flux_directives(job):
+    return set()
+
+
+def _expected_flux_directives_minimal(job):
+    return set()
 
 
 def _expected_lsf_directives_minimal(job):
@@ -375,28 +391,34 @@ def test_submit(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job)
     assert minimal_job.nodelist is None
-    minimal_job.submit()
+    submit_job(minimal_job)
     assert minimal_job.jobid is not None
     minimal_job.wait()
 
     # Additional scheduler-specific checks
     sched_name = minimal_job.scheduler.registered_name
+
     if sched_name == 'local':
         assert [socket.gethostname()] == minimal_job.nodelist
         assert minimal_job.exitcode == 0
         assert minimal_job.state == 'SUCCESS'
-    elif sched_name == ('slurm', 'squeue', 'pbs', 'torque'):
+    elif sched_name in ('slurm', 'pbs', 'torque'):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
         assert num_nodes == len(minimal_job.nodelist)
-        assert 0 == minimal_job.exitcode
+
+        # Handle the case where the exitcode was not reported by the scheduler
+        assert minimal_job.exitcode is None or 0 == minimal_job.exitcode
+
+    with open(minimal_job.stderr) as stderr:
+        assert not stderr.read().strip()
 
 
 def test_submit_timelimit(minimal_job, local_only):
     minimal_job.time_limit = '2s'
     prepare_job(minimal_job, 'sleep 10')
     t_job = time.time()
-    minimal_job.submit()
+    submit_job(minimal_job)
     assert minimal_job.jobid is not None
     minimal_job.wait()
     t_job = time.time() - t_job
@@ -418,7 +440,7 @@ def test_submit_job_array(make_job, slurm_only, exec_ctx):
     job = make_job(sched_access=exec_ctx.access)
     job.options = ['--array=0-1']
     prepare_job(job, command='echo "Task id: ${SLURM_ARRAY_TASK_ID}"')
-    job.submit()
+    submit_job(job)
     job.wait()
     if job.scheduler.registered_name == 'slurm':
         assert job.exitcode == 0
@@ -432,7 +454,8 @@ def test_cancel(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'sleep 30')
     t_job = time.time()
-    minimal_job.submit()
+
+    submit_job(minimal_job)
     minimal_job.cancel()
 
     # We give some time to the local scheduler for the TERM signal to be
@@ -449,7 +472,7 @@ def test_cancel(make_job, exec_ctx):
 
     # Additional scheduler-specific checks
     sched_name = minimal_job.scheduler.registered_name
-    if sched_name in ('slurm', 'squeue'):
+    if sched_name in ('slurm', 'squeue', 'flux'):
         assert minimal_job.state == 'CANCELLED'
     elif sched_name == 'local':
         assert minimal_job.state == 'FAILURE'
@@ -471,7 +494,7 @@ def test_wait_before_submit(minimal_job):
 def test_finished(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'sleep 2')
-    minimal_job.submit()
+    submit_job(minimal_job)
     assert not minimal_job.finished()
     minimal_job.wait()
 
@@ -485,7 +508,7 @@ def test_finished_before_submit(minimal_job):
 def test_finished_raises_error(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'echo hello')
-    minimal_job.submit()
+    submit_job(minimal_job)
     minimal_job.wait()
 
     # Emulate an error during polling and verify that it is raised correctly
@@ -542,7 +565,7 @@ def test_guess_num_tasks(minimal_job, scheduler):
         minimal_job.num_tasks = 0
         minimal_job._sched_flex_alloc_nodes = 'idle'
         prepare_job(minimal_job)
-        minimal_job.submit()
+        submit_job(minimal_job)
         minimal_job.wait()
         assert minimal_job.num_tasks == 1
     elif scheduler.registered_name in ('slurm', 'squeue'):
@@ -573,7 +596,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
     # Monkey-patch the Job's state property to pretend that the job is always
     # pending
     def state(self):
-        if scheduler.registered_name in ('slurm', 'squeue'):
+        if scheduler.registered_name in ('slurm', 'squeue', 'flux'):
             return 'PENDING'
         elif scheduler.registered_name in ('pbs', 'torque'):
             return 'QUEUED'
@@ -583,7 +606,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
 
     type(minimal_job).state = property(state)
     prepare_job(minimal_job, 'sleep 30')
-    minimal_job.submit()
+    submit_job(minimal_job)
     with pytest.raises(JobError,
                        match='maximum pending time exceeded'):
         minimal_job.wait()
@@ -636,7 +659,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
                 pre_run=['trap -- "" TERM'],
                 post_run=['echo $!', 'wait'],
                 prepare_cmds=[''])
-    minimal_job.submit()
+    submit_job(minimal_job)
 
     # Stall a bit here to let the the spawned process start and install its
     # signal handler for SIGTERM
@@ -654,8 +677,12 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     assert minimal_job.signal == signal.SIGKILL
 
     # Verify that the spawned sleep is killed, too, but back off a bit in
-    # order to allow the sleep process to wake up and get the signal
-    time.sleep(0.1)
+    # order to allow the init process to reap it.
+    #
+    # NOTE: If this unit test is run inside a container, make sure that the
+    # PID 1 process is able to reap zombie processes; if not, make sure that
+    # the container is launched with the proper options, e.g., `docker --init`.
+    time.sleep(0.2)
     assert_process_died(sleep_pid)
 
 
@@ -679,7 +706,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
                 pre_run=[''],
                 post_run=[''],
                 prepare_cmds=[''])
-    minimal_job.submit()
+    submit_job(minimal_job)
 
     # Stall a bit here to let the the spawned process start and install its
     # signal handler for SIGTERM
@@ -697,8 +724,12 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     assert minimal_job.signal == signal.SIGKILL
 
     # Verify that the spawned sleep is killed, too, but back off a bit in
-    # order to allow the sleep process to wake up and get the signal
-    time.sleep(0.1)
+    # order to allow the init process to reap it.
+    #
+    # NOTE: If this unit test is run inside a container, make sure that the
+    # PID 1 process is able to reap zombie processes; if not, make sure that
+    # the container is launched with the proper options, e.g., `docker --init`.
+    time.sleep(0.2)
     assert_process_died(sleep_pid)
 
 
