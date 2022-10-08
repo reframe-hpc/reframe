@@ -352,7 +352,7 @@ class _SiteConfig:
         # First look for the current subconfig in the cache; if not found,
         # generate it and cache it
         system_fullname = system_fullname or self._detect_system()
-        getlogger().debug(f'Selecting subconfig for {system_fullname!r}')
+        getlogger().debug2(f'Selecting subconfig for {system_fullname!r}')
 
         self._local_system = system_fullname
         if system_fullname in self._subconfigs:

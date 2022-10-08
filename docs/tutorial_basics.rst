@@ -459,7 +459,9 @@ Let's run the test now:
 
    ./bin/reframe -c tutorials/basics/stream/stream1.py -r --performance-report
 
-The :option:`--performance-report` will generate a short report at the end for each performance test that has run.
+The :option:`--performance-report` will generate a short report at the end of the run for each performance test that has run.
+Additionally, as soon as a performance test finishes, the obtained performance for each of the metrics is immediately reported.
+This is especially useful if you run long suites of performance exploration tests and you do not want to wait until the end of the run to have an overview of the obtained performance.
 
 
 .. literalinclude:: listings/stream1.txt

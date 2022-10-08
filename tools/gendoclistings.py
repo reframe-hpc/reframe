@@ -95,6 +95,17 @@ LISTINGS = {
         },
         xfail=True
     ),
+    'stream1': ListingInfo(
+        './bin/reframe -c tutorials/basics/stream/stream1.py -r --performance-report',  # noqa: E501
+        {'local', 'tutorial-basics'},
+        DEFAULT_FILTERS,
+        env={
+            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
+                                            'tutorials/config/settings.py'),
+            'RFM_COLORIZE': 'n'
+        },
+        xfail=False
+    ),
     'alltests_daint': ListingInfo(
         './bin/reframe -c tutorials/basics/ -R -n "HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest" --performance-report -r',   # noqa: E501
         {'remote', 'tutorial-basics'},

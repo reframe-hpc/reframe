@@ -1,65 +1,88 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+149af549
+  version:           4.0.0-dev.1+36ffa085
   command:           './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -r'
-  launched by:       user@host
+  launched by:       user@tresa.local
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '<builtin>'
+  settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
   check search path: '/home/user/Repositories/reframe/unittests/resources/checks_unlisted/deps_complex.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-jr16q567.log'
 
 [==========] Running 10 check(s)
-[==========] Started on Sat Jan 22 23:44:18 2022
+[==========] Started on Sat Oct  1 20:06:35 2022 
 
 [----------] start processing checks
-[ RUN      ] T0 @generic:default+builtin
-[       OK ] ( 1/10) T0 @generic:default+builtin
-[ RUN      ] T4 @generic:default+builtin
-[       OK ] ( 2/10) T4 @generic:default+builtin
-[ RUN      ] T5 @generic:default+builtin
-[       OK ] ( 3/10) T5 @generic:default+builtin
-[ RUN      ] T1 @generic:default+builtin
-[       OK ] ( 4/10) T1 @generic:default+builtin
-[ RUN      ] T8 @generic:default+builtin
-[     FAIL ] ( 5/10) T8 @generic:default+builtin
-==> test failed during 'setup': test staged in '/home/user/Repositories/reframe/stage/generic/default/builtin/T8'
-[     FAIL ] ( 6/10) T9 @generic:default+builtin
+[ RUN      ] T0 /c9c2be9f @catalina:default+gnu
+[ RUN      ] T0 /c9c2be9f @catalina:default+clang
+[       OK ] ( 1/20) T0 /c9c2be9f @catalina:default+gnu
+[       OK ] ( 2/20) T0 /c9c2be9f @catalina:default+clang
+[ RUN      ] T4 /11ee5e9a @catalina:default+gnu
+[ RUN      ] T4 /11ee5e9a @catalina:default+clang
+[       OK ] ( 3/20) T4 /11ee5e9a @catalina:default+gnu
+[       OK ] ( 4/20) T4 /11ee5e9a @catalina:default+clang
+[ RUN      ] T5 /020d01e5 @catalina:default+gnu
+[ RUN      ] T5 /020d01e5 @catalina:default+clang
+[       OK ] ( 5/20) T5 /020d01e5 @catalina:default+gnu
+[       OK ] ( 6/20) T5 /020d01e5 @catalina:default+clang
+[ RUN      ] T1 /1f93603d @catalina:default+gnu
+[ RUN      ] T1 /1f93603d @catalina:default+clang
+[       OK ] ( 7/20) T1 /1f93603d @catalina:default+gnu
+[       OK ] ( 8/20) T1 /1f93603d @catalina:default+clang
+[ RUN      ] T8 /605fc1d6 @catalina:default+gnu
+[     FAIL ] ( 9/20) T8 /605fc1d6 @catalina:default+gnu
+==> test failed during 'setup': test staged in '/home/user/Repositories/reframe/stage/catalina/default/gnu/T8'
+[ RUN      ] T8 /605fc1d6 @catalina:default+clang
+[     FAIL ] (10/20) T8 /605fc1d6 @catalina:default+clang
+==> test failed during 'setup': test staged in '/home/user/Repositories/reframe/stage/catalina/default/clang/T8'
+[     FAIL ] (11/20) T9 /78a78a4e @catalina:default+gnu
 ==> test failed during 'startup': test staged in None
-[ RUN      ] T6 @generic:default+builtin
-[       OK ] ( 7/10) T6 @generic:default+builtin
-[ RUN      ] T2 @generic:default+builtin
-[ RUN      ] T3 @generic:default+builtin
-[     FAIL ] ( 8/10) T2 @generic:default+builtin
-==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/generic/default/builtin/T2'
-[     FAIL ] ( 9/10) T7 @generic:default+builtin
+[     FAIL ] (12/20) T9 /78a78a4e @catalina:default+clang
 ==> test failed during 'startup': test staged in None
-[       OK ] (10/10) T3 @generic:default+builtin
+[ RUN      ] T6 /6dbdaf93 @catalina:default+gnu
+[ RUN      ] T6 /6dbdaf93 @catalina:default+clang
+[       OK ] (13/20) T6 /6dbdaf93 @catalina:default+gnu
+[       OK ] (14/20) T6 /6dbdaf93 @catalina:default+clang
+[ RUN      ] T2 /0f617ba9 @catalina:default+gnu
+[ RUN      ] T2 /0f617ba9 @catalina:default+clang
+[ RUN      ] T3 /5dd67f7f @catalina:default+gnu
+[ RUN      ] T3 /5dd67f7f @catalina:default+clang
+[     FAIL ] (15/20) T2 /0f617ba9 @catalina:default+gnu
+==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/catalina/default/gnu/T2'
+[     FAIL ] (16/20) T2 /0f617ba9 @catalina:default+clang
+==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/catalina/default/clang/T2'
+[     FAIL ] (17/20) T7 /f005e93d @catalina:default+gnu
+==> test failed during 'startup': test staged in None
+[     FAIL ] (18/20) T7 /f005e93d @catalina:default+clang
+==> test failed during 'startup': test staged in None
+[       OK ] (19/20) T3 /5dd67f7f @catalina:default+gnu
+[       OK ] (20/20) T3 /5dd67f7f @catalina:default+clang
 [----------] all spawned checks have finished
 
-[  FAILED  ] Ran 10/10 test case(s) from 10 check(s) (4 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 23:44:21 2022
+[  FAILED  ] Ran 20/20 test case(s) from 10 check(s) (8 failure(s), 0 skipped)
+[==========] Finished on Sat Oct  1 20:06:37 2022 
 
-==============================================================================
+================================================================================
 SUMMARY OF FAILURES
-------------------------------------------------------------------------------
-FAILURE INFO for T8
+--------------------------------------------------------------------------------
+FAILURE INFO for T8 
   * Expanded name: T8
-  * Description: T8
-  * System partition: generic:default
-  * Environment: builtin
-  * Stage directory: /home/user/Repositories/reframe/stage/generic/default/builtin/T8
-  * Node list:
+  * Description: 
+  * System partition: catalina:default
+  * Environment: gnu
+  * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/gnu/T8
+  * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T1']
-  * Dependencies (actual): [('T1', 'generic:default', 'builtin')]
+  * Dependencies (actual): [('T1', 'catalina:default', 'gnu')]
   * Maintainers: []
   * Failing phase: setup
-  * Rerun with '-n T8 -p builtin --system generic:default -r'
+  * Rerun with '-n /605fc1d6 -p gnu --system catalina:default -r'
   * Reason: exception
 Traceback (most recent call last):
-  File "/home/user/Repositories/reframe/reframe/frontend/executors/__init__.py", line 291, in _safe_call
+  File "/home/user/Repositories/reframe/reframe/frontend/executors/__init__.py", line 303, in _safe_call
     return fn(*args, **kwargs)
-  File "/home/user/Repositories/reframe/reframe/core/hooks.py", line 82, in _fn
+  File "/home/user/Repositories/reframe/reframe/core/hooks.py", line 101, in _fn
     getattr(obj, h.__name__)()
   File "/home/user/Repositories/reframe/reframe/core/hooks.py", line 32, in _fn
     func(*args, **kwargs)
@@ -67,51 +90,122 @@ Traceback (most recent call last):
     raise Exception
 Exception
 
-------------------------------------------------------------------------------
-FAILURE INFO for T9
+--------------------------------------------------------------------------------
+FAILURE INFO for T8 
+  * Expanded name: T8
+  * Description: 
+  * System partition: catalina:default
+  * Environment: clang
+  * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/clang/T8
+  * Node list: 
+  * Job type: local (id=None)
+  * Dependencies (conceptual): ['T1']
+  * Dependencies (actual): [('T1', 'catalina:default', 'clang')]
+  * Maintainers: []
+  * Failing phase: setup
+  * Rerun with '-n /605fc1d6 -p clang --system catalina:default -r'
+  * Reason: exception
+Traceback (most recent call last):
+  File "/home/user/Repositories/reframe/reframe/frontend/executors/__init__.py", line 303, in _safe_call
+    return fn(*args, **kwargs)
+  File "/home/user/Repositories/reframe/reframe/core/hooks.py", line 101, in _fn
+    getattr(obj, h.__name__)()
+  File "/home/user/Repositories/reframe/reframe/core/hooks.py", line 32, in _fn
+    func(*args, **kwargs)
+  File "/home/user/Repositories/reframe/unittests/resources/checks_unlisted/deps_complex.py", line 180, in fail
+    raise Exception
+Exception
+
+--------------------------------------------------------------------------------
+FAILURE INFO for T9 
   * Expanded name: T9
-  * Description: T9
-  * System partition: generic:default
-  * Environment: builtin
+  * Description: 
+  * System partition: catalina:default
+  * Environment: gnu
   * Stage directory: None
-  * Node list:
+  * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T8']
-  * Dependencies (actual): [('T8', 'generic:default', 'builtin')]
+  * Dependencies (actual): [('T8', 'catalina:default', 'gnu')]
   * Maintainers: []
   * Failing phase: startup
-  * Rerun with '-n T9 -p builtin --system generic:default -r'
+  * Rerun with '-n /78a78a4e -p gnu --system catalina:default -r'
   * Reason: task dependency error: dependencies failed
-------------------------------------------------------------------------------
-FAILURE INFO for T2
+--------------------------------------------------------------------------------
+FAILURE INFO for T9 
+  * Expanded name: T9
+  * Description: 
+  * System partition: catalina:default
+  * Environment: clang
+  * Stage directory: None
+  * Node list: 
+  * Job type: local (id=None)
+  * Dependencies (conceptual): ['T8']
+  * Dependencies (actual): [('T8', 'catalina:default', 'clang')]
+  * Maintainers: []
+  * Failing phase: startup
+  * Rerun with '-n /78a78a4e -p clang --system catalina:default -r'
+  * Reason: task dependency error: dependencies failed
+--------------------------------------------------------------------------------
+FAILURE INFO for T2 
   * Expanded name: T2
-  * Description: T2
-  * System partition: generic:default
-  * Environment: builtin
-  * Stage directory: /home/user/Repositories/reframe/stage/generic/default/builtin/T2
+  * Description: 
+  * System partition: catalina:default
+  * Environment: gnu
+  * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/gnu/T2
   * Node list: tresa.localNone
-  * Job type: local (id=49427)
+  * Job type: local (id=92028)
   * Dependencies (conceptual): ['T6']
-  * Dependencies (actual): [('T6', 'generic:default', 'builtin')]
+  * Dependencies (actual): [('T6', 'catalina:default', 'gnu')]
   * Maintainers: []
   * Failing phase: sanity
-  * Rerun with '-n T2 -p builtin --system generic:default -r'
+  * Rerun with '-n /0f617ba9 -p gnu --system catalina:default -r'
   * Reason: sanity error: 31 != 30
-------------------------------------------------------------------------------
-FAILURE INFO for T7
+--------------------------------------------------------------------------------
+FAILURE INFO for T2 
+  * Expanded name: T2
+  * Description: 
+  * System partition: catalina:default
+  * Environment: clang
+  * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/clang/T2
+  * Node list: tresa.localNone
+  * Job type: local (id=92029)
+  * Dependencies (conceptual): ['T6']
+  * Dependencies (actual): [('T6', 'catalina:default', 'clang')]
+  * Maintainers: []
+  * Failing phase: sanity
+  * Rerun with '-n /0f617ba9 -p clang --system catalina:default -r'
+  * Reason: sanity error: 31 != 30
+--------------------------------------------------------------------------------
+FAILURE INFO for T7 
   * Expanded name: T7
-  * Description: T7
-  * System partition: generic:default
-  * Environment: builtin
+  * Description: 
+  * System partition: catalina:default
+  * Environment: gnu
   * Stage directory: None
-  * Node list:
+  * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T2']
-  * Dependencies (actual): [('T2', 'generic:default', 'builtin')]
+  * Dependencies (actual): [('T2', 'catalina:default', 'gnu')]
   * Maintainers: []
   * Failing phase: startup
-  * Rerun with '-n T7 -p builtin --system generic:default -r'
+  * Rerun with '-n /f005e93d -p gnu --system catalina:default -r'
   * Reason: task dependency error: dependencies failed
-------------------------------------------------------------------------------
-Run report saved in '/home/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-92y3fr5s.log'
+--------------------------------------------------------------------------------
+FAILURE INFO for T7 
+  * Expanded name: T7
+  * Description: 
+  * System partition: catalina:default
+  * Environment: clang
+  * Stage directory: None
+  * Node list: 
+  * Job type: local (id=None)
+  * Dependencies (conceptual): ['T2']
+  * Dependencies (actual): [('T2', 'catalina:default', 'clang')]
+  * Maintainers: []
+  * Failing phase: startup
+  * Rerun with '-n /f005e93d -p clang --system catalina:default -r'
+  * Reason: task dependency error: dependencies failed
+--------------------------------------------------------------------------------
+Run report saved in '/home/user/.reframe/reports/run-report-109.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-jr16q567.log'

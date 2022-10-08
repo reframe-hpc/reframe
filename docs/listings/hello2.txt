@@ -1,44 +1,45 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+c22440c1
+  version:           4.0.0-dev.1+36ffa085
   command:           './bin/reframe -c tutorials/basics/hello/hello2.py -r'
-  launched by:       user@host
-  working directory: '/path/to/reframe'
+  launched by:       user@tresa.local
+  working directory: '/home/user/Repositories/reframe'
   settings file:     '<builtin>'
-  check search path: '/path/to/reframe/tutorials/basics/hello/hello2.py'
-  stage directory:   '/path/to/reframe/stage'
-  output directory:  '/path/to/reframe/output'
+  check search path: '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
+  stage directory:   '/home/user/Repositories/reframe/stage'
+  output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-iz0z1c2r.log'
 
 [==========] Running 2 check(s)
-[==========] Started on Sat Jan 22 13:21:51 2022
+[==========] Started on Sat Oct  1 20:06:23 2022 
 
 [----------] start processing checks
-[ RUN      ] HelloMultiLangTest %lang=cpp @generic:default+builtin
-[ RUN      ] HelloMultiLangTest %lang=c @generic:default+builtin
-[     FAIL ] (1/2) HelloMultiLangTest %lang=cpp @generic:default+builtin
-==> test failed during 'compile': test staged in '/path/to/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp'
-[       OK ] (2/2) HelloMultiLangTest %lang=c @generic:default+builtin
+[ RUN      ] HelloMultiLangTest %lang=cpp /71bf65a3 @generic:default+builtin
+[ RUN      ] HelloMultiLangTest %lang=c /7cfa870e @generic:default+builtin
+[     FAIL ] (1/2) HelloMultiLangTest %lang=cpp /71bf65a3 @generic:default+builtin
+==> test failed during 'compile': test staged in '/home/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_71bf65a3'
+[       OK ] (2/2) HelloMultiLangTest %lang=c /7cfa870e @generic:default+builtin
 [----------] all spawned checks have finished
 
 [  FAILED  ] Ran 2/2 test case(s) from 2 check(s) (1 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 13:21:52 2022
+[==========] Finished on Sat Oct  1 20:06:23 2022 
 
-==============================================================================
+================================================================================
 SUMMARY OF FAILURES
-------------------------------------------------------------------------------
-FAILURE INFO for HelloMultiLangTest_cpp
+--------------------------------------------------------------------------------
+FAILURE INFO for HelloMultiLangTest_1 
   * Expanded name: HelloMultiLangTest %lang=cpp
-  * Description: HelloMultiLangTest %lang=cpp
+  * Description: 
   * System partition: generic:default
   * Environment: builtin
-  * Stage directory: /path/to/reframe/stage/generic/default/builtin/HelloMultiLangTest_cpp
-  * Node list:
+  * Stage directory: /home/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_71bf65a3
+  * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): []
   * Dependencies (actual): []
   * Maintainers: []
   * Failing phase: compile
-  * Rerun with '-n HelloMultiLangTest_cpp -p builtin --system generic:default -r'
+  * Rerun with '-n /71bf65a3 -p builtin --system generic:default -r'
   * Reason: build system error: I do not know how to compile a C++ program
-------------------------------------------------------------------------------
-Run report saved in '/home/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-tse_opq0.log'
+--------------------------------------------------------------------------------
+Run report saved in '/home/user/.reframe/reports/run-report-104.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-iz0z1c2r.log'
