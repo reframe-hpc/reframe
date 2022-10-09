@@ -17,7 +17,8 @@ def generate_partial_configs(tmp_path):
     part1 = tmp_path / 'settings-part1.py'
     part2 = tmp_path / 'settings-part2.py'
     part3 = tmp_path / 'settings-part3.py'
-    mod = util.import_module_from_file('unittests/resources/config/settings.py')
+    mod = util.import_module_from_file(
+        'unittests/resources/config/settings.py')
     full_config = mod.site_configuration
 
     config_1 = {
@@ -339,6 +340,101 @@ def test_sticky_options(site_config):
     site_config.remove_sticky_option('modes/options')
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'gcc'
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
+
+
+@pytest.fixture
+def write_config(tmp_path):
+    def _write_config(config):
+        filename = (tmp_path / 'settings.json')
+        filename.touch()
+        with open(filename, 'w') as fp:
+            json.dump(config, fp)
+
+        return str(filename)
+
+    return _write_config
+
+
+def test_multi_config_redefine_system(write_config):
+    config_file = write_config({
+        'systems': [
+            {
+                'name': 'generic',
+                'hostnames': ['foo'],
+                'partitions': [
+                    {
+                        'name': 'local',
+                        'scheduler': 'local',
+                        'launcher': 'mpirun',
+                        'environs': ['builtin']
+                    }
+                ]
+            }
+        ]
+    })
+    with pytest.raises(
+            ConfigError,
+            match=f"'generic' system is already defined in '<builtin>'"
+    ):
+        site_config = config.load_config(config_file)
+
+
+def test_multi_config_redefine_environment(write_config):
+    config_file = write_config({
+        'environments': [
+            {
+                'name': 'builtin',
+                'cc': 'gcc'
+            }
+        ]
+    })
+    with pytest.raises(
+            ConfigError,
+            match=f"'builtin' environment is already defined in '<builtin>'"
+    ):
+        site_config = config.load_config(config_file)
+
+
+def test_multi_config_combine_general_options(write_config):
+    config_file = write_config({
+        'general': [
+            {
+                'pipeline_timeout': 10,
+                'target_systems': ['testsys:login']
+            },
+            {
+                'colorize': False
+            }
+        ]
+    })
+    site_config = config.load_config('unittests/resources/config/settings.py',
+                                     config_file)
+    site_config.validate()
+    site_config.select_subconfig('testsys:login')
+    assert site_config.get('general/0/check_search_path') == ['a:b']
+    assert site_config.get('general/0/pipeline_timeout') == 10
+    assert site_config.get('general/0/colorize') == False
+
+
+# FIXME: Adapt this to the new syntax of logging config.
+def _test_multi_config_combine_logging_options(write_config):
+    config_file = write_config({
+        'logging': [{
+            'level': 'debug',
+            'handlers': [
+                {
+                    'type': 'file',
+                    'level': 'info',
+                    'format': '%(message)s'
+                }
+            ],
+        }]
+    })
+    site_config = config.load_config(config_file)
+    site_config.validate()
+    site_config.select_subconfig('generic')
+    assert site_config.get('logging/0/level') == 'debug'
+    assert len(site_config.get('logging/0/handlers')) == 3
 
 
 def test_system_create(site_config):
