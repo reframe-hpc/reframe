@@ -25,63 +25,7 @@ ReFrame offers an intuitive and very powerful syntax that allows users to create
 ReFrame will load the tests and send them down a well-defined pipeline that will execute them in parallel.
 The stages of this pipeline take care of all the system interaction details, such as programming environment switching, compilation, job submission, job status query, sanity checking and performance assessment.
 
-Please visit the project's documentation [page](https://reframe-hpc.readthedocs.io/) for all the details!
-
-
-## Installation
-
-ReFrame is fairly easy to install.
-All you need is Python 3.6 or above and to run its bootstrap script:
-
-```bash
-git clone https://github.com/reframe-hpc/reframe.git
-cd reframe
-./bootstrap.sh
-./bin/reframe -V
-```
-
-If you want a specific release, please refer to the documentation [page](https://reframe-hpc.readthedocs.io/en/stable/started.html).
-
-
-### Running the unit tests
-
-You can optionally run the framework's unit tests with the following command:
-
-```bash
-./test_reframe.py -v
-```
-
-NOTE: Unit tests require a POSIX-compliant C compiler (available through the `cc` command), as well as the `make` utility.
-
-### Building the documentation locally
-
-You may build the documentation of the master manually as follows:
-
-```
-./bootstrap.sh +docs
-```
-
-For viewing it, you may do the following:
-
-```
-cd docs/html
-python3 -m http.server
-```
-
-The documentation is now up on [localhost:8000](http://localhost:8000), where you can navigate with your browser.
-
-
-## Test library
-
-The framework comes with a library of tests that users can either run them from the command line directly or extend them and fine tune them for their systems. See [here](https://reframe-hpc.readthedocs.io/en/stable/hpctestlib.html) for more details.
-
-
-## Test examples
-
-You can find examples of real tests under the ReFrame HPC [community Github page](https://github.com/reframe-hpc).
-The most complete suite of tests currently publicly available is that of [CSCS](https://cscs.ch/), which you can also find [here](https://github.com/eth-cscs/cscs-reframe-tests).
-You can use those tests as a starting point for implementing your own tests.
-
+Please visit the project's documentation [page](https://reframe-hpc.readthedocs.io/) and [GitHub repository](https://github.com/reframe-hpc/reframe) for all the details!
 
 ## Contact
 
