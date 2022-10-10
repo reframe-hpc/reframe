@@ -584,12 +584,6 @@ def main():
         type=float
     )
     argparser.add_argument(
-        dest='graylog_server',
-        envvar='RFM_GRAYLOG_ADDRESS',
-        configvar='logging/handlers_perflog/graylog_address',
-        help='Graylog server address'
-    )
-    argparser.add_argument(
         dest='httpjson_url',
         envvar='RFM_HTTPJSON_URL',
         configvar='logging/handlers_perflog/httpjson_url',
@@ -697,13 +691,6 @@ def main():
     printer.colorize = site_config.get('general/0/colorize')
     if not restrict_logging():
         printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
-
-    if os.getenv('RFM_GRAYLOG_SERVER'):
-        printer.warning(
-            'RFM_GRAYLOG_SERVER environment variable is deprecated; '
-            'please use RFM_GRAYLOG_ADDRESS instead'
-        )
-        os.environ['RFM_GRAYLOG_ADDRESS'] = os.getenv('RFM_GRAYLOG_SERVER')
 
     if options.upgrade_config_file is not None:
         old_config, *new_config = options.upgrade_config_file.split(

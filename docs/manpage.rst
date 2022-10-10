@@ -1205,11 +1205,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
    .. versionadded:: 3.1
 
-.. envvar:: RFM_GRAYLOG_SERVER
-
-   .. deprecated:: 3.1
-      Please :envvar:`RFM_GRAYLOG_ADDRESS` instead.
-
 
 .. envvar:: RFM_HTTPJSON_URL
 
