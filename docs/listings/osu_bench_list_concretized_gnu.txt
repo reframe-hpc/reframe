@@ -1,17 +1,18 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+605af31a
+  version:           4.0.0-dev.1+6c51b548
   command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -L -p builtin -p gnu'
-  launched by:       user@host
+  launched by:       user@daint104
   working directory: '/home/user/Devel/reframe'
   settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
   check search path: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
+  log files:         '/tmp/rfm-o4x9lxoo.log'
 
 [List of matched checks]
-- OSULatencyTest [id: OSULatencyTest, file: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py']
-    ^OSUBuildTest [id: OSUBuildTest, file: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py']
-      ^OSUDownloadTest [id: OSUDownloadTest, file: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py']
+- OSULatencyTest /14f35a43 [variant: 0, file: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py']
+    ^OSUBuildTest /19b4fb56 [variant: 0, file: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py']
+      ^OSUDownloadTest /7de668df [variant: 0, file: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py']
 Found 3 check(s)
 
-Log file(s) saved in '/tmp/rfm-klltwsex.log'
+Log file(s) saved in '/tmp/rfm-o4x9lxoo.log'

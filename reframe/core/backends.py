@@ -17,6 +17,7 @@ _launcher_backend_modules = [
 ]
 _launchers = {}
 _scheduler_backend_modules = [
+    'reframe.core.schedulers.flux',
     'reframe.core.schedulers.local',
     'reframe.core.schedulers.lsf',
     'reframe.core.schedulers.pbs',
@@ -27,7 +28,7 @@ _scheduler_backend_modules = [
 _schedulers = {}
 
 
-def _register_backend(name, local=False, *, backend_type):
+def _register_backend(name, local=False, error=None, *, backend_type):
     def do_register(cls):
         registry = globals()[f'_{backend_type}s']
         if name in registry:
@@ -37,7 +38,7 @@ def _register_backend(name, local=False, *, backend_type):
 
         cls.is_local = fields.ConstantField(bool(local))
         cls.registered_name = fields.ConstantField(name)
-        registry[name] = cls
+        registry[name] = (cls, error)
         return cls
 
     return do_register
@@ -49,9 +50,15 @@ def _get_backend(name, *, backend_type):
         importlib.import_module(mod)
 
     try:
-        return globals()[f'_{backend_type}s'][name]
+        cls, error = globals()[f'_{backend_type}s'][name]
+        if error:
+            raise ConfigError(
+                f'could not register {backend_type} backend: {error}'
+            )
     except KeyError:
-        raise ConfigError(f"no such {backend_type}: '{name}'")
+        raise ConfigError(f'no such {backend_type}: {name!r}')
+    else:
+        return cls
 
 
 register_scheduler = functools.partial(

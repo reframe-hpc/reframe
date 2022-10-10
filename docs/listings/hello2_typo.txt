@@ -1,18 +1,19 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+149af549
+  version:           4.0.0-dev.1+36ffa085
   command:           './bin/reframe -c tutorials/basics/hello -R -l'
-  launched by:       user@host
+  launched by:       user@tresa.local
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '<builtin>'
+  settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
   check search path: (R) '/home/user/Repositories/reframe/tutorials/basics/hello'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-x9_02v7a.log'
 
-./bin/reframe: skipping test file '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:13: name 'paramter' is not defined
+WARNING: skipping test file '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:13: name 'paramter' is not defined
     lang = paramter(['c', 'cpp'])
  (rerun with '-v' for more information)
 [List of matched checks]
-- HelloTest
+- HelloTest /2b3e4546
 Found 1 check(s)
 
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-bzqy3nc7.log'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-x9_02v7a.log'

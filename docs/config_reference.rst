@@ -223,6 +223,7 @@ System Partition Configuration
    Supported schedulers are the following:
 
    - ``local``: Jobs will be launched locally without using any job scheduler.
+   - ``flux``: Jobs will be launched using the `Flux Framework <https://flux-framework.org/>`_ scheduler.
    - ``oar``: Jobs will be launched using the `OAR <https://oar.imag.fr/>`__ scheduler.
    - ``pbs``: Jobs will be launched using the `PBS Pro <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
    - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
@@ -321,6 +322,14 @@ System Partition Configuration
 
    - ``upcrun``: Parallel programs will be launched using the `UPC <https://upc.lbl.gov/>`__ ``upcrun`` command.
    - ``upcxx-run``: Parallel programs will be launched using the `UPC++ <https://bitbucket.org/berkeleylab/upcxx/wiki/Home>`__ ``upcxx-run`` command.
+
+   .. tip::
+
+      .. versionadded:: 4.0.0
+
+        ReFrame also allows you to register your own custom launchers simply by defining them in the configuration.
+        You can follow a small tutorial `here <tutorial_advanced.html#adding-a-custom-launcher-to-a-partition>`__.
+
 
 .. js:attribute:: .systems[].partitions[].access
 
@@ -466,6 +475,7 @@ ReFrame can launch containerized applications, but you need to configure properl
    The type of the container platform.
    Available values are the following:
 
+   - ``Apptainer``: The `Apptainer <https://apptainer.org/>`__ container runtime.
    - ``Docker``: The `Docker <https://www.docker.com/>`__ container runtime.
    - ``Sarus``: The `Sarus <https://sarus.readthedocs.io/>`__ container runtime.
    - ``Shifter``: The `Shifter <https://github.com/NERSC/shifter>`__ container runtime.
@@ -1178,6 +1188,15 @@ The additional properties for the ``httpjson`` handler are the following:
    A set of optional key/value pairs to be passed with each log record to the server.
    These may depend on the server configuration.
 
+.. js:attribute:: .logging[].handlers[].ignore_keys
+
+.. object:: .logging[].handlers_perflog[].ignore_keys
+
+   :required: No
+   :default: ``[]``
+
+   These keys will be excluded from the log record that will be sent to the server.
+
 
 The ``httpjson`` handler sends log messages in JSON format using an HTTP POST request to the specified URL.
 
@@ -1192,7 +1211,8 @@ An example configuration of this handler for performance logging is shown here:
        'extras': {
            'facility': 'reframe',
            'data-version': '1.0'
-       }
+       },
+       'ignore_keys': ['check_perfvalues']
    }
 
 
@@ -1638,6 +1658,10 @@ Processor Info
 
 A *processor info object* in ReFrame's configuration is used to hold information about the processor of a system partition and is made available to the tests through the :attr:`processor <reframe.core.systems.SystemPartition.processor>` attribute of the :attr:`current_partition <reframe.core.pipeline.RegressionTest.current_partition>`.
 
+.. note::
+   In the following the term *logical CPUs* refers to the smallest processing unit recognized by the OS.
+   Depending on the microarchitecture, this can either be a core or a hardware thread in processors that support simultaneous multithreading and this feature is enabled.
+   Therefore, properties such as :attr:`num_cpus_per_core` may have a value greater than one.
 
 .. attribute:: .arch
 

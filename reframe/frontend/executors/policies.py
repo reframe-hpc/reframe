@@ -39,6 +39,18 @@ def _cleanup_all(tasks, *args, **kwargs):
     tasks[:] = [t for t in tasks if t.ref_count]
 
 
+def _print_perf(task):
+    '''Get performance info of the current task.'''
+
+    perfvars = task.testcase.check.perfvalues
+    for key, info in perfvars.items():
+        name = key.split(':')[-1]
+        getlogger().info(
+            f'P: {name}: {info[0]} {info[4]} '
+            f'(r:{info[1]}, l:{info[2]}, u:{info[3]})'
+        )
+
+
 class _PollController:
     SLEEP_MIN = 0.1
     SLEEP_MAX = 10
@@ -85,12 +97,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def runcase(self, case):
         super().runcase(case)
         check, partition, environ = case
-
-        self.printer.status(
-            'RUN',
-            f'{check.name} @{partition.fullname}+{environ.name}'
-        )
         task = RegressionTask(case, self.task_listeners)
+        self.printer.status('RUN', task.info())
         self._task_index[case] = task
         self.stats.add_task(task)
         try:
@@ -178,6 +186,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         else:
             self.printer.status('FAIL', msg, just='right')
 
+        _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -195,6 +204,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_success(self, task):
         msg = f'{task.info()}'
         self.printer.status('OK', msg, just='right')
+        _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -574,6 +584,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         else:
             self.printer.status('FAIL', msg, just='right')
 
+        _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -591,6 +602,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_success(self, task):
         msg = f'{task.info()}'
         self.printer.status('OK', msg, just='right')
+        _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -598,7 +610,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                          'performance',
                                          'total'])
         getlogger().verbose(f'==> {timings}')
-
         for c in task.testcase.deps:
             # NOTE: Restored dependencies are not in the task_index
             if c in self._task_index:
