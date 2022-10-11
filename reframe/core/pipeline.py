@@ -991,9 +991,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._build_job = None
         self._compile_proc = None
 
-        # Performance logging
-        self._perf_logger = logging.null_logger
-
         # List of dependencies specified by the user
         self._userdeps = []
 
@@ -1583,9 +1580,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def _setup_run_job(self, **job_opts):
         self._job = self._create_job(f'rfm_job', self.local, **job_opts)
 
-    def _setup_perf_logging(self):
-        self._perf_logger = logging.getperflogger(self)
-
     def _setup_container_platform(self):
         try:
             self.container_platform.emit_prepare_commands(self.stagedir)
@@ -2046,6 +2040,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             if not success:
                 raise SanityError()
 
+    def is_performance_check(self):
+        '''Return :obj:`True` if the test is a performance test.'''
+        return (self.perf_variables or
+                self._rfm_perf_fns  or
+                hasattr(self, 'perf_patterns'))
+
     @final
     def check_performance(self):
         '''The performance checking phase of the regression test pipeline.
@@ -2077,8 +2077,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         f"or setting a value to 'perf_variables'"
                     )
 
+                # FIXME: Check the validity of this loop and the one in else.
+                # May not be needed anymore that performance logging is no
+                # more here.
+
                 # Log the performance variables
-                self._setup_perf_logging()
                 for tag, expr in self.perf_variables.items():
                     try:
                         value = expr.evaluate()
@@ -2113,12 +2116,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         ref = (0, None, None)
 
                     self._perfvalues[key] = (value, *ref, unit)
-                    self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                      *ref, unit)
             elif not hasattr(self, 'perf_patterns'):
                 return
             else:
-                self._setup_perf_logging()
                 # Check if default reference perf values are provided and
                 # store all the variables tested in the performance check
                 has_default = False
@@ -2158,8 +2158,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         )
 
                     self._perfvalues[key] = (value, *self.reference[key])
-                    self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                      *self.reference[key])
 
             # Check the performance variables against their references.
             for key, values in self._perfvalues.items():

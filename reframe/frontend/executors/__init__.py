@@ -156,6 +156,9 @@ class RegressionTask:
 
         self._aborted = False
 
+        # Performance logging
+        self._perflogger = logging.null_logger
+
     def duration(self, phase):
         # Treat pseudo-phases first
         if phase == 'compile_complete':
@@ -362,6 +365,9 @@ class RegressionTask:
 
     @logging.time_function
     def performance(self):
+        if self.check.is_performance_check():
+            self._perflogger = logging.getperflogger(self.check)
+
         self._safe_call(self.check.performance)
 
     @logging.time_function
@@ -377,6 +383,7 @@ class RegressionTask:
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
+        self._perflogger.log_performance(logging.INFO, self)
 
     @logging.time_function
     def cleanup(self, *args, **kwargs):
@@ -386,6 +393,7 @@ class RegressionTask:
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_failure')
+        self._perflogger.log_performance(logging.INFO, self)
 
     def skip(self, exc_info=None):
         self._skipped = True
