@@ -1315,6 +1315,49 @@ def dummytest(testsys_exec_ctx, perf_file, sanity_file):
     yield MyTest()
 
 
+@pytest.fixture
+def dummytest_modern(testsys_exec_ctx, perf_file, sanity_file):
+    '''Modern version of the dummytest above'''
+
+    class MyTest(rfm.RunOnlyRegressionTest):
+        perf_file = perf_file
+        reference = {
+            'testsys': {
+                'value1': (1.4, -0.1, 0.1, None),
+                'value2': (1.7, -0.1, 0.1, None),
+            },
+            'testsys:gpu': {
+                'value3': (3.1, -0.1, 0.1, None),
+            }
+        }
+
+        @sanity_function
+        def validate(self):
+            return sn.assert_found(r'result = success', sanity_file)
+
+        @performance_function('unit')
+        def value1(self):
+            return sn.extractsingle(r'perf1 = (\S+)', perf_file, 1, float)
+
+        @performance_function('unit')
+        def value2(self):
+            return sn.extractsingle(r'perf2 = (\S+)', perf_file, 1, float)
+
+        @performance_function('unit')
+        def value3(self):
+            return sn.extractsingle(r'perf3 = (\S+)', perf_file, 1, float)
+
+    yield MyTest()
+
+
+@pytest.fixture(params=['classic', 'modern'])
+def dummy_perftest(request, dummytest, dummytest_modern):
+    if request.param == 'modern':
+        return dummytest_modern
+    else:
+        return dummytest
+
+
 def test_sanity_success(dummytest, sanity_file, perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
@@ -1390,7 +1433,7 @@ def test_reference_unknown_tag(dummytest, sanity_file,
             'foo': (3.1, -0.1, 0.1, None),
         }
     }
-    with pytest.raises(SanityError):
+    with pytest.raises(PerformanceError):
         _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
@@ -1454,6 +1497,27 @@ def test_reference_tag_resolution(dummytest, sanity_file,
         }
     }
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+
+
+def test_required_reference(dummy_perftest, sanity_file,
+                            perf_file, dummy_gpu_exec_ctx):
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n'
+                         'perf2 = 1.8\n'
+                         'perf3 = 3.3\n')
+
+    dummy_perftest.require_reference = True
+    dummy_perftest.reference = {
+        'testsys:login': {
+            'value1': (1.4, -0.1, 0.1, None),
+            'value3': (3.1, -0.1, 0.1, None),
+        },
+        'foo': {
+            'value2': (1.7, -0.1, 0.1, None)
+        }
+    }
+    with pytest.raises(PerformanceError):
+        _run_sanity(dummy_perftest, *dummy_gpu_exec_ctx)
 
 
 def test_performance_invalid_value(dummytest, sanity_file,
