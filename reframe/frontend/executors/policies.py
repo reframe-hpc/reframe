@@ -43,14 +43,15 @@ def _cleanup_all(tasks, *args, **kwargs):
 def _print_perf(task):
     '''Get performance info of the current task.'''
     
-    with change_dir(task.testcase.check.stagedir or '.'):
-        perfvars = task.testcase.check.perfvalues
-        for key, info in perfvars.items():
-            name = key.split(':')[-1]
-            getlogger().info(
-                f'P: {name}: {info[0]} {info[4]} '
-                f'(r:{info[1]}, l:{info[2]}, u:{info[3]})'
-            )
+    perfvars = task.testcase.check.perfvalues 
+    if perfvars:
+        with change_dir(task.testcase.check.stagedir):
+            for key, info in perfvars.items():
+                name = key.split(':')[-1]
+                getlogger().info(
+                    f'P: {name}: {info[0]} {info[4]} '
+                    f'(r:{info[1]}, l:{info[2]}, u:{info[3]})'
+                )
 
 
 class _PollController:
