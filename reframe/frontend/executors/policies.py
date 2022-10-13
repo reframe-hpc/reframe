@@ -43,7 +43,7 @@ def _cleanup_all(tasks, *args, **kwargs):
 def _print_perf(task):
     '''Get performance info of the current task.'''
     
-    with change_dir(task.testcase.check.stagedir):
+    with change_dir(task.testcase.check.stagedir or '.'):
         perfvars = task.testcase.check.perfvalues
         for key, info in perfvars.items():
             name = key.split(':')[-1]
