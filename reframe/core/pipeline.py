@@ -676,8 +676,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: Require that a reference is defined for each system that this test is
     #: run on.
     #:
+    #: If this is set and a reference is not found for the current system, the
+    #: test will fail.
+    #:
     #: :type: boolean
-    #: :default: :obj:`False`
+    #: :default: :const:`False`
     #:
     #: .. versionadded:: 4.0.0
     require_reference = variable(typ.Bool, value=False)
