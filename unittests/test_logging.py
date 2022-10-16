@@ -17,8 +17,6 @@ from datetime import datetime
 import reframe as rfm
 import reframe.core.logging as rlog
 import reframe.core.runtime as rt
-import reframe.core.settings as settings
-import reframe.utility as util
 from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.schedulers import Job
@@ -225,7 +223,7 @@ def _found_in_logfile(string, filename):
 
 
 @pytest.fixture
-def config_file(tmp_path, logfile):
+def config_file(make_config_file, logfile):
     def _config_file(logging_config=None):
         if logging_config is None:
             logging_config = {
@@ -244,13 +242,7 @@ def config_file(tmp_path, logfile):
                 'handlers_perflog': []
             }
 
-        site_config = copy.deepcopy(settings.site_configuration)
-        site_config['logging'] = [logging_config]
-        with tempfile.NamedTemporaryFile(mode='w+t', dir=str(tmp_path),
-                                         suffix='.py', delete=False) as fp:
-            fp.write(f'site_configuration = {util.ppretty(site_config)}')
-
-        return fp.name
+        return make_config_file({'logging': [logging_config]})
 
     return _config_file
 

@@ -340,9 +340,10 @@ def _create_file_handler(site_config, config_prefix):
 
 
 def _create_filelog_handler(site_config, config_prefix):
-    basedir = os.path.abspath(
+    basedir = os.path.abspath(os.path.join(
+        site_config.get(f'systems/0/prefix'),
         osext.expandvars(site_config.get(f'{config_prefix}/basedir'))
-    )
+    ))
     prefix  = osext.expandvars(site_config.get(f'{config_prefix}/prefix'))
     filename_patt = os.path.join(basedir, prefix)
     append = site_config.get(f'{config_prefix}/append')

@@ -13,6 +13,7 @@ import sys
 import time
 
 import reframe as rfm
+import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
@@ -20,6 +21,7 @@ import reframe.frontend.executors.policies as policies
 import reframe.frontend.runreport as runreport
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
+import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
 from lxml import etree
@@ -965,3 +967,77 @@ def test_config_params(make_runner, make_exec_ctx):
     runner.runall(testcases)
     assert runner.stats.num_cases() == 2
     assert not runner.stats.failed()
+
+
+@pytest.fixture
+def perf_test():
+    class _MyTest(rfm.RunOnlyRegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        executable = 'echo perf0=100 && echo perf1=50'
+
+        @sanity_function
+        def validate(self):
+            return sn.assert_found(r'perf0', self.stdout)
+
+        @performance_function('unit0')
+        def perf0(self):
+            return sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float)
+
+        @performance_function('unit1')
+        def perf1(self):
+            return sn.extractsingle(r'perf1=(\S+)', self.stdout, 1, float)
+
+    return _MyTest()
+
+
+@pytest.fixture
+def config_perflog(make_config_file):
+    def _config_perflog(fmt, perffmt):
+        return make_config_file({
+            'logging': [{
+                'level': 'debug2',
+                'handlers': [{
+                    'type': 'stream',
+                    'name': 'stdout',
+                    'level': 'info',
+                    'format': '%(message)s'
+                }],
+                'handlers_perflog': [{
+                    'type': 'filelog',
+                    'prefix': '%(check_system)s/%(check_partition)s',
+                    'level': 'info',
+                    'format_perfvars': perffmt,
+                    'format': fmt
+                }]
+            }]
+        })
+
+    return _config_perflog
+
+
+def test_perf_logging(make_runner, make_exec_ctx, perf_test,
+                      config_perflog, tmp_path):
+    make_exec_ctx(
+        config_perflog(
+            fmt=(
+                '%(check_job_completion_time)s,%(version)s,'
+                '%(check_display_name)s,%(check_system)s,'
+                '%(check_partition)s,%(check_environ)s,'
+                '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
+            ),
+            perffmt=(
+                '%(check_perf_value)s,%(check_perf_unit)s,'
+                '%(check_perf_ref)s,%(check_perf_lower)s,'
+                '%(check_perf_upper)s,'
+            )
+        )
+    )
+    logging.configure_logging(rt.runtime().site_config)
+    print(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([perf_test])
+    runner.runall(testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    assert os.path.exists(logfile)
