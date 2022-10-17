@@ -11,8 +11,8 @@ import os
 import re
 import requests
 import shutil
-import sys
 import socket
+import sys
 import time
 import urllib
 
@@ -163,7 +163,7 @@ class MultiFileHandler(logging.FileHandler):
                 if delim_p:
                     header = header.rstrip(delim_p)
             elif attr.startswith('check_'):
-                header += attr.lstrip('check_')
+                header += attr[6:]
             else:
                 header += attr
 
@@ -277,7 +277,11 @@ class CheckFieldFormatter(logging.Formatter):
                 'check_perf_lower': lower,
                 'check_perf_upper': upper
             }
-            chunks.append(self.__fmtperf % record)
+            try:
+                chunks.append(self.__fmtperf % record)
+            except ValueError:
+                chunks.append("<error formatting the performance record: "
+                              "please check the 'format_perfvars' string>")
 
         return self.__delim.join(chunks)
 
@@ -301,7 +305,11 @@ class CheckFieldFormatter(logging.Formatter):
                 time.localtime(ct), datefmt
             )
 
-        return self.__fmt % record_proxy
+        try:
+            return self.__fmt % record_proxy
+        except ValueError:
+            return ("<error formatting the log message: "
+                    "please check the 'format' string>")
 
 
 class RFC3339Formatter(CheckFieldFormatter):

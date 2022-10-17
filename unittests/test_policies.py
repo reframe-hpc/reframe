@@ -1016,6 +1016,20 @@ def config_perflog(make_config_file):
     return _config_perflog
 
 
+def _count_lines(filepath):
+    count = 0
+    with open(filepath) as fp:
+        for line in fp:
+            count += 1
+
+    return count
+
+
+def _assert_header(filepath, header):
+    with open(filepath) as fp:
+        assert fp.readline().strip() == header
+
+
 def test_perf_logging(make_runner, make_exec_ctx, perf_test,
                       config_perflog, tmp_path):
     make_exec_ctx(
@@ -1034,10 +1048,129 @@ def test_perf_logging(make_runner, make_exec_ctx, perf_test,
         )
     )
     logging.configure_logging(rt.runtime().site_config)
-    print(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases([perf_test])
     runner.runall(testcases)
 
     logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
     assert os.path.exists(logfile)
+    assert _count_lines(logfile) == 2
+
+    # Rerun with the same configuration and check that new entry is appended
+    testcases = executors.generate_testcases([perf_test])
+    runner = make_runner()
+    runner.runall(testcases)
+    assert _count_lines(logfile) == 3
+
+    # Change the configuration and rerun
+    make_exec_ctx(
+        config_perflog(
+            fmt=(
+                '%(check_job_completion_time)s,%(version)s,'
+                '%(check_display_name)s,%(check_system)s,'
+                '%(check_partition)s,%(check_environ)s,'
+                '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
+            ),
+            perffmt='%(check_perf_value)s,%(check_perf_unit)s,'
+        )
+    )
+    logging.configure_logging(rt.runtime().site_config)
+    testcases = executors.generate_testcases([perf_test])
+    runner = make_runner()
+    runner.runall(testcases)
+    assert _count_lines(logfile) == 2
+    _assert_header(logfile,
+                   'job_completion_time,version,display_name,system,partition,'
+                   'environ,jobid,result,perf0_value,perf0_unit,'
+                   'perf1_value,perf1_unit')
+
+    logfile_prev = [(str(logfile) + '.h0', 3)]
+    for f, num_lines in logfile_prev:
+        assert os.path.exists(f)
+        _count_lines(f) == num_lines
+
+    # Change the test and rerun
+    perf_test.perf_variables['perfN'] = perf_test.perf_variables['perf1']
+
+    # We reconfigure the logging in order for the filelog handler to start
+    # from a clean state
+    logging.configure_logging(rt.runtime().site_config)
+    testcases = executors.generate_testcases([perf_test])
+    runner = make_runner()
+    runner.runall(testcases)
+    assert _count_lines(logfile) == 2
+    _assert_header(logfile,
+                   'job_completion_time,version,display_name,system,partition,'
+                   'environ,jobid,result,perf0_value,perf0_unit,'
+                   'perf1_value,perf1_unit,perfN_value,perfN_unit')
+
+    logfile_prev = [(str(logfile) + '.h0', 3), (str(logfile) + '.h1', 2)]
+    for f, num_lines in logfile_prev:
+        assert os.path.exists(f)
+        _count_lines(f) == num_lines
+
+
+def test_perf_logging_no_end_delim(make_runner, make_exec_ctx, perf_test,
+                                   config_perflog, tmp_path):
+    make_exec_ctx(
+        config_perflog(
+            fmt=(
+                '%(check_job_completion_time)s,%(version)s,'
+                '%(check_display_name)s,%(check_system)s,'
+                '%(check_partition)s,%(check_environ)s,'
+                '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
+            ),
+            perffmt='%(check_perf_value)s,%(check_perf_unit)s'
+        )
+    )
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([perf_test])
+    runner.runall(testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    assert os.path.exists(logfile)
+    assert _count_lines(logfile) == 2
+
+    with open(logfile) as fp:
+        lines = fp.readlines()
+
+    assert len(lines) == 2
+    assert lines[0] == (
+        'job_completion_time,version,display_name,system,partition,'
+        'environ,jobid,result,perf0_value,perf0_unitperf1_value,perf1_unit\n'
+    )
+    assert '<error formatting the performance record' in lines[1]
+
+
+def test_perf_logging_no_perfvars(make_runner, make_exec_ctx, perf_test,
+                                  config_perflog, tmp_path):
+    make_exec_ctx(
+        config_perflog(
+            fmt=(
+                '%(check_job_completion_time)s,%(version)s,'
+                '%(check_display_name)s,%(check_system)s,'
+                '%(check_partition)s,%(check_environ)s,'
+                '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
+            ),
+            perffmt=''
+        )
+    )
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([perf_test])
+    runner.runall(testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    assert os.path.exists(logfile)
+    assert _count_lines(logfile) == 2
+
+    with open(logfile) as fp:
+        lines = fp.readlines()
+
+    assert len(lines) == 2
+    assert lines[0] == (
+        'job_completion_time,version,display_name,system,partition,'
+        'environ,jobid,result,\n'
+    )
+    assert 'error' not in lines[1]

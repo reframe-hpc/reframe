@@ -62,7 +62,6 @@ site_configuration = {
                         '%(check_display_name)s,%(check_system)s,'
                         '%(check_partition)s,%(check_environ)s,'
                         '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
-
                     ),
                     'append': True
                 }

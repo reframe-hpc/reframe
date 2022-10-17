@@ -308,6 +308,29 @@ def test_handler_noappend(make_exec_ctx, config_file, logfile):
     assert _found_in_logfile('bar', logfile)
 
 
+def test_handler_bad_format(make_exec_ctx, config_file, logfile):
+    make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers': [
+                {
+                    'type': 'file',
+                    'name': str(logfile),
+                    'level': 'warning',
+                    'format': '[%(asctime)s] %(levelname)s: %(message)',
+                    'datefmt': '%F',
+                    'append': False,
+                }
+            ],
+            'handlers_perflog': []
+        })
+    )
+
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().warning('foo')
+    assert _found_in_logfile('<error formatting the log message:', logfile)
+
+
 def test_warn_once(default_exec_ctx, logfile):
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().warning('foo', cache=True)
