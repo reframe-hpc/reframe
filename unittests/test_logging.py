@@ -3,14 +3,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import copy
 import logging
 import logging.handlers
 import os
 import pytest
 import re
 import sys
-import tempfile
 import time
 from datetime import datetime
 
