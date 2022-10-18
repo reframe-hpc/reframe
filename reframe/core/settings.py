@@ -52,16 +52,16 @@ site_configuration = {
                     'type': 'filelog',
                     'prefix': '%(check_system)s/%(check_partition)s',
                     'level': 'info',
-                    'format_perfvars': (
-                        '%(check_perf_value)s,%(check_perf_unit)s,'
-                        '%(check_perf_ref)s,%(check_perf_lower)s,'
-                        '%(check_perf_upper)s,'
-                    ),
                     'format': (
                         '%(check_job_completion_time)s,%(version)s,'
                         '%(check_display_name)s,%(check_system)s,'
                         '%(check_partition)s,%(check_environ)s,'
                         '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
+                    ),
+                    'format_perfvars': (
+                        '%(check_perf_value)s,%(check_perf_unit)s,'
+                        '%(check_perf_ref)s,%(check_perf_lower)s,'
+                        '%(check_perf_upper)s,'
                     ),
                     'append': True
                 }

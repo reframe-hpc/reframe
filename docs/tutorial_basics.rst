@@ -573,10 +573,16 @@ Let's inspect the log file from our last test:
 .. literalinclude:: listings/perflogs.txt
    :language: console
 
-Several information are printed for each run, such as the performance variables, their value, their references and thresholds etc.
-The default format is in a form suitable for easy parsing, but you may fully control not only the format, but also what is being logged from the configuration file.
-:doc:`configure` and :doc:`config_reference` cover logging in ReFrame in much more detail.
+The format of this file is controlled by :js:attr:`handlers_perflog` logging configuration parameter and, by default, contains several information about the test.
+For each test, all of its performance variables are logged along with their unit, the obtained value, the reference and the lower and upper threshold.
+The default format is in CSV, so that it can be easily post-processed.
+For this reason, a header is also printed to help identify the different fields.
 
+Since version 4.0, ReFrame is very cautious when generating this file: if a change is detected in the information that is being logged, ReFrame will not append to the file, but it will instead create a new one, saving the old file using the ``.h<N>`` suffix, where ``N`` is an integer that is increased every time a new file is being created due to such changes.
+Examples of changes in the logged information are when the log record format changes or a new performance metric is added, deleted or has its name changed.
+This behavior guarantees that each log file is consistent and it will not break existing parsers.
+
+For more information on configuring performance logging in ReFrame as well as logging in general, you may refer to the :ref:`logging-config-reference` reference.
 
 
 Porting The Tests to an HPC cluster
