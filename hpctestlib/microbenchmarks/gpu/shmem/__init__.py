@@ -79,7 +79,7 @@ class GpuShmem(rfm.RegressionTest, pin_prefix=True):
         '''Count the number of GPUs testd is correct.'''
 
         return sn.assert_eq(
-            sn.count(sn.findall(r'Bandwidth', self.stdout)),
+            sn.count(sn.findall(r'Bandwidth\((int|double)\)', self.stdout)),
             self.job.num_tasks * 2 * self.num_gpus_per_node
         )
 

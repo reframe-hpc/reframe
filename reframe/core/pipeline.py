@@ -673,6 +673,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
+    #: Require that a reference is defined for each system that this test is
+    #: run on.
+    #:
+    #: If this is set and a reference is not found for the current system, the
+    #: test will fail.
+    #:
+    #: :type: boolean
+    #: :default: :const:`False`
+    #:
+    #: .. versionadded:: 4.0.0
+    require_reference = variable(typ.Bool, value=False)
+
     #:
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
     #: examples.
@@ -898,7 +910,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: responsibility to check whether the build phase failed by adding an
     #: appropriate sanity check.
     #:
-    #: :type: boolean : :default: :class:`True`
+    #: :type: boolean
+    #: :default: :class:`True`
     build_locally = variable(typ.Bool, value=True, loggable=True)
 
     def __new__(cls, *args, **kwargs):
@@ -2124,6 +2137,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                         # Pop the unit from the ref tuple (redundant)
                         ref = ref[:3]
                 except KeyError:
+                    if self.require_reference:
+                        raise PerformanceError(
+                            f'no reference value found for '
+                            f'performance variable {tag!r} on '
+                            f'system {self._current_partition.fullname!r}'
+                        ) from None
+
                     ref = (0, None, None)
 
                 self._perfvalues[key] = (value, *ref, unit)
@@ -2148,7 +2168,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                  'expected {1} (l={2}, u={3})' % tag))
                     )
                 except SanityError as e:
-                    raise PerformanceError(e)
+                    raise PerformanceError(e) from None
 
     def _copy_job_files(self, job, dst):
         if job is None:
