@@ -1390,8 +1390,7 @@ def test_reference_unknown_tag(dummytest, sanity_file,
             'foo': (3.1, -0.1, 0.1, None),
         }
     }
-    with pytest.raises(SanityError):
-        _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+    _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
 def test_reference_unknown_system(dummytest, sanity_file,
