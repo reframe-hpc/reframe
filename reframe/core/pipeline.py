@@ -557,8 +557,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :attr:`extra_resources` attribute.
     #:
     #: :type: integral
-    #: :default: ``0``
-    num_gpus_per_node = variable(int, value=0, loggable=True)
+    #: :default: :const:`None`
+    #:
+    #: .. versionchanged:: 4.0.0
+    #:    The default value changed to :const:`None`.
+    num_gpus_per_node = variable(int, type(None), value=None, loggable=True)
 
     #: Number of CPUs per task required by this test.
     #:
@@ -1890,7 +1893,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 environs.insert(2, cp_env)
 
         # num_gpus_per_node is a managed resource
-        if self.num_gpus_per_node > 0:
+        if self.num_gpus_per_node:
             self.extra_resources.setdefault(
                 '_rfm_gpu', {'num_gpus_per_node': self.num_gpus_per_node}
             )
