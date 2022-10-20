@@ -95,13 +95,6 @@ You can get in contact with the ReFrame community in the following ways:
 
 Please join the community's [Slack channel](https://reframe-slack.herokuapp.com) for keeping up with the latest news about ReFrame, posting questions and, generally getting in touch with other users and the developers.
 
-### Mailing list
-
-You may also [subscribe](mailto:reframe-subscribe@sympa.cscs.ch) to the [mailing list](mailto:reframe@sympa.cscs.ch).
-Only subscribers can send messages to the list.
-For unsubscribing, you may send an empty message [here](mailto:reframe-unsubscribe@sympa.cscs.ch).
-
-
 ## Contributing back
 
 ReFrame is an open-source project and we welcome and encourage contributions!
