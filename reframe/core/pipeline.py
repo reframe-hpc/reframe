@@ -556,7 +556,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: For more information on test resources, have a look at the
     #: :attr:`extra_resources` attribute.
     #:
-    #: :type: integral
+    #: :type: integral or :const:`None`
     #: :default: :const:`None`
     #:
     #: .. versionchanged:: 4.0.0
