@@ -100,7 +100,6 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
         if detailed:
             details = f' [variant: {t.check.variant_num}, file: {location!r}]'
 
-        # if not concretized and t.check.name not in unique_checks:
         if concretized or (not concretized and
                            t.check.unique_name not in unique_checks):
             printer.info(f'- {name_info}{tc_info}{details}')
@@ -969,6 +968,9 @@ def main():
         testcases_all = generate_testcases(checks_found)
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
+
+        # Filter out fixtures
+        testcases = [t for t in testcases if not t.check.is_fixture()]
 
         # Filter test cases by name
         if options.exclude_names:
