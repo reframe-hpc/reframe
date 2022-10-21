@@ -573,21 +573,28 @@ def unique_abs_paths(paths, prune_children=True):
 
 
 def cray_cdt_version():
-    '''Return the Cray Development Toolkit (CDT) version or :class:`None` if
-    the version cannot be retrieved.'''
+    '''Return eithe the Cray Development Toolkit (CDT) version, the Cray
+    Programming Environment (CPE) version or :class:`None` if the version
+    cannot be retrieved.'''
 
-    rcfile = os.getenv('MODULERCFILE', '/opt/cray/pe/cdt/default/modulerc')
+    modulerc_path = '/opt/cray/pe/{cray_module}/default/modulerc'
+    cray_module = 'cdt' if os.path.exists(
+        modulerc_path.format(cray_module='cdt')
+    ) else 'cpe'
+
+    rcfile = os.getenv('MODULERCFILE',
+                       modulerc_path.format(cray_module=cray_module))
     try:
         with open(rcfile) as fp:
             header = fp.readline()
             if not header:
                 return None
 
-        match = re.search(r'^#%Module CDT (\S+)', header)
+        match = re.search(r'^#%Module (CDT|CPE) (\S+)', header)
         if not match:
             return None
 
-        return match.group(1)
+        return match.group(2)
     except OSError:
         return None
 
