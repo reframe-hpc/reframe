@@ -573,7 +573,7 @@ def unique_abs_paths(paths, prune_children=True):
 
 
 def cray_cdt_version():
-    '''Return eithe the Cray Development Toolkit (CDT) version, the Cray
+    '''Return either the Cray Development Toolkit (CDT) version, the Cray
     Programming Environment (CPE) version or :class:`None` if the version
     cannot be retrieved.'''
 
