@@ -121,7 +121,7 @@ def test_load_config_unknown_filetype(tmp_path):
 
 
 def test_validate_fallback_config():
-    site_config = config.load_config('reframe/core/settings.py')
+    site_config = config.load_config()
     site_config.validate()
 
 

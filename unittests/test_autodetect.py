@@ -20,7 +20,7 @@ def temp_topo(tmp_path, monkeypatch):
     monkeypatch.setattr(autodetect, '_TREAT_WARNINGS_AS_ERRORS', True)
 
     # Create a devices file manually, since it is not auto-generated
-    meta_prefix = tmp_path / '.reframe' / 'topology' / 'generic-default'
+    meta_prefix = tmp_path / '.reframe' / 'topology' / 'generic1-default'
     os.makedirs(meta_prefix)
     with open(meta_prefix / 'devices.json', 'w') as fp:
         json.dump([

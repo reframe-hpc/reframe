@@ -10,7 +10,7 @@
 site_configuration = {
     'systems': [
         {
-            'name': 'generic',
+            'name': 'generic1',
             'descr': 'Generic example system',
             'hostnames': ['.*'],
             'partitions': [
