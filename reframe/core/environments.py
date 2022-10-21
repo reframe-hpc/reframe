@@ -10,6 +10,7 @@ import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.typecheck as typ
+from reframe.core.warnings import user_deprecation_warning
 
 
 def normalize_module_list(modules):
@@ -37,14 +38,14 @@ class Environment(jsonext.JSONSerializable):
        Users may not create :class:`Environment` objects directly.
     '''
 
-    def __init__(self, name, modules=None, variables=None,
+    def __init__(self, name, modules=None, env_vars=None,
                  extras=None, features=None):
         modules = modules or []
-        variables = variables or []
+        env_vars = env_vars or []
         self._name = name
         self._modules = normalize_module_list(modules)
         self._module_names = [m['name'] for m in self._modules]
-        self._variables = collections.OrderedDict(variables)
+        self._env_vars = collections.OrderedDict(env_vars)
         self._extras = extras or {}
         self._features = features or []
 
@@ -85,12 +86,25 @@ class Environment(jsonext.JSONSerializable):
         return util.SequenceView(self._modules)
 
     @property
-    def variables(self):
+    def env_vars(self):
         '''The environment variables associated with this environment.
 
         :type: :class:`OrderedDict[str, str]`
+
+        .. versionadded:: 4.0.0
         '''
-        return util.MappingView(self._variables)
+        return util.MappingView(self._env_vars)
+
+    @property
+    def variables(self):
+        '''The environment variables associated with this environment.
+
+        .. deprecated:: 4.0.0
+           Please :attr:`env_vars` instead.
+        '''
+        user_deprecation_warning("the 'variables' attribute is deprecated; "
+                                 "please use the 'env_vars' instead")
+        return util.MappingView(self._env_vars)
 
     @property
     def extras(self):
@@ -119,7 +133,7 @@ class Environment(jsonext.JSONSerializable):
 
         return (self.name == other.name and
                 set(self.modules) == set(other.modules) and
-                self.variables == other.variables)
+                self.env_vars == other.env_vars)
 
     def __str__(self):
         return self.name
@@ -128,7 +142,7 @@ class Environment(jsonext.JSONSerializable):
         return (f'{type(self).__name__}('
                 f'name={self._name!r}, '
                 f'modules={self._modules!r}, '
-                f'variables={list(self._variables.items())!r}, '
+                f'env_vars={list(self._env_vars.items())!r}, '
                 f'extras={self._extras!r}, features={self._features!r})')
 
 
@@ -141,15 +155,15 @@ class _EnvironmentSnapshot(Environment):
     def restore(self):
         '''Restore this environment snapshot.'''
         os.environ.clear()
-        os.environ.update(self._variables)
+        os.environ.update(self._env_vars)
 
     def __eq__(self, other):
         if not isinstance(other, Environment):
             return NotImplemented
 
-        # Order of variables is not important when comparing snapshots
-        for k, v in self.variables.items():
-            if other.variables[k] != v:
+        # Order of env. variables is not important when comparing snapshots
+        for k, v in self.env_vars.items():
+            if other.env_vars[k] != v:
                 return False
 
         return self.name == other.name
@@ -185,7 +199,7 @@ class ProgEnvironment(Environment):
     def __init__(self,
                  name,
                  modules=None,
-                 variables=None,
+                 env_vars=None,
                  extras=None,
                  features=None,
                  cc='cc',
@@ -198,7 +212,7 @@ class ProgEnvironment(Environment):
                  fflags=None,
                  ldflags=None,
                  **kwargs):
-        super().__init__(name, modules, variables, extras, features)
+        super().__init__(name, modules, env_vars, extras, features)
         self._cc = cc
         self._cxx = cxx
         self._ftn = ftn

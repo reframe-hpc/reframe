@@ -783,9 +783,21 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: These variables will be set during the :func:`setup` phase.
     #:
-    #: :type: :class:`Dict[str, str]`
+    #: :type: :class:`Dict[str, object]`
     #: :default: ``{}``
-    variables = variable(typ.Dict[str, str], value={}, loggable=True)
+    #:
+    #: .. versionadded:: 4.0.0
+    env_vars = variable(typ.Dict[str, object], value={}, loggable=True)
+
+    #: Environment variables to be set before running this test.
+    #:
+    #: This is an alias of :attr:`env_vars`.
+    #:
+    #: .. deprecated:: 4.0.0
+    #:    Please use :attr:`env_vars` instead.
+    variables = deprecate(variable(alias=env_vars, loggable=True),
+                          f"the use of 'variables' is deprecated; "
+                          f"please use 'env_vars' instead")
 
     #: Time limit for this test.
     #:
@@ -1746,7 +1758,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.build_system.executable = self.executable
 
         user_environ = Environment(self.unique_name,
-                                   self.modules, self.variables.items())
+                                   self.modules, self.env_vars.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
         self._build_job.time_limit = (
@@ -1880,7 +1892,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             *self.postrun_cmds
         ]
         user_environ = Environment(self.unique_name,
-                                   self.modules, self.variables.items())
+                                   self.modules, self.env_vars.items())
         environs = [
             self._current_partition.local_env,
             self._current_environ,
