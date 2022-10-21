@@ -332,6 +332,25 @@ class _SiteConfig:
             raise ConfigError(f"could not validate configuration files: "
                               f"'{self._sources}'") from e
 
+        # Make sure that system and partition names are unique
+        system_names = set()
+        for system in self._site_config['systems']:
+            sysname = system['name']
+            if sysname in system_names:
+                raise ConfigError(f"system '{sysname}' already defined")
+
+            system_names.add(sysname)
+            partition_names = set()
+            for part in system['partitions']:
+                partname = part['name']
+                if partname in partition_names:
+                    raise ConfigError(
+                        f"partition '{partname}' already defined "
+                        f"for system '{sysname}'"
+                    )
+
+                partition_names.add(partname)
+
     def select_subconfig(self, system_fullname=None,
                          ignore_resolve_errors=False):
         # First look for the current subconfig in the cache; if not found,
