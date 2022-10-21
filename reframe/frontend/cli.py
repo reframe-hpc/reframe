@@ -99,7 +99,6 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
         if detailed:
             details = f' [variant: {t.check.variant_num}, file: {location!r}]'
 
-        # if not concretized and t.check.name not in unique_checks:
         if concretized or (not concretized and
                            t.check.unique_name not in unique_checks):
             printer.info(f'- {name_info}{tc_info}{details}')
@@ -585,12 +584,6 @@ def main():
         type=float
     )
     argparser.add_argument(
-        dest='graylog_server',
-        envvar='RFM_GRAYLOG_ADDRESS',
-        configvar='logging/handlers_perflog/graylog_address',
-        help='Graylog server address'
-    )
-    argparser.add_argument(
         dest='httpjson_url',
         envvar='RFM_HTTPJSON_URL',
         configvar='logging/handlers_perflog/httpjson_url',
@@ -698,13 +691,6 @@ def main():
     printer.colorize = site_config.get('general/0/colorize')
     if not restrict_logging():
         printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
-
-    if os.getenv('RFM_GRAYLOG_SERVER'):
-        printer.warning(
-            'RFM_GRAYLOG_SERVER environment variable is deprecated; '
-            'please use RFM_GRAYLOG_ADDRESS instead'
-        )
-        os.environ['RFM_GRAYLOG_ADDRESS'] = os.getenv('RFM_GRAYLOG_SERVER')
 
     # Now configure ReFrame according to the user configuration file
     try:
@@ -961,6 +947,9 @@ def main():
         testcases_all = generate_testcases(checks_found)
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
+
+        # Filter out fixtures
+        testcases = [t for t in testcases if not t.check.is_fixture()]
 
         # Filter test cases by name
         if options.exclude_names:
