@@ -172,16 +172,40 @@ class TestVar:
         the field validator.
     :returns: A new test variable.
 
-    .. versionadded:: 3.10.2
+    .. version added:: 3.10.2
        The ``loggable`` argument is added.
 
     '''
 
-    __slots__ = ('_default_value', '_field', '_loggable', '_name')
+    # NOTE: We can't use truly private fields in __slots__, because
+    # __setattr__() will be called with their mangled name and we cannot match
+    # them in the __slots__ with making implementation-defined assumptions
+    # about the mangled name. So we just add the `_p_` prefix for "private"
+
+    __slots__ = ('_p_default_value', '_p_field',
+                 '_loggable', '_name', '_target')
+
+    __mutable_props = ('_default_value',)
 
     def __init__(self, *args, **kwargs):
         field_type = kwargs.pop('field', fields.TypedField)
-        self._default_value = kwargs.pop('value', Undefined)
+        alias = kwargs.pop('alias', None)
+
+        if alias and not isinstance(alias, TestVar):
+            raise TypeError(f"'alias' must refer to a variable; "
+                            f"found {type(alias).__name__!r}")
+
+        if alias and 'field' in kwargs:
+            raise ValueError(f"'field' cannot be set for an alias variable")
+
+        if alias and 'value' in kwargs:
+            raise ValueError('alias variables do not accept default values')
+
+        if alias:
+            self._p_default_value = alias._default_value
+        else:
+            self._p_default_value = kwargs.pop('value', Undefined)
+
         self._loggable = kwargs.pop('loggable', False)
 
         if not issubclass(field_type, fields.Field):
@@ -190,16 +214,22 @@ class TestVar:
                 f'{fields.Field.__qualname__}'
             )
 
-        self._field = field_type(*args, **kwargs)
+        if alias:
+            self._p_field = alias._field
+        else:
+            self._p_field = field_type(*args, **kwargs)
+
+        self._target = alias
 
     @classmethod
     def create_deprecated(cls, var, message,
                           kind=DEPRECATE_RDWR, from_version='0.0.0'):
         ret = TestVar.__new__(TestVar)
-        ret._field = fields.DeprecatedField(var.field, message,
-                                            kind, from_version)
-        ret._default_value = var._default_value
+        ret._p_field = fields.DeprecatedField(var.field, message,
+                                              kind, from_version)
+        ret._p_default_value = var._default_value
         ret._loggable = var._loggable
+        ret._target = var._target
         return ret
 
     def _check_deprecation(self, kind):
@@ -217,20 +247,22 @@ class TestVar:
         self._default_value = Undefined
 
     def define(self, value):
-        if value != self._default_value:
-            # We only issue a deprecation warning if the write attempt changes
-            # the value. This is a workaround to the fact that if a variable
-            # defined in parent classes is accessed by the current class, then
-            # the definition of the variable is "copied" in the class body as
-            # an assignment (see `MetaNamespace.__getitem__()`). The
-            # `VarSpace.extend()` method then checks all local class body
-            # assignments and if they refer to a variable (inherited or not),
-            # they call `define()` on it. So, practically, in this case, the
-            # `_default_value` is set redundantly once per class in the
-            # hierarchy.
-            self._check_deprecation(DEPRECATE_WR)
-
+        self._check_deprecation(DEPRECATE_WR)
         self._default_value = value
+
+    @property
+    def _default_value(self):
+        if self._target:
+            return self._target._default_value
+        else:
+            return self._p_default_value
+
+    @_default_value.setter
+    def _default_value(self, value):
+        if self._target:
+            self._target._default_value = value
+        else:
+            self._p_default_value = value
 
     @property
     def default_value(self):
@@ -239,6 +271,13 @@ class TestVar:
         self._check_is_defined()
         self._check_deprecation(DEPRECATE_RD)
         return copy.deepcopy(self._default_value)
+
+    @property
+    def _field(self):
+        if self._target:
+            return self._target._field
+        else:
+            return self._p_field
 
     @property
     def field(self):
@@ -253,14 +292,14 @@ class TestVar:
 
     def __setattr__(self, name, value):
         '''Set any additional variable attribute into the default value.'''
-        if name in self.__slots__:
+        if name in self.__slots__ or name in self.__mutable_props:
             super().__setattr__(name, value)
         else:
             setattr(self._default_value, name, value)
 
     def __getattr__(self, name):
         '''Attribute lookup into the variable's value.'''
-        def_val = self.__getattribute__('_default_value')
+        def_val = self.__getattribute__('_p_default_value')
 
         # NOTE: This if below is necessary to avoid breaking the deepcopy
         # of instances of this class. Without it, a deepcopy of instances of
@@ -284,12 +323,22 @@ class TestVar:
                 f'variable {self._name!r} is not assigned a value'
             )
 
-    def __repr__(self):
-        self._check_is_defined()
-        return repr(self._default_value)
-
     def __str__(self):
-        return self.__repr__()
+        self._check_is_defined()
+        return str(self._default_value)
+
+    def __repr__(self):
+        try:
+            name = self.name
+        except AttributeError:
+            name = '<undef>'
+
+        if self.is_defined():
+            value = self._default_value
+        else:
+            value = '<undef>'
+
+        return f'TestVar(name={name!r}, value={value!r})'
 
     def __bytes__(self):
         self._check_is_defined()
@@ -593,6 +642,30 @@ class TestVar:
         return math.ceil(self._default_value)
 
 
+class ShadowVar(TestVar):
+    '''A shadow instance of another variable.
+
+    This is essentially a fully-fledged shallow copy of another variable. It
+    is used during the construction of the class namespace to bring in scope a
+    requested variable that is defined in a base class (see
+    `MetaNamespace.__getitem__()`)
+
+    We could not simply create a reference of the original variable in the
+    current namespace, because we need a mechanism to differentiate the
+    lowered variable from any redefinition, which is illegal.
+
+    Also, we don't need a deep copy, since the shadow variable will replace
+    the original variable in the newly constructed `VarSpace`.
+
+    '''
+
+    def __init__(self, other):
+        for name in self.__slots__:
+            setattr(self, name, getattr(other, name))
+
+        self._check_deprecation(DEPRECATE_RD)
+
+
 class VarSpace(namespaces.Namespace):
     '''Variable space of a regression test.
 
@@ -645,8 +718,7 @@ class VarSpace(namespaces.Namespace):
         is disallowed.
         '''
         local_varspace = getattr(cls, self.local_namespace_name, False)
-        while local_varspace:
-            key, var = local_varspace.popitem()
+        for key, var in local_varspace.items():
             if isinstance(var, TestVar):
                 # Disable redeclaring a variable
                 if key in self.vars:
@@ -657,13 +729,19 @@ class VarSpace(namespaces.Namespace):
                 # Add a new var
                 self.vars[key] = var
 
+        local_varspace.clear()
+
         # If any previously declared variable was defined in the class body
         # by directly assigning it a value, retrieve this value from the class
         # namespace and update it into the variable space.
         _assigned_vars = set()
         for key, value in cls.__dict__.items():
             if key in self.vars:
-                self.vars[key].define(value)
+                if isinstance(value, ShadowVar):
+                    self.vars[key] = value
+                else:
+                    self.vars[key].define(value)
+
                 _assigned_vars.add(key)
             elif value is Undefined:
                 # Cannot be set as Undefined if not a variable

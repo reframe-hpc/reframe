@@ -219,7 +219,7 @@ def test_variable_access():
     with pytest.raises(ReframeSyntaxError):
         class Foo(rfm.RegressionMixin):
             my_var = variable(int)
-            x = f'accessing {my_var!r} fails because its value is not set.'
+            x = f'accessing {my_var} fails because its value is not set.'
 
 
 def test_var_space_is_read_only():
@@ -486,3 +486,49 @@ def test_var_deprecation():
     c = a.y
     with pytest.warns(ReframeDeprecationWarning):
         a.y = 10
+
+
+def test_var_aliases():
+    with pytest.raises(ValueError,
+                       match=r'alias variables do not accept default values'):
+        class T(rfm.RegressionMixin):
+            x = variable(int, value=1)
+            y = variable(alias=x, value=2)
+
+    class T(rfm.RegressionMixin):
+        x = variable(int, value=1)
+        y = variable(alias=x)
+        z = variable(alias=y)
+
+    t = T()
+    assert t.y == 1
+    assert t.z == 1
+
+    t.x = 4
+    assert t.y == 4
+    assert t.z == 4
+
+    t.y = 5
+    assert t.x == 5
+    assert t.z == 5
+
+    t.z = 10
+    assert t.x == 10
+    assert t.y == 10
+
+    # Test inheritance
+
+    class T(rfm.RegressionMixin):
+        x = variable(int, value=1)
+
+    class S(T):
+        y = variable(alias=x)
+
+    s = S()
+    assert s.y == 1
+
+    s.y = 2
+    assert s.x == 2
+
+    s.x = 3
+    assert s.y == 3
