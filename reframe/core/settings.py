@@ -31,6 +31,7 @@ site_configuration = {
             'ftn': ''
         },
     ],
+    # rfmdocstart: logging
     'logging': [
         {
             'handlers': [
@@ -66,4 +67,5 @@ site_configuration = {
             ]
         }
     ],
+    # rfmdocend: logging
 }

@@ -33,7 +33,7 @@ This contains everything that ReFrame needs to run on a generic system, as well 
 ReFrame continues on looking for configuration files in the directories defined in :envvar:`RFM_CONFIG_PATH`.
 For each directory, will look within it for a ``settings.py`` or ``settings.json`` file (in that order), and if it finds one, it will load it.
 
-Finally, ReFrame processes the :option:`--config-file` option or the :envvar:`RFM_CONFIG_FILE` to load any specific configuration files passed from the command line.
+Finally, ReFrame processes the :option:`--config-file` option or the :envvar:`RFM_CONFIG_FILES` environment variable to load any specific configuration files passed from the command line.
 
 
 Anatomy of the Configuration File
@@ -153,9 +153,9 @@ Logging configuration
 
 ReFrame has a powerful logging mechanism that gives fine grained control over what information is being logged, where it is being logged and how this information is formatted.
 Additionally, it allows for logging performance data from performance tests into different channels.
-Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
+Let's see how logging is defined in the builtin configuration:
 
-.. literalinclude:: ../tutorials/config/settings.py
+.. literalinclude:: ../reframe/core/settings.py
    :start-after: # rfmdocstart: logging
    :end-before: # rfmdocend: logging
 
