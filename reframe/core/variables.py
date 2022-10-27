@@ -158,6 +158,14 @@ class TestVar:
     from :class:`EchoBaseTest` to throw an error indicating that the variable
     ``what`` has not been set.
 
+    Finally, variables may alias each other. If a variable is an alias of
+    another one it behaves in the exact same way as its target. If a change is
+    made to the target variable, this is reflected to the alias and vice
+    versa. However, alias variables are independently loggable: an alias may
+    be logged but not its target and vice versa. Aliased variables are useful
+    when you want to rename a variable and you want to keep the old one for
+    compatibility reasons.
+
     :param `types`: the supported types for the variable.
     :param value: the default value assigned to the variable. If no value is
         provided, the variable is set as ``required``.
@@ -165,6 +173,9 @@ class TestVar:
         field argument is provided, it defaults to
         :attr:`reframe.core.fields.TypedField`. The provided field validator
         by this argument must derive from :attr:`reframe.core.fields.Field`.
+    :param alias: the target variable if this variable is an alias. This must
+        refer to an already declared variable and neither default value nor a
+        field can be specified for an alias variable.
     :param loggable: Mark this variable as loggable. If :obj:`True`, this
         variable will become a log record attribute under the name
         ``check_NAME``, where ``NAME`` is the name of the variable.
@@ -172,8 +183,11 @@ class TestVar:
         the field validator.
     :returns: A new test variable.
 
-    .. version added:: 3.10.2
+    .. versionadded:: 3.10.2
        The ``loggable`` argument is added.
+
+    .. versionadded:: 4.0.0
+       Alias variable are introduced.
 
     '''
 
