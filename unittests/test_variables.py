@@ -495,6 +495,18 @@ def test_var_aliases():
             x = variable(int, value=1)
             y = variable(alias=x, value=2)
 
+    with pytest.raises(TypeError, match=r"'alias' must refer to a variable"):
+        class T(rfm.RegressionMixin):
+            x = variable(int, value=1)
+            y = variable(alias=10)
+
+    with pytest.raises(ValueError, match=r"'field' cannot be set"):
+        from reframe.core.fields import TypedField
+
+        class T(rfm.RegressionMixin):
+            x = variable(int, value=1)
+            y = variable(alias=x, field=TypedField)
+
     class T(rfm.RegressionMixin):
         x = variable(int, value=1)
         y = variable(alias=x)

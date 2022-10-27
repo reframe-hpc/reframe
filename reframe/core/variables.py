@@ -177,10 +177,11 @@ class TestVar:
 
     '''
 
-    # NOTE: We can't use truly private fields in __slots__, because
-    # __setattr__() will be called with their mangled name and we cannot match
-    # them in the __slots__ with making implementation-defined assumptions
-    # about the mangled name. So we just add the `_p_` prefix for "private"
+    # NOTE: We can't use truly private fields in `__slots__`, because
+    # `__setattr__()` will be called with their mangled name and we cannot
+    # match them in the `__slots__` without making implementation-defined
+    # assumptions about the mangled name. So we just add the `_p_` prefix for
+    # to denote the "private" fields.
 
     __slots__ = ('_p_default_value', '_p_field',
                  '_loggable', '_name', '_target')
@@ -188,19 +189,18 @@ class TestVar:
     __mutable_props = ('_default_value',)
 
     def __init__(self, *args, **kwargs):
-        field_type = kwargs.pop('field', fields.TypedField)
         alias = kwargs.pop('alias', None)
-
-        if alias and not isinstance(alias, TestVar):
-            raise TypeError(f"'alias' must refer to a variable; "
-                            f"found {type(alias).__name__!r}")
-
         if alias and 'field' in kwargs:
             raise ValueError(f"'field' cannot be set for an alias variable")
 
         if alias and 'value' in kwargs:
             raise ValueError('alias variables do not accept default values')
 
+        if alias and not isinstance(alias, TestVar):
+            raise TypeError(f"'alias' must refer to a variable; "
+                            f"found {type(alias).__name__!r}")
+
+        field_type = kwargs.pop('field', fields.TypedField)
         if alias:
             self._p_default_value = alias._default_value
         else:
