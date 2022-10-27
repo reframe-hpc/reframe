@@ -508,13 +508,13 @@ def test_var_aliases():
             y = variable(alias=x, field=TypedField)
 
     class T(rfm.RegressionMixin):
-        x = variable(int, value=1)
+        x = variable(int, value=0)
         y = variable(alias=x)
         z = variable(alias=y)
 
     t = T()
-    assert t.y == 1
-    assert t.z == 1
+    assert t.y == 0
+    assert t.z == 0
 
     t.x = 4
     assert t.y == 4

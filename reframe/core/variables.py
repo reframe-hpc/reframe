@@ -204,31 +204,30 @@ class TestVar:
 
     def __init__(self, *args, **kwargs):
         alias = kwargs.pop('alias', None)
-        if alias and 'field' in kwargs:
+        if alias is not None and 'field' in kwargs:
             raise ValueError(f"'field' cannot be set for an alias variable")
 
-        if alias and 'value' in kwargs:
+        if alias is not None and 'value' in kwargs:
             raise ValueError('alias variables do not accept default values')
 
-        if alias and not isinstance(alias, TestVar):
+        if alias is not None and not isinstance(alias, TestVar):
             raise TypeError(f"'alias' must refer to a variable; "
                             f"found {type(alias).__name__!r}")
 
         field_type = kwargs.pop('field', fields.TypedField)
-        if alias:
+        if alias is not None:
             self._p_default_value = alias._default_value
         else:
             self._p_default_value = kwargs.pop('value', Undefined)
 
         self._loggable = kwargs.pop('loggable', False)
-
         if not issubclass(field_type, fields.Field):
             raise TypeError(
                 f'field {field_type!r} is not derived from '
                 f'{fields.Field.__qualname__}'
             )
 
-        if alias:
+        if alias is not None:
             self._p_field = alias._field
         else:
             self._p_field = field_type(*args, **kwargs)
