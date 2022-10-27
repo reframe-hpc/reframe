@@ -9,6 +9,7 @@ import math
 
 import reframe as rfm
 from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.warnings import ReframeDeprecationWarning
 
 
 @pytest.fixture
@@ -458,7 +459,6 @@ def test_other_numerical_operators():
 
 def test_var_deprecation():
     from reframe.core.variables import DEPRECATE_RD, DEPRECATE_WR
-    from reframe.core.warnings import ReframeDeprecationWarning
 
     # Check read deprecation
     class A(rfm.RegressionMixin):
@@ -544,3 +544,15 @@ def test_var_aliases():
 
     s.x = 3
     assert s.y == 3
+
+    # Test deprecated aliases
+    class S(T):
+        y = deprecate(variable(alias=x), f'y is deprecated')
+
+    with pytest.warns(ReframeDeprecationWarning):
+        class U(S):
+            y = 10
+
+    s = S()
+    with pytest.warns(ReframeDeprecationWarning):
+        s.y = 10

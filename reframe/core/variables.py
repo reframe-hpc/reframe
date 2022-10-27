@@ -246,10 +246,12 @@ class TestVar:
         ret._target = var._target
         return ret
 
-    def _check_deprecation(self, kind):
-        if isinstance(self.field, fields.DeprecatedField):
-            if self.field.op & kind:
-                user_deprecation_warning(self.field.message)
+    def _warn_deprecation(self, kind):
+        if self.is_deprecated() and self.field.op & kind:
+            user_deprecation_warning(self.field.message)
+
+    def is_deprecated(self):
+        return isinstance(self._p_field, fields.DeprecatedField)
 
     def is_loggable(self):
         return self._loggable
@@ -261,7 +263,7 @@ class TestVar:
         self._default_value = Undefined
 
     def define(self, value):
-        self._check_deprecation(DEPRECATE_WR)
+        self._warn_deprecation(DEPRECATE_WR)
         self._default_value = value
 
     @property
@@ -283,11 +285,14 @@ class TestVar:
         # Variables must be returned by-value to prevent an instance from
         # modifying the class variable space.
         self._check_is_defined()
-        self._check_deprecation(DEPRECATE_RD)
+        self._warn_deprecation(DEPRECATE_RD)
         return copy.deepcopy(self._default_value)
 
     @property
     def _field(self):
+        if self.is_deprecated():
+            return self._p_field
+
         if self._target:
             return self._target._field
         else:
@@ -677,7 +682,7 @@ class ShadowVar(TestVar):
         for name in self.__slots__:
             setattr(self, name, getattr(other, name))
 
-        self._check_deprecation(DEPRECATE_RD)
+        self._warn_deprecation(DEPRECATE_RD)
 
 
 class VarSpace(namespaces.Namespace):
