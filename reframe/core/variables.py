@@ -346,6 +346,10 @@ class TestVar:
         return str(self._default_value)
 
     def __repr__(self):
+        import reframe
+        if hasattr(reframe, '__build_docs__'):
+            return str(self)
+
         try:
             name = self.name
         except AttributeError:
