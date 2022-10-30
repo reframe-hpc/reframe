@@ -781,6 +781,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: Environment variables to be set before running this test.
     #:
+    #: The value of the environment variables can be of any type. ReFrame will
+    #: invoke :func:`str` on it whenever it needs to emit it in a script.
+    #:
     #: :type: :class:`Dict[str, object]`
     #: :default: ``{}``
     #:
