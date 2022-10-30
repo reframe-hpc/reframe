@@ -17,7 +17,7 @@ class StreamMultiSysTest(rfm.RegressionTest):
     ]
     build_system = 'SingleSource'
     sourcepath = 'stream.c'
-    variables = {
+    env_vars = {
         'OMP_NUM_THREADS': '4',
         'OMP_PLACES': 'cores'
     }
@@ -56,7 +56,7 @@ class StreamMultiSysTest(rfm.RegressionTest):
     def set_num_threads(self):
         num_threads = self.cores.get(self.current_partition.fullname, 1)
         self.num_cpus_per_task = num_threads
-        self.variables = {
+        self.env_vars = {
             'OMP_NUM_THREADS': str(num_threads),
             'OMP_PLACES': 'cores'
         }

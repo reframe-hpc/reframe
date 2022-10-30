@@ -899,7 +899,8 @@ All logging handlers share the following set of common attributes:
       ``%(check_descr)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.descr` attribute.
       ``%(check_display_name)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.display_name` attribute.
       ``%(check_environ)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_environ`.
-      ``%(check_exclusive_access)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.exclusive_access` attribute.
+      ``%(check_env_vars)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.env_vars` attribute.
+    ``%(check_exclusive_access)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.exclusive_access` attribute.
       ``%(check_executable)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable` attribute.
       ``%(check_executable_opts)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attribute.
       ``%(check_extra_resources)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute.
@@ -949,7 +950,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_use_multithreading)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.use_multithreading` attribute.
       ``%(check_valid_prog_environs)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` attribute.
       ``%(check_valid_systems)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` attribute.
-      ``%(check_variables)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.variables` attribute.
+      ``%(check_variables)s``, DEPRECATED: Please use ``%(check_env_vars)s`` instead.
       ``%(osuser)s``, The name of the OS user running ReFrame.
       ``%(osgroup)s``, The name of the OS group running ReFrame.
       ``%(version)s``, The ReFrame version.
