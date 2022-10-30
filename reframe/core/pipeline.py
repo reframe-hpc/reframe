@@ -781,8 +781,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: Environment variables to be set before running this test.
     #:
-    #: These variables will be set during the :func:`setup` phase.
-    #:
     #: :type: :class:`Dict[str, str]`
     #: :default: ``{}``
     #:
