@@ -131,9 +131,19 @@ class Environment(jsonext.JSONSerializable):
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        return (self.name == other.name and
-                set(self.modules) == set(other.modules) and
-                self.env_vars == other.env_vars)
+        if (self.name != other.name or
+            set(self.modules) != set(other.modules)):
+            return False
+
+        # Env. variables are checked against their string representation
+        for kv0, kv1 in zip(self.env_vars.items(),
+                            other.env_vars.items()):
+            k0, v0 = kv0
+            k1, v1 = kv1
+            if k0 != k1 or str(v0) != str(v1):
+                return False
+
+        return True
 
     def __str__(self):
         return self.name

@@ -154,8 +154,13 @@ def test_load_overlapping(base_environ):
 
 
 def test_env_equal(base_environ):
-    env1 = env.Environment('env1', modules=['foo', 'bar'])
-    env2 = env.Environment('env1', modules=['bar', 'foo'])
+    env1 = env.Environment('env1', modules=['foo', 'bar'],
+                           env_vars=[('a', '1')])
+    env2 = env.Environment('env1', modules=['bar', 'foo'],
+                           env_vars=[('a', 1)])
+
+    # Environments variables must be checked against their string
+    # representation
     assert env1 == env2
     assert env2 == env1
 
