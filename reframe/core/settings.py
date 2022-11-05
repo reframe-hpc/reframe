@@ -34,16 +34,18 @@ site_configuration = {
     # rfmdocstart: logging
     'logging': [
         {
-            'handlers': [
+            'handlers$': [
                 {
                     'type': 'stream',
                     'name': 'stdout',
                     'level': 'info',
                     'format': '%(message)s'
                 },
+            ],
+            'handlers': [
                 {
                     'type': 'file',
-                    'level': 'debug',
+                    'level': 'debug2',
                     'format': '[%(asctime)s] %(levelname)s: %(check_info)s: %(message)s',   # noqa: E501
                     'append': False
                 }

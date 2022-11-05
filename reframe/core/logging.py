@@ -225,12 +225,32 @@ class RFC3339Formatter(CheckFieldFormatter):
             return _format_time_rfc3339(timestamp, datefmt)
 
 
-def _create_logger(site_config, handlers_group):
+def _create_logger(site_config, *handlers_groups):
     level = site_config.get('logging/0/level')
     logger = Logger('reframe')
     logger.setLevel(_log_level_values[level])
-    for handler in _extract_handlers(site_config, handlers_group):
-        logger.addHandler(handler)
+
+    def stream_handler_kind(handler):
+        if not isinstance(handler, logging.StreamHandler):
+            return None
+        elif handler.stream is sys.stdout:
+            return 'stdout'
+        elif handler.stream is sys.stderr:
+            return 'stderr'
+        else:
+            return None
+
+    stream_kinds = []
+    for hgrp in handlers_groups:
+        for handler in _extract_handlers(site_config, hgrp):
+            kind = stream_handler_kind(handler)
+            if kind in stream_kinds:
+                continue
+
+            if kind:
+                stream_kinds.append(kind)
+
+            logger.addHandler(handler)
 
     return logger
 
@@ -396,8 +416,8 @@ class HTTPJSONHandler(logging.Handler):
     def _record_to_json(self, record):
         def _can_send(key):
             return not (
-                key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS
-                or (self._ignore_keys and key in self._ignore_keys)
+                key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS or
+                (self._ignore_keys and key in self._ignore_keys)
             )
 
         json_record = {
@@ -708,7 +728,7 @@ def configure_logging(site_config):
         _context_logger = null_logger
         return
 
-    _logger = _create_logger(site_config, 'handlers')
+    _logger = _create_logger(site_config, 'handlers$', 'handlers')
     _perf_logger = _create_logger(site_config, 'handlers_perflog')
     _context_logger = LoggerAdapter(_logger)
 

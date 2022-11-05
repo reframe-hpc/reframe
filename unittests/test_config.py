@@ -176,14 +176,6 @@ def test_select_subconfig_unknown_partition():
         site_config.select_subconfig('generic:foo')
 
 
-def test_select_subconfig_no_logging():
-    site_config = config.load_config('reframe/core/settings.py')
-    site_config['logging'][0]['target_systems'] = ['foo']
-    site_config['logging'][1]['target_systems'] = ['foo']
-    with pytest.raises(ConfigError, match=r"section 'logging' not defined"):
-        site_config.select_subconfig()
-
-
 def test_select_subconfig_no_environments():
     site_config = config.load_config('reframe/core/settings.py')
     site_config['environments'][0]['target_systems'] = ['foo']
@@ -237,12 +229,12 @@ def test_select_subconfig(site_config):
     assert site_config.get('systems/0/partitions/@gpu/max_jobs') == 10
     assert site_config.get('modes/0/name') == 'unittest'
     assert site_config.get('modes/@unittest/name') == 'unittest'
-    assert len(site_config.get('logging/0/handlers')) == 2
+    assert len(site_config.get('logging/0/handlers$')) == 1
+    assert len(site_config.get('logging/0/handlers')) == 1
     assert len(site_config.get('logging/0/handlers_perflog')) == 1
     assert site_config.get('logging/0/handlers/0/timestamp') is False
     assert site_config.get('logging/0/handlers/0/level') == 'debug'
-    assert site_config.get('logging/0/handlers/1/level') == 'info'
-    assert site_config.get('logging/0/handlers/2/level') is None
+    assert site_config.get('logging/0/handlers/1/level') is None
 
     site_config.select_subconfig('testsys:login')
     assert len(site_config.get('systems/0/partitions')) == 1
@@ -355,46 +347,6 @@ def write_config(tmp_path):
     return _write_config
 
 
-def test_multi_config_redefine_system(write_config):
-    config_file = write_config({
-        'systems': [
-            {
-                'name': 'generic',
-                'hostnames': ['foo'],
-                'partitions': [
-                    {
-                        'name': 'local',
-                        'scheduler': 'local',
-                        'launcher': 'mpirun',
-                        'environs': ['builtin']
-                    }
-                ]
-            }
-        ]
-    })
-    with pytest.raises(
-            ConfigError,
-            match=f"'generic' system is already defined in '<builtin>'"
-    ):
-        site_config = config.load_config(config_file)
-
-
-def test_multi_config_redefine_environment(write_config):
-    config_file = write_config({
-        'environments': [
-            {
-                'name': 'builtin',
-                'cc': 'gcc'
-            }
-        ]
-    })
-    with pytest.raises(
-            ConfigError,
-            match=f"'builtin' environment is already defined in '<builtin>'"
-    ):
-        site_config = config.load_config(config_file)
-
-
 def test_multi_config_combine_general_options(write_config):
     config_file = write_config({
         'general': [
@@ -416,25 +368,14 @@ def test_multi_config_combine_general_options(write_config):
     assert site_config.get('general/0/colorize') == False
 
 
-# FIXME: Adapt this to the new syntax of logging config.
-def _test_multi_config_combine_logging_options(write_config):
-    config_file = write_config({
-        'logging': [{
-            'level': 'debug',
-            'handlers': [
-                {
-                    'type': 'file',
-                    'level': 'info',
-                    'format': '%(message)s'
-                }
-            ],
-        }]
-    })
+def test_multi_config_combine_logging_options(write_config):
+    config_file = write_config({'logging': [{'level': 'debug'}]})
     site_config = config.load_config(config_file)
     site_config.validate()
     site_config.select_subconfig('generic')
     assert site_config.get('logging/0/level') == 'debug'
-    assert len(site_config.get('logging/0/handlers')) == 3
+    assert len(site_config.get('logging/0/handlers')) == 1
+    assert len(site_config.get('logging/0/handlers_perflog')) == 1
 
 
 def test_system_create(site_config):

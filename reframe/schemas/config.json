@@ -415,6 +415,19 @@
                                 {"$ref": "#/defs/syslog_handler"},
                                 {"$ref": "#/defs/httpjson_handler"}
                             ]
+                        }
+                    },
+                    "handlers$": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {"$ref": "#/defs/file_handler"},
+                                {"$ref": "#/defs/filelog_handler"},
+                                {"$ref": "#/defs/graylog_handler"},
+                                {"$ref": "#/defs/stream_handler"},
+                                {"$ref": "#/defs/syslog_handler"},
+                                {"$ref": "#/defs/httpjson_handler"}
+                            ]
                         },
                         "minItems": 1
                     },
@@ -432,7 +445,7 @@
                     },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
-                "required": ["handlers", "handlers_perflog"],
+                "required": ["handlers$"],
                 "additionalProperties": false
             }
         },
@@ -540,6 +553,8 @@
         "general/verbose": 0,
         "logging/level": "undefined",
         "logging/target_systems": ["*"],
+        "logging/handlers": [],
+        "logging/handlers_perflog": [],
         "logging/handlers*/*_level": "info",
         "logging/handlers*/*_format": "%(message)s",
         "logging/handlers*/*_datefmt": "%FT%T",
