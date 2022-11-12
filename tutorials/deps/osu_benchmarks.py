@@ -20,11 +20,9 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
     num_tasks = 2
     num_tasks_per_node = 1
 
-    # rfmdocstart: set_deps
     @run_after('init')
     def set_dependencies(self):
         self.depends_on('OSUBuildTest', udeps.by_env)
-    # rfmdocend: set_deps
 
     @sanity_function
     def validate_test(self):
@@ -35,7 +33,6 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
 class OSULatencyTest(OSUBenchmarkTestBase):
     descr = 'OSU latency test'
 
-    # rfmdocstart: set_exec
     @require_deps
     def set_executable(self, OSUBuildTest):
         self.executable = os.path.join(
@@ -43,7 +40,6 @@ class OSULatencyTest(OSUBenchmarkTestBase):
             'mpi', 'pt2pt', 'osu_latency'
         )
         self.executable_opts = ['-x', '100', '-i', '1000']
-    # rfmdocend: set_exec
 
     @performance_function('us')
     def latency(self):
@@ -69,7 +65,6 @@ class OSUBandwidthTest(OSUBenchmarkTestBase):
                                 self.stdout, 1, float)
 
 
-# rfmdocstart: osuallreduce
 @rfm.simple_test
 class OSUAllreduceTest(OSUBenchmarkTestBase):
     mpi_tasks = parameter(1 << i for i in range(1, 5))
@@ -90,10 +85,8 @@ class OSUAllreduceTest(OSUBenchmarkTestBase):
     @performance_function('us')
     def latency(self):
         return sn.extractsingle(r'^8\s+(\S+)', self.stdout, 1, float)
-# rfmdocend: osuallreduce
 
 
-# rfmdocstart: osubuild
 @rfm.simple_test
 class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     descr = 'OSU benchmarks build test'
@@ -101,20 +94,16 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     valid_prog_environs = ['gnu', 'nvidia', 'intel']
     build_system = 'Autotools'
 
-    # rfmdocstart: inject_deps
     @run_after('init')
     def inject_dependencies(self):
         self.depends_on('OSUDownloadTest', udeps.fully)
-    # rfmdocend: inject_deps
 
-    # rfmdocstart: set_sourcedir
     @require_deps
     def set_sourcedir(self, OSUDownloadTest):
         self.sourcesdir = os.path.join(
             OSUDownloadTest(part='login', environ='builtin').stagedir,
             'osu-micro-benchmarks-5.6.2'
         )
-    # rfmdocend: set_sourcedir
 
     @run_before('compile')
     def set_build_system_attrs(self):
@@ -123,10 +112,8 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     @sanity_function
     def validate_build(self):
         return sn.assert_not_found('error', self.stderr)
-# rfmdocend: osubuild
 
 
-# rfmdocstart: osudownload
 @rfm.simple_test
 class OSUDownloadTest(rfm.RunOnlyRegressionTest):
     descr = 'OSU benchmarks download sources'
@@ -143,4 +130,3 @@ class OSUDownloadTest(rfm.RunOnlyRegressionTest):
     @sanity_function
     def validate_download(self):
         return sn.assert_true(os.path.exists('osu-micro-benchmarks-5.6.2'))
-# rfmdocend: osudownload

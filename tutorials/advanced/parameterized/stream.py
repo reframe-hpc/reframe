@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: parameterized
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -79,4 +78,3 @@ class StreamMultiSysTest(rfm.RegressionTest):
     @performance_function('MB/s', perf_key='Triad')
     def extract_triad_bw(self):
         return sn.extractsingle(r'Triad:\s+(\S+)\s+.*', self.stdout, 1, float)
-# rfmdocend: parameterized

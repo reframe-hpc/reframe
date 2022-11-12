@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: flextest
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -22,4 +21,3 @@ class HostnameCheck(rfm.RunOnlyRegressionTest):
             self.num_tasks,
             sn.count(sn.findall(r'^nid\d+$', self.stdout))
         )
-# rfmdocend: flextest

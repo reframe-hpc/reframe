@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
-# rfmdocstart: maketestmixin
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -47,4 +46,3 @@ class MakeOnlyTestAlt(rfm.CompileOnlyRegressionTest, ElemTypeParam):
     @sanity_function
     def validate_build(self):
         return sn.assert_not_found(r'warning', self.stdout)
-# rfmdocend: maketestmixin
