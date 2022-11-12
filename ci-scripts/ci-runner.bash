@@ -42,7 +42,7 @@ checked_exec()
 run_tutorial_checks()
 {
     export RFM_AUTODETECT_XTHOSTNAME=1
-    cmd="./bin/reframe -C tutorials/config/settings.py -J account=jenscscs \
+    cmd="./bin/reframe -C tutorials/config/daint.py -J account=jenscscs \
 --save-log-files --flex-alloc-nodes=2 -r -x HelloThreadedExtendedTest|BZip2.*Check $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
