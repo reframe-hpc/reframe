@@ -20,4 +20,4 @@ class HelloMultiLangTest(rfm.RegressionTest):
 
     @sanity_function
     def assert_hello(self):
-        return sn.assert_found(r'Hello, World\!', sn.print(self.stdout))
+        return sn.assert_found(r'Hello, World\!', self.stdout)
