@@ -1,16 +1,16 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+9a4b68ae
+  version:           4.0.0-dev.2
   command:           './bin/reframe -c tutorials/basics/ -R -n HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest --performance-report -r'
-  launched by:       user@daint104
+  launched by:       user@host
   working directory: '/home/user/Devel/reframe'
-  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/daint.py'
   check search path: (R) '/home/user/Devel/reframe/tutorials/basics'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
-  log files:         '/tmp/rfm-rlcxnr_v.log'
+  log files:         '/tmp/rfm-nyqs7jb9.log'
 
 [==========] Running 4 check(s)
-[==========] Started on Fri Oct  7 12:28:29 2022
+[==========] Started on Tue Nov 15 18:20:32 2022
 
 [----------] start processing checks
 [ RUN      ] HelloMultiLangTest %lang=cpp /71bf65a3 @daint:login+builtin
@@ -65,82 +65,82 @@
 [       OK ] ( 8/42) HelloMultiLangTest %lang=c /7cfa870e @daint:login+intel
 [       OK ] ( 9/42) HelloMultiLangTest %lang=c /7cfa870e @daint:login+nvidia
 [       OK ] (10/42) HelloMultiLangTest %lang=c /7cfa870e @daint:login+cray
-[       OK ] (11/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:mc+cray
-[       OK ] (12/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:mc+intel
-[       OK ] (13/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:mc+nvidia
-[       OK ] (14/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:mc+gnu
-[       OK ] (15/42) HelloThreadedExtended2Test /57223829 @daint:login+builtin
-[       OK ] (16/42) HelloThreadedExtended2Test /57223829 @daint:login+gnu
-[       OK ] (17/42) HelloThreadedExtended2Test /57223829 @daint:login+intel
-[       OK ] (18/42) HelloThreadedExtended2Test /57223829 @daint:login+nvidia
-[       OK ] (19/42) HelloThreadedExtended2Test /57223829 @daint:login+cray
-[       OK ] (20/42) HelloMultiLangTest %lang=c /7cfa870e @daint:mc+gnu
-[       OK ] (21/42) HelloMultiLangTest %lang=c /7cfa870e @daint:mc+intel
-[       OK ] (22/42) HelloMultiLangTest %lang=c /7cfa870e @daint:mc+cray
-[       OK ] (23/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:gpu+gnu
-[       OK ] (24/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:gpu+cray
-[       OK ] (25/42) HelloThreadedExtended2Test /57223829 @daint:gpu+intel
-[       OK ] (26/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:gpu+intel
-[       OK ] (27/42) HelloMultiLangTest %lang=c /7cfa870e @daint:gpu+nvidia
-[       OK ] (28/42) StreamWithRefTest /f925207b @daint:login+gnu
-P: Copy: 69797.3 MB/s (r:0, l:None, u:None)
-P: Scale: 45046.8 MB/s (r:0, l:None, u:None)
-P: Add: 48981.3 MB/s (r:0, l:None, u:None)
-P: Triad: 48733.2 MB/s (r:0, l:None, u:None)
-[       OK ] (29/42) HelloMultiLangTest %lang=c /7cfa870e @daint:gpu+cray
-[       OK ] (30/42) HelloMultiLangTest %lang=c /7cfa870e @daint:gpu+gnu
-[       OK ] (31/42) HelloMultiLangTest %lang=c /7cfa870e @daint:gpu+intel
-[       OK ] (32/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:gpu+nvidia
-[       OK ] (33/42) HelloMultiLangTest %lang=c /7cfa870e @daint:mc+nvidia
-[       OK ] (34/42) HelloThreadedExtended2Test /57223829 @daint:gpu+gnu
-[       OK ] (35/42) HelloThreadedExtended2Test /57223829 @daint:mc+cray
-[       OK ] (36/42) HelloThreadedExtended2Test /57223829 @daint:mc+gnu
+[       OK ] (11/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:gpu+cray
+[       OK ] (12/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:mc+nvidia
+[       OK ] (13/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:mc+cray
+[       OK ] (14/42) HelloMultiLangTest %lang=c /7cfa870e @daint:mc+cray
+[       OK ] (15/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:gpu+nvidia
+[       OK ] (16/42) HelloMultiLangTest %lang=c /7cfa870e @daint:gpu+intel
+[       OK ] (17/42) HelloMultiLangTest %lang=c /7cfa870e @daint:gpu+nvidia
+[       OK ] (18/42) HelloMultiLangTest %lang=c /7cfa870e @daint:mc+intel
+[       OK ] (19/42) HelloThreadedExtended2Test /57223829 @daint:login+builtin
+[       OK ] (20/42) HelloThreadedExtended2Test /57223829 @daint:login+gnu
+[       OK ] (21/42) HelloThreadedExtended2Test /57223829 @daint:login+intel
+[       OK ] (22/42) HelloMultiLangTest %lang=c /7cfa870e @daint:gpu+cray
+[       OK ] (23/42) HelloMultiLangTest %lang=c /7cfa870e @daint:mc+gnu
+[       OK ] (24/42) HelloThreadedExtended2Test /57223829 @daint:login+nvidia
+[       OK ] (25/42) HelloThreadedExtended2Test /57223829 @daint:login+cray
+[       OK ] (26/42) HelloMultiLangTest %lang=c /7cfa870e @daint:mc+nvidia
+[       OK ] (27/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:gpu+gnu
+[       OK ] (28/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:gpu+intel
+[       OK ] (29/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:mc+gnu
+[       OK ] (30/42) HelloMultiLangTest %lang=cpp /71bf65a3 @daint:mc+intel
+[       OK ] (31/42) HelloMultiLangTest %lang=c /7cfa870e @daint:gpu+gnu
+[       OK ] (32/42) StreamWithRefTest /f925207b @daint:login+gnu
+P: Copy: 71061.6 MB/s (r:0, l:None, u:None)
+P: Scale: 44201.5 MB/s (r:0, l:None, u:None)
+P: Add: 48178.5 MB/s (r:0, l:None, u:None)
+P: Triad: 48063.3 MB/s (r:0, l:None, u:None)
+[       OK ] (33/42) HelloThreadedExtended2Test /57223829 @daint:mc+cray
+[       OK ] (34/42) HelloThreadedExtended2Test /57223829 @daint:mc+intel
+[       OK ] (35/42) HelloThreadedExtended2Test /57223829 @daint:mc+gnu
+[       OK ] (36/42) HelloThreadedExtended2Test /57223829 @daint:mc+nvidia
 [       OK ] (37/42) StreamWithRefTest /f925207b @daint:mc+gnu
-P: Copy: 52773.7 MB/s (r:0, l:None, u:None)
-P: Scale: 32666.0 MB/s (r:0, l:None, u:None)
-P: Add: 34786.5 MB/s (r:0, l:None, u:None)
-P: Triad: 34904.0 MB/s (r:0, l:None, u:None)
-[       OK ] (38/42) HelloThreadedExtended2Test /57223829 @daint:mc+nvidia
-[       OK ] (39/42) HelloThreadedExtended2Test /57223829 @daint:mc+intel
-[       OK ] (40/42) HelloThreadedExtended2Test /57223829 @daint:gpu+cray
-[       OK ] (41/42) StreamWithRefTest /f925207b @daint:gpu+gnu
-P: Copy: 50396.1 MB/s (r:0, l:None, u:None)
-P: Scale: 34650.0 MB/s (r:0, l:None, u:None)
-P: Add: 38072.3 MB/s (r:0, l:None, u:None)
-P: Triad: 38566.1 MB/s (r:0, l:None, u:None)
-[       OK ] (42/42) HelloThreadedExtended2Test /57223829 @daint:gpu+nvidia
+P: Copy: 52660.1 MB/s (r:0, l:None, u:None)
+P: Scale: 33117.6 MB/s (r:0, l:None, u:None)
+P: Add: 34876.7 MB/s (r:0, l:None, u:None)
+P: Triad: 35150.7 MB/s (r:0, l:None, u:None)
+[       OK ] (38/42) HelloThreadedExtended2Test /57223829 @daint:gpu+intel
+[       OK ] (39/42) HelloThreadedExtended2Test /57223829 @daint:gpu+cray
+[       OK ] (40/42) HelloThreadedExtended2Test /57223829 @daint:gpu+nvidia
+[       OK ] (41/42) HelloThreadedExtended2Test /57223829 @daint:gpu+gnu
+[       OK ] (42/42) StreamWithRefTest /f925207b @daint:gpu+gnu
+P: Copy: 49682.3 MB/s (r:0, l:None, u:None)
+P: Scale: 34452.3 MB/s (r:0, l:None, u:None)
+P: Add: 38030.7 MB/s (r:0, l:None, u:None)
+P: Triad: 38379.0 MB/s (r:0, l:None, u:None)
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 42/42 test case(s) from 4 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Fri Oct  7 12:38:41 2022
+[==========] Finished on Tue Nov 15 18:22:48 2022
 
 ================================================================================
 PERFORMANCE REPORT
 --------------------------------------------------------------------------------
 [StreamWithRefTest /f925207b @daint:login:gnu]
-  num_tasks: 1
   num_gpus_per_node: 0
+  num_tasks: 1
   performance:
-    - Copy: 69797.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Scale: 45046.8 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Add: 48981.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Triad: 48733.2 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Copy: 71061.6 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 44201.5 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 48178.5 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 48063.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
 [StreamWithRefTest /f925207b @daint:gpu:gnu]
-  num_tasks: 1
   num_gpus_per_node: 0
+  num_tasks: 1
   performance:
-    - Copy: 50396.1 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Scale: 34650.0 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Add: 38072.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Triad: 38566.1 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Copy: 49682.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 34452.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 38030.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 38379.0 MB/s (r: 0 MB/s l: -inf% u: +inf%)
 [StreamWithRefTest /f925207b @daint:mc:gnu]
-  num_tasks: 1
   num_gpus_per_node: 0
+  num_tasks: 1
   performance:
-    - Copy: 52773.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Scale: 32666.0 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Add: 34786.5 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-    - Triad: 34904.0 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Copy: 52660.1 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 33117.6 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 34876.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 35150.7 MB/s (r: 0 MB/s l: -inf% u: +inf%)
 --------------------------------------------------------------------------------
-Run report saved in '/home/user/.reframe/reports/run-report-74.json'
-Log file(s) saved in '/tmp/rfm-rlcxnr_v.log'
+Run report saved in '/home/user/.reframe/reports/run-report-1.json'
+Log file(s) saved in '/tmp/rfm-nyqs7jb9.log'

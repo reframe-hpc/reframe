@@ -1,13 +1,13 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+9a4b68ae
+  version:           4.0.0-dev.2
   command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest -L -p builtin -p gnu'
-  launched by:       user@daint104
+  launched by:       user@host
   working directory: '/home/user/Devel/reframe'
-  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/daint.py'
   check search path: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
-  log files:         '/tmp/rfm-86ylicrv.log'
+  log files:         '/tmp/rfm-7hnco47r.log'
 
 [List of matched checks]
 - OSULatencyTest /14f35a43 [variant: 0, file: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py']
@@ -15,4 +15,4 @@
       ^OSUDownloadTest /7de668df [variant: 0, file: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py']
 Found 3 check(s)
 
-Log file(s) saved in '/tmp/rfm-86ylicrv.log'
+Log file(s) saved in '/tmp/rfm-7hnco47r.log'
