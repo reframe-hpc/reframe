@@ -116,7 +116,7 @@ def test_run_command(job):
     elif launcher_name == 'mpirun':
         assert command == 'mpirun -np 4 --foo'
     elif launcher_name == 'srun':
-        assert command == 'srun --foo'
+        assert command == 'srun --cpus-per-task=$SLURM_CPUS_PER_TASK --foo'
     elif launcher_name == 'srunalloc':
         assert command == ('srun '
                            '--job-name=fake_job '
@@ -159,7 +159,7 @@ def test_run_command_minimal(minimal_job):
     elif launcher_name == 'mpirun':
         assert command == 'mpirun -np 1 --foo'
     elif launcher_name == 'srun':
-        assert command == 'srun --foo'
+        assert command == 'srun --cpus-per-task=$SLURM_CPUS_PER_TASK --foo'
     elif launcher_name == 'srunalloc':
         assert command == ('srun '
                            '--job-name=fake_job '
