@@ -380,18 +380,12 @@ class SlurmJobScheduler(sched.JobScheduler):
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
-    def _expand_nodelist(self, nodespec):
-        completed = osext.run_command(f'scontrol show hostname {nodespec}')
-        return completed.stdout.splitlines()
-
     def _update_nodelist(self, job, nodespec):
-        if nodespec and nodespec != 'None assigned':
-            current_nodelist = self._expand_nodelist(nodespec)
+        if job.nodelist is not None:
+            return
 
-            if job.nodelist == current_nodelist:
-                return
-            else:
-                job._nodelist = current_nodelist
+        if nodespec and nodespec != 'None assigned':
+            job._nodelist = [n.name for n in self._get_nodes_by_name(nodespec)]
 
     def _update_completion_time(self, job, timestamps):
         if job._completion_time is not None:
