@@ -12,8 +12,15 @@ from reframe.utility import seconds_to_hms
 class SrunLauncher(JobLauncher):
     def command(self, job):
         # For Slurm versions >= 22.05 the cpus per task need to be specified
-        # in the srun command
-        return ['srun', '--cpus-per-task=$SLURM_CPUS_PER_TASK']
+        # in the srun command. If SLURM_CPUS_PER_TASK is set to the empty
+        # string the command will fail so we have to put more logic in the
+        # command
+        return [
+            'if [ -v SLURM_CPUS_PER_TASK ];',
+            'then export SRUN_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK};',
+            'fi;',
+            'srun'
+        ]
 
 
 @register_launcher('ibrun')
