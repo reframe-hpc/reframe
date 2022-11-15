@@ -11,7 +11,9 @@ from reframe.utility import seconds_to_hms
 @register_launcher('srun')
 class SrunLauncher(JobLauncher):
     def command(self, job):
-        return ['srun']
+        # For Slurm versions >= 22.05 the cpus per task need to be specified
+        # in the srun command
+        return ['srun', '--cpus-per-task=$SLURM_CPUS_PER_TASK']
 
 
 @register_launcher('ibrun')
