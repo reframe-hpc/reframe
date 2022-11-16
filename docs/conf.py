@@ -38,6 +38,16 @@ sys.path = [prefix, external] + sys.path
 import reframe                           # noqa: F401, F403
 import reframe.utility.osext as osext    # noqa: F401, F403
 
+# Sphinx erroneously uses `repr()` to display values and not the
+# human-readable `str()`. For this reason we define the following variable in
+# the `reframe` module so that objects can redirect to their `str()` method
+# from `repr()` if they are invoked in the context of Sphinx when building the
+# documentation. See discussion and the related workaround here:
+#
+# https://github.com/sphinx-doc/sphinx/issues/3857
+
+reframe.__build_docs__ = True
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
