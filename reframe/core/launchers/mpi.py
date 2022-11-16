@@ -3,24 +3,51 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import semver
+import re
+
+import reframe.utility.osext as osext
 from reframe.core.backends import register_launcher
 from reframe.core.launchers import JobLauncher
+from reframe.core.logging import getlogger
 from reframe.utility import seconds_to_hms
 
 
 @register_launcher('srun')
 class SrunLauncher(JobLauncher):
+    def __init__(self):
+        self.options = []
+        self.explicit_cpus_per_task = True
+        try:
+            out = osext.run_command('srun --version')
+            match = re.search('slurm (\d+).0*(\d+).0*(\d+)', out.stdout)
+            if match:
+                # We cannot pass to semver strings like 22.05.1 directly
+                # because it is not a valid version string for semver. We
+                # need to remove all the leading zeros.
+                slurm_version = (
+                    f'{match.group(1)}.{match.group(2)}.{match.group(3)}'
+                )
+                if semver.compare(slurm_version, '22.5.0') < 0:
+                    self.explicit_cpus_per_task = False
+            else:
+                getlogger().warning(
+                    'could not get version of Slurm, --cpus-per-task will be '
+                    'set according to the num_cpus_per_task attribute'
+                )
+
+        except Exception:
+            getlogger().warning(
+                'could not get version of Slurm, --cpus-per-task will be set '
+                'according to the num_cpus_per_task attribute'
+            )
+
     def command(self, job):
-        # For Slurm versions >= 22.05 the cpus per task need to be specified
-        # in the srun command. If SLURM_CPUS_PER_TASK is set to the empty
-        # string the command will fail so we have to put more logic in the
-        # command
-        return [
-            'if [ -v SLURM_CPUS_PER_TASK ];',
-            'then export SRUN_CPUS_PER_TASK=${SLURM_CPUS_PER_TASK};',
-            'fi;',
-            'srun'
-        ]
+        ret = ['srun']
+        if self.explicit_cpus_per_task and job.num_cpus_per_task:
+            ret += [f'--cpus-per-task={job.num_cpus_per_task}']
+
+        return ret
 
 
 @register_launcher('ibrun')
