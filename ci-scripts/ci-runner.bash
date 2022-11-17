@@ -148,6 +148,11 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
             tutorialchecks_path="${tutorialchecks_path} -c ${check}"
         done
 
+        if [[ $(hostname) =~ daint ]]; then
+            echo "[INFO] Applying tutorial patch for daint"
+            patch -s -p0 < ci-scripts/tutorials.patch
+        fi
+
         echo "[INFO] Modified tutorial checks"
         echo ${tutorialchecks_path}
         for i in ${!invocations[@]}; do
