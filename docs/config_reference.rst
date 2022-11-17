@@ -142,7 +142,7 @@ System Configuration
    These modules modify the ReFrame environment.
    This is useful in cases where a particular module is needed, for example, to submit jobs on a specific system.
 
-.. js:attribute:: .systems[].variables
+.. js:attribute:: .systems[].env_vars
 
    :required: No
    :default: ``[]``
@@ -153,6 +153,14 @@ System Configuration
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
+
+   .. versionadded:: 4.0.0
+
+.. js:attribute:: .systems[].variables
+
+   .. deprecated:: 4.0.0
+      Please use :js:attr:`env_vars` instead.
+      If specified in conjunction with :js:attr:`env_vars`, it will be ignored.
 
 .. js:attribute:: .systems[].prefix
 
@@ -374,7 +382,7 @@ System Partition Configuration
    When the value is ``null``, no time limit is applied.
 
 
-.. js:attribute:: .systems[].partitions[].variables
+.. js:attribute:: .systems[].partitions[].env_vars
 
    :required: No
    :default: ``[]``
@@ -385,6 +393,13 @@ System Partition Configuration
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
 
+   .. versionadded:: 4.0.0
+
+.. js:attribute:: .systems[].partitions[].variables
+
+   .. deprecated:: 4.0.0
+      Please use :js:attr:`env_vars` instead.
+      If specified in conjunction with :js:attr:`env_vars`, it will be ignored.
 
 .. js:attribute:: .systems[].partitions[].max_jobs
 
@@ -500,7 +515,7 @@ ReFrame can launch containerized applications, but you need to configure properl
    A list of `environment module objects <#module-objects>`__ to be loaded when running containerized tests using this container platform.
 
 
-.. js:attribute:: .systems[].partitions[].container_platforms[].variables
+.. js:attribute:: .systems[].partitions[].container_platforms[].env_vars
 
    :required: No
    :default: ``[]``
@@ -510,6 +525,14 @@ ReFrame can launch containerized applications, but you need to configure properl
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
+
+   .. versionadded:: 4.0.0
+
+.. js:attribute:: .systems[].partitions[].container_platforms[].variables
+
+   .. deprecated:: 4.0.0
+      Please use :js:attr:`env_vars` instead.
+      If specified in conjunction with :js:attr:`env_vars`, it will be ignored.
 
 
 Custom Job Scheduler Resources
@@ -619,7 +642,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    A list of `environment module objects <#module-objects>`__ to be loaded when this environment is loaded.
 
 
-.. js:attribute:: .environments[].variables
+.. js:attribute:: .environments[].env_vars
 
    :required: No
    :default: ``[]``
@@ -629,6 +652,14 @@ They are associated with `system partitions <#system-partition-configuration>`__
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
+
+   .. versionadded:: 4.0.0
+
+.. js:attribute:: .environments[].variables
+
+   .. deprecated:: 4.0.0
+      Please use :js:attr:`env_vars` instead.
+      If specified in conjunction with :js:attr:`env_vars`, it will be ignored.
 
 
 .. js:attribute:: .environments[].features
@@ -868,7 +899,8 @@ All logging handlers share the following set of common attributes:
       ``%(check_descr)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.descr` attribute.
       ``%(check_display_name)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.display_name` attribute.
       ``%(check_environ)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_environ`.
-      ``%(check_exclusive_access)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.exclusive_access` attribute.
+      ``%(check_env_vars)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.env_vars` attribute.
+    ``%(check_exclusive_access)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.exclusive_access` attribute.
       ``%(check_executable)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable` attribute.
       ``%(check_executable_opts)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attribute.
       ``%(check_extra_resources)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute.
@@ -918,7 +950,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_use_multithreading)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.use_multithreading` attribute.
       ``%(check_valid_prog_environs)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` attribute.
       ``%(check_valid_systems)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` attribute.
-      ``%(check_variables)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.variables` attribute.
+      ``%(check_variables)s``, DEPRECATED: Please use ``%(check_env_vars)s`` instead.
       ``%(osuser)s``, The name of the OS user running ReFrame.
       ``%(osgroup)s``, The name of the OS group running ReFrame.
       ``%(version)s``, The ReFrame version.

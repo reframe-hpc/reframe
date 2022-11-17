@@ -71,12 +71,12 @@ def assert_modules_loaded(modules):
 def test_env_construction(base_environ, env0):
     assert len(env0.modules) == 1
     assert 'testmod_foo' in env0.modules
-    assert len(env0.variables.keys()) == 3
-    assert env0.variables['_var0'] == 'val1'
+    assert len(env0.env_vars.keys()) == 3
+    assert env0.env_vars['_var0'] == 'val1'
 
     # No variable expansion, if environment is not loaded
-    assert env0.variables['_var2'] == '$_var0'
-    assert env0.variables['_var3'] == '${_var1}'
+    assert env0.env_vars['_var2'] == '$_var0'
+    assert env0.env_vars['_var3'] == '${_var1}'
 
     # Assert extras
     assert env0.extras == {'foo': 1, 'bar': 2}
@@ -85,11 +85,11 @@ def test_env_construction(base_environ, env0):
 def test_progenv_construction():
     environ = env.ProgEnvironment('myenv',
                                   modules=['modfoo'],
-                                  variables=[('var', 'val')],
+                                  env_vars=[('var', 'val')],
                                   extras={'foo': 'bar'})
     assert environ.name == 'myenv'
     assert environ.modules == ['modfoo']
-    assert environ.variables == {'var': 'val'}
+    assert environ.env_vars == {'var': 'val'}
     assert environ.extras == {'foo': 'bar'}
 
 
@@ -138,16 +138,16 @@ def test_env_load_already_present(base_environ, user_runtime,
 
 
 def test_env_load_non_overlapping(base_environ):
-    e0 = env.Environment(name='e0', variables=[('a', '1'), ('b', '2')])
-    e1 = env.Environment(name='e1', variables=[('c', '3'), ('d', '4')])
+    e0 = env.Environment(name='e0', env_vars=[('a', '1'), ('b', '2')])
+    e1 = env.Environment(name='e1', env_vars=[('c', '3'), ('d', '4')])
     rt.loadenv(e0, e1)
     assert rt.is_env_loaded(e0)
     assert rt.is_env_loaded(e1)
 
 
 def test_load_overlapping(base_environ):
-    e0 = env.Environment(name='e0', variables=[('a', '1'), ('b', '2')])
-    e1 = env.Environment(name='e1', variables=[('b', '3'), ('c', '4')])
+    e0 = env.Environment(name='e0', env_vars=[('a', '1'), ('b', '2')])
+    e1 = env.Environment(name='e1', env_vars=[('b', '3'), ('c', '4')])
     rt.loadenv(e0, e1)
     assert not rt.is_env_loaded(e0)
     assert rt.is_env_loaded(e1)
@@ -166,8 +166,8 @@ def test_env_not_equal(base_environ):
     assert env1 != env2
 
     # Variables are ordered, because they might depend on each other
-    env1 = env.Environment('env1', variables=[('a', 1), ('b', 2)])
-    env2 = env.Environment('env1', variables=[('b', 2), ('a', 1)])
+    env1 = env.Environment('env1', env_vars=[('a', 1), ('b', 2)])
+    env2 = env.Environment('env1', env_vars=[('b', 2), ('a', 1)])
     assert env1 != env2
 
 

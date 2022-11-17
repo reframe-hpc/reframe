@@ -45,7 +45,7 @@ class stream_test(rfm.RunOnlyRegressionTest):
         self.executable = os.path.join(self.stream_binaries.stagedir, 'stream')
         procinfo = self.current_partition.processor
         self.num_cpus_per_task = procinfo.num_cores
-        self.variables = {
+        self.env_vars = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'OMP_PLACES': 'cores'
         }

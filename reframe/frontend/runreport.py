@@ -13,7 +13,7 @@ import re
 import reframe as rfm
 import reframe.core.exceptions as errors
 import reframe.utility.jsonext as jsonext
-
+from reframe.core.warnings import suppress_deprecations
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
@@ -46,7 +46,8 @@ class _RunReport:
         return self._report[key]
 
     def __getattr__(self, name):
-        return getattr(self._report, name)
+        with suppress_deprecations():
+            return getattr(self._report, name)
 
     def add_fallback(self, report):
         self._fallbacks.append(report)
