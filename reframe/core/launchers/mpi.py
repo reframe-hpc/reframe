@@ -26,10 +26,13 @@ class SrunLauncher(JobLauncher):
                 # because it is not a valid version string for semver. We
                 # need to remove all the leading zeros.
                 slurm_version = (
-                    f'{match.group(1)}.{match.group(2)}.{match.group(3)}'
+                    semver.VersionInfo(
+                        match.group(1), match.group(2), match.group(3)
+                    )
                 )
-                if semver.compare(slurm_version, '22.5.0') < 0:
+                if slurm_version < semver.VersionInfo(22, 5, 0):
                     self.explicit_cpus_per_task = False
+
             else:
                 getlogger().warning(
                     'could not get version of Slurm, --cpus-per-task will be '

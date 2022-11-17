@@ -104,6 +104,9 @@ def minimal_job(make_job, launcher):
 
 def test_run_command(job):
     launcher_name = type(job.launcher).registered_name
+    # This is relevant only for the srun launcher, because it may
+    # run in different platforms with older versions of Slurm
+    job.launcher.explicit_cpus_per_task = True
     command = job.launcher.run_command(job)
     if launcher_name == 'alps':
         assert command == 'aprun -n 4 -N 2 -d 2 -j 0 --foo'
@@ -147,6 +150,9 @@ def test_run_command(job):
 
 def test_run_command_minimal(minimal_job):
     launcher_name = type(minimal_job.launcher).registered_name
+    # This is relevant only for the srun launcher, because it may
+    # run in different platforms with older versions of Slurm
+    minimal_job.launcher.explicit_cpus_per_task = True
     command = minimal_job.launcher.run_command(minimal_job)
     if launcher_name == 'alps':
         assert command == 'aprun -n 1 --foo'
