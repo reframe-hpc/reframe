@@ -160,7 +160,7 @@ def test_eq():
 
 def test_environ_setup(hellotest, local_exec_ctx):
     # Use test environment for the regression check
-    hellotest.env_vars = {'_FOO_': '1', '_BAR_': '2'}
+    hellotest.env_vars = {'_FOO_': 1, '_BAR_': 2}
     hellotest.setup(*local_exec_ctx)
     for k in hellotest.env_vars.keys():
         assert k not in os.environ
@@ -1895,13 +1895,13 @@ def test_set_var_default():
 def _test_variables_deprecation():
     with pytest.warns(ReframeDeprecationWarning):
         class _X(rfm.RunOnlyRegressionTest):
-            variables = {'FOO': '1'}
+            variables = {'FOO': 1}
 
     test = _X()
     print('===')
-    assert test.env_vars['FOO'] == '1'
+    assert test.env_vars['FOO'] == 1
 
     with pytest.warns(ReframeDeprecationWarning):
-        test.variables['BAR'] == '2'
+        test.variables['BAR'] == 2
 
-    assert test.env_vars['BAR'] == '2'
+    assert test.env_vars['BAR'] == 2
