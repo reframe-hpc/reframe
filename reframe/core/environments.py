@@ -45,7 +45,15 @@ class Environment(jsonext.JSONSerializable):
         self._name = name
         self._modules = normalize_module_list(modules)
         self._module_names = [m['name'] for m in self._modules]
-        self._env_vars = collections.OrderedDict(env_vars)
+
+        # Convert values of env_vars to strings before storing
+        if isinstance(env_vars, dict):
+            env_vars = env_vars.items()
+
+        self._env_vars = collections.OrderedDict()
+        for k, v in env_vars:
+            self._env_vars[k] = str(v)
+
         self._extras = extras or {}
         self._features = features or []
 
@@ -131,9 +139,19 @@ class Environment(jsonext.JSONSerializable):
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        return (self.name == other.name and
-                set(self.modules) == set(other.modules) and
-                self.env_vars == other.env_vars)
+        if (self.name != other.name or
+            set(self.modules) != set(other.modules)):
+            return False
+
+        # Env. variables are checked against their string representation
+        for kv0, kv1 in zip(self.env_vars.items(),
+                            other.env_vars.items()):
+            k0, v0 = kv0
+            k1, v1 = kv1
+            if k0 != k1 or str(v0) != str(v1):
+                return False
+
+        return True
 
     def __str__(self):
         return self.name

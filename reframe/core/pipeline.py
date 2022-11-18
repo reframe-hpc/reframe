@@ -781,11 +781,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: Environment variables to be set before running this test.
     #:
-    #: :type: :class:`Dict[str, str]`
+    #: The value of the environment variables can be of any type. ReFrame will
+    #: invoke :func:`str` on it whenever it needs to emit it in a script.
+    #:
+    #: :type: :class:`Dict[str, object]`
     #: :default: ``{}``
     #:
     #: .. versionadded:: 4.0.0
-    env_vars = variable(typ.Dict[str, str], value={}, loggable=True)
+    env_vars = variable(typ.Dict[str, str],
+                        typ.Dict[str, object], value={}, loggable=True)
+    # NOTE: We still keep the original type, just to allow setting this
+    # variable from the command line, because otherwise, ReFrame will not know
+    # how to convert a value to an arbitrary object.
 
     #: Environment variables to be set before running this test.
     #:

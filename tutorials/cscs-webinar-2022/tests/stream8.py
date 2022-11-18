@@ -46,7 +46,7 @@ class stream_test(rfm.RunOnlyRegressionTest):
         procinfo = self.current_partition.processor
         self.num_cpus_per_task = procinfo.num_cores
         self.env_vars = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            'OMP_NUM_THREADS': self.num_cpus_per_task,
             'OMP_PLACES': 'cores'
         }
 
@@ -67,7 +67,7 @@ class stream_scale_test(stream_test):
     @run_before('run')
     def set_cpus_per_task(self):
         self.num_cpus_per_task = self.num_threads
-        self.env_vars['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
+        self.env_vars['OMP_NUM_THREADS'] = self.num_cpus_per_task
 
     @run_after('setup')
     def skip_if_too_large(self):
