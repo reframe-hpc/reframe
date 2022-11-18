@@ -81,7 +81,10 @@ class _SlurmJob(sched.Job):
     def nodelist(self):
         # Redefine nodelist so as to generate it from the nodespec
         if self._nodelist is None and self._nodespec is not None:
-            self._nodelist = nodelist_expand(self._nodespec)
+            completed = osext.run_command(
+                f'scontrol show hostname {self._nodespec}', log=False
+            )
+            self._nodelist = completed.stdout.splitlines()
 
         return self._nodelist
 
