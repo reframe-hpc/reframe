@@ -424,7 +424,7 @@ The next thing to notice is the :attr:`~reframe.core.pipeline.RegressionTest.pre
 These commands will be executed from the test's stage directory.
 In this case, we just fetch the source code of the benchmark.
 For running the benchmark, we need to set the OpenMP number of threads and pin them to the right CPUs through the ``OMP_NUM_THREADS`` and ``OMP_PLACES`` environment variables.
-You can set environment variables in a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.variables` dictionary.
+You can set environment variables in a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.env_vars` dictionary.
 
 What makes a ReFrame test a performance test is the definition of at least one :ref:`performance function<deferrable-performance-functions>`.
 Similarly to a test's :func:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>`, a performance function is a member function decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator, which binds the decorated function to a given unit.

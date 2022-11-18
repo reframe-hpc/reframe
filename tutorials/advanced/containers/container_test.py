@@ -14,7 +14,7 @@ class ContainerTest(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['builtin']
 
     @run_before('run')
-    def set_container_variables(self):
+    def setup_container_platf(self):
         self.descr = f'Run commands inside a container using {self.platform}'
         image_prefix = 'docker://' if self.platform == 'Singularity' else ''
         self.container_platform = self.platform

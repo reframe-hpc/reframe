@@ -423,6 +423,45 @@ class _SiteConfig:
             raise ConfigError(f"could not validate configuration files: "
                               f"'{self._sources}'") from e
 
+        def _warn_variables(config, opt_path):
+            opt_path = '/'.join(opt_path + ['variables'])
+            if 'env_vars' in config and 'variables' in config:
+                getlogger().warning(
+                    f"configuration option {opt_path!r}: "
+                    f"both 'env_vars' and 'variables' are defined; "
+                    f"'variables' will be ignored"
+                )
+            elif 'variables' in config:
+                getlogger().warning(
+                    f"configuration option {opt_path!r}: "
+                    f"'variables' is deprecated; please use 'env_vars' instead"
+                )
+                config['env_vars'] = config['variables']
+
+        # Warn about the deprecated `variables` and convert them internally to
+        # `env_vars`
+        for system in self._site_config['systems']:
+            sysname = system['name']
+            opt_path = ['systems', f'@{sysname}']
+            _warn_variables(system, opt_path)
+            for part in system['partitions']:
+                partname = part['name']
+                opt_path += ['partitions', f'@{partname}']
+                _warn_variables(part, opt_path)
+                for i, cp in enumerate(part.get('container_platforms', [])):
+                    opt_path += ['container_platforms', str(i)]
+                    _warn_variables(cp, opt_path)
+                    opt_path.pop()
+                    opt_path.pop()
+
+                opt_path.pop()
+                opt_path.pop()
+
+        for env in self._site_config['environments']:
+            envname = env['name']
+            opt_path = ['environments', f'@{envname}']
+            _warn_variables(env, opt_path)
+
     def select_subconfig(self, system_fullname=None,
                          ignore_resolve_errors=False):
         # First look for the current subconfig in the cache; if not found,

@@ -235,7 +235,7 @@ def loadenv(*environs):
             else:
                 commands += modules_system.emit_load_commands(**mod)
 
-        for k, v in env.variables.items():
+        for k, v in env.env_vars.items():
             os.environ[k] = osext.expandvars(v)
             commands.append(f'export {k}={v}')
 
@@ -264,7 +264,7 @@ def is_env_loaded(environ):
     is_module_loaded = runtime().modules_system.is_module_loaded
     return (all(map(is_module_loaded, environ.modules)) and
             all(os.environ.get(k, None) == osext.expandvars(v)
-                for k, v in environ.variables.items()))
+                for k, v in environ.env_vars.items()))
 
 
 def _is_valid_part(part, valid_systems):
@@ -382,7 +382,8 @@ class temp_environment:
         self._variables = variables
 
     def __enter__(self):
-        new_env = Environment('_rfm_temp_env', self._modules, self._variables)
+        new_env = Environment('_rfm_temp_env', self._modules,
+                              self._variables.items())
         self._environ_save, _ = loadenv(new_env)
         return new_env
 

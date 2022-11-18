@@ -20,6 +20,7 @@ import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
+from reframe.core.warnings import suppress_deprecations
 from reframe.utility.profile import TimeProfiler
 
 
@@ -597,9 +598,11 @@ class LoggerAdapter(logging.LoggerAdapter):
         for attr, alt_name in check_type.loggable_attrs():
             extra_name  = alt_name or attr
 
-            # In case of AttributeError, i.e., the variable is undefined, we
-            # set the value to None
-            val = getattr(self.check, attr, None)
+            with suppress_deprecations():
+                # In case of AttributeError, i.e., the variable is undefined,
+                # we set the value to None
+                val = getattr(self.check, attr, None)
+
             if attr in check_type.raw_params:
                 # Attribute is parameter, so format it
                 val = check_type.raw_params[attr].format(val)

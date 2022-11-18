@@ -16,7 +16,7 @@ site_configuration = {
             'prefix': '.rfm_testing',
             'resourcesdir': '.rfm_testing/resources',
             'modules': ['foo/1.0'],
-            'variables': [['FOO_CMD', 'foobar']],
+            'env_vars': [['FOO_CMD', 'foobar']],
             'partitions': [
                 {
                     'name': 'login',
@@ -41,7 +41,7 @@ site_configuration = {
                     'modules': [
                         {'name': 'foogpu', 'collection': False, 'path': '/foo'}
                     ],
-                    'variables': [['FOO_GPU', 'yes']],
+                    'env_vars': [['FOO_GPU', 'yes']],
                     'resources': [
                         {
                             'name': 'gpu',
@@ -156,7 +156,7 @@ site_configuration = {
         {
             'name': 'sys2',
             'descr': 'System required from testing execution policies',
-            'hostnames': ['sys2\d+'],
+            'hostnames': [r'sys2\d+'],
             'partitions': [
                 {
                     'name': 'part1',

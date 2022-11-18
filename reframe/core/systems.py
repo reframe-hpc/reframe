@@ -432,13 +432,12 @@ class SystemPartition(jsonext.JSONSerializable):
                 {
                     'type': ctype,
                     'modules': [m for m in cpenv.modules],
-                    'variables': [[n, v] for n, v in cpenv.variables.items()]
+                    'env_vars': [[n, v] for n, v in cpenv.env_vars.items()]
                 }
                 for ctype, cpenv in self._container_environs.items()
             ],
             'modules': [m for m in self._local_env.modules],
-            'variables': [[n, v]
-                          for n, v in self._local_env.variables.items()],
+            'env_vars': [[n, v] for n, v in self._local_env.env_vars.items()],
             'environs': [e.name for e in self._environs],
             'max_jobs': self._max_jobs,
             'resources': [
@@ -513,8 +512,8 @@ class System(jsonext.JSONSerializable):
                     modules=site_config.get(
                         f'{partid}/container_platforms/{i}/modules'
                     ),
-                    variables=site_config.get(
-                        f'{partid}/container_platforms/{i}/variables'
+                    env_vars=site_config.get(
+                        f'{partid}/container_platforms/{i}/env_vars'
                     )
                 )
                 if p.get('default', None):
@@ -529,7 +528,7 @@ class System(jsonext.JSONSerializable):
                 ProgEnvironment(
                     name=e,
                     modules=site_config.get(f'environments/@{e}/modules'),
-                    variables=site_config.get(f'environments/@{e}/variables'),
+                    env_vars=site_config.get(f'environments/@{e}/env_vars'),
                     extras=site_config.get(f'environments/@{e}/extras'),
                     features=site_config.get(f'environments/@{e}/features'),
                     cc=site_config.get(f'environments/@{e}/cc'),
@@ -558,7 +557,7 @@ class System(jsonext.JSONSerializable):
                     local_env=Environment(
                         name=f'__rfm_env_{part_name}',
                         modules=site_config.get(f'{partid}/modules'),
-                        variables=site_config.get(f'{partid}/variables')
+                        env_vars=site_config.get(f'{partid}/env_vars')
                     ),
                     max_jobs=site_config.get(f'{partid}/max_jobs'),
                     prepare_cmds=site_config.get(f'{partid}/prepare_cmds'),
@@ -582,7 +581,7 @@ class System(jsonext.JSONSerializable):
             preload_env=Environment(
                 name=f'__rfm_env_{sysname}',
                 modules=site_config.get('systems/0/modules'),
-                variables=site_config.get('systems/0/variables')
+                env_vars=site_config.get('systems/0/env_vars')
             ),
             prefix=site_config.get('systems/0/prefix'),
             outputdir=site_config.get('systems/0/outputdir'),
@@ -696,9 +695,9 @@ class System(jsonext.JSONSerializable):
             'hostnames': self._hostnames,
             'modules_system': self._modules_system.name,
             'modules': [m for m in self._preload_env.modules],
-            'variables': [
+            'env_vars': [
                 [name, value]
-                for name, value in self._preload_env.variables.items()
+                for name, value in self._preload_env.env_vars.items()
             ],
             'prefix': self._prefix,
             'outputdir': self._outputdir,

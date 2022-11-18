@@ -16,7 +16,7 @@ class StreamWithRefTest(rfm.RegressionTest):
     ]
     build_system = 'SingleSource'
     sourcepath = 'stream.c'
-    variables = {
+    env_vars = {
         'OMP_NUM_THREADS': '4',
         'OMP_PLACES': 'cores'
     }

@@ -221,7 +221,7 @@ def test_select_subconfig(site_config):
     assert site_config.get('systems/0/modules') == [{'name': 'foo/1.0',
                                                      'collection': False,
                                                      'path': None}]
-    assert site_config.get('systems/0/variables') == [['FOO_CMD', 'foobar']]
+    assert site_config.get('systems/0/env_vars') == [['FOO_CMD', 'foobar']]
     assert site_config.get('systems/0/modules_system') == 'nomod'
     assert site_config.get('systems/0/outputdir') == ''
     assert site_config.get('systems/0/stagedir') == ''
@@ -252,7 +252,7 @@ def test_select_subconfig(site_config):
         {'type': 'Singularity'}
     ]
     assert site_config.get('systems/0/partitions/0/modules') == []
-    assert site_config.get('systems/0/partitions/0/variables') == []
+    assert site_config.get('systems/0/partitions/0/env_vars') == []
     assert site_config.get('systems/0/partitions/0/max_jobs') == 8
     assert len(site_config['environments']) == 7
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'gcc'
@@ -284,7 +284,7 @@ def test_select_subconfig(site_config):
     assert site_config.get('systems/0/partitions/0/modules') == [
         {'name': 'foogpu', 'collection': False, 'path': '/foo'}
     ]
-    assert (site_config.get('systems/0/partitions/0/variables') ==
+    assert (site_config.get('systems/0/partitions/0/env_vars') ==
             [['FOO_GPU', 'yes']])
     assert site_config.get('systems/0/partitions/0/max_jobs') == 10
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
@@ -386,7 +386,7 @@ def test_system_create(site_config):
     assert system.hostnames == ['testsys']
     assert system.modules_system.name == 'nomod'
     assert system.preload_environ.modules == ['foo/1.0']
-    assert system.preload_environ.variables == {'FOO_CMD': 'foobar'}
+    assert system.preload_environ.env_vars == {'FOO_CMD': 'foobar'}
     assert system.prefix == '.rfm_testing'
     assert system.stagedir == ''
     assert system.outputdir == ''
@@ -406,7 +406,7 @@ def test_system_create(site_config):
     assert partition.local_env.modules_detailed == [{
         'name': 'foogpu', 'collection': False, 'path': '/foo'
     }]
-    assert partition.local_env.variables == {'FOO_GPU': 'yes'}
+    assert partition.local_env.env_vars == {'FOO_GPU': 'yes'}
     assert partition.max_jobs == 10
     assert partition.time_limit is None
     assert len(partition.environs) == 2
@@ -442,6 +442,36 @@ def test_system_create(site_config):
     site_config.select_subconfig('testsys:login')
     system = System.create(site_config)
     assert system.partitions[0].container_runtime == 'Docker'
+
+
+def test_variables(tmp_path):
+    # Test that the old syntax using `variables` instead of `env_vars` still
+    # works
+    config_file = tmp_path / 'settings.py'
+    with open(config_file, 'w') as fout:
+        with open('unittests/resources/config/settings.py') as fin:
+            fout.write(fin.read().replace('env_vars', 'variables'))
+
+    site_config = config.load_config(config_file)
+    site_config.validate()
+    site_config.select_subconfig('testsys')
+    assert site_config.get('systems/0/variables') == [['FOO_CMD', 'foobar']]
+    assert site_config.get('systems/0/env_vars') == [['FOO_CMD', 'foobar']]
+
+    site_config.select_subconfig('testsys:login')
+    assert site_config.get('systems/0/partitions/0/variables') == []
+    assert site_config.get('systems/0/partitions/0/env_vars') == []
+
+    site_config.select_subconfig('testsys:gpu')
+    assert (site_config.get('systems/0/partitions/0/variables') ==
+            [['FOO_GPU', 'yes']])
+    assert (site_config.get('systems/0/partitions/0/env_vars') ==
+            [['FOO_GPU', 'yes']])
+
+    # Test that system is created correctly
+    system = System.create(site_config)
+    assert system.preload_environ.env_vars == {'FOO_CMD': 'foobar'}
+    assert system.partitions[0].local_env.env_vars == {'FOO_GPU': 'yes'}
 
 
 def test_hostname_autodetection(site_config):

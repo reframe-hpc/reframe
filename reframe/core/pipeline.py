@@ -556,9 +556,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: For more information on test resources, have a look at the
     #: :attr:`extra_resources` attribute.
     #:
-    #: :type: integral
-    #: :default: ``0``
-    num_gpus_per_node = variable(int, value=0, loggable=True)
+    #: :type: integral or :const:`None`
+    #: :default: :const:`None`
+    #:
+    #: .. versionchanged:: 4.0.0
+    #:    The default value changed to :const:`None`.
+    num_gpus_per_node = variable(int, type(None), value=None, loggable=True)
 
     #: Number of CPUs per task required by this test.
     #:
@@ -778,11 +781,28 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: Environment variables to be set before running this test.
     #:
-    #: These variables will be set during the :func:`setup` phase.
+    #: The value of the environment variables can be of any type. ReFrame will
+    #: invoke :func:`str` on it whenever it needs to emit it in a script.
     #:
-    #: :type: :class:`Dict[str, str]`
+    #: :type: :class:`Dict[str, object]`
     #: :default: ``{}``
-    variables = variable(typ.Dict[str, str], value={}, loggable=True)
+    #:
+    #: .. versionadded:: 4.0.0
+    env_vars = variable(typ.Dict[str, str],
+                        typ.Dict[str, object], value={}, loggable=True)
+    # NOTE: We still keep the original type, just to allow setting this
+    # variable from the command line, because otherwise, ReFrame will not know
+    # how to convert a value to an arbitrary object.
+
+    #: Environment variables to be set before running this test.
+    #:
+    #: This is an alias of :attr:`env_vars`.
+    #:
+    #: .. deprecated:: 4.0.0
+    #:    Please use :attr:`env_vars` instead.
+    variables = deprecate(variable(alias=env_vars, loggable=True),
+                          f"the use of 'variables' is deprecated; "
+                          f"please use 'env_vars' instead")
 
     #: Time limit for this test.
     #:
@@ -1743,7 +1763,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.build_system.executable = self.executable
 
         user_environ = Environment(self.unique_name,
-                                   self.modules, self.variables.items())
+                                   self.modules, self.env_vars.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
         self._build_job.time_limit = (
@@ -1877,7 +1897,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             *self.postrun_cmds
         ]
         user_environ = Environment(self.unique_name,
-                                   self.modules, self.variables.items())
+                                   self.modules, self.env_vars.items())
         environs = [
             self._current_partition.local_env,
             self._current_environ,
@@ -1890,7 +1910,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 environs.insert(2, cp_env)
 
         # num_gpus_per_node is a managed resource
-        if self.num_gpus_per_node > 0:
+        if self.num_gpus_per_node:
             self.extra_resources.setdefault(
                 '_rfm_gpu', {'num_gpus_per_node': self.num_gpus_per_node}
             )

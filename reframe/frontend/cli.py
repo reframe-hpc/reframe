@@ -154,8 +154,9 @@ def describe_checks(testcases, printer):
 
             # List all required variables
             required = []
-            for var in tc.check._rfm_var_space:
-                if not tc.check._rfm_var_space[var].is_defined():
+            var_space = type(tc.check).var_space
+            for var in var_space:
+                if not var_space[var].is_defined():
                     required.append(var)
 
             rec['@required'] = required
