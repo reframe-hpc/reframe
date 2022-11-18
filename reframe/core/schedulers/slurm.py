@@ -20,7 +20,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
                                      JobError,
                                      JobSchedulerError)
-from reframe.utility import nodelist_abbrev, nodelist_expand, seconds_to_hms
+from reframe.utility import nodelist_abbrev, seconds_to_hms
 
 
 def slurm_state_completed(state):
