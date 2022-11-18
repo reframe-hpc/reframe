@@ -20,7 +20,7 @@ class SrunLauncher(JobLauncher):
         self.use_cpus_per_task = True
         try:
             out = osext.run_command('srun --version')
-            match = re.search('slurm (\d+).(\d+).(\d+)', out.stdout)
+            match = re.search('slurm (\d+)\.(\d+)\.(\d+)', out.stdout)
             if match:
                 # We cannot pass to semver strings like 22.05.1 directly
                 # because it is not a valid version string for semver. We
