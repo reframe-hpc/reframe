@@ -17,7 +17,7 @@ from reframe.utility import seconds_to_hms
 class SrunLauncher(JobLauncher):
     def __init__(self):
         self.options = []
-        self.explicit_cpus_per_task = True
+        self.use_cpus_per_task = True
         try:
             out = osext.run_command('srun --version')
             match = re.search('slurm (\d+).(\d+).(\d+)', out.stdout)
@@ -31,14 +31,12 @@ class SrunLauncher(JobLauncher):
                     )
                 )
                 if slurm_version < semver.VersionInfo(22, 5, 0):
-                    self.explicit_cpus_per_task = False
-
+                    self.use_cpus_per_task = False
             else:
                 getlogger().warning(
                     'could not get version of Slurm, --cpus-per-task will be '
                     'set according to the num_cpus_per_task attribute'
                 )
-
         except Exception:
             getlogger().warning(
                 'could not get version of Slurm, --cpus-per-task will be set '
@@ -47,7 +45,7 @@ class SrunLauncher(JobLauncher):
 
     def command(self, job):
         ret = ['srun']
-        if self.explicit_cpus_per_task and job.num_cpus_per_task:
+        if self.use_cpus_per_task and job.num_cpus_per_task:
             ret.append(f'--cpus-per-task={job.num_cpus_per_task}')
 
         return ret
