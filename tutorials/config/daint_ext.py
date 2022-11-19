@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
-# rfmdocstart: site-configuration
 site_configuration = {
     'systems': [
         {
@@ -19,9 +18,8 @@ site_configuration = {
                     'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['builtin', 'gnu', 'intel', 'nvidia', 'cray'],
+                    'environs': ['builtin', 'gnu', 'intel', 'nvidia', 'cray']
                 },
-                # rfmdocstart: memory
                 {
                     'name': 'gpu',
                     'descr': 'Hybrid nodes',
@@ -30,6 +28,16 @@ site_configuration = {
                     'access': ['-C gpu', '-A csstaff'],
                     'environs': ['gnu', 'intel', 'nvidia', 'cray'],
                     'max_jobs': 100,
+                    'container_platforms': [
+                        {
+                            'type': 'Sarus',
+                            'modules': ['sarus']
+                        },
+                        {
+                            'type': 'Singularity',
+                            'modules': ['singularity']
+                        }
+                    ],
                     'resources': [
                         {
                             'name': 'memory',
@@ -44,15 +52,8 @@ site_configuration = {
                     'launcher': 'srun',
                     'access': ['-C mc', '-A csstaff'],
                     'environs': ['gnu', 'intel', 'nvidia', 'cray'],
-                    'max_jobs': 100,
-                    'resources': [
-                        {
-                            'name': 'memory',
-                            'options': ['--mem={size}']
-                        }
-                    ]
+                    'max_jobs': 100
                 }
-                # rfmdocend: memory
             ]
         }
     ],
@@ -98,4 +99,3 @@ site_configuration = {
         }
     ]
 }
-# rfmdocend: site-configuration

@@ -459,10 +459,9 @@ You can then use those resources transparently from within your test.
 To achieve this in our case, we first need to define a ``memory`` resource in the configuration of both of our ``daint`` partitions:
 
 
-.. literalinclude:: ../tutorials/config/daint-mem.py
+.. literalinclude:: ../tutorials/config/daint_mem.py
    :start-after: # rfmdocstart: memory
    :end-before: # rfmdocend: memory
-   :emphasize-lines: 9-14,24-29
 
 Notice that we do not define the resource for all the partitions, but only for those that it makes sense.
 Each resource has a name and a set of scheduler options that will be passed to the scheduler when this resource will be requested by the test.
@@ -719,7 +718,7 @@ Testing containerized applications
 ReFrame can be used also to test applications that run inside a container.
 First, we need to enable the container platform support in ReFrame's configuration and, specifically, at the partition configuration level:
 
-.. literalinclude:: ../tutorials/config/daint-containers.py
+.. literalinclude:: ../tutorials/config/daint_containers.py
    :start-after: # rfmdocstart: containers
    :end-before: # rfmdocend: containers
    :emphasize-lines: 9-18

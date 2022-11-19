@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
-# rfmdocstart: site-configuration
 site_configuration = {
     'systems': [
         {
@@ -19,7 +18,7 @@ site_configuration = {
                     'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
-                    'environs': ['builtin', 'gnu', 'intel', 'nvidia', 'cray'],
+                    'environs': ['builtin', 'gnu', 'intel', 'nvidia', 'cray']
                 },
                 # rfmdocstart: containers
                 {
@@ -49,51 +48,9 @@ site_configuration = {
                     'launcher': 'srun',
                     'access': ['-C mc', '-A csstaff'],
                     'environs': ['gnu', 'intel', 'nvidia', 'cray'],
-                    'max_jobs': 100,
+                    'max_jobs': 100
                 }
             ]
         }
-    ],
-    'environments': [
-        {
-            'name': 'gnu',
-            'modules': ['PrgEnv-gnu'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        },
-        {
-            'name': 'cray',
-            'modules': ['PrgEnv-cray'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        },
-        {
-            'name': 'intel',
-            'modules': ['PrgEnv-intel'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        },
-        {
-            'name': 'nvidia',
-            'modules': ['PrgEnv-nvidia'],
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        },
-        {
-            'name': 'builtin',
-            'cc': 'cc',
-            'cxx': 'CC',
-            'ftn': 'ftn',
-            'target_systems': ['daint']
-        }
     ]
 }
-# rfmdocend: site-configuration

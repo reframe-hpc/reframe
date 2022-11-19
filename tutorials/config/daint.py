@@ -28,22 +28,6 @@ site_configuration = {
                     'access': ['-C gpu', '-A csstaff'],
                     'environs': ['gnu', 'intel', 'nvidia', 'cray'],
                     'max_jobs': 100,
-                    'resources': [
-                        {
-                            'name': 'memory',
-                            'options': ['--mem={size}']
-                        }
-                    ],
-                    'container_platforms': [
-                        {
-                            'type': 'Sarus',
-                            'modules': ['sarus']
-                        },
-                        {
-                            'type': 'Singularity',
-                            'modules': ['singularity']
-                        }
-                    ]
                 },
                 {
                     'name': 'mc',
