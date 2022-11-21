@@ -37,4 +37,4 @@ RUN echo '. /usr/local/lmod/lmod/init/profile && . /home/rfmuser/spack/share/spa
 
 ENV BASH_ENV /home/rfmuser/setup.sh
 
-CMD ["/bin/bash", "-c", "./bin/reframe -r -C tutorials/config/settings.py -R -c tutorials/build_systems --system tutorials-docker"]
+CMD ["/bin/bash", "-c", "./bin/reframe -r -C tutorials/config/lmodsys.py -R -c tutorials/build_systems"]

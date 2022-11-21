@@ -344,7 +344,8 @@ def test_stream_handler(make_exec_ctx, config_file, stream):
     make_exec_ctx(
         config_file({
             'level': 'info',
-            'handlers': [{'type': 'stream', 'name': stream}],
+            'handlers$': [{'type': 'stream', 'name': stream}],
+            'handlers': [],
             'handlers_perflog': []
         })
     )
@@ -362,8 +363,8 @@ def test_multiple_handlers(make_exec_ctx, config_file, logfile):
     make_exec_ctx(
         config_file({
             'level': 'info',
+            'handlers$': [{'type': 'stream', 'name': 'stderr'}],
             'handlers': [
-                {'type': 'stream', 'name': 'stderr'},
                 {'type': 'file', 'name': str(logfile)},
                 {'type': 'syslog', 'address': '/dev/log'}
             ],

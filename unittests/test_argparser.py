@@ -120,7 +120,7 @@ def extended_parser():
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
     foo_options.add_argument(
-        '-C', '--config-file', action='store', envvar='RFM_CONFIG_FILE'
+        '-C', '--config-file', action='store', envvar='RFM_CONFIG_FILES'
     )
     foo_options.add_argument(
         '--check-path', action='append', envvar='RFM_CHECK_SEARCH_PATH :'

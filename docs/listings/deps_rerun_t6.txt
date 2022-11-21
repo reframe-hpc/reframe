@@ -1,23 +1,25 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+3b06b112
+  version:           4.0.0-dev.2+5ea6b7a6
   command:           './bin/reframe --restore-session --keep-stage-files -n T6 -r'
   launched by:       user@host
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '<builtin>'
+  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
   check search path: '/home/user/Repositories/reframe/unittests/resources/checks_unlisted/deps_complex.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
-  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-r1gopvcr.log'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-vtnok1ih.log'
 
 [==========] Running 1 check(s)
-[==========] Started on Fri Oct  7 23:06:23 2022 
+[==========] Started on Sat Nov 12 19:01:06 2022 
 
 [----------] start processing checks
-[ RUN      ] T6 /6dbdaf93 @generic:default+builtin
-[       OK ] (1/1) T6 /6dbdaf93 @generic:default+builtin
+[ RUN      ] T6 /6dbdaf93 @tresa:default+gnu
+[ RUN      ] T6 /6dbdaf93 @tresa:default+clang
+[       OK ] (1/2) T6 /6dbdaf93 @tresa:default+gnu
+[       OK ] (2/2) T6 /6dbdaf93 @tresa:default+clang
 [----------] all spawned checks have finished
 
-[  PASSED  ] Ran 1/1 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Fri Oct  7 23:06:24 2022 
-Run report saved in '/home/user/.reframe/reports/run-report-125.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-r1gopvcr.log'
+[  PASSED  ] Ran 2/2 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
+[==========] Finished on Sat Nov 12 19:01:07 2022 
+Run report saved in '/home/user/.reframe/reports/run-report-328.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-vtnok1ih.log'

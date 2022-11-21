@@ -7,23 +7,60 @@ import json
 import pytest
 
 import reframe.core.config as config
+import reframe.utility as util
 from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
 
 
-def test_load_config_fallback(monkeypatch):
-    monkeypatch.setattr(config, '_find_config_file', lambda: None)
-    site_config = config.load_config()
-    assert site_config.filename == '<builtin>'
+@pytest.fixture
+def generate_partial_configs(tmp_path):
+    part1 = tmp_path / 'settings-part1.py'
+    part2 = tmp_path / 'settings-part2.py'
+    part3 = tmp_path / 'settings-part3.py'
+    mod = util.import_module_from_file(
+        'unittests/resources/config/settings.py')
+    full_config = mod.site_configuration
+
+    config_1 = {
+        'systems': full_config['systems'][-2:],
+        'environments': full_config['environments'][:3],
+        'modes': full_config['modes'],
+        'general': full_config['general'][0:1],
+    }
+    config_2 = {
+        'systems': full_config['systems'][-3:-2],
+        'environments': full_config['environments'][3:],
+        'general': full_config['general'][1:3],
+    }
+    config_3 = {
+        'systems': full_config['systems'][:-3],
+        'logging': full_config['logging'],
+        'general': full_config['general'][3:],
+    }
+    part1.write_text(f'site_configuration = {config_1!r}')
+    part2.write_text(f'site_configuration = {config_2!r}')
+    part3.write_text(f'site_configuration = {config_3!r}')
+    return part1, part2, part3
+
+
+@pytest.fixture(params=['full', 'parts'])
+def site_config(request, generate_partial_configs):
+    # `unittests/resources/config/settings.py` should be equivalent to loading
+    # the `unittests/resources/config/settings-part*.py` files
+    if request.param == 'full':
+        return config.load_config('unittests/resources/config/settings.py')
+    else:
+        return config.load_config(*generate_partial_configs)
 
 
 def test_load_config_python():
-    config.load_config('reframe/core/settings.py')
+    site = config.load_config('reframe/core/settings.py')
+    assert len(site.sources) == 2
 
 
-def test_load_config_python_old_syntax():
-    with pytest.raises(ConfigError):
-        config.load_config('unittests/resources/settings_old_syntax.py')
+def test_load_multiple_configs(generate_partial_configs):
+    site = config.load_config(*generate_partial_configs)
+    assert len(site.sources) == 4
 
 
 def test_load_config_nouser(monkeypatch):
@@ -36,21 +73,6 @@ def test_load_config_nouser(monkeypatch):
     monkeypatch.delenv('LNAME', raising=False)
     monkeypatch.delenv('USERNAME', raising=False)
     config.load_config()
-
-
-def test_convert_old_config():
-    converted = config.convert_old_config(
-        'unittests/resources/settings_old_syntax.py'
-    )
-    site_config = config.load_config(converted)
-    site_config.validate()
-    assert len(site_config.get('systems')) == 3
-    assert len(site_config.get('logging')) == 2
-
-    site_config.select_subconfig('testsys')
-    assert len(site_config.get('systems/0/partitions')) == 2
-    assert len(site_config.get('modes')) == 1
-    assert len(site_config['environments']) == 6
 
 
 def test_load_config_python_invalid(tmp_path):
@@ -67,7 +89,7 @@ def test_load_config_json(tmp_path):
     json_file = tmp_path / 'settings.json'
     json_file.write_text(json.dumps(settings.site_configuration, indent=4))
     site_config = config.load_config(json_file)
-    assert site_config.filename == json_file
+    assert site_config.sources == ['<builtin>', json_file]
 
 
 def test_load_config_json_invalid_syntax(tmp_path):
@@ -100,12 +122,11 @@ def test_load_config_unknown_filetype(tmp_path):
 
 
 def test_validate_fallback_config():
-    site_config = config.load_config('reframe/core/settings.py')
+    site_config = config.load_config()
     site_config.validate()
 
 
-def test_validate_unittest_config():
-    site_config = config.load_config('unittests/resources/settings.py')
+def test_validate_unittest_config(site_config):
     site_config.validate()
 
 
@@ -114,24 +135,6 @@ def test_validate_config_invalid_syntax():
     site_config['systems'][0]['name'] = 123
     with pytest.raises(ConfigError,
                        match=r'could not validate configuration file'):
-        site_config.validate()
-
-
-def test_validate_config_duplicate_systems():
-    site_config = config.load_config('reframe/core/settings.py')
-    site_config['systems'].append(site_config['systems'][0])
-    with pytest.raises(ConfigError,
-                       match=r"system 'generic' already defined"):
-        site_config.validate()
-
-
-def test_validate_config_duplicate_partitions():
-    site_config = config.load_config('reframe/core/settings.py')
-    site_config['systems'][0]['partitions'].append(
-        site_config['systems'][0]['partitions'][0]
-    )
-    with pytest.raises(ConfigError,
-                       match=r"partition 'default' already defined"):
         site_config.validate()
 
 
@@ -144,6 +147,7 @@ def test_select_subconfig_autodetect():
 def test_select_subconfig_autodetect_failure():
     site_config = config.load_config('reframe/core/settings.py')
     site_config['systems'][0]['hostnames'] = ['$^']
+    site_config['systems'][1]['hostnames'] = ['$^']
     with pytest.raises(
             ConfigError,
             match=(r'could not find a configuration entry '
@@ -172,16 +176,10 @@ def test_select_subconfig_unknown_partition():
         site_config.select_subconfig('generic:foo')
 
 
-def test_select_subconfig_no_logging():
-    site_config = config.load_config('reframe/core/settings.py')
-    site_config['logging'][0]['target_systems'] = ['foo']
-    with pytest.raises(ConfigError, match=r"section 'logging' not defined"):
-        site_config.select_subconfig()
-
-
 def test_select_subconfig_no_environments():
     site_config = config.load_config('reframe/core/settings.py')
     site_config['environments'][0]['target_systems'] = ['foo']
+    site_config['environments'][1]['target_systems'] = ['foo']
     with pytest.raises(ConfigError,
                        match=r"section 'environments' not defined"):
         site_config.select_subconfig()
@@ -209,8 +207,7 @@ def test_select_subconfig_ignore_no_section_errors():
     site_config.select_subconfig(ignore_resolve_errors=True)
 
 
-def test_select_subconfig():
-    site_config = config.load_config('unittests/resources/settings.py')
+def test_select_subconfig(site_config):
     site_config.select_subconfig('testsys')
     assert len(site_config['systems']) == 1
     assert len(site_config['systems'][0]['partitions']) == 2
@@ -232,12 +229,12 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/@gpu/max_jobs') == 10
     assert site_config.get('modes/0/name') == 'unittest'
     assert site_config.get('modes/@unittest/name') == 'unittest'
-    assert len(site_config.get('logging/0/handlers')) == 2
+    assert len(site_config.get('logging/0/handlers$')) == 1
+    assert len(site_config.get('logging/0/handlers')) == 1
     assert len(site_config.get('logging/0/handlers_perflog')) == 1
     assert site_config.get('logging/0/handlers/0/timestamp') is False
     assert site_config.get('logging/0/handlers/0/level') == 'debug'
-    assert site_config.get('logging/0/handlers/1/level') == 'info'
-    assert site_config.get('logging/0/handlers/2/level') is None
+    assert site_config.get('logging/0/handlers/1/level') is None
 
     site_config.select_subconfig('testsys:login')
     assert len(site_config.get('systems/0/partitions')) == 1
@@ -259,9 +256,9 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/0/max_jobs') == 8
     assert len(site_config['environments']) == 7
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'gcc'
-    assert site_config.get('environments/0/cxx') == 'g++'
+    assert site_config.get('environments/1/cxx') == 'g++'
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
-    assert site_config.get('environments/1/cxx') == 'CC'
+    assert site_config.get('environments/2/cxx') == 'CC'
     assert (site_config.get('environments/@PrgEnv-cray/modules') ==
             [{'name': 'PrgEnv-cray', 'collection': False, 'path': None}]
             )
@@ -291,7 +288,7 @@ def test_select_subconfig():
             [['FOO_GPU', 'yes']])
     assert site_config.get('systems/0/partitions/0/max_jobs') == 10
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
-    assert site_config.get('environments/0/cxx') == 'CC'
+    assert site_config.get('environments/1/cxx') == 'CC'
     assert site_config.get('general/0/check_search_path') == ['c:d']
 
     # Test default values for non-existent name-addressable objects
@@ -320,8 +317,7 @@ def test_select_subconfig_optional_section_absent():
     assert site_config.get('general/verbose') == 0
 
 
-def test_sticky_options():
-    site_config = config.load_config('unittests/resources/settings.py')
+def test_sticky_options(site_config):
     site_config.select_subconfig('testsys:login')
     site_config.add_sticky_option('environments/cc', 'clang')
     site_config.add_sticky_option('modes/options', ['foo'])
@@ -338,8 +334,51 @@ def test_sticky_options():
     assert site_config.get('environments/@PrgEnv-cray/cc') == 'cc'
 
 
-def test_system_create():
-    site_config = config.load_config('unittests/resources/settings.py')
+@pytest.fixture
+def write_config(tmp_path):
+    def _write_config(config):
+        filename = (tmp_path / 'settings.json')
+        filename.touch()
+        with open(filename, 'w') as fp:
+            json.dump(config, fp)
+
+        return str(filename)
+
+    return _write_config
+
+
+def test_multi_config_combine_general_options(write_config):
+    config_file = write_config({
+        'general': [
+            {
+                'pipeline_timeout': 10,
+                'target_systems': ['testsys:login']
+            },
+            {
+                'colorize': False
+            }
+        ]
+    })
+    site_config = config.load_config('unittests/resources/config/settings.py',
+                                     config_file)
+    site_config.validate()
+    site_config.select_subconfig('testsys:login')
+    assert site_config.get('general/0/check_search_path') == ['a:b']
+    assert site_config.get('general/0/pipeline_timeout') == 10
+    assert site_config.get('general/0/colorize') == False
+
+
+def test_multi_config_combine_logging_options(write_config):
+    config_file = write_config({'logging': [{'level': 'debug'}]})
+    site_config = config.load_config(config_file)
+    site_config.validate()
+    site_config.select_subconfig('generic')
+    assert site_config.get('logging/0/level') == 'debug'
+    assert len(site_config.get('logging/0/handlers')) == 1
+    assert len(site_config.get('logging/0/handlers_perflog')) == 1
+
+
+def test_system_create(site_config):
     site_config.select_subconfig('testsys:gpu')
     system = System.create(site_config)
     assert system.name == 'testsys'
@@ -410,7 +449,7 @@ def test_variables(tmp_path):
     # works
     config_file = tmp_path / 'settings.py'
     with open(config_file, 'w') as fout:
-        with open('unittests/resources/settings.py') as fin:
+        with open('unittests/resources/config/settings.py') as fin:
             fout.write(fin.read().replace('env_vars', 'variables'))
 
     site_config = config.load_config(config_file)
@@ -435,12 +474,11 @@ def test_variables(tmp_path):
     assert system.partitions[0].local_env.env_vars == {'FOO_GPU': 'yes'}
 
 
-def test_hostname_autodetection():
+def test_hostname_autodetection(site_config):
     # This exercises only the various execution paths
 
     # We set the autodetection method and we call `select_subconfig()` in
     # order to trigger the auto-detection
-    site_config = config.load_config('unittests/resources/settings.py')
     for use_xthostname in (True, False):
         for use_fqdn in (True, False):
             site_config.set_autodetect_meth('hostname',

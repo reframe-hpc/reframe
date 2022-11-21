@@ -62,7 +62,7 @@ def run_reframe(tmp_path, perflogdir, monkeypatch):
                      action='run',
                      more_options=None,
                      mode=None,
-                     config_file='unittests/resources/settings.py',
+                     config_file='unittests/resources/config/settings.py',
                      perflogdir=str(perflogdir)):
         import reframe.frontend.cli as cli
 

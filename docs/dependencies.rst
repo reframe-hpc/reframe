@@ -200,8 +200,7 @@ As shown in the :doc:`tutorial_deps`, test dependencies would be of limited usag
 Let's reiterate over the :func:`set_executable` function of the :class:`OSULatencyTest` that we presented previously:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :start-after: # rfmdocstart: set_exec
-   :end-before: # rfmdocend: set_exec
+   :pyobject: OSULatencyTest.set_executable
 
 The ``@require_deps`` decorator does some magic -- we will unravel this shortly -- with the function arguments of the :func:`set_executable` function and binds them to the target test dependencies by their name.
 However, as discussed in this section, dependencies are defined at test case level, so the ``OSUBuildTest`` function argument is bound to a special function that allows you to retrieve an actual test case of the target dependency.
