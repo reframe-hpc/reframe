@@ -993,25 +993,29 @@ def perf_test():
 
 @pytest.fixture
 def config_perflog(make_config_file):
-    def _config_perflog(fmt, perffmt):
-        return make_config_file({
-            'logging': [{
-                'level': 'debug2',
-                'handlers': [{
-                    'type': 'stream',
-                    'name': 'stdout',
-                    'level': 'info',
-                    'format': '%(message)s'
-                }],
-                'handlers_perflog': [{
-                    'type': 'filelog',
-                    'prefix': '%(check_system)s/%(check_partition)s',
-                    'level': 'info',
-                    'format_perfvars': perffmt,
-                    'format': fmt
-                }]
+    def _config_perflog(fmt, perffmt=None, logging_opts=None):
+        logging_config = {
+            'level': 'debug2',
+            'handlers': [{
+                'type': 'stream',
+                'name': 'stdout',
+                'level': 'info',
+                'format': '%(message)s'
+            }],
+            'handlers_perflog': [{
+                'type': 'filelog',
+                'prefix': '%(check_system)s/%(check_partition)s',
+                'level': 'info',
+                'format': fmt
             }]
-        })
+        }
+        if logging_opts:
+            logging_config.update(logging_opts)
+
+        if perffmt is not None:
+            logging_config['handlers_perflog'][0]['format_perfvars'] = perffmt
+
+        return make_config_file({'logging': [logging_config]})
 
     return _config_perflog
 
@@ -1152,8 +1156,7 @@ def test_perf_logging_no_perfvars(make_runner, make_exec_ctx, perf_test,
                 '%(check_display_name)s,%(check_system)s,'
                 '%(check_partition)s,%(check_environ)s,'
                 '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
-            ),
-            perffmt=''
+            )
         )
     )
     logging.configure_logging(rt.runtime().site_config)
@@ -1174,3 +1177,33 @@ def test_perf_logging_no_perfvars(make_runner, make_exec_ctx, perf_test,
         'environ,jobid,result,\n'
     )
     assert 'error' not in lines[1]
+
+
+def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
+                                config_perflog, tmp_path):
+    make_exec_ctx(
+        config_perflog(
+            fmt=(
+                '%(check_job_completion_time)s,%(version)s,'
+                '%(check_display_name)s,%(check_system)s,'
+                '%(check_partition)s,%(check_environ)s,'
+                '%(check_jobid)s,%(check_result)s,'
+                '%(check_perf_var)s=%(check_perf_value)s,%(check_perf_unit)s'
+            ),
+            logging_opts={'perflog_compat': True}
+        )
+    )
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([perf_test])
+    runner.runall(testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    assert os.path.exists(logfile)
+    assert _count_lines(logfile) == 3
+
+    # assert that the emitted lines are correct
+    with open(logfile) as fp:
+        lines = fp.readlines()
+        assert ',perf0=100.0,unit0' in lines[1]
+        assert ',perf1=50.0,unit1'  in lines[2]

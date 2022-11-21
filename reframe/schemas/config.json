@@ -55,6 +55,7 @@
                 },
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},
+                "format_perfvars": {"type": "string"},
                 "datefmt": {"type": "string"}
             },
             "required": ["type"]
@@ -539,9 +540,11 @@
         "general/user_modules": [],
         "general/verbose": 0,
         "logging/level": "undefined",
+        "logging/perflog_compat": false,
         "logging/target_systems": ["*"],
         "logging/handlers*/*_level": "info",
         "logging/handlers*/*_format": "%(message)s",
+        "logging/handlers*/*_format_perfvars": "",
         "logging/handlers*/*_datefmt": "%FT%T",
         "logging/handlers*/file_append": false,
         "logging/handlers*/file_name": "",

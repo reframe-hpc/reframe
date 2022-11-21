@@ -270,7 +270,7 @@ class CheckFieldFormatter(logging.Formatter):
         for var, info in perfvars.items():
             val, ref, lower, upper, unit = info
             record = {
-                'check_perf_var': var,
+                'check_perf_var': var.split(':')[-1],
                 'check_perf_value': val,
                 'check_perf_unit': unit,
                 'check_perf_ref': ref,
@@ -697,14 +697,27 @@ class LoggerAdapter(logging.LoggerAdapter):
             '%FT%T%:z'
         )
 
-    def log_performance(self, level, task, msg=None):
+    def log_performance(self, level, task, msg=None, multiline=False):
         self.extra['check_partition'] = task.testcase.partition.name
         self.extra['check_environ'] = task.testcase.environ.name
         self.extra['check_result'] = 'pass' if task.succeeded else 'fail'
         if msg is None:
             msg = 'sent by ' + self.extra['osuser']
 
-        self.log(level, msg)
+        if multiline:
+            # Log one record for each performance variable
+            check = self.extra['__rfm_check__']
+            for var, info in check.perfvalues.items():
+                val, ref, lower, upper, unit = info
+                self.extra['check_perf_var'] = var.split(':')[-1]
+                self.extra['check_perf_value'] = val
+                self.extra['check_perf_ref'] = ref
+                self.extra['check_perf_lower_thres'] = lower
+                self.extra['check_perf_upper_thres'] = upper
+                self.extra['check_perf_unit'] = unit
+                self.log(level, msg)
+        else:
+            self.log(level, msg)
 
     def process(self, msg, kwargs):
         # Setup dynamic fields of the check

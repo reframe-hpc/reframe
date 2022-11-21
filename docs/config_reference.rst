@@ -801,6 +801,14 @@ You may define different logger objects per system but *not* per partition.
    A list of logging handlers responsible for handling performance data from tests.
 
 
+.. js:attribute:: .logging[].perflog_compat
+
+   :required: No
+   :default: ``false``
+
+   Emit a separate log record for each performance variable.
+   Set this option to ``true`` if you want to keep compatibility with the performance logging prior to ReFrame 4.0.
+
 .. js:attribute:: .logging[].target_systems
 
    :required: No
@@ -933,14 +941,15 @@ All logging handlers share the following set of common attributes:
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
 
 
+.. js:attribute:: .logging[].handlers[].format_perfvars
 .. js:attribute:: .logging[].handlers_perflog[].format_perfvars
 
    Format specifier for logging the performance variables.
 
-   This defines how the ``%(check_perfvalues)s`` will be formatted and is relevant only for performance logging.
+   This defines how the ``%(check_perfvalues)s`` will be formatted.
    Since a test may define multiple performance variables, the formatting specified in this field will be repeated for each performance variable sequentially in the *same* line.
 
-   .. attention::
+   .. important::
       The last character of this format will be interpreted as the final delimiter of the formatted performance variables to the rest of the record.
 
    The following log record attributes are defined additionally by this format specifier:
@@ -954,6 +963,11 @@ All logging handlers share the following set of common attributes:
       ``%(check_perf_upper)s``, The upper thresholds of the logged performance variable.
       ``%(check_perf_value)s``, The actual value of the logged performance variable.
       ``%(check_perf_var)s``, The name of the logged performance variable.
+
+
+   .. important::
+      ReFrame versions prior to 4.0 logged a separate line for each performance variable and the ``%(check_perf_*)s`` attributes could be used directly in the ``format``.
+      You can re-enable this behaviour by setting the ``perflog_compat`` logging configuration parameter.
 
 
    .. versionadded:: 4.0.0
