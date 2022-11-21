@@ -20,7 +20,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
                                      JobError,
                                      JobSchedulerError)
-from reframe.utility import nodelist_abbrev, nodelist_expand, seconds_to_hms
+from reframe.utility import nodelist_abbrev, seconds_to_hms
 
 
 def slurm_state_completed(state):
@@ -81,7 +81,10 @@ class _SlurmJob(sched.Job):
     def nodelist(self):
         # Redefine nodelist so as to generate it from the nodespec
         if self._nodelist is None and self._nodespec is not None:
-            self._nodelist = nodelist_expand(self._nodespec)
+            completed = osext.run_command(
+                f'scontrol show hostname {self._nodespec}', log=False
+            )
+            self._nodelist = completed.stdout.splitlines()
 
         return self._nodelist
 
