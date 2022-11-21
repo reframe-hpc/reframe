@@ -1036,7 +1036,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if rt.runtime().get_option('general/0/non_default_craype'):
             self._cdt_environ = Environment(
                 name='__rfm_cdt_environ',
-                variables={
+                env_vars={
                     'LD_LIBRARY_PATH': '$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH'
                 }
             )
