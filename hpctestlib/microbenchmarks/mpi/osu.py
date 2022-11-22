@@ -145,7 +145,8 @@ class osu_benchmark(rfm.RunOnlyRegressionTest):
         self.executable = bench.split('.')[-1]
         self.executable_opts = ['-m', f'{self.message_size}',
                                 '-x', f'{self.num_warmup_iters}',
-                                '-i', f'{self.num_iters}']
+                                '-i', f'{self.num_iters}', '-c']
+
         if self.device_buffers != 'cpu':
             self.executable_opts += ['-d', self.device_buffers]
 
@@ -161,7 +162,7 @@ class osu_benchmark(rfm.RunOnlyRegressionTest):
 
     @sanity_function
     def validate_test(self):
-        return sn.assert_found(rf'^{self.message_size}', self.stdout)
+        return sn.assert_found(rf'^{self.message_size}.*Pass', self.stdout)
 
     @deferrable
     def _extract_metric(self):

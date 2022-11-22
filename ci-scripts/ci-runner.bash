@@ -42,7 +42,7 @@ checked_exec()
 run_tutorial_checks()
 {
     export RFM_AUTODETECT_XTHOSTNAME=1
-    cmd="./bin/reframe -C tutorials/config/settings.py -J account=jenscscs \
+    cmd="./bin/reframe -C tutorials/config/daint_ext.py -J account=jenscscs \
 --save-log-files --flex-alloc-nodes=2 -r -x HelloThreadedExtendedTest|BZip2.*Check $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
@@ -147,6 +147,11 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
         for check in ${tutorialchecks[@]}; do
             tutorialchecks_path="${tutorialchecks_path} -c ${check}"
         done
+
+        if [[ $(hostname) =~ daint ]]; then
+            echo "[INFO] Applying tutorial patch for daint"
+            patch -s -p0 < ci-scripts/tutorials.patch
+        fi
 
         echo "[INFO] Modified tutorial checks"
         echo ${tutorialchecks_path}

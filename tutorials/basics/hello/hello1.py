@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: hellotest
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -17,4 +16,3 @@ class HelloTest(rfm.RegressionTest):
     @sanity_function
     def assert_hello(self):
         return sn.assert_found(r'Hello, World\!', self.stdout)
-# rfmdocend: hellotest

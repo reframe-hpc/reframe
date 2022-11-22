@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: streamtest2
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -51,4 +50,3 @@ class StreamAltTest(rfm.RegressionTest):
             'Add': self.extract_bw('Add'),
             'Triad': self.extract_bw('Triad'),
         }
-# rfmdocend: streamtest2

@@ -9,36 +9,29 @@ This section will guide you through configuring ReFrame for your site.
 
 If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the :doc:`migration_2_to_3` page.
 
+ReFrame's configuration can be either in JSON or in Python format and can be split into multiple files.
+The Python format is useful in cases that you want to generate configuration parameters on-the-fly, since ReFrame will import that Python file and the load the resulting configuration.
+In the following we will use a single Python-based configuration file also for historical reasons, since it was the only way to configure ReFrame in versions prior to 3.0.
 
-ReFrame's configuration file can be either a JSON file or a Python file storing the site configuration in a JSON-formatted string.
-The latter format is useful in cases that you want to generate configuration parameters on-the-fly, since ReFrame will import that Python file and the load the resulting configuration.
-In the following we will use a Python-based configuration file also for historical reasons, since it was the only way to configure ReFrame in versions prior to 3.0.
+
+.. versionchanged:: 4.0.0
+   The configuration can now be split into multiple files.
 
 
-Locating the Configuration File
--------------------------------
+Loading the configuration
+-------------------------
 
-ReFrame looks for a configuration file in the following locations in that order:
+ReFrame builds its final configuration gradually by combining multiple configuration files.
+Each one can have different parts of the configuration, for example different systems, different environments, different general options or different logging handlers.
+This technique allows users to avoid having a single huge configuration file.
 
-1. ``${HOME}/.reframe/settings.{py,json}``
-2. ``${RFM_INSTALL_PREFIX}/settings.{py,json}``
-3. ``/etc/reframe.d/settings.{py,json}``
+The first configuration file loaded in this chain is always the generic builtin configuration located under ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
+This contains everything that ReFrame needs to run on a generic system, as well as basic settings for logging, so subsequent configuration files may skip defining some configuration sections altogether, if they are not relevant.
 
-If both ``settings.py`` and ``settings.json`` are found, the Python file is preferred.
-The ``RFM_INSTALL_PREFIX`` variable refers to the installation directory of ReFrame or the top-level source directory if you are running ReFrame from source.
-Users have no control over this variable.
-It is always set by the framework upon startup.
+ReFrame continues on looking for configuration files in the directories defined in :envvar:`RFM_CONFIG_PATH`.
+For each directory, will look within it for a ``settings.py`` or ``settings.json`` file (in that order), and if it finds one, it will load it.
 
-If no configuration file is found in any of the predefined locations, ReFrame will fall back to a generic configuration that allows it to run on any system.
-You can find this generic configuration file `here <https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py>`__.
-Users may *not* modify this file.
-
-There are two ways to provide a custom configuration file to ReFrame:
-
-1. Pass it through the ``-C`` or ``--config-file`` option.
-2. Specify it using the ``RFM_CONFIG_FILE`` environment variable.
-
-Command line options take always precedence over their respective environment variables.
+Finally, ReFrame processes the :option:`--config-file` option or the :envvar:`RFM_CONFIG_FILES` environment variable to load any specific configuration files passed from the command line.
 
 
 Anatomy of the Configuration File
@@ -49,16 +42,18 @@ We'll refer to these top-level properties as *sections*.
 These sections contain other objects which further define in detail the framework's behavior.
 If you are using a Python file to configure ReFrame, this big JSON configuration object is stored in a special variable called ``site_configuration``.
 
-We will explore the basic configuration of ReFrame by looking into the configuration file of the tutorials, which permits ReFrame to run both on the Piz Daint supercomputer and a local computer.
+We will explore the basic configuration of ReFrame by looking into the configuration file of the tutorials, which permits ReFrame to run on the Piz Daint supercomputer and a local computer.
 For the complete listing and description of all configuration options, you should refer to the :doc:`config_reference`.
 
-.. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: site-configuration
-   :end-before: # rfmdocend: site-configuration
+.. literalinclude:: ../tutorials/config/daint.py
+   :start-at: site_configuration
 
-There are three required sections that each configuration file must provide: ``systems``, ``environments`` and ``logging``.
-We will first cover these and then move on to the optional ones.
+There are three required sections that the final ReFrame configuration must have: ``systems``, ``environments`` and ``logging``, but in most cases you will define only the first two, as ReFrame's builtin configuration already defines a reasonable logging configuration. We will first cover these sections and then move on to the optional ones.
 
+.. tip::
+
+   These configuration sections may not all be defined in the same configuration file, but can reside in any configuration file that is being loaded.
+   This is the case of the example configuration shown above, where the ``logging`` section is "missing" as it's defined in ReFrame's builtin configuration.
 
 ---------------------
 Systems Configuration
@@ -66,11 +61,11 @@ Systems Configuration
 
 ReFrame allows you to configure multiple systems in the same configuration file.
 Each system is a different object inside the ``systems`` section.
-In our example we define three systems, a Mac laptop, Piz Daint and a generic fallback system:
+In our example we define only Piz Daint:
 
-.. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: systems
-   :end-before: # rfmdocend: systems
+.. literalinclude:: ../tutorials/config/daint.py
+   :start-at: 'systems'
+   :end-before: 'environments'
 
 Each system is associated with a set of properties, which in this case are the following:
 
@@ -91,9 +86,9 @@ In the example shown here, we define three partitions that none of them correspo
 The ``login`` partition refers to the login nodes of the system, whereas the ``gpu`` and ``mc`` partitions refer to two different set of nodes in the same cluster that are effectively separated using Slurm constraints.
 Let's pick the ``gpu`` partition and look into it in more detail:
 
-.. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: gpu-partition
-   :end-before: # rfmdocend: gpu-partition
+.. literalinclude:: ../tutorials/config/daint.py
+   :start-at: 'name': 'gpu'
+   :end-at: 'max_jobs'
 
 The basic properties of a partition are the following:
 
@@ -110,13 +105,10 @@ The basic properties of a partition are the following:
   Notice how in this case, the nodes are selected through a constraint and not an actual scheduler partition.
 * ``environs``: The list of environments that ReFrame will use to run regression tests on this partition.
   These are just symbolic names that refer to environments defined in the ``environments`` section described below.
-* ``container_platforms``: A set of supported container platforms in this partition.
-  Each container platform is an object with a name and list of environment modules to load, in order to enable this platform.
-  For a complete list of the supported container platforms, see `here <config_reference.html#.systems[].partitions[].container_platforms[].type>`__.
 * ``max_jobs``: The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
   This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
-* ``resources``: This is a set of optional additional scheduler resources that the tests can access transparently.
-  For more information, please have a look `here <config_reference.html#custom-job-scheduler-resources>`__.
+
+  For more partition configuration options, have a look `here <config_reference.html#system-partition-configuration>`__.
 
 
 --------------------------
@@ -134,9 +126,9 @@ For each environment referenced inside a partition, a definition of it must be p
 In our example, we define environments for all the basic compilers as well as a default built-in one, which is used with the generic system configuration.
 In certain contexts, it is useful to see a ReFrame environment as a wrapper of a programming toolchain (MPI + compiler combination):
 
-.. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: environments
-   :end-before: # rfmdocend: environments
+.. literalinclude:: ../tutorials/config/daint.py
+   :start-at: 'environments'
+   :end-at: # end of environments
 
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
@@ -155,18 +147,21 @@ Logging configuration
 
 ReFrame has a powerful logging mechanism that gives fine grained control over what information is being logged, where it is being logged and how this information is formatted.
 Additionally, it allows for logging performance data from performance tests into different channels.
-Let's see how logging is defined in our example configuration, which also represents a typical one for logging:
+Let's see how logging is defined in the builtin configuration:
 
-.. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: logging
-   :end-before: # rfmdocend: logging
+.. literalinclude:: ../reframe/core/settings.py
+   :start-at: 'logging'
+   :end-at: # end of logging
 
 Logging is configured under the ``logging`` section of the configuration, which is a list of logger objects.
 Unless you want to configure logging differently for different systems, a single logger object is enough.
 Each logger object is associated with a `logging level <config_reference.html#.logging[].level>`__ stored in the ``level`` property and has a set of logging handlers that are actually responsible for handling the actual logging records.
-ReFrame's output is performed through the logging mechanism, meaning that if you don't specify any logging handler, you will not get any output from ReFrame!
-The ``handlers`` property of the logger object holds the actual handlers.
-Notice that you can use multiple handlers at the same time, which enables you to feed ReFrame's output to different sinks and at different verbosity levels.
+ReFrame's output is performed through its logging mechanism and that's why there is the special ``handlers$`` property.
+The handler defined in this property, in the builtin configuration shown here, defines how exactly the output of ReFrame will be printed.
+You will not have to override this in your configuration files, unless you really need to change how ReFrame's output look like.
+
+As a user you might need to override the ``handlers`` property to define different sinks for ReFrame logs and/or output using different verbosity levels.
+Note that you can use multiple handlers at the same time.
 All handler objects share a set of common properties.
 These are the following:
 
@@ -230,8 +225,90 @@ There are finally two more optional configuration sections that are not discusse
 
 
 
-Picking a System Configuration
-------------------------------
+Building the Final Configuration
+--------------------------------
+
+.. versionadded:: 4.0.0
+
+As mentioned above ReFrame can build its final configuration incrementally from a series of user-specified configuration files starting from the basic builtin configuration.
+We discussed briefly at the beginning of this page how ReFrame locates and loads these configuration files and the documentation of the :option:`-C` option provides more detailed information.
+But how are these configuration files actually combined?
+This is what we will discuss in this section.
+
+Configuration objects in the top-level configuration sections can be split in two categories: *named* and *unnamed*.
+Named objects are the systems, the environments and the modes and the rest are unnamed.
+The named object have a ``name`` property.
+When ReFrame builds its final configuration, named objects from newer configuration files are either appended or prepended in their respective sections, but unnamed objects are merged based on their ``target_systems``.
+More specifically, new systems are *prepended* in the list of the already defined, whereas environments and modes are *appended*.
+The reason for that is that systems are tried from the beginning of the list until a match is found.
+See :ref:`pick-system-config` for more information on how ReFrame picks the right system.
+If a system is redefined, ReFrame will warn about it, but it will still use the new definition.
+This is done for backward compatibility with the old configuration mechanism, where users had to redefine also the builtin systems and environments in their configuration.
+Similarly, if an environment or a mode is redefined, ReFrame will issue a warning, but only if the redefinition is at the same scope as the conflicting one.
+Again this is done for backward compatibility.
+
+Given the Piz Daint configuration shown in this section and the ReFrame's builtin configuration, ReFrame will build internally the following configuration:
+
+.. code-block:: python
+
+   site_configuration = {
+       'systems': [
+           {
+               # from the Daint config
+               'name': 'daint',
+               ...
+           },
+           {
+               # from the builtin config
+               'name': 'generic',
+               ...
+           }
+       ],
+       'environments': [
+           {
+               # from the builtin config
+               'name': 'builtin'
+                ...
+           },
+           {
+               # from the Daint config
+               'name': 'gnu',
+               ...
+           }
+       ],
+       'logging': [
+           # from the builtin config
+       ]
+   }
+
+You might wonder why would I need to define multiple objects in sections such as ``logging`` or ``general``.
+As mentioned above, ReFrame merges them if they refer to the same target systems, but if they don't they can serve as scopes for the configuration parameters they define.
+Imagine the following ``general`` section:
+
+.. code-block:: python
+
+   'general': [
+       {
+           'git_timeout': 5
+       },
+       {
+           'git_timeout': 10,
+           'target_systems': ['daint']
+       },
+       {
+           'git_timeout': 20,
+           'target_systems': ['tresa']
+       }
+   ]
+
+This means that the default value for ``git_timeout`` is 5 seconds for any system, but it is 10 for ``daint`` and 20 for ``tresa``.
+The nice thing is that you can spread that in multiple configuration files and ReFrame will combine them internally in a single one with the various configuration options indexed by their scope.
+
+
+.. _pick-system-config:
+
+Picking the Right System Configuration
+--------------------------------------
 
 As discussed previously, ReFrame's configuration file can store the configurations for multiple systems.
 When launched, ReFrame will pick the first matching configuration and load it.
