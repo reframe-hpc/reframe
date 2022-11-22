@@ -73,6 +73,21 @@ class _SlurmJob(sched.Job):
         self._is_array = False
         self._is_cancelling = False
 
+        # The compacted nodelist as reported by Slurm. This must be updated in
+        # every poll as Slurm may be slow in reporting the exact nodelist
+        self._nodespec = None
+
+    @property
+    def nodelist(self):
+        # Redefine nodelist so as to generate it from the nodespec
+        if self._nodelist is None and self._nodespec is not None:
+            completed = osext.run_command(
+                f'scontrol show hostname {self._nodespec}', log=False
+            )
+            self._nodelist = completed.stdout.splitlines()
+
+        return self._nodelist
+
     @property
     def is_array(self):
         return self._is_array
@@ -380,13 +395,6 @@ class SlurmJobScheduler(sched.JobScheduler):
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
-    def _update_nodelist(self, job, nodespec):
-        if job.nodelist is not None:
-            return
-
-        if nodespec and nodespec != 'None assigned':
-            job._nodelist = [n.name for n in self._get_nodes_by_name(nodespec)]
-
     def _update_completion_time(self, job, timestamps):
         if job._completion_time is not None:
             return
@@ -460,9 +468,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 )
 
             # Use ',' to join nodes to be consistent with Slurm syntax
-            self._update_nodelist(
-                job, ','.join(m.group('nodespec') for m in jobarr_info)
-            )
+            job._nodespec = ','.join(m.group('nodespec') for m in jobarr_info)
             self._update_completion_time(
                 job, (m.group('end') for m in jobarr_info)
             )

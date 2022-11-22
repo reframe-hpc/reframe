@@ -19,7 +19,6 @@ import reframe.core.config as config
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
-import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.autodetect as autodetect
 import reframe.frontend.ci as ci
@@ -155,8 +154,9 @@ def describe_checks(testcases, printer):
 
             # List all required variables
             required = []
-            for var in tc.check._rfm_var_space:
-                if not tc.check._rfm_var_space[var].is_defined():
+            var_space = type(tc.check).var_space
+            for var in var_space:
+                if not var_space[var].is_defined():
                     required.append(var)
 
             rec['@required'] = required
@@ -502,10 +502,10 @@ def main():
 
     # Miscellaneous options
     misc_options.add_argument(
-        '-C', '--config-file', action='store',
-        dest='config_file', metavar='FILE',
+        '-C', '--config-file', action='append', metavar='FILE',
+        dest='config_files',
         help='Set configuration file',
-        envvar='RFM_CONFIG_FILE'
+        envvar='RFM_CONFIG_FILES :'
     )
     misc_options.add_argument(
         '--detect-host-topology', action='store', nargs='?', const='-',
@@ -531,10 +531,6 @@ def main():
     misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
         envvar='RFM_SYSTEM'
-    )
-    misc_options.add_argument(
-        '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
-        help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
     )
     misc_options.add_argument(
         '-V', '--version', action='version', version=osext.reframe_version()
@@ -564,6 +560,12 @@ def main():
         action='store',
         default='hostname',
         help='Method to detect the system'
+    )
+    argparser.add_argument(
+        dest='config_path',
+        envvar='RFM_CONFIG_PATH :',
+        action='append',
+        help='Directories where ReFrame will look for base configuration'
     )
     argparser.add_argument(
         dest='autodetect_xthostname',
@@ -691,38 +693,26 @@ def main():
     if not restrict_logging():
         printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
 
-    if options.upgrade_config_file is not None:
-        old_config, *new_config = options.upgrade_config_file.split(
-            ':', maxsplit=1
-        )
-        new_config = new_config[0] if new_config else None
-
-        try:
-            new_config = config.convert_old_config(old_config, new_config)
-        except Exception as e:
-            printer.error(f'could not convert file: {e}')
-            sys.exit(1)
-
-        printer.info(
-            f'Conversion successful! '
-            f'The converted file can be found at {new_config!r}.'
-        )
-        sys.exit(0)
-
     # Now configure ReFrame according to the user configuration file
     try:
-        try:
-            printer.debug('Loading user configuration')
-            site_config = config.load_config(options.config_file)
-        except warnings.ReframeDeprecationWarning as e:
-            printer.warning(e)
-            converted = config.convert_old_config(options.config_file)
-            printer.warning(
-                f"configuration file has been converted "
-                f"to the new syntax here: '{converted}'"
-            )
-            site_config = config.load_config(converted)
+        # Issue a deprecation warning if the old `RFM_CONFIG_FILE` is used
+        config_file = os.getenv('RFM_CONFIG_FILE')
+        if config_file is not None:
+            printer.warning('RFM_CONFIG_FILE is deprecated; '
+                            'please use RFM_CONFIG_FILES instead')
+            if os.getenv('RFM_CONFIG_FILES'):
+                printer.warning(
+                    'both RFM_CONFIG_FILE and RFM_CONFIG_FILES are specified; '
+                    'the former will be ignored'
+                )
+            else:
+                os.environ['RFM_CONFIG_FILES'] = config_file
 
+        printer.debug('Loading user configuration')
+        conf_files = config.find_config_files(
+            options.config_path, options.config_files
+        )
+        site_config = config.load_config(*conf_files)
         site_config.validate()
         site_config.set_autodetect_meth(
             options.autodetect_method,
@@ -912,7 +902,7 @@ def main():
 
     session_info = {
         'cmdline': ' '.join(sys.argv),
-        'config_file': rt.site_config.filename,
+        'config_files': rt.site_config.sources,
         'data_version': runreport.DATA_VERSION,
         'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
@@ -931,7 +921,10 @@ def main():
         f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
     )
     print_infoline('working directory', repr(session_info['workdir']))
-    print_infoline('settings file', f"{session_info['config_file']!r}")
+    print_infoline(
+        'settings files',
+        ', '.join(repr(x) for x in session_info['config_files'])
+    )
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")

@@ -29,6 +29,7 @@ def fake_check():
     class _FakeCheck(rfm.RegressionTest):
         param = parameter(range(3), loggable=True, fmt=lambda x: 10*x)
         custom = variable(str, value='hello extras', loggable=True)
+        custom2 = variable(alias=custom)
         custom_list = variable(list,
                                value=['custom', 3.0, ['hello', 'world']],
                                loggable=True)
@@ -161,13 +162,13 @@ def test_logger_levels(logfile, logger_with_check):
 
 def test_logger_loggable_attributes(logfile, logger_with_check):
     formatter = rlog.RFC3339Formatter(
-        '%(check_custom)s|%(check_custom_list)s|'
+        '%(check_custom)s|%(check_custom2)s|%(check_custom_list)s|'
         '%(check_foo)s|%(check_custom_dict)s|%(check_param)s|%(check_x)s'
     )
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(
-        r'hello extras\|custom,3.0,\["hello", "world"\]\|null\|'
+        r'hello extras\|null\|custom,3.0,\["hello", "world"\]\|null\|'
         r'{"a": 1, "b": 2}\|10\|null', logfile
     )
 
@@ -343,7 +344,8 @@ def test_stream_handler(make_exec_ctx, config_file, stream):
     make_exec_ctx(
         config_file({
             'level': 'info',
-            'handlers': [{'type': 'stream', 'name': stream}],
+            'handlers$': [{'type': 'stream', 'name': stream}],
+            'handlers': [],
             'handlers_perflog': []
         })
     )
@@ -361,8 +363,8 @@ def test_multiple_handlers(make_exec_ctx, config_file, logfile):
     make_exec_ctx(
         config_file({
             'level': 'info',
+            'handlers$': [{'type': 'stream', 'name': 'stderr'}],
             'handlers': [
-                {'type': 'stream', 'name': 'stderr'},
                 {'type': 'file', 'name': str(logfile)},
                 {'type': 'syslog', 'address': '/dev/log'}
             ],

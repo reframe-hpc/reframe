@@ -1,13 +1,13 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+36ffa085
+  version:           4.0.0-dev.2+5ea6b7a6
   command:           './bin/reframe -c tutorials/advanced/parameterized/stream.py -l'
-  launched by:       user@tresa.local
+  launched by:       user@host
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
   check search path: '/home/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
-  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-1yfa3c8v.log'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-lou71c2g.log'
 
 [List of matched checks]
 - StreamMultiSysTest %num_bytes=536870912 /cf10843f
@@ -23,4 +23,4 @@
 - StreamMultiSysTest %num_bytes=524288 /eb104cd0
 Found 11 check(s)
 
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-1yfa3c8v.log'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-lou71c2g.log'

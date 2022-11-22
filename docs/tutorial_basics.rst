@@ -40,8 +40,7 @@ Here is its C version:
 
 .. literalinclude:: ../tutorials/basics/hello/src/hello.c
    :language: c
-   :start-after: // rfmdocstart: helloworld
-   :end-before: // rfmdocend: helloworld
+   :start-at: #include
 
 
 And here is the ReFrame version of it:
@@ -52,8 +51,7 @@ And here is the ReFrame version of it:
 
 
 .. literalinclude:: ../tutorials/basics/hello/hello1.py
-   :start-after: # rfmdocstart: hellotest
-   :end-before: # rfmdocend: hellotest
+   :start-at: import reframe
 
 
 Regression tests in ReFrame are specially decorated classes that ultimately derive from :class:`~reframe.core.pipeline.RegressionTest`.
@@ -149,8 +147,7 @@ ReFrame allows you to avoid this in several ways but the most compact is to defi
 
 
 .. literalinclude:: ../tutorials/basics/hello/hello2.py
-   :start-after: # rfmdocstart: hellomultilang
-   :end-before: # rfmdocend: hellomultilang
+   :start-at: import reframe
 
 
 This test extends the ``hello1.py`` test by defining the ``lang`` parameter with the :py:func:`~reframe.core.pipeline.RegressionMixin.parameter` built-in.
@@ -174,8 +171,8 @@ This is exactly what we want to do here, and we know that the test sources are n
 Hence, we move the ``sourcepath`` assignment into a pre-compile hook.
 
 .. literalinclude:: ../tutorials/basics/hello/hello2.py
-   :start-after: # rfmdocstart: set_sourcepath
-   :end-before: # rfmdocend: set_sourcepath
+   :start-at: @run_before('compile')
+   :end-at: self.sourcepath
 
 The use of hooks is covered in more detail later on, but for now, let's just think of them as a way to defer the execution of a function to a given stage of the test's pipeline.
 By using hooks, any user could now derive from this class and attach other hooks (for example, adding some compiler flags) without having to worry about overriding the base method that sets the ``sourcepath`` variable.
@@ -210,32 +207,29 @@ In this case, the stage directory contains only the "Hello, World" source files,
 
 
 Let's go on and fix this failure by defining a new system and programming environments for the machine we are running on.
-We start off by copying the generic configuration file that ReFrame uses.
-Note that you should *not* edit this configuration file in place.
+For this we need to create our own configuration file.
 
 .. code-block:: console
 
-   cp reframe/core/settings.py tutorials/config/mysettings.py
+   vi tutorials/config/tresa.py
 
+Here is what we need to type:
 
-.. note::
-   You may also use edit directly the supplied ``tutorials/config/settings.py`` file, which is the actual configuration file against which the various tutorials have been evaluated.
+.. literalinclude:: ../tutorials/config/tresa.py
 
-
-Here is how the new configuration file looks like with the needed additions highlighted:
-
-.. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: site-configuration
-   :end-before: # rfmdocend: site-configuration
-   :emphasize-lines: 4-17, 91-103
-
-Here we define a system named ``catalina`` that has one partition named ``default``.
+We define a system named ``tresa`` that has one partition named ``default``.
 This partition makes no use of any `workload manager <config_reference.html#.systems[].partitions[].scheduler>`__, but instead launches any jobs locally as OS processes.
 Two programming environments are relevant for that partition, namely ``gnu`` and ``clang``, which are defined in the section :js:attr:`environments` of the `configuration file <config_reference.html#.environments>`__.
-The ``gnu`` programming environment provides GCC 9, whereas the ``clang`` one provides the Clang compiler from the system.
+The ``gnu`` programming environment provides GCC 12, whereas the ``clang`` one provides the Clang compiler from the system.
 Notice, how you can define the actual commands for invoking the C, C++ and Fortran compilers in each programming environment.
 As soon as a programming environment defines the different compilers, ReFrame will automatically pick the right compiler based on the source file extension.
 In addition to C, C++ and Fortran programs, ReFrame will recognize the ``.cu`` extension as well and will try to invoke the ``nvcc`` compiler for CUDA programs.
+Note also that we set the :js:attr:`target_systems` for each environment definition.
+This restricts the definition of the environment being defined to the specified systems only.
+ReFrame will always pick the definition that is a closest match for the current system.
+Restricting the environment definitions is generally a good practice if you plan to define multiple systems in multiple configuration files, as ReFrame would otherwise complain that an environment is redefined.
+On the other hand, if you want to provide generic definitions of environments that are valid for multiple systems, you may skip that.
+This is what the builtin configuration of ReFrame does for its generic ``builtin`` environment.
 
 Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` `configuration parameter <config_reference.html#.systems[].hostnames>`__) and it will not use any environment modules system (see the :js:attr:`modules_system` `configuration parameter <config_reference.html#.systems[].modules_system>`__).
 The :js:attr:`hostnames` attribute will help ReFrame to automatically pick the right configuration when running on it.
@@ -243,8 +237,8 @@ Notice, how the ``generic`` system matches any hostname, so that it acts as a fa
 
 .. note::
 
-   The different systems in the configuration file are tried in order and the first match is picked.
-   This practically means that the more general the selection pattern for a system is, the lower in the list of systems it should be.
+   Multiple systems may defined in a configuration file, in which case they are tried in order and the first match is picked.
+   This means that the systems whose ``hostnames`` patterns are more generic, they should go to the end of the list.
 
 The :doc:`configure` page describes the configuration file in more detail and the :doc:`config_reference` provides a complete reference guide of all the configuration options of ReFrame.
 
@@ -253,20 +247,25 @@ Let's now rerun our "Hello, World!" tests:
 
 .. code-block:: console
 
-   ./bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r
+   ./bin/reframe -C tutorials/config/tresa.py -c tutorials/basics/hello/hello2.py -r
 
 
-.. literalinclude:: listings/hello2_catalina.txt
+.. literalinclude:: listings/hello2_tresa.txt
    :language: console
 
 Notice how the same tests are now tried with both the ``gnu`` and ``clang`` programming environments, without having to touch them at all!
 That's one of the powerful features of ReFrame and we shall see later on, how easily we can port our tests to an HPC cluster with minimal changes.
-In order to instruct ReFrame to use our configuration file, we use the ``-C`` command line option.
-Since we don't want to type it throughout the tutorial, we will now set it in the environment:
+In order to instruct ReFrame to use our configuration file, we use the :option:`-C` command line option.
+Since we don't want to type it throughout the tutorial, we could set the :envvar:`RFM_CONFIG_FILES` environment variable, which takes a colon-separated list of configuration files that ReFrame will load.
+We will take advantage of multiple configuration files later in the tutorial.
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
+   export RFM_CONFIG_FILES=$(pwd)/tutorials/config/tresa.py
+
+
+.. tip::
+   If our configuration file was named ``settings.py`` and we did not intend to use multiple configuration files in the same directory, we could also set the :envvar:`RFM_CONFIG_PATH` environment variable.
 
 
 A Multithreaded "Hello, World!"
@@ -282,8 +281,7 @@ We extend our C++ "Hello, World!" example to print the greetings from multiple t
 
 .. literalinclude:: ../tutorials/basics/hellomp/src/hello_threads.cpp
    :language: cpp
-   :start-after: // rfmdocstart: hello_threads
-   :end-before: // rfmdocend: hello_threads
+   :start-at: #include
 
 This program takes as argument the number of threads it will create and it uses ``std::thread``, which is a C++11 addition, meaning that we will need to pass ``-std=c++11`` to our compilers.
 Here is the corresponding ReFrame test, where the new concepts introduced are highlighted:
@@ -294,8 +292,7 @@ Here is the corresponding ReFrame test, where the new concepts introduced are hi
 
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp1.py
-   :start-after: # rfmdocstart: hellothreaded
-   :end-before: # rfmdocend: hellothreaded
+   :start-at: import reframe
    :emphasize-lines: 10-10, 13-18
 
 
@@ -375,8 +372,7 @@ See the highlighted lines below in the modified version of the :attr:`@sanity_fu
 
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp2.py
-   :start-after: # rfmdocstart: hellothreadedextended
-   :end-before: # rfmdocend: hellothreadedextended
+   :start-at: import reframe
    :emphasize-lines: 22-24
 
 This new :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` counts all the pattern matches in the tests's :attr:`~reframe.core.pipeline.RegressionTest.stdout` and checks that this count matches the expected value.
@@ -403,8 +399,7 @@ To fix this test, we need to compile with ``-DSYNC_MESSAGES``, which will synchr
 
 
 .. literalinclude:: ../tutorials/basics/hellomp/hellomp3.py
-   :start-after: # rfmdocstart: hellothreadedextented2
-   :end-before: # rfmdocend: hellothreadedextented2
+   :start-at: import reframe
    :emphasize-lines: 15
 
 
@@ -421,8 +416,7 @@ In the test below, we highlight the lines that introduce new concepts.
 
 
 .. literalinclude:: ../tutorials/basics/stream/stream1.py
-   :start-after: # rfmdocstart: streamtest
-   :end-before: # rfmdocend: streamtest
+   :start-at: import reframe
    :emphasize-lines: 9-11,14-17,28-
 
 First of all, notice that we restrict the programming environments to ``gnu`` only, since this test requires OpenMP, which our installation of Clang does not have.
@@ -430,7 +424,7 @@ The next thing to notice is the :attr:`~reframe.core.pipeline.RegressionTest.pre
 These commands will be executed from the test's stage directory.
 In this case, we just fetch the source code of the benchmark.
 For running the benchmark, we need to set the OpenMP number of threads and pin them to the right CPUs through the ``OMP_NUM_THREADS`` and ``OMP_PLACES`` environment variables.
-You can set environment variables in a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.variables` dictionary.
+You can set environment variables in a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.env_vars` dictionary.
 
 What makes a ReFrame test a performance test is the definition of at least one :ref:`performance function<deferrable-performance-functions>`.
 Similarly to a test's :func:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>`, a performance function is a member function decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator, which binds the decorated function to a given unit.
@@ -481,8 +475,7 @@ Hence, in this example, we show how to collapse all these four performance funct
    cat tutorials/basics/stream/stream2.py
 
 .. literalinclude:: ../tutorials/basics/stream/stream2.py
-   :start-after: # rfmdocstart: streamtest2
-   :end-before: # rfmdocend: streamtest2
+   :start-at: import reframe
    :emphasize-lines: 28-
 
 As shown in the highlighted lines, this example collapses the four performance functions from the previous example into the :func:`extract_bw` function, which is also decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator with the units set to ``'MB/s'``.
@@ -528,8 +521,7 @@ In the following example, we set the reference values for all the STREAM sub-ben
 
 
 .. literalinclude:: ../tutorials/basics/stream/stream3.py
-   :start-after: # rfmdocstart: streamtest3
-   :end-before: # rfmdocend: streamtest3
+   :start-at: import reframe
    :emphasize-lines: 18-25
 
 
@@ -595,13 +587,11 @@ Adapting the configuration
 
 Our target system is the `Piz Daint <https://www.cscs.ch/computers/piz-daint/>`__ supercomputer at CSCS, but you can adapt the process to your target HPC system.
 In ReFrame, all the details of the various interactions of a test with the system environment are handled transparently and are set up in its configuration file.
-Let's extend our configuration file for Piz Daint.
+Let's create a new configuration file for Piz Daint:
 
 
-.. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: site-configuration
-   :end-before: # rfmdocend: site-configuration
-   :emphasize-lines: 32-90,114-145,158-164
+.. literalinclude:: ../tutorials/config/daint.py
+   :start-at: site_configuration
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
@@ -616,7 +606,7 @@ In this case, we define three partitions:
 .. |srun| replace:: :obj:`srun`
 .. _srun: https://slurm.schedmd.com/srun.html
 
-The login nodes are pretty much similar to the ``catalina:default`` partition which corresponded to our laptop: tests will be launched and run locally.
+The login nodes are pretty much similar to the ``tresa:default`` partition which corresponded to our laptop: tests will be launched and run locally.
 The other two partitions are handled by `Slurm <https://slurm.schedmd.com/>`__ and parallel jobs are launched using the |srun|_ command.
 Additionally, in order to access the different types of nodes represented by those partitions, users have to specify either ``-C mc`` or ``-C gpu`` options along with their account.
 This is what we do exactly with the :js:attr:`access` partition configuration option.
@@ -636,12 +626,8 @@ This parameter specifies the maximum number of ReFrame test jobs that can be sim
 ReFrame will try to keep concurrency close to this limit (but not exceeding it).
 By default, this is set to ``8``, so you are advised to set it to a higher number if you want to increase the throughput of completed tests.
 
-The new environments are defined similarly to the ones we had for our local system, except that now we set two more parameters: the :js:attr:`modules` and the :js:attr:`target_systems`.
+The new environments are defined similarly to the ones we had for our local system, except that now we add also the :js:attr:`modules` parameter.
 The :js:attr:`modules` parameter is a list of environment modules that needs to be loaded, in order to make available this compiler.
-The :js:attr:`target_systems` parameter restricts the environment definition to a list of specific systems or system partitions.
-This allows us to redefine environments for different systems, as for example the ``gnu`` environment in this case.
-ReFrame will always pick the definition that is a closest match for the current system.
-In this example, it will pick the second definition for ``gnu`` whenever it runs on the system named ``daint``, and the first in every other occasion.
 
 -----------------
 Running the tests
@@ -652,7 +638,7 @@ We will only do so with the final versions of the tests from the previous sectio
 
 .. code-block:: console
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
+   export RFM_CONFIG_FILES=$(pwd)/tutorials/config/daint.py
    ./bin/reframe -c tutorials/basics/ -R -n 'HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest' --performance-report -r
 
 .. literalinclude:: listings/alltests_daint.txt
@@ -717,8 +703,7 @@ Let's see and comment the changes:
    cat tutorials/basics/stream/stream4.py
 
 .. literalinclude:: ../tutorials/basics/stream/stream4.py
-   :start-after: # rfmdocstart: streamtest4
-   :end-before: # rfmdocend: streamtest4
+   :start-at: import reframe
    :emphasize-lines: 8, 27-41, 43-56
 
 First of all, we need to add the new programming environments in the list of the supported ones.

@@ -22,10 +22,8 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
     verbosity = 'v' * config.get('general/0/verbose')
 
     def rfm_command(testcase):
-        if config.filename != '<builtin>':
-            config_opt = f'-C {config.filename}'
-        else:
-            config_opt = ''
+        # Ignore the first argument, it should be '<builtin>'
+        config_opt = ' '.join([f'-C {arg}' for arg in config.sources[1:]])
 
         report_file = f'{testcase.check.unique_name}-report.json'
         if testcase.level:

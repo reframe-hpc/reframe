@@ -1,27 +1,28 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+36ffa085
+  version:           4.0.0-dev.2+5ea6b7a6
   command:           './bin/reframe -c tutorials/basics/hello/hello2.py -r'
-  launched by:       user@tresa.local
+  launched by:       user@host
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '<builtin>'
+  settings files:    '<builtin>'
   check search path: '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
-  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-iz0z1c2r.log'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-krmo7oc3.log'
 
 [==========] Running 2 check(s)
-[==========] Started on Sat Oct  1 20:06:23 2022 
+[==========] Started on Sat Nov 12 19:00:45 2022 
 
 [----------] start processing checks
 [ RUN      ] HelloMultiLangTest %lang=cpp /71bf65a3 @generic:default+builtin
 [ RUN      ] HelloMultiLangTest %lang=c /7cfa870e @generic:default+builtin
 [     FAIL ] (1/2) HelloMultiLangTest %lang=cpp /71bf65a3 @generic:default+builtin
 ==> test failed during 'compile': test staged in '/home/user/Repositories/reframe/stage/generic/default/builtin/HelloMultiLangTest_71bf65a3'
+rfm_job.out
 [       OK ] (2/2) HelloMultiLangTest %lang=c /7cfa870e @generic:default+builtin
 [----------] all spawned checks have finished
 
 [  FAILED  ] Ran 2/2 test case(s) from 2 check(s) (1 failure(s), 0 skipped)
-[==========] Finished on Sat Oct  1 20:06:23 2022 
+[==========] Finished on Sat Nov 12 19:00:46 2022 
 
 ================================================================================
 SUMMARY OF FAILURES
@@ -41,5 +42,5 @@ FAILURE INFO for HelloMultiLangTest_1
   * Rerun with '-n /71bf65a3 -p builtin --system generic:default -r'
   * Reason: build system error: I do not know how to compile a C++ program
 --------------------------------------------------------------------------------
-Run report saved in '/home/user/.reframe/reports/run-report-104.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-iz0z1c2r.log'
+Run report saved in '/home/user/.reframe/reports/run-report-320.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-krmo7oc3.log'

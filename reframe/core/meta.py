@@ -140,11 +140,9 @@ class RegressionTestMeta(type):
                         # available in the current class' namespace.
                         for b in self['_rfm_bases']:
                             if key in b._rfm_var_space:
-                                # Store a deep-copy of the variable's
-                                # value and return.
-                                v = b._rfm_var_space[key].default_value
+                                v = variables.ShadowVar(b._rfm_var_space[key])
                                 self._namespace[key] = v
-                                return self._namespace[key]
+                                return v
 
                         # If 'key' is neither a variable nor a parameter,
                         # raise the exception from the base __getitem__.

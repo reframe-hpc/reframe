@@ -1,66 +1,66 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+36ffa085
+  version:           4.0.0-dev.2+5ea6b7a6
   command:           './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -r'
-  launched by:       user@tresa.local
+  launched by:       user@host
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
   check search path: '/home/user/Repositories/reframe/unittests/resources/checks_unlisted/deps_complex.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
-  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-jr16q567.log'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-_008n_el.log'
 
 [==========] Running 10 check(s)
-[==========] Started on Sat Oct  1 20:06:35 2022 
+[==========] Started on Sat Nov 12 19:01:00 2022 
 
 [----------] start processing checks
-[ RUN      ] T0 /c9c2be9f @catalina:default+gnu
-[ RUN      ] T0 /c9c2be9f @catalina:default+clang
-[       OK ] ( 1/20) T0 /c9c2be9f @catalina:default+gnu
-[       OK ] ( 2/20) T0 /c9c2be9f @catalina:default+clang
-[ RUN      ] T4 /11ee5e9a @catalina:default+gnu
-[ RUN      ] T4 /11ee5e9a @catalina:default+clang
-[       OK ] ( 3/20) T4 /11ee5e9a @catalina:default+gnu
-[       OK ] ( 4/20) T4 /11ee5e9a @catalina:default+clang
-[ RUN      ] T5 /020d01e5 @catalina:default+gnu
-[ RUN      ] T5 /020d01e5 @catalina:default+clang
-[       OK ] ( 5/20) T5 /020d01e5 @catalina:default+gnu
-[       OK ] ( 6/20) T5 /020d01e5 @catalina:default+clang
-[ RUN      ] T1 /1f93603d @catalina:default+gnu
-[ RUN      ] T1 /1f93603d @catalina:default+clang
-[       OK ] ( 7/20) T1 /1f93603d @catalina:default+gnu
-[       OK ] ( 8/20) T1 /1f93603d @catalina:default+clang
-[ RUN      ] T8 /605fc1d6 @catalina:default+gnu
-[     FAIL ] ( 9/20) T8 /605fc1d6 @catalina:default+gnu
-==> test failed during 'setup': test staged in '/home/user/Repositories/reframe/stage/catalina/default/gnu/T8'
-[ RUN      ] T8 /605fc1d6 @catalina:default+clang
-[     FAIL ] (10/20) T8 /605fc1d6 @catalina:default+clang
-==> test failed during 'setup': test staged in '/home/user/Repositories/reframe/stage/catalina/default/clang/T8'
-[     FAIL ] (11/20) T9 /78a78a4e @catalina:default+gnu
+[ RUN      ] T0 /c9c2be9f @tresa:default+gnu
+[ RUN      ] T0 /c9c2be9f @tresa:default+clang
+[       OK ] ( 1/20) T0 /c9c2be9f @tresa:default+gnu
+[       OK ] ( 2/20) T0 /c9c2be9f @tresa:default+clang
+[ RUN      ] T4 /11ee5e9a @tresa:default+gnu
+[ RUN      ] T4 /11ee5e9a @tresa:default+clang
+[       OK ] ( 3/20) T4 /11ee5e9a @tresa:default+gnu
+[       OK ] ( 4/20) T4 /11ee5e9a @tresa:default+clang
+[ RUN      ] T5 /020d01e5 @tresa:default+gnu
+[ RUN      ] T5 /020d01e5 @tresa:default+clang
+[       OK ] ( 5/20) T5 /020d01e5 @tresa:default+gnu
+[       OK ] ( 6/20) T5 /020d01e5 @tresa:default+clang
+[ RUN      ] T1 /1f93603d @tresa:default+gnu
+[ RUN      ] T1 /1f93603d @tresa:default+clang
+[       OK ] ( 7/20) T1 /1f93603d @tresa:default+gnu
+[       OK ] ( 8/20) T1 /1f93603d @tresa:default+clang
+[ RUN      ] T8 /605fc1d6 @tresa:default+gnu
+[     FAIL ] ( 9/20) T8 /605fc1d6 @tresa:default+gnu
+==> test failed during 'setup': test staged in '/home/user/Repositories/reframe/stage/tresa/default/gnu/T8'
+[ RUN      ] T8 /605fc1d6 @tresa:default+clang
+[     FAIL ] (10/20) T8 /605fc1d6 @tresa:default+clang
+==> test failed during 'setup': test staged in '/home/user/Repositories/reframe/stage/tresa/default/clang/T8'
+[     FAIL ] (11/20) T9 /78a78a4e @tresa:default+gnu
 ==> test failed during 'startup': test staged in None
-[     FAIL ] (12/20) T9 /78a78a4e @catalina:default+clang
+[     FAIL ] (12/20) T9 /78a78a4e @tresa:default+clang
 ==> test failed during 'startup': test staged in None
-[ RUN      ] T6 /6dbdaf93 @catalina:default+gnu
-[ RUN      ] T6 /6dbdaf93 @catalina:default+clang
-[       OK ] (13/20) T6 /6dbdaf93 @catalina:default+gnu
-[       OK ] (14/20) T6 /6dbdaf93 @catalina:default+clang
-[ RUN      ] T2 /0f617ba9 @catalina:default+gnu
-[ RUN      ] T2 /0f617ba9 @catalina:default+clang
-[ RUN      ] T3 /5dd67f7f @catalina:default+gnu
-[ RUN      ] T3 /5dd67f7f @catalina:default+clang
-[     FAIL ] (15/20) T2 /0f617ba9 @catalina:default+gnu
-==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/catalina/default/gnu/T2'
-[     FAIL ] (16/20) T2 /0f617ba9 @catalina:default+clang
-==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/catalina/default/clang/T2'
-[     FAIL ] (17/20) T7 /f005e93d @catalina:default+gnu
+[ RUN      ] T6 /6dbdaf93 @tresa:default+gnu
+[ RUN      ] T6 /6dbdaf93 @tresa:default+clang
+[       OK ] (13/20) T6 /6dbdaf93 @tresa:default+gnu
+[       OK ] (14/20) T6 /6dbdaf93 @tresa:default+clang
+[ RUN      ] T2 /0f617ba9 @tresa:default+gnu
+[ RUN      ] T2 /0f617ba9 @tresa:default+clang
+[ RUN      ] T3 /5dd67f7f @tresa:default+gnu
+[ RUN      ] T3 /5dd67f7f @tresa:default+clang
+[     FAIL ] (15/20) T2 /0f617ba9 @tresa:default+gnu
+==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/tresa/default/gnu/T2'
+[     FAIL ] (16/20) T2 /0f617ba9 @tresa:default+clang
+==> test failed during 'sanity': test staged in '/home/user/Repositories/reframe/stage/tresa/default/clang/T2'
+[     FAIL ] (17/20) T7 /f005e93d @tresa:default+gnu
 ==> test failed during 'startup': test staged in None
-[     FAIL ] (18/20) T7 /f005e93d @catalina:default+clang
+[     FAIL ] (18/20) T7 /f005e93d @tresa:default+clang
 ==> test failed during 'startup': test staged in None
-[       OK ] (19/20) T3 /5dd67f7f @catalina:default+gnu
-[       OK ] (20/20) T3 /5dd67f7f @catalina:default+clang
+[       OK ] (19/20) T3 /5dd67f7f @tresa:default+gnu
+[       OK ] (20/20) T3 /5dd67f7f @tresa:default+clang
 [----------] all spawned checks have finished
 
 [  FAILED  ] Ran 20/20 test case(s) from 10 check(s) (8 failure(s), 0 skipped)
-[==========] Finished on Sat Oct  1 20:06:37 2022 
+[==========] Finished on Sat Nov 12 19:01:03 2022 
 
 ================================================================================
 SUMMARY OF FAILURES
@@ -68,16 +68,16 @@ SUMMARY OF FAILURES
 FAILURE INFO for T8 
   * Expanded name: T8
   * Description: 
-  * System partition: catalina:default
+  * System partition: tresa:default
   * Environment: gnu
-  * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/gnu/T8
+  * Stage directory: /home/user/Repositories/reframe/stage/tresa/default/gnu/T8
   * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T1']
-  * Dependencies (actual): [('T1', 'catalina:default', 'gnu')]
+  * Dependencies (actual): [('T1', 'tresa:default', 'gnu')]
   * Maintainers: []
   * Failing phase: setup
-  * Rerun with '-n /605fc1d6 -p gnu --system catalina:default -r'
+  * Rerun with '-n /605fc1d6 -p gnu --system tresa:default -r'
   * Reason: exception
 Traceback (most recent call last):
   File "/home/user/Repositories/reframe/reframe/frontend/executors/__init__.py", line 303, in _safe_call
@@ -94,16 +94,16 @@ Exception
 FAILURE INFO for T8 
   * Expanded name: T8
   * Description: 
-  * System partition: catalina:default
+  * System partition: tresa:default
   * Environment: clang
-  * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/clang/T8
+  * Stage directory: /home/user/Repositories/reframe/stage/tresa/default/clang/T8
   * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T1']
-  * Dependencies (actual): [('T1', 'catalina:default', 'clang')]
+  * Dependencies (actual): [('T1', 'tresa:default', 'clang')]
   * Maintainers: []
   * Failing phase: setup
-  * Rerun with '-n /605fc1d6 -p clang --system catalina:default -r'
+  * Rerun with '-n /605fc1d6 -p clang --system tresa:default -r'
   * Reason: exception
 Traceback (most recent call last):
   File "/home/user/Repositories/reframe/reframe/frontend/executors/__init__.py", line 303, in _safe_call
@@ -120,92 +120,92 @@ Exception
 FAILURE INFO for T9 
   * Expanded name: T9
   * Description: 
-  * System partition: catalina:default
+  * System partition: tresa:default
   * Environment: gnu
   * Stage directory: None
   * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T8']
-  * Dependencies (actual): [('T8', 'catalina:default', 'gnu')]
+  * Dependencies (actual): [('T8', 'tresa:default', 'gnu')]
   * Maintainers: []
   * Failing phase: startup
-  * Rerun with '-n /78a78a4e -p gnu --system catalina:default -r'
+  * Rerun with '-n /78a78a4e -p gnu --system tresa:default -r'
   * Reason: task dependency error: dependencies failed
 --------------------------------------------------------------------------------
 FAILURE INFO for T9 
   * Expanded name: T9
   * Description: 
-  * System partition: catalina:default
+  * System partition: tresa:default
   * Environment: clang
   * Stage directory: None
   * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T8']
-  * Dependencies (actual): [('T8', 'catalina:default', 'clang')]
+  * Dependencies (actual): [('T8', 'tresa:default', 'clang')]
   * Maintainers: []
   * Failing phase: startup
-  * Rerun with '-n /78a78a4e -p clang --system catalina:default -r'
+  * Rerun with '-n /78a78a4e -p clang --system tresa:default -r'
   * Reason: task dependency error: dependencies failed
 --------------------------------------------------------------------------------
 FAILURE INFO for T2 
   * Expanded name: T2
   * Description: 
-  * System partition: catalina:default
+  * System partition: tresa:default
   * Environment: gnu
-  * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/gnu/T2
-  * Node list: tresa.localNone
-  * Job type: local (id=92028)
+  * Stage directory: /home/user/Repositories/reframe/stage/tresa/default/gnu/T2
+  * Node list: hostNone
+  * Job type: local (id=59611)
   * Dependencies (conceptual): ['T6']
-  * Dependencies (actual): [('T6', 'catalina:default', 'gnu')]
+  * Dependencies (actual): [('T6', 'tresa:default', 'gnu')]
   * Maintainers: []
   * Failing phase: sanity
-  * Rerun with '-n /0f617ba9 -p gnu --system catalina:default -r'
+  * Rerun with '-n /0f617ba9 -p gnu --system tresa:default -r'
   * Reason: sanity error: 31 != 30
 --------------------------------------------------------------------------------
 FAILURE INFO for T2 
   * Expanded name: T2
   * Description: 
-  * System partition: catalina:default
+  * System partition: tresa:default
   * Environment: clang
-  * Stage directory: /home/user/Repositories/reframe/stage/catalina/default/clang/T2
-  * Node list: tresa.localNone
-  * Job type: local (id=92029)
+  * Stage directory: /home/user/Repositories/reframe/stage/tresa/default/clang/T2
+  * Node list: hostNone
+  * Job type: local (id=59612)
   * Dependencies (conceptual): ['T6']
-  * Dependencies (actual): [('T6', 'catalina:default', 'clang')]
+  * Dependencies (actual): [('T6', 'tresa:default', 'clang')]
   * Maintainers: []
   * Failing phase: sanity
-  * Rerun with '-n /0f617ba9 -p clang --system catalina:default -r'
+  * Rerun with '-n /0f617ba9 -p clang --system tresa:default -r'
   * Reason: sanity error: 31 != 30
 --------------------------------------------------------------------------------
 FAILURE INFO for T7 
   * Expanded name: T7
   * Description: 
-  * System partition: catalina:default
+  * System partition: tresa:default
   * Environment: gnu
   * Stage directory: None
   * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T2']
-  * Dependencies (actual): [('T2', 'catalina:default', 'gnu')]
+  * Dependencies (actual): [('T2', 'tresa:default', 'gnu')]
   * Maintainers: []
   * Failing phase: startup
-  * Rerun with '-n /f005e93d -p gnu --system catalina:default -r'
+  * Rerun with '-n /f005e93d -p gnu --system tresa:default -r'
   * Reason: task dependency error: dependencies failed
 --------------------------------------------------------------------------------
 FAILURE INFO for T7 
   * Expanded name: T7
   * Description: 
-  * System partition: catalina:default
+  * System partition: tresa:default
   * Environment: clang
   * Stage directory: None
   * Node list: 
   * Job type: local (id=None)
   * Dependencies (conceptual): ['T2']
-  * Dependencies (actual): [('T2', 'catalina:default', 'clang')]
+  * Dependencies (actual): [('T2', 'tresa:default', 'clang')]
   * Maintainers: []
   * Failing phase: startup
-  * Rerun with '-n /f005e93d -p clang --system catalina:default -r'
+  * Rerun with '-n /f005e93d -p clang --system tresa:default -r'
   * Reason: task dependency error: dependencies failed
 --------------------------------------------------------------------------------
-Run report saved in '/home/user/.reframe/reports/run-report-109.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-jr16q567.log'
+Run report saved in '/home/user/.reframe/reports/run-report-326.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-_008n_el.log'

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import copy
 import fnmatch
 import functools
@@ -12,7 +13,6 @@ import jsonschema
 import os
 import re
 import socket
-import tempfile
 
 import reframe
 import reframe.core.settings as settings
@@ -81,9 +81,9 @@ def _hostname(use_fqdn, use_xthostname):
 
 
 class _SiteConfig:
-    def __init__(self, site_config, filename):
-        self._site_config = copy.deepcopy(site_config)
-        self._filename = filename
+    def __init__(self):
+        self._site_config = None
+        self._sources = []
         self._subconfigs = {}
         self._local_system = None
         self._sticky_options = {}
@@ -93,6 +93,12 @@ class _SiteConfig:
                 'use_fqdn': False,
                 'use_xthostname': False,
             }
+        }
+        self._definitions = {
+            'systems': {},
+            'partitions': {},
+            'environments': {},
+            'modes': {}
         }
 
         # Open and store the JSON schema for later validation
@@ -106,6 +112,108 @@ class _SiteConfig:
                     f'invalid configuration schema: {schema_filename!r}'
                 ) from e
 
+    def _update_system_defs(self, config, filename):
+        for sys_entry in config:
+            sys_name = sys_entry['name']
+            if sys_name in self._definitions['systems']:
+                fname = self._definitions['systems'][sys_name]
+                getlogger().warning(f'redefinition of system {sys_name!r}: '
+                                    f'already defined in {fname!r}')
+
+            self._definitions['systems'][sys_name] = filename
+            for part_entry in sys_entry['partitions']:
+                part_name = sys_name + ':' + part_entry['name']
+                if part_name in self._definitions['partitions']:
+                    fname = self._definitions['partitions'][part_name]
+                    getlogger().warning(
+                        f'redefinition of partition {part_name!r}: '
+                        f'already defined in {fname!r}'
+                    )
+                self._definitions['partitions'][part_name] = filename
+
+    def _update_environment_defs(self, config, filename):
+        for env_entry in config:
+            target_systems = env_entry.get('target_systems', '*')
+            for target in target_systems:
+                env_name = target + ':' + env_entry['name']
+                if env_name in self._definitions['environments']:
+                    fname = self._definitions['environments'][env_name]
+                    getlogger().warning(
+                        f'redefinition of environment {env_name!r}: '
+                        f'already defined in {fname!r}'
+                    )
+
+                self._definitions['environments'][env_name] = filename
+
+    def _update_mode_defs(self, config, filename):
+        for mode_entry in config:
+            target_systems = mode_entry.get('target_systems', '*')
+            for target in target_systems:
+                mode_name = target + ':' + mode_entry['name']
+                if mode_name in self._definitions['modes']:
+                    fname = self._definitions['modes'][mode_name]
+                    getlogger().warning(f'redefinition of mode {mode_name!r}: '
+                                        f'already defined in {fname!r}')
+
+                self._definitions['modes'][mode_name] = filename
+
+    def _update_defs(self, site_config, filename):
+        for secname, config in site_config.items():
+            if secname == 'systems':
+                self._update_system_defs(config, filename)
+            elif secname == 'environments':
+                self._update_environment_defs(config, filename)
+            elif secname == 'modes':
+                self._update_mode_defs(config, filename)
+
+    def _merge_config_sections(self, target, other):
+        '''Merge `other` section into `target`.
+
+        :returns: the merged section
+        '''
+        # Index the sections by the target_systems
+        options_by_system = {}
+        for entry in target + other:
+            for key in entry.pop('target_systems', ['*']):
+                options_by_system.setdefault(key, [])
+                options_by_system[key].append(entry)
+
+        # Now merge the options
+        ret = []
+        for system, optionset in options_by_system.items():
+            entry = functools.reduce(
+                lambda l, r: l.update(r) or l, optionset
+            )
+            entry['target_systems'] = [system]
+            ret.append(entry)
+
+        return ret
+
+    def update_config(self, config, filename):
+        self._sources.append(filename)
+        self._update_defs(config, filename)
+        nc = copy.deepcopy(config)
+        if self._site_config is None:
+            self._site_config = nc
+            return self
+
+        mergeable_sections = ('general', 'logging', 'schedulers')
+        for sec in nc.keys():
+            if sec not in self._site_config:
+                self._site_config[sec] = nc[sec]
+            elif sec in mergeable_sections:
+                self._site_config[sec] = self._merge_config_sections(
+                    self._site_config[sec], nc[sec]
+                )
+            else:
+                if sec == 'systems':
+                    # Systems have to be inserted in the beginning of the list,
+                    # since they are selected by the first matching entry in
+                    # `hostnames`.
+                    self._site_config[sec] = nc[sec] + self._site_config[sec]
+                else:
+                    self._site_config[sec] += nc[sec]
+
     def _pick_config(self):
         if self._local_system:
             return self._subconfigs[self._local_system]
@@ -114,7 +222,7 @@ class _SiteConfig:
 
     def __repr__(self):
         return (f'{type(self).__name__}(site_config={self._site_config!r}, '
-                f'filename={self._filename!r})')
+                f'sources={self._sources!r})')
 
     def __str__(self):
         return json.dumps(self._pick_config(), indent=2)
@@ -242,25 +350,14 @@ class _SiteConfig:
         return value
 
     @property
-    def filename(self):
-        return self._filename
+    def sources(self):
+        return self._sources
 
     @property
     def subconfig_system(self):
         return self._local_system
 
-    @classmethod
-    def create(cls, filename):
-        _, ext = os.path.splitext(filename)
-        if ext == '.py':
-            return cls._create_from_python(filename)
-        elif ext == '.json':
-            return cls._create_from_json(filename)
-        else:
-            raise ConfigError(f"unknown configuration file type: '{filename}'")
-
-    @classmethod
-    def _create_from_python(cls, filename):
+    def load_config_python(self, filename):
         try:
             mod = util.import_module_from_file(filename)
         except ImportError as e:
@@ -274,8 +371,7 @@ class _SiteConfig:
             # Looks like an old style config
             raise ConfigError(
                 f"the syntax of the configuration file {filename!r} "
-                f"is no longer supported; please convert it using the "
-                f"'--upgrade-config-file' option"
+                f"is no longer supported"
             )
 
         mod = util.import_module_from_file(filename)
@@ -284,10 +380,9 @@ class _SiteConfig:
                 f"not a valid Python configuration file: '{filename}'"
             )
 
-        return _SiteConfig(mod.site_configuration, filename)
+        self.update_config(mod.site_configuration, filename)
 
-    @classmethod
-    def _create_from_json(cls, filename):
+    def load_config_json(self, filename):
         with open(filename) as fp:
             try:
                 config = json.loads(fp.read())
@@ -296,7 +391,7 @@ class _SiteConfig:
                     f"invalid JSON syntax in configuration file '{filename}'"
                 ) from e
 
-        return _SiteConfig(config, filename)
+        self.update_config(config, filename)
 
     def _detect_system(self):
         getlogger().debug(
@@ -325,27 +420,47 @@ class _SiteConfig:
         try:
             jsonschema.validate(site_config, self._schema)
         except jsonschema.ValidationError as e:
-            raise ConfigError(f"could not validate configuration file: "
-                              f"'{self._filename}'") from e
+            raise ConfigError(f"could not validate configuration files: "
+                              f"'{self._sources}'") from e
 
-        # Make sure that system and partition names are unique
-        system_names = set()
+        def _warn_variables(config, opt_path):
+            opt_path = '/'.join(opt_path + ['variables'])
+            if 'env_vars' in config and 'variables' in config:
+                getlogger().warning(
+                    f"configuration option {opt_path!r}: "
+                    f"both 'env_vars' and 'variables' are defined; "
+                    f"'variables' will be ignored"
+                )
+            elif 'variables' in config:
+                getlogger().warning(
+                    f"configuration option {opt_path!r}: "
+                    f"'variables' is deprecated; please use 'env_vars' instead"
+                )
+                config['env_vars'] = config['variables']
+
+        # Warn about the deprecated `variables` and convert them internally to
+        # `env_vars`
         for system in self._site_config['systems']:
             sysname = system['name']
-            if sysname in system_names:
-                raise ConfigError(f"system '{sysname}' already defined")
-
-            system_names.add(sysname)
-            partition_names = set()
+            opt_path = ['systems', f'@{sysname}']
+            _warn_variables(system, opt_path)
             for part in system['partitions']:
                 partname = part['name']
-                if partname in partition_names:
-                    raise ConfigError(
-                        f"partition '{partname}' already defined "
-                        f"for system '{sysname}'"
-                    )
+                opt_path += ['partitions', f'@{partname}']
+                _warn_variables(part, opt_path)
+                for i, cp in enumerate(part.get('container_platforms', [])):
+                    opt_path += ['container_platforms', str(i)]
+                    _warn_variables(cp, opt_path)
+                    opt_path.pop()
+                    opt_path.pop()
 
-                partition_names.add(partname)
+                opt_path.pop()
+                opt_path.pop()
+
+        for env in self._site_config['environments']:
+            envname = env['name']
+            opt_path = ['environments', f'@{envname}']
+            _warn_variables(env, opt_path)
 
     def select_subconfig(self, system_fullname=None,
                          ignore_resolve_errors=False):
@@ -356,7 +471,7 @@ class _SiteConfig:
 
         self._local_system = system_fullname
         if system_fullname in self._subconfigs:
-            return self._subconfigs[system_fullname]
+            return
 
         try:
             system_name, part_name = system_fullname.split(':', maxsplit=1)
@@ -401,30 +516,51 @@ class _SiteConfig:
             # Convert section to a scoped dict that will handle correctly and
             # transparently the system/partition resolution
             scoped_section = ScopedDict()
+            unnamed_objects = False
             for obj in section:
-                key = obj.get('name', name)
                 target_systems = obj.get(
                     'target_systems',
                     _match_option(f'{name}/target_systems',
                                   self._schema['defaults'])
                 )
-                for t in target_systems:
-                    scoped_section[f'{t}:{key}'] = obj
-
-            unique_keys = set()
-            for obj in section:
-                key = obj.get('name', name)
-                if key in unique_keys:
-                    continue
-
-                unique_keys.add(key)
                 try:
-                    val = scoped_section[f"{system_fullname}:{key}"]
+                    key = obj['name']
+                    for t in target_systems:
+                        scoped_section[f'{t}:{key}'] = obj
                 except KeyError:
-                    pass
-                else:
-                    local_config.setdefault(name, [])
-                    local_config[name].append(val)
+                    unnamed_objects = True
+                    for k, v in obj.items():
+                        if k != 'target_systems':
+                            for t in target_systems:
+                                scoped_section[f'{t}:{name}/{k}'] = v
+
+            if unnamed_objects:
+                # We need to merge all the objects of the section into a
+                # single one based on the selected system
+                uniq_obj = {}
+                for obj in section:
+                    for k, v in obj.items():
+                        with contextlib.suppress(KeyError):
+                            uniq_obj[k] = scoped_section[
+                                f'{system_fullname}:{name}/{k}'
+                            ]
+
+                local_config[name] = [uniq_obj]
+            else:
+                unique_keys = set()
+                for obj in section:
+                    key = obj['name']
+                    if key in unique_keys:
+                        continue
+
+                    unique_keys.add(key)
+                    try:
+                        val = scoped_section[f'{system_fullname}:{key}']
+                    except KeyError:
+                        pass
+                    else:
+                        local_config.setdefault(name, [])
+                        local_config[name].append(val)
 
         required_sections = self._schema['required']
         for name in required_sections:
@@ -456,213 +592,44 @@ class _SiteConfig:
         self._subconfigs[system_fullname] = local_config
 
 
-def convert_old_config(filename, newfilename=None):
-    old_config = util.import_module_from_file(filename).settings
-    converted = {
-        'systems': [],
-        'environments': [],
-        'logging': [],
-    }
-    perflogdir = {}
-    old_systems = old_config.site_configuration['systems'].items()
-    for sys_name, sys_spec in old_systems:
-        sys_dict = {'name': sys_name}
-
-        system_perflogdir = sys_spec.pop('perflogdir', None)
-        perflogdir.setdefault(system_perflogdir, [])
-        perflogdir[system_perflogdir].append(sys_name)
-
-        sys_dict.update(sys_spec)
-
-        # hostnames is now a required property
-        if 'hostnames' not in sys_spec:
-            sys_dict['hostnames'] = []
-
-        # Make variables dictionary into a list of lists
-        if 'variables' in sys_spec:
-            sys_dict['variables'] = [
-                [vname, v] for vname, v in sys_dict['variables'].items()
-            ]
-
-        # Make partitions dictionary into a list
-        if 'partitions' in sys_spec:
-            sys_dict['partitions'] = []
-            for pname, p in sys_spec['partitions'].items():
-                new_p = {'name': pname}
-                new_p.update(p)
-                if p['scheduler'] == 'nativeslurm':
-                    new_p['scheduler'] = 'slurm'
-                    new_p['launcher'] = 'srun'
-                elif p['scheduler'] == 'local':
-                    new_p['scheduler'] = 'local'
-                    new_p['launcher'] = 'local'
-                else:
-                    sched, launcher, *_ = p['scheduler'].split('+')
-                    new_p['scheduler'] = sched
-                    new_p['launcher'] = launcher
-
-                # Make resources dictionary into a list
-                if 'resources' in p:
-                    new_p['resources'] = [
-                        {'name': rname, 'options': r}
-                        for rname, r in p['resources'].items()
-                    ]
-
-                # Make variables dictionary into a list of lists
-                if 'variables' in p:
-                    new_p['variables'] = [
-                        [vname, v] for vname, v in p['variables'].items()
-                    ]
-
-                if 'container_platforms' in p:
-                    new_p['container_platforms'] = []
-                    for cname, c in p['container_platforms'].items():
-                        new_c = {'type': cname}
-                        new_c.update(c)
-                        if 'variables' in c:
-                            new_c['variables'] = [
-                                [vn, v] for vn, v in c['variables'].items()
-                            ]
-
-                        new_p['container_platforms'].append(new_c)
-
-                sys_dict['partitions'].append(new_p)
-
-        converted['systems'].append(sys_dict)
-
-    old_environs = old_config.site_configuration['environments'].items()
-    for env_target, env_entries in old_environs:
-        for ename, e in env_entries.items():
-            new_env = {'name': ename}
-            if env_target != '*':
-                new_env['target_systems'] = [env_target]
-
-            new_env.update(e)
-
-            # Convert variables dictionary to a list of lists
-            if 'variables' in e:
-                new_env['variables'] = [
-                    [vname, v] for vname, v in e['variables'].items()
-                ]
-
-            # Type attribute is not used anymore
-            if 'type' in new_env:
-                del new_env['type']
-
-            converted['environments'].append(new_env)
-
-    if 'modes' in old_config.site_configuration:
-        converted['modes'] = []
-        old_modes = old_config.site_configuration['modes'].items()
-        for target_mode, mode_entries in old_modes:
-            for mname, m in mode_entries.items():
-                new_mode = {'name': mname, 'options': m}
-                if target_mode != '*':
-                    new_mode['target_systems'] = [target_mode]
-
-                converted['modes'].append(new_mode)
-
-    def handler_list(handler_config, basedir=None):
-        ret = []
-        for h in handler_config:
-            new_h = h.copy()
-            new_h['level'] = h['level'].lower()
-            if h['type'] == 'graylog':
-                # `host` and `port` attribute are converted to `address`
-                new_h['address'] = h['host']
-                if 'port' in h:
-                    new_h['address'] += ':' + h['port']
-            elif h['type'] == 'filelog' and basedir is not None:
-                new_h['basedir'] = basedir
-
-            ret.append(new_h)
-
-        return ret
-
-    for basedir, target_systems in perflogdir.items():
-        converted['logging'].append(
-            {
-                'level': old_config.logging_config['level'].lower(),
-                'handlers': handler_list(
-                    old_config.logging_config['handlers']
-                ),
-                'handlers_perflog': handler_list(
-                    old_config.perf_logging_config['handlers'],
-                    basedir=basedir
-                ),
-                'target_systems': target_systems
-            }
-        )
-        if basedir is None:
-            del converted['logging'][-1]['target_systems']
-
-    converted['general'] = [{}]
-    if hasattr(old_config, 'checks_path'):
-        converted['general'][0][
-            'check_search_path'
-        ] = old_config.checks_path
-
-    if hasattr(old_config, 'checks_path_recurse'):
-        converted['general'][0][
-            'check_search_recursive'
-        ] = old_config.checks_path_recurse
-
-    if converted['general'] == [{}]:
-        del converted['general']
-
-    contents = (f"#\n# This file was automatically generated "
-                f"by ReFrame based on '{filename}'.\n#\n\n"
-                f"site_configuration = {util.ppretty(converted)}\n")
-
-    contents = '\n'.join(l if len(l) < 80 else f'{l}  # noqa: E501'
-                         for l in contents.split('\n'))
-
-    if newfilename:
-        with open(newfilename, 'w') as fp:
-            if newfilename.endswith('.json'):
-                json.dump(converted, fp, indent=4)
+def find_config_files(config_path=None, config_file=None):
+    res = []
+    if config_path:
+        for p in config_path:
+            if os.path.exists(p + '/settings.py'):
+                res.append(p + '/settings.py')
+            elif os.path.exists(p + '/settings.json'):
+                res.append(p + '/settings.json')
             else:
-                fp.write(contents)
+                getlogger().debug(f"No 'settings.py' or 'settings.json' "
+                                  f"found in {p!r}, path will be ignored")
 
-    else:
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py',
-                                         delete=False) as fp:
-            fp.write(contents)
+    if config_file:
+        for f in config_file:
+            # If the user sets RFM_CONFIG_FILES=:conf1:conf2 the list will
+            # include one empty string in the beginning
+            if f == '':
+                res = []
+            elif f.startswith(':'):
+                res = [f[1:]]
+            else:
+                res.append(f)
 
-    return fp.name
-
-
-def _find_config_file():
-    # The order of elements is important, since it defines the priority
-    homedir = os.getenv('HOME')
-    prefixes = [os.path.join(homedir, '.reframe')] if homedir else []
-    prefixes += [
-        reframe.INSTALL_PREFIX,
-        '/etc/reframe.d'
-    ]
-    valid_exts = ['py', 'json']
-    getlogger().debug('Looking for a suitable configuration file')
-    for d in prefixes:
-        if not d:
-            continue
-
-        for ext in valid_exts:
-            filename = os.path.join(d, f'settings.{ext}')
-            getlogger().debug(f'Trying {filename!r}')
-            if os.path.exists(filename):
-                return filename
-
-    return None
+    return res
 
 
-def load_config(filename=None):
-    if filename is None:
-        filename = _find_config_file()
-        if filename is None:
-            # Return the generic configuration
-            getlogger().debug('No configuration found; '
-                              'falling back to a generic one')
-            return _SiteConfig(settings.site_configuration, '<builtin>')
+def load_config(*filenames):
+    ret = _SiteConfig()
+    getlogger().debug('Loading the generic configuration')
+    ret.update_config(settings.site_configuration, '<builtin>')
+    for f in filenames:
+        getlogger().debug(f'Loading configuration file: {filenames!r}')
+        _, ext = os.path.splitext(f)
+        if ext == '.py':
+            ret.load_config_python(f)
+        elif ext == '.json':
+            ret.load_config_json(f)
+        else:
+            raise ConfigError(f"unknown configuration file type: '{f}'")
 
-    getlogger().debug(f'Loading configuration file: {filename!r}')
-    return _SiteConfig.create(filename)
+    return ret

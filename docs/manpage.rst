@@ -775,11 +775,25 @@ It does so by leveraging the selected system's environment modules system.
 Miscellaneous options
 ---------------------
 
-.. option:: -C --config-file=FILE
+.. option:: -C, --config-file=FILE
 
    Use ``FILE`` as configuration file for ReFrame.
 
-   This option can also be set using the :envvar:`RFM_CONFIG_FILE` environment variable.
+   This option can be passed multiple times, in which case multiple configuration files will be read and loaded successively.
+   The base of the configuration chain is always the builtin configuration file, namely the ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
+   At any point, the user can "break" the chain of configuration files by prefixing the configuration file name with a colon as in the following example: ``-C :/path/to/new_config.py``.
+   This will ignore any previously loaded configuration file and will only load the one specified.
+   Note, however, that the builtin configuration file cannot be overriden;
+   It will always be loaded first in the chain.
+
+   This option can also be set using the :envvar:`RFM_CONFIG_FILES` environment variable.
+
+   In order to determine its final configuration, ReFrame first loads the builtin configuration file unconditionally and then starts looking for configuration files in the :envvar:`RFM_CONFIG_PATH`.
+   For each directory in the :envvar:`RFM_CONFIG_PATH`, ReFrame looks for files named ``setting.py`` or ``setting.json`` and loads them.
+   If both a ``settings.py`` and a ``settings.json`` file are found, the Python configuration will be preferred.
+   ReFrame, finally, processes any configuration files specified in the command line or in the :envvar:`RFM_CONFIG_FILES` environment variable.
+
+   .. versionchanged:: 4.0.0
 
 .. _--detect-host-topology:
 
@@ -1171,6 +1185,41 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       Associated command line option     :option:`-C`
       Associated configuration parameter N/A
       ================================== ==================
+
+   .. deprecated:: 4.0.0
+      Please use the :envvar:`RFM_CONFIG_FILES` instead.
+
+
+.. envvar:: RFM_CONFIG_FILES
+
+   A colon-separated list of configuration files to load.
+   Refer to the documentation of the :option:`--config-file` option for a detailed description on how ReFrame loads its configuration.
+
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`-C`
+      Associated configuration parameter N/A
+      ================================== ==================
+
+   .. versionadded:: 4.0.0
+
+.. envvar:: RFM_CONFIG_PATH
+
+   A colon-separated list of directories that contain ReFrame configuration files.
+   Refer to the documentation of the :option:`--config-file` option for a detailed description on how ReFrame loads its configuration.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter N/A
+      ================================== ==================
+
+   .. versionadded:: 4.0.0
 
 
 .. envvar:: RFM_GIT_TIMEOUT

@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-// rfmdocstart: helloworld
 #include <stdio.h>
 
 
@@ -12,4 +11,3 @@ int main()
     printf("Hello, World!\n");
     return 0;
 }
-// rfmdocend: helloworld

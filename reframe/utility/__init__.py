@@ -925,6 +925,43 @@ def nodelist_abbrev(nodes):
     return ','.join(str(ng) for ng in node_groups)
 
 
+def nodelist_expand(nodespec):
+    '''Expand the nodes in ``nodespec`` to a list of nodes.
+
+    :arg nodespec: A node specification as the one returned by
+        :func:`nodelist_abbrev`
+    :returns: The list of nodes corresponding to the given node specification.
+
+    .. versionadded:: 4.0.0
+    '''
+
+    if not isinstance(nodespec, str):
+        raise TypeError('nodespec argument must be a string')
+
+    if nodespec == '':
+        return []
+
+    nodespec_parts = nodespec.split(',')
+    node_patt = re.compile(r'(?P<prefix>.+)\[(?P<l>\d+)-(?P<u>\d+)\]')
+    nodes = []
+    for ns in nodespec_parts:
+        if '[' not in ns and ']' not in ns:
+            nodes.append(ns)
+            continue
+
+        match = node_patt.match(ns)
+        if not match:
+            raise ValueError(f'invalid nodespec: {nodespec}')
+
+        prefix = match.group('prefix')
+        low, upper = int(match.group('l')), int(match.group('u'))
+        width = count_digits(upper)
+        for nid in range(low, upper+1):
+            nodes.append(f'{prefix}{nid:0{width}}')
+
+    return nodes
+
+
 def cache_return_value(fn):
     '''Decorator that caches the return value of the decorated function.
 

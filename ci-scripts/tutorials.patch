@@ -1,0 +1,68 @@
+diff -Nru tutorials.orig/advanced/affinity/affinity.py tutorials/advanced/affinity/affinity.py
+--- tutorials.orig/advanced/affinity/affinity.py	2022-11-17 19:13:28.000000000 +0100
++++ tutorials/advanced/affinity/affinity.py	2022-11-17 19:12:26.000000000 +0100
+@@ -26,3 +26,11 @@
+     @sanity_function
+     def validate_test(self):
+         return sn.assert_found(r'CPU affinity', self.stdout)
++
++    @run_before('compile')
++    def prgenv_nvidia_workaround(self):
++        ce = self.current_environ.name
++        if ce == 'nvidia':
++            self.build_system.cppflags += [
++                '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
++            ]
+diff -Nru tutorials.orig/basics/hello/hello2.py tutorials/basics/hello/hello2.py
+--- tutorials.orig/basics/hello/hello2.py	2022-11-17 19:13:28.000000000 +0100
++++ tutorials/basics/hello/hello2.py	2022-11-17 19:12:26.000000000 +0100
+@@ -13,6 +13,7 @@
+ 
+     valid_systems = ['*']
+     valid_prog_environs = ['*']
++    build_system = 'SingleSource'
+ 
+     @run_before('compile')
+     def set_sourcepath(self):
+@@ -21,3 +22,11 @@
+     @sanity_function
+     def assert_hello(self):
+         return sn.assert_found(r'Hello, World\!', self.stdout)
++
++    @run_before('compile')
++    def prgenv_nvidia_workaround(self):
++        ce = self.current_environ.name
++        if ce == 'nvidia' and self.lang=='cpp':
++            self.build_system.cppflags = [
++                '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
++            ]
+diff -Nru tutorials.orig/basics/hellomp/hellomp1.py tutorials/basics/hellomp/hellomp1.py
+--- tutorials.orig/basics/hellomp/hellomp1.py	2022-11-17 19:13:28.000000000 +0100
++++ tutorials/basics/hellomp/hellomp1.py	2022-11-17 19:12:26.000000000 +0100
+@@ -25,3 +25,11 @@
+     @sanity_function
+     def assert_hello(self):
+         return sn.assert_found(r'Hello, World\!', self.stdout)
++
++    @run_before('compile')
++    def prgenv_nvidia_workaround(self):
++        ce = self.current_environ.name
++        if ce == 'nvidia':
++            self.build_system.cppflags += [
++                '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
++            ]
+diff -Nru tutorials.orig/basics/hellomp/hellomp3.py tutorials/basics/hellomp/hellomp3.py
+--- tutorials.orig/basics/hellomp/hellomp3.py	2022-11-17 19:13:28.000000000 +0100
++++ tutorials/basics/hellomp/hellomp3.py	2022-11-17 19:12:26.000000000 +0100
+@@ -28,3 +28,11 @@
+         num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
+                                          self.stdout))
+         return sn.assert_eq(num_messages, 16)
++
++    @run_before('compile')
++    def prgenv_nvidia_workaround(self):
++        ce = self.current_environ.name
++        if ce == 'nvidia':
++            self.build_system.cppflags += [
++                '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
++            ]

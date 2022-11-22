@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-// rfmdocstart: dotprod
 #include <cassert>
 #include <iostream>
 #include <random>
@@ -71,4 +70,3 @@ int main(int argc, char *argv[])
               << dotprod(x, y) << "\n";
     return 0;
 }
-// rfmdocend: dotprod

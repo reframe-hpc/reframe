@@ -1,16 +1,17 @@
 Loading user configuration
-Loading configuration file: 'tutorials/config/settings.py'
+Loading the generic configuration
+Loading configuration file: ('tutorials/config/tresa.py',)
 Detecting system using method: 'hostname'
 Using standard hostname...
-Retrieved hostname: 'tresa.local'
+Retrieved hostname: 'host'
 Looking for a matching configuration entry
-Configuration found: picking system 'catalina'
+Configuration found: picking system 'tresa'
 Initializing runtime
 Initializing system partition 'default'
-Initializing system 'catalina'
+Initializing system 'tresa'
 Initializing modules system 'nomod'
-detecting topology info for catalina:default
-> found topology file '/home/user/.reframe/topology/catalina-default/processor.json'; loading...
+detecting topology info for tresa:default
+> found topology file '/home/user/.reframe/topology/tresa-default/processor.json'; loading...
 > device auto-detection is not supported
 [ReFrame Environment]
   RFM_AUTODETECT_FQDN=<not set>
@@ -21,10 +22,10 @@ detecting topology info for catalina:default
   RFM_CLEAN_STAGEDIR=<not set>
   RFM_COLORIZE=n
   RFM_COMPRESS_REPORT=<not set>
-  RFM_CONFIG_FILE=/home/user/Repositories/reframe/tutorials/config/settings.py
+  RFM_CONFIG_FILES=/home/user/Repositories/reframe/tutorials/config/tresa.py
+  RFM_CONFIG_PATH=<not set>
   RFM_DUMP_PIPELINE_PROGRESS=<not set>
   RFM_GIT_TIMEOUT=<not set>
-  RFM_GRAYLOG_ADDRESS=<not set>
   RFM_HTTPJSON_URL=<not set>
   RFM_IGNORE_CHECK_CONFLICTS=<not set>
   RFM_IGNORE_REQNODENOTAVAIL=<not set>
@@ -54,15 +55,15 @@ detecting topology info for catalina:default
   RFM_USE_LOGIN_SHELL=<not set>
   RFM_VERBOSE=<not set>
 [ReFrame Setup]
-  version:           4.0.0-dev.1+36ffa085
-  command:           './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -l -vv'
-  launched by:       user@tresa.local
+  version:           4.0.0-dev.2+5ea6b7a6
+  command:           './bin/reframe -C tutorials/config/tresa.py -c tutorials/basics/hello/hello2.py -l -vv'
+  launched by:       user@host
   working directory: '/home/user/Repositories/reframe'
-  settings file:     'tutorials/config/settings.py'
+  settings files:    '<builtin>', 'tutorials/config/tresa.py'
   check search path: '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
-  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-gnl0vln_.log'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-3gcehyof.log'
 
 Looking for tests in '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py'
 Validating '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py': OK
@@ -74,26 +75,26 @@ Filtering test cases(s) by tags: 4 remaining
 Filtering test cases(s) by other attributes: 4 remaining
 Building and validating the full test DAG
 Full test DAG:
-  ('HelloMultiLangTest_1', 'catalina:default', 'gnu') -> []
-  ('HelloMultiLangTest_1', 'catalina:default', 'clang') -> []
-  ('HelloMultiLangTest_0', 'catalina:default', 'gnu') -> []
-  ('HelloMultiLangTest_0', 'catalina:default', 'clang') -> []
+  ('HelloMultiLangTest_1', 'tresa:default', 'gnu') -> []
+  ('HelloMultiLangTest_1', 'tresa:default', 'clang') -> []
+  ('HelloMultiLangTest_0', 'tresa:default', 'gnu') -> []
+  ('HelloMultiLangTest_0', 'tresa:default', 'clang') -> []
 Final number of test cases: 4
 [List of matched checks]
 - HelloMultiLangTest %lang=cpp /71bf65a3
 - HelloMultiLangTest %lang=c /7cfa870e
 Found 2 check(s)
 
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-gnl0vln_.log'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-3gcehyof.log'
 >>> profiler report [start] <<<
-main: 0.046616 s
-    test processing: 0.011215 s
-        RegressionCheckLoader.load_all: 0.007729 s
-            TestRegistry.instantiate_all: 0.002678 s
+main: 0.053832 s
+    test processing: 0.012268 s
+        RegressionCheckLoader.load_all: 0.008720 s
+            TestRegistry.instantiate_all: 0.003012 s
         generate_testcases: 0.000049 s
         main.<locals>._sort_testcases: 0.000012 s
-        build_deps: 0.000105 s
-        validate_deps: 0.000117 s
-        toposort: 0.000092 s
-        list_checks: 0.001067 s
+        build_deps: 0.000072 s
+        validate_deps: 0.000061 s
+        toposort: 0.000091 s
+        list_checks: 0.001080 s
 >>> profiler report [ end ] <<<

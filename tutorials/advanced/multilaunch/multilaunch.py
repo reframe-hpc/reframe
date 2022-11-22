@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: multilaunchtest
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -29,4 +28,3 @@ class MultiLaunchTest(rfm.RunOnlyRegressionTest):
         return sn.assert_eq(
             sn.count(sn.extractall(r'^nid\d+', self.stdout)), 10
         )
-# rfmdocend: multilaunchtest
