@@ -7,8 +7,8 @@
 # Functionality to build extensible variable spaces into ReFrame tests.
 #
 
-import math
 import copy
+import math
 
 import reframe.core.fields as fields
 import reframe.core.namespaces as namespaces
@@ -258,6 +258,9 @@ class TestVar:
     def is_defined(self):
         return self._default_value is not Undefined
 
+    def is_alias(self):
+        return self._target is not None
+
     def undefine(self):
         self._default_value = Undefined
 
@@ -267,14 +270,14 @@ class TestVar:
 
     @property
     def _default_value(self):
-        if self._target:
+        if self.is_alias():
             return self._target._default_value
         else:
             return self._p_default_value
 
     @_default_value.setter
     def _default_value(self, value):
-        if self._target:
+        if self.is_alias():
             self._target._default_value = value
         else:
             self._p_default_value = value
@@ -304,6 +307,18 @@ class TestVar:
     @property
     def name(self):
         return self._name
+
+    @property
+    def target(self):
+        return self._target
+
+    def reset_target(self, new_target):
+        if not self.is_deprecated():
+            self._p_field = new_target._field
+        else:
+            self._p_field._target_field = new_target._field
+
+        self._target = new_target
 
     def __set_name__(self, owner, name):
         self._name = name
@@ -687,6 +702,9 @@ class ShadowVar(TestVar):
 
         self._warn_deprecation(DEPRECATE_RD)
 
+    def __repr__(self):
+        return super().__repr__().replace('TestVar', 'ShadowVar')
+
 
 class VarSpace(namespaces.Namespace):
     '''Variable space of a regression test.
@@ -723,6 +741,12 @@ class VarSpace(namespaces.Namespace):
                 )
 
             self.vars[key] = copy.deepcopy(var)
+
+        # Inherited variables are copied in the current namespace, so we need
+        # to update any aliases to point to the current namespace copies
+        for var in self.vars.values():
+            if var.is_alias():
+                var.reset_target(self.vars[var.target.name])
 
         # Carry over the set of injected variables
         self._injected_vars.update(other._injected_vars)

@@ -1892,16 +1892,15 @@ def test_set_var_default():
     assert x.bar == 100
 
 
-def _test_variables_deprecation():
+def test_variables_deprecation():
     with pytest.warns(ReframeDeprecationWarning):
         class _X(rfm.RunOnlyRegressionTest):
             variables = {'FOO': 1}
 
     test = _X()
-    print('===')
     assert test.env_vars['FOO'] == 1
 
     with pytest.warns(ReframeDeprecationWarning):
-        test.variables['BAR'] == 2
+        test.variables['BAR'] = 2
 
     assert test.env_vars['BAR'] == 2
