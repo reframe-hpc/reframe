@@ -574,7 +574,7 @@ def test_list_tags(run_reframe):
     assert returncode == 0
 
 
-def test_filtering_multiple_criteria(run_reframe):
+def test_filtering_multiple_criteria_name(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
@@ -585,6 +585,27 @@ def test_filtering_multiple_criteria(run_reframe):
     assert 'Found 1 check(s)' in stdout
     assert returncode == 0
 
+def test_filtering_multiple_criteria_hash(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks'],
+        action='list',
+        more_options=['-t', 'foo', '-n', '/2b3e4546']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 1 check(s)' in stdout
+    assert returncode == 0
+
+def test_filtering_exclude_hash(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks'],
+        action='list',
+        more_options=['-x', '/2b3e4546']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 8 check(s)' in stdout
+    assert returncode == 0
 
 def test_show_config_all(run_reframe):
     # Just make sure that this option does not make the frontend crash
@@ -595,7 +616,6 @@ def test_show_config_all(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
-
 
 def test_show_config_param(run_reframe):
     # Just make sure that this option does not make the frontend crash
