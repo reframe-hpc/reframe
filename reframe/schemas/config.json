@@ -451,7 +451,6 @@
                     },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
-                "required": ["handlers$"],
                 "additionalProperties": false
             }
         },
