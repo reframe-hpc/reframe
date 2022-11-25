@@ -156,7 +156,7 @@ def print(obj, *, sep=' ', end='\n', file=None, flush=False):
         @sanity_function
         def my_sanity_fn(self):
             return sn.assert_eq(
-                sn.count(sn.print(sn.extract_all(...))), 10
+                sn.count(sn.print(sn.extractall(...))), 10
             )
 
     If ``file`` is None, :func:`print` will print its arguments to the

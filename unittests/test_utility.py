@@ -1761,7 +1761,7 @@ def test_is_trivially_callable():
         util.is_trivially_callable(1)
 
 
-def test_nodelist_abbrev():
+def test_nodelist_utilities():
     nid_nodes = [f'nid{n:03}' for n in range(5, 20)]
     cid_nodes = [f'cid{n:03}' for n in range(20)]
 
@@ -1776,11 +1776,19 @@ def test_nodelist_abbrev():
     random.shuffle(all_nodes)
 
     nodelist = util.nodelist_abbrev
+    expand = util.nodelist_expand
     assert nodelist(nid_nodes) == 'nid00[1-2],nid0[05-19],nid125'
     assert nodelist(cid_nodes) == 'cid0[00-19],cid05[5-6]'
     assert nodelist(all_nodes) == (
         'cid0[00-19],cid05[5-6],nid00[1-2],nid0[05-19],nid125'
     )
+
+    # Test the reverse operation
+    assert expand('nid00[1-2],nid0[05-19],nid125') == sorted(nid_nodes)
+    assert expand('cid0[00-19],cid05[5-6]') == sorted(cid_nodes)
+    assert expand(
+        'cid0[00-19],cid05[5-6],nid00[1-2],nid0[05-19],nid125'
+    ) == sorted(all_nodes)
 
     # Test non-contiguous nodes
     nid_nodes = []
@@ -1793,18 +1801,34 @@ def test_nodelist_abbrev():
     assert nodelist([]) == ''
     assert nodelist(['nid001']) == 'nid001'
 
+    # Test the reverse operation
+    assert expand('nid00[0-4],nid01[0-4],nid02[0-4]') == sorted(nid_nodes)
+    assert expand('nid01,nid10,nid20') == ['nid01', 'nid10', 'nid20']
+    assert expand('') == []
+    assert expand('nid001') == ['nid001']
+
     # Test host names with numbers in their basename (see GH #2357)
     nodes = [f'c2-01-{n:02}' for n in range(100)]
     assert nodelist(nodes) == 'c2-01-[00-99]'
 
+    # Test the reverse operation
+    assert expand('c2-01-[00-99]') == nodes
+
     # Test node duplicates
     assert nodelist(['nid001', 'nid001', 'nid002']) == 'nid001,nid00[1-2]'
+    assert expand('nid001,nid00[1-2]') == ['nid001', 'nid001', 'nid002']
 
     with pytest.raises(TypeError, match='nodes argument must be a Sequence'):
         nodelist(1)
 
     with pytest.raises(TypeError, match='nodes argument cannot be a string'):
         nodelist('foo')
+
+    with pytest.raises(TypeError, match='nodespec argument must be a string'):
+        expand(10)
+
+    with pytest.raises(ValueError, match='invalid nodespec'):
+        expand('nid00[1-3],nid3[3-43')
 
 
 def test_cached_return_value():

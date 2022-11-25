@@ -216,7 +216,7 @@ def _generate_runreport(run_stats, time_start, time_end):
     return {
         'session_info': {
             'cmdline': ' '.join(sys.argv),
-            'config_file': rt.runtime().site_config.filename,
+            'config_files': rt.runtime().site_config.sources,
             'data_version': runreport.DATA_VERSION,
             'hostname': socket.gethostname(),
             'num_cases': run_stats[0]['num_cases'],
@@ -936,18 +936,13 @@ def test_restore_session(report_file, make_runner,
         report.restore_dangling(testgraph)
 
 
-@pytest.fixture
-def generic2_exec_ctx(request, make_exec_ctx_g):
-    yield from make_exec_ctx_g(system='generic2')
-
-
 def test_config_params(make_runner, make_exec_ctx):
     '''Test that configuration parameters are properly retrieved with the
     various execution policies.
     '''
 
     class T(rfm.RunOnlyRegressionTest):
-        valid_systems = ['generic2']
+        valid_systems = ['sys2']
         valid_prog_environs = ['*']
         executable = 'echo'
 
@@ -961,7 +956,7 @@ def test_config_params(make_runner, make_exec_ctx):
             timeout = rt.runtime().get_option('general/0/git_timeout')
             assert timeout == expected
 
-    make_exec_ctx(system='generic2')
+    make_exec_ctx(system='sys2')
     runner = make_runner()
     testcases = executors.generate_testcases([T()])
     runner.runall(testcases)

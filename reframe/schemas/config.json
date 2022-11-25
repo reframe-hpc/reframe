@@ -236,6 +236,7 @@
                                  "lmod", "nomod", "spack"]
                     },
                     "modules": {"$ref": "#/defs/modules_list"},
+                    "env_vars": {"$ref": "#/defs/envvar_list"},
                     "variables": {"$ref": "#/defs/envvar_list"},
                     "prefix": {"type": "string"},
                     "stagedir": {"type": "string"},
@@ -275,6 +276,9 @@
                                             "modules": {
                                                 "$ref": "#/defs/modules_list"
                                             },
+                                            "env_vars": {
+                                                "$ref": "#/defs/envvar_list"
+                                            },
                                             "variables": {
                                                 "$ref": "#/defs/envvar_list"
                                             },
@@ -284,8 +288,9 @@
                                     }
                                 },
                                 "modules": {"$ref": "#/defs/modules_list"},
-                                "time_limit": {"type": ["string", "null"]},
+                                "env_vars": {"$ref": "#/defs/envvar_list"},
                                 "variables": {"$ref": "#/defs/envvar_list"},
+                                "time_limit": {"type": ["string", "null"]},
                                 "max_jobs": {"type": "number"},
                                 "prepare_cmds": {
                                     "type": "array",
@@ -336,6 +341,7 @@
                 "properties": {
                     "name": {"$ref": "#/defs/alphanum_ext_string"},
                     "modules": {"$ref": "#/defs/modules_list"},
+                    "env_vars": {"$ref": "#/defs/envvar_list"},
                     "variables": {"$ref": "#/defs/envvar_list"},
                     "cc": {"type": "string"},
                     "cxx": {"type": "string"},
@@ -416,6 +422,19 @@
                                 {"$ref": "#/defs/syslog_handler"},
                                 {"$ref": "#/defs/httpjson_handler"}
                             ]
+                        }
+                    },
+                    "handlers$": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {"$ref": "#/defs/file_handler"},
+                                {"$ref": "#/defs/filelog_handler"},
+                                {"$ref": "#/defs/graylog_handler"},
+                                {"$ref": "#/defs/stream_handler"},
+                                {"$ref": "#/defs/syslog_handler"},
+                                {"$ref": "#/defs/httpjson_handler"}
+                            ]
                         },
                         "minItems": 1
                     },
@@ -433,7 +452,7 @@
                     },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
-                "required": ["handlers", "handlers_perflog"],
+                "required": ["handlers$"],
                 "additionalProperties": false
             }
         },
@@ -500,6 +519,7 @@
     "additionalProperties": false,
     "defaults": {
         "environments/modules": [],
+        "environments/env_vars": [],
         "environments/variables": [],
         "environments/cc": "cc",
         "environments/cxx": "CC",
@@ -542,6 +562,8 @@
         "logging/level": "undefined",
         "logging/perflog_compat": false,
         "logging/target_systems": ["*"],
+        "logging/handlers": [],
+        "logging/handlers_perflog": [],
         "logging/handlers*/*_level": "info",
         "logging/handlers*/*_format": "%(message)s",
         "logging/handlers*/*_format_perfvars": "",
@@ -568,6 +590,7 @@
         "systems/max_local_jobs": 8,
         "systems/modules_system": "nomod",
         "systems/modules": [],
+        "systems/env_vars": [],
         "systems/variables": [],
         "systems/prefix": ".",
         "systems/outputdir": "",
@@ -579,11 +602,13 @@
         "systems/partitions/container_runtime": null,
         "systems/partitions/container_platforms": [],
         "systems/partitions/container_platforms/*modules": [],
+        "systems/partitions/container_platforms/*env_vars": [],
         "systems/partitions/container_platforms/*variables": [],
         "systems/partitions/features": [],
         "systems/partitions/resources": [],
         "systems/partitions/resources/options": [],
         "systems/partitions/modules": [],
+        "systems/partitions/env_vars": [],
         "systems/partitions/variables": [],
         "systems/partitions/max_jobs": 8,
         "systems/partitions/prepare_cmds": [],

@@ -10,48 +10,13 @@
 site_configuration = {
     'systems': [
         {
-            'name': 'generic',
-            'descr': 'Generic example system',
-            'hostnames': ['.*'],
-            'partitions': [
-                {
-                    'name': 'default',
-                    'descr': 'Login nodes',
-                    'scheduler': 'local',
-                    'launcher': 'local',
-                    'environs': ['builtin']
-                }
-            ]
-        },
-        {
-            'name': 'generic2',
-            'descr': 'Generic example system',
-            'hostnames': ['.*'],
-            'partitions': [
-                {
-                    'name': 'part1',
-                    'descr': 'Login nodes',
-                    'scheduler': 'local',
-                    'launcher': 'local',
-                    'environs': ['builtin']
-                },
-                {
-                    'name': 'part2',
-                    'descr': 'Login nodes',
-                    'scheduler': 'local',
-                    'launcher': 'local',
-                    'environs': ['builtin']
-                }
-            ]
-        },
-        {
             'name': 'testsys',
             'descr': 'Fake system for unit tests',
             'hostnames': ['testsys'],
             'prefix': '.rfm_testing',
             'resourcesdir': '.rfm_testing/resources',
             'modules': ['foo/1.0'],
-            'variables': [['FOO_CMD', 'foobar']],
+            'env_vars': [['FOO_CMD', 'foobar']],
             'partitions': [
                 {
                     'name': 'login',
@@ -76,7 +41,7 @@ site_configuration = {
                     'modules': [
                         {'name': 'foogpu', 'collection': False, 'path': '/foo'}
                     ],
-                    'variables': [['FOO_GPU', 'yes']],
+                    'env_vars': [['FOO_GPU', 'yes']],
                     'resources': [
                         {
                             'name': 'gpu',
@@ -187,6 +152,27 @@ site_configuration = {
                 }
 
             ]
+        },
+        {
+            'name': 'sys2',
+            'descr': 'System required from testing execution policies',
+            'hostnames': [r'sys2\d+'],
+            'partitions': [
+                {
+                    'name': 'part1',
+                    'descr': 'Login nodes',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['builtin']
+                },
+                {
+                    'name': 'part2',
+                    'descr': 'Login nodes',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['builtin']
+                }
+            ]
         }
     ],
     'environments': [
@@ -269,30 +255,7 @@ site_configuration = {
                     'datefmt': '%FT%T',
                     'append': False,
                 },
-                {
-                    'type': 'stream',
-                    'name': 'stdout',
-                    'level': 'info',
-                    'format': '%(message)s'
-                }
             ],
-            'handlers_perflog': [
-                {
-                    'type': 'filelog',
-                    'prefix': '%(check_system)s/%(check_partition)s',
-                    'level': 'info',
-                    'format': (
-                        '%(check_job_completion_time)s|reframe %(version)s|'
-                        '%(check_info)s|jobid=%(check_jobid)s|'
-                        '%(check_perf_var)s=%(check_perf_value)s|'
-                        'ref=%(check_perf_ref)s '
-                        '(l=%(check_perf_lower_thres)s, '
-                        'u=%(check_perf_upper_thres)s)|'
-                        '%(check_perf_unit)s'
-                    ),
-                    'append': True
-                }
-            ]
         }
     ],
     'general': [
@@ -306,11 +269,11 @@ site_configuration = {
         },
         {
             'git_timeout': 10,
-            'target_systems': ['generic2:part1']
+            'target_systems': ['sys2:part1']
         },
         {
             'git_timeout': 20,
-            'target_systems': ['generic2:part2']
+            'target_systems': ['sys2:part2']
         }
     ]
 }

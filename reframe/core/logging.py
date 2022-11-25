@@ -20,6 +20,7 @@ import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
+from reframe.core.warnings import suppress_deprecations
 from reframe.utility.profile import TimeProfiler
 
 
@@ -322,12 +323,32 @@ class RFC3339Formatter(CheckFieldFormatter):
             return _format_time_rfc3339(timestamp, datefmt)
 
 
-def _create_logger(site_config, handlers_group):
+def _create_logger(site_config, *handlers_groups):
     level = site_config.get('logging/0/level')
     logger = Logger('reframe')
     logger.setLevel(_log_level_values[level])
-    for handler in _extract_handlers(site_config, handlers_group):
-        logger.addHandler(handler)
+
+    def stream_handler_kind(handler):
+        if not isinstance(handler, logging.StreamHandler):
+            return None
+        elif handler.stream is sys.stdout:
+            return 'stdout'
+        elif handler.stream is sys.stderr:
+            return 'stderr'
+        else:
+            return None
+
+    stream_kinds = []
+    for hgrp in handlers_groups:
+        for handler in _extract_handlers(site_config, hgrp):
+            kind = stream_handler_kind(handler)
+            if kind in stream_kinds:
+                continue
+
+            if kind:
+                stream_kinds.append(kind)
+
+            logger.addHandler(handler)
 
     return logger
 
@@ -681,9 +702,11 @@ class LoggerAdapter(logging.LoggerAdapter):
         for attr, alt_name in check_type.loggable_attrs():
             extra_name  = alt_name or attr
 
-            # In case of AttributeError, i.e., the variable is undefined, we
-            # set the value to None
-            val = getattr(self.check, attr, None)
+            with suppress_deprecations():
+                # In case of AttributeError, i.e., the variable is undefined,
+                # we set the value to None
+                val = getattr(self.check, attr, None)
+
             if attr in check_type.raw_params:
                 # Attribute is parameter, so format it
                 val = check_type.raw_params[attr].format(val)
@@ -819,7 +842,7 @@ def configure_logging(site_config):
         _context_logger = null_logger
         return
 
-    _logger = _create_logger(site_config, 'handlers')
+    _logger = _create_logger(site_config, 'handlers$', 'handlers')
     _perf_logger = _create_logger(site_config, 'handlers_perflog')
     _context_logger = LoggerAdapter(_logger)
 

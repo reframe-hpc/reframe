@@ -19,21 +19,18 @@ We first create a basic run-only test, that fetches the benchmarks:
 
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :start-after: # rfmdocstart: osudownload
-   :end-before: # rfmdocend: osudownload
+   :pyobject: OSUDownloadTest
 
 This test doesn't need any specific programming environment, so we simply pick the ``builtin`` environment in the ``login`` partition.
 The build tests would then copy the benchmark code and build it for the different programming environments:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :start-after: # rfmdocstart: osubuild
-   :end-before: # rfmdocend: osubuild
+   :pyobject: OSUBuildTest
 
 The only new thing that comes in with the :class:`OSUBuildTest` test is the following:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :start-after: # rfmdocstart: inject_deps
-   :end-before: # rfmdocend: inject_deps
+   :pyobject: OSUBuildTest.inject_dependencies
 
 Here we tell ReFrame that this test depends on a test named :class:`OSUDownloadTest`.
 This test may or may not be defined in the same test file; all ReFrame needs is the test name.
@@ -49,8 +46,7 @@ The next step for the :class:`OSUBuildTest` is to set its :attr:`sourcesdir` to 
 This is achieved with the following specially decorated function:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :start-after: # rfmdocstart: set_sourcedir
-   :end-before: # rfmdocend: set_sourcedir
+   :pyobject: OSUBuildTest.set_sourcedir
 
 The :func:`@require_deps <reframe.core.decorators.require_deps>` decorator binds each argument of the decorated function to the corresponding target dependency.
 In order for the binding to work correctly the function arguments must be named after the target dependencies.
@@ -74,8 +70,7 @@ Again nothing new here; we are going to use two nodes for the benchmark and we s
 As done previously, we define the dependencies with the following:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :start-after: # rfmdocstart: set_deps
-   :end-before: # rfmdocend: set_deps
+   :pyobject: OSUBenchmarkTestBase.set_dependencies
 
 Here we tell ReFrame that this test depends on a test named :class:`OSUBuildTest` "by environment."
 This means that the test cases of this test will only depend on the test cases of the :class:`OSUBuildTest` that use the same environment;
@@ -85,8 +80,7 @@ The next step for the :class:`OSULatencyTest` is to set its executable to point 
 This is achieved with the following specially decorated function:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :start-after: # rfmdocstart: set_exec
-   :end-before: # rfmdocend: set_exec
+   :pyobject: OSULatencyTest.set_executable
 
 This concludes the presentation of the :class:`OSULatencyTest` test. The :class:`OSUBandwidthTest` is completely analogous.
 
@@ -94,8 +88,7 @@ The :class:`OSUAllreduceTest` shown below is similar to the other two, except th
 It is essentially a scalability test that is running the ``osu_allreduce`` executable created by the :class:`OSUBuildTest` for 2, 4, 8 and 16 nodes.
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :start-after: # rfmdocstart: osuallreduce
-   :end-before: # rfmdocend: osuallreduce
+   :pyobject: OSUAllreduceTest
 
 The full set of OSU example tests is shown below:
 

@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: hellothreadedextented2
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -29,4 +28,3 @@ class HelloThreadedExtended2Test(rfm.RegressionTest):
         num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
                                          self.stdout))
         return sn.assert_eq(num_messages, 16)
-# rfmdocend: hellothreadedextented2

@@ -1,13 +1,13 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.1+36ffa085
+  version:           4.0.0-dev.2+5ea6b7a6
   command:           './bin/reframe -c tutorials/basics/hello -R -l'
-  launched by:       user@tresa.local
+  launched by:       user@host
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
   check search path: (R) '/home/user/Repositories/reframe/tutorials/basics/hello'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
-  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-x9_02v7a.log'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-ldo5um3v.log'
 
 WARNING: skipping test file '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:13: name 'paramter' is not defined
     lang = paramter(['c', 'cpp'])
@@ -16,4 +16,4 @@ WARNING: skipping test file '/home/user/Repositories/reframe/tutorials/basics/he
 - HelloTest /2b3e4546
 Found 1 check(s)
 
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-x9_02v7a.log'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-ldo5um3v.log'

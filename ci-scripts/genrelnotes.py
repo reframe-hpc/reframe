@@ -49,7 +49,7 @@ if __name__ == '__main__':
         title_line = titles.get(tag, '## Other')
         sections.setdefault(title_line, [])
         for pr, descr in extract_release_notes(completed.stdout, tag):
-            descr_line = f'- {descr} ([{pr}](https://github.com/reframe-hpc/reframe/pull/{pr[1:]}))'  # noqa: E501
+            descr_line = '- %s (%s)' % (descr, pr)
             sections[title_line].append(descr_line)
 
     print('# Release Notes')

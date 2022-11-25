@@ -10,8 +10,7 @@ Requirements
 * The required Python packages are the following:
 
 .. literalinclude:: ../requirements.txt
-   :start-after: # rfmdocstart: required-packages
-   :end-before: # rfmdocend: required-packages
+   :end-before: #+
 
 
 .. note::

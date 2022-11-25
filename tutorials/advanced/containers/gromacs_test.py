@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: gromacstest
 import reframe as rfm
 from hpctestlib.sciapps.gromacs.benchmarks import gromacs_check
 
