@@ -152,7 +152,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    num_nodes = variable(int, type(None), value=1)
+    num_nodes = variable(int, type(None), value=None)
 
     #: Number of tasks per node for this job.
     #:
