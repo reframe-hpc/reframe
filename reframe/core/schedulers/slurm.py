@@ -174,7 +174,6 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         # WIP: If ntasks is found to be none and a number of nodes are requested, then assume the desire is to fill the whole node
         # if this is not true then omit the explicit request of any nodes and allow reframe / slurm to calculate that the default way
-        print(job.num_tasks,job.num_nodes)
         if job.num_tasks==None and job.num_nodes!=None:
             preamble.append(self._format_option(job.num_nodes, '--nodes={0}'))
         else:
