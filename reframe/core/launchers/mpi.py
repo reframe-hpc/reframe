@@ -134,6 +134,9 @@ class SrunAllocationLauncher(JobLauncher):
 
         if job.num_tasks:
             ret += ['--ntasks=%s' % str(job.num_tasks)]
+        
+        if job.num_nodes:
+            ret += ['--nodes=%s' % str(job.num_nodes)]
 
         if job.num_tasks_per_node:
             ret += ['--ntasks-per-node=%s' % str(job.num_tasks_per_node)]
