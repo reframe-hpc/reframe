@@ -531,8 +531,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :attr:`num_tasks` to ``0`` is equivalent to setting it to
     #: :attr:`-num_tasks_per_node
     #: <reframe.core.pipeline.RegressionTest.num_tasks_per_node>`.
+    #: If set to :attr:`None` it will be omitted from any job scripts created and when combined with :attr:`num_nodes` this will allow a more flexible number of tasks to be run.
     #:
-    #: :type: integral
+    #: :type: integral or :class:`None`
     #: :default: ``1``
     #:
     #: .. note::
@@ -550,14 +551,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: Number of nodes for this job.
     #:
-    #: :type: integral
+    #: :type: integral or :class:`None`
     #: :default: ``None``
     #:
-    #: .. note::
-    #:    This attribute is set by the framework just before submitting the job
-    #:    based on the test information.
     #:
-    #: .. versionadded:: 3.11.0
     num_nodes = variable(int, type(None), value=None,loggable=True)
 
     #: Number of tasks per node required by this test.

@@ -180,14 +180,10 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
 
     #: Number of nodes for this job.
     #:
-    #: :type: integral
+    #: :type: integral or :class:`None`
     #: :default: ``None``
     #:
-    #: .. note::
-    #:    This attribute is set by the framework just before submitting the job
-    #:    based on the test information.
     #:
-    #: .. versionadded:: 3.11.0
     num_nodes = variable(int, type(None), value=None)
 
     #: Number of tasks per node for this job.
