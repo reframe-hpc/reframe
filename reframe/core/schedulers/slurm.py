@@ -151,6 +151,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             return ''
 
     def emit_preamble(self, job):
+
         preamble = [
             self._format_option(job.name, '--job-name="{0}"'),
             self._format_option(job.num_tasks, '--ntasks={0}'),
@@ -161,7 +162,18 @@ class SlurmJobScheduler(sched.JobScheduler):
             self._format_option(job.num_tasks_per_socket,
                                 '--ntasks-per-socket={0}'),
             self._format_option(job.num_cpus_per_task, '--cpus-per-task={0}'),
+            
         ]
+
+        # WIP: If ntasks is found to be none and a number of nodes are requested, then assume the desire is to fill the whole node
+        # if this is not true then omit the explicit request of any nodes and allow reframe / slurm to calculate that the default way
+        print(job.num_tasks,job.num_nodes)
+        if job.num_tasks==None and job.num_nodes!=None:
+            preamble.append(self._format_option(job.num_nodes, '--nodes={0}'))
+        else:
+            preamble.append(self._format_option(job.num_tasks, '--ntasks={0}'))
+            
+
 
         # Determine if job refers to a Slurm job array, by looking into the
         # job.options and job.cli_options
