@@ -541,7 +541,20 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
     #: .. _--flex-alloc-nodes: manpage.html#cmdoption-flex-alloc-nodes
-    num_tasks = variable(int, value=1, loggable=True)
+    num_tasks = variable(int,type(None), value=1, loggable=True)
+
+
+    #: Number of nodes for this job.
+    #:
+    #: :type: integral
+    #: :default: ``None``
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
+    num_nodes = variable(int, type(None), value=None)
 
     #: Number of tasks per node required by this test.
     #:
@@ -1872,6 +1885,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 )
 
         self.job.num_tasks = self.num_tasks
+        self.job.num_nodes=self.num_nodes
         self.job.num_tasks_per_node = self.num_tasks_per_node
         self.job.num_tasks_per_core = self.num_tasks_per_core
         self.job.num_tasks_per_socket = self.num_tasks_per_socket

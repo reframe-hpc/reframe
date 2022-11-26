@@ -138,7 +138,21 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    num_tasks = variable(int, value=1)
+    num_tasks = variable(int, type(None), value=1)
+
+
+
+    #: Number of nodes for this job.
+    #:
+    #: :type: integral
+    #: :default: ``None``
+    #:
+    #: .. note::
+    #:    This attribute is set by the framework just before submitting the job
+    #:    based on the test information.
+    #:
+    #: .. versionadded:: 3.11.0
+    num_nodes = variable(int, type(None), value=1)
 
     #: Number of tasks per node for this job.
     #:
@@ -461,7 +475,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
 
     def prepare(self, commands, environs=None, prepare_cmds=None, **gen_opts):
         environs = environs or []
-        if self.num_tasks <= 0:
+        if self.num_tasks!=None and self.num_tasks <= 0:
             getlogger().debug(f'[F] Flexible node allocation requested')
             num_tasks_per_node = self.num_tasks_per_node or 1
             min_num_tasks = (-self.num_tasks if self.num_tasks else
