@@ -154,7 +154,6 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         preamble = [
             self._format_option(job.name, '--job-name="{0}"'),
-            self._format_option(job.num_tasks, '--ntasks={0}'),
             self._format_option(job.num_tasks_per_node,
                                 '--ntasks-per-node={0}'),
             self._format_option(job.num_tasks_per_core,
