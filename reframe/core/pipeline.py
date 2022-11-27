@@ -1882,7 +1882,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 )
 
         self.job.num_tasks = self.num_tasks
-        self.job.num_nodes=self.num_nodes
+        self.job.num_nodes = self.num_nodes
         self.job.num_tasks_per_node = self.num_tasks_per_node
         self.job.num_tasks_per_core = self.num_tasks_per_core
         self.job.num_tasks_per_socket = self.num_tasks_per_socket
