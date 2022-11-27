@@ -200,7 +200,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 self._format_option(job.exclusive_access, '--exclusive')
             )
 
-        if self._use_nodes_opt:
+        if self._use_nodes_opt and job.num_nodes==None:
             num_nodes = job.num_tasks // job.num_tasks_per_node
             preamble.append(self._format_option(num_nodes, '--nodes={0}'))
 
