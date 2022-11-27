@@ -593,7 +593,7 @@ def main():
     argparser.add_argument(
         dest='ignore_reqnodenotavail',
         envvar='RFM_IGNORE_REQNODENOTAVAIL',
-        configvar='schedulers/ignore_reqnodenotavail',
+        configvar='systems*/sched_options/ignore_reqnodenotavail',
         action='store_true',
         help='Ignore ReqNodeNotAvail Slurm error'
     )

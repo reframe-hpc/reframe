@@ -65,9 +65,7 @@ class _FluxJob(Job):
 class FluxJobScheduler(JobScheduler):
     def __init__(self):
         self._fexecutor = flux.job.FluxExecutor()
-        self._submit_timeout = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/job_submit_timeout'
-        )
+        self._submit_timeout = self.get_option('job_submit_timeout')
 
     def emit_preamble(self, job):
         # We don't need to submit with a file, so we don't need a preamble.

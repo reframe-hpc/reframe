@@ -76,9 +76,7 @@ class PbsJobScheduler(sched.JobScheduler):
 
     def __init__(self):
         self._prefix = '#PBS'
-        self._submit_timeout = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/job_submit_timeout'
-        )
+        self._submit_timeout = self.get_option('job_submit_timeout')
 
     def _emit_lselect_option(self, job):
         num_tasks_per_node = job.num_tasks_per_node or 1
