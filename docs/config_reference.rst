@@ -213,6 +213,9 @@ System Configuration
    To understand the difference between the different execution contexts, please refer to ":ref:`execution-contexts`"
    For the available scheduler options, see the :obj:`sched_options` in the partition configuration below.
 
+   .. versionadded:: 4.0.0
+
+
 ------------------------------
 System Partition Configuration
 ------------------------------
@@ -309,6 +312,8 @@ System Partition Configuration
 
    Scheduler-specific options for this partition.
    See below for the available options.
+
+   .. versionadded:: 4.0.0
 
 
 .. js:attribute:: .systems[].partitions[].sched_options.ignore_reqnodenotavail
