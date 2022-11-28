@@ -217,12 +217,10 @@ However, there are several options that can go into this section, but the reader
 Other configuration options
 ---------------------------
 
-There are finally two more optional configuration sections that are not discussed here:
+There is finally one additional optional configuration section that is not discussed here:
 
-1. The ``schedulers`` section holds configuration variables specific to the different scheduler backends and
-2. the ``modes`` section defines different execution modes for the framework.
-   Execution modes are discussed in the :doc:`pipeline` page.
-
+The ``modes`` section defines different execution modes for the framework.
+Execution modes are discussed in the :doc:`pipeline` page.
 
 
 Building the Final Configuration
