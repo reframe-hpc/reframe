@@ -15,7 +15,6 @@ import itertools
 import re
 import time
 
-import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler

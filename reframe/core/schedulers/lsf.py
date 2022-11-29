@@ -14,7 +14,6 @@ import functools
 import re
 import time
 
-import reframe.core.runtime as rt
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobSchedulerError

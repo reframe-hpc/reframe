@@ -14,7 +14,6 @@ import re
 import time
 import xml.etree.ElementTree as ET
 
-import reframe.core.runtime as rt
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobSchedulerError

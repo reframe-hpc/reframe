@@ -14,7 +14,6 @@ import itertools
 import os
 import time
 
-import reframe.core.runtime as rt
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError
 from reframe.core.schedulers import JobScheduler, Job
