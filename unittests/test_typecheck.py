@@ -251,3 +251,42 @@ def test_custom_types_conversion():
 
     assert Y('1').y == 1
     assert Z(5, 3).z  == 8
+
+
+def test_composition_of_types():
+    t = types.Integer | types.Float
+    assert isinstance(1, t)
+    assert isinstance(1.2, t)
+    assert not isinstance([1], t)
+
+    t = ~types.Float
+    assert isinstance(1, t)
+    assert not isinstance(1.2, t)
+    assert isinstance([1], t)
+
+    t = types.Integer | types.List[types.Integer | types.Float]
+    assert isinstance(1, t)
+    assert not isinstance(1.2, t)
+    assert isinstance([1], t)
+    assert isinstance([1.2], t)
+    assert not isinstance(None, t)
+
+    # Check the other direction
+    t = types.List[types.Integer | types.Float] | types.Integer
+    assert isinstance(1, t)
+    assert not isinstance(1.2, t)
+    assert isinstance([1], t)
+    assert isinstance([1.2], t)
+    assert not isinstance(None, t)
+
+    # Test custom types
+    class T:
+        pass
+
+    MetaT = types.make_meta_type('MetaT', T)
+
+    t = T()
+    assert isinstance(t, T)
+    assert isinstance(t, MetaT)
+    assert isinstance(1, MetaT | types.Integer)
+    assert isinstance(1, ~MetaT)

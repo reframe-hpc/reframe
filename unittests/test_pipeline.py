@@ -1521,6 +1521,17 @@ def test_required_reference(dummy_perftest, sanity_file,
         _run_sanity(dummy_perftest, *dummy_gpu_exec_ctx)
 
 
+def test_reference_deferrable(dummy_perftest):
+    with pytest.raises(TypeError):
+        dummy_perftest.reference = {'*': {'value1': (sn.defer(1), -0.1, -0.1)}}
+
+    class T(rfm.RegressionTest):
+        reference = {'*': {'value1': (sn.defer(1), -0.1, -0.1)}}
+
+    with pytest.raises(TypeError):
+        T()
+
+
 def test_performance_invalid_value(dummytest, sanity_file,
                                    perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
