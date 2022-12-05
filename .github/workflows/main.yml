@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -32,6 +32,19 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         fail_ci_if_error: true
+
+  unittest-py36:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    container:
+      image: "reframehpc/rfm-ci-ubuntu-py36:latest"
+      options: "--platform=linux/amd64 --user root -it --init"
+    steps:
+      - name: Run Python 3.6 unit tests
+        run: |
+          cd /reframe
+          ./test_reframe.py -v
 
   unittest-macos:
     runs-on: macos-latest
