@@ -411,6 +411,7 @@
                 "type": "object",
                 "properties": {
                     "level": {"$ref": "#/defs/loglevel"},
+                    "perflog_compat": {"type": "boolean"},
                     "handlers": {
                         "type": "array",
                         "items": {
