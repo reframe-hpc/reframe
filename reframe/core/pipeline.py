@@ -1146,11 +1146,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 name += f'{prefix}{p}={format_fn(v)}'
 
             for f, v in info['fixtures'].items():
-                if isinstance(v, tuple):
-                    # This is join fixture
+                fixt = cls.fixture_space[f]
+                if fixt.action == 'join':
                     continue
 
-                fixt = cls.fixture_space[f]
                 name += _format_params(fixt.cls, v, f'{prefix}{f}.')
 
                 # Append any variables set for the fixtures
