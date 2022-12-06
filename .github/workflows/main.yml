@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -32,6 +32,24 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         fail_ci_if_error: true
+
+  unittest-py36:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ['3.6']
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        ./bootstrap.sh
+    - name: Generic Unittests
+      run: |
+        ./test_reframe.py
 
   unittest-macos:
     runs-on: macos-latest
