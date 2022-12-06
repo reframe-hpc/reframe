@@ -26,6 +26,9 @@ def _have_name(patt):
         if '@' in patt:
             # Do an exact match on the unique name
             return patt.replace('@', '_') == case.check.unique_name
+        elif patt.startswith('/'):
+            # Do an exact match on the hashcode
+            return patt[1:] == case.check.hashcode
         else:
             return regex.match(display_name)
 
