@@ -34,17 +34,22 @@ jobs:
         fail_ci_if_error: true
 
   unittest-py36:
-    runs-on: ubuntu-latest
-    permissions:
-      packages: read
-    container:
-      image: "reframehpc/rfm-ci-ubuntu-py36:latest"
-      options: "--platform=linux/amd64 --user root -it --init"
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ['3.6']
     steps:
-      - name: Run Python 3.6 unit tests
-        run: |
-          cd /reframe
-          ./test_reframe.py -v
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        ./bootstrap.sh
+    - name: Generic Unittests
+      run: |
+        ./test_reframe.py
 
   unittest-macos:
     runs-on: macos-latest
