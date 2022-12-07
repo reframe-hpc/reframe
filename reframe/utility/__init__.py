@@ -836,6 +836,9 @@ class _NodeGroup:
         self.__nodes.append(nid)
 
     def __str__(self):
+        if not self.__nodes:
+            return self.__name
+
         abbrev = []
         encoded = _rl_encode(_delta_encode(self.nodes))
         for unit in encoded:
@@ -920,7 +923,8 @@ def nodelist_abbrev(nodes):
         basename, width, nid = _parse_node(n)
         ng = _NodeGroup(basename, width)
         node_groups.setdefault(ng, ng)
-        node_groups[ng].add(nid)
+        if nid is not None:
+            node_groups[ng].add(nid)
 
     return ','.join(str(ng) for ng in node_groups)
 

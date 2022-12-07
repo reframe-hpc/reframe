@@ -434,7 +434,8 @@ def _create_stream_handler(site_config, config_prefix):
 def _create_graylog_handler(site_config, config_prefix):
     try:
         import pygelf
-    except ImportError:
+    except ImportError as err:
+        getlogger().warning(f'could not import pygelf module: {err}')
         return None
 
     address = site_config.get(f'{config_prefix}/address')
