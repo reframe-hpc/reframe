@@ -1800,6 +1800,8 @@ def test_nodelist_utilities():
     assert nodelist(['nid01', 'nid10', 'nid20']) == 'nid01,nid10,nid20'
     assert nodelist([]) == ''
     assert nodelist(['nid001']) == 'nid001'
+    assert nodelist(['node']) == 'node'
+    assert nodelist(['nid001', 'node', 'nid002']) == 'nid00[1-2],node'
 
     # Test the reverse operation
     assert expand('nid00[0-4],nid01[0-4],nid02[0-4]') == sorted(nid_nodes)
