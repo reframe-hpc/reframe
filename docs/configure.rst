@@ -197,9 +197,8 @@ Finally, there is a special set of handlers for handling performance log message
 Performance log messages are generated *only* for `performance tests <tutorial_basics.html#writing-a-performance-test>`__, i.e., tests defining the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` or the :attr:`~reframe.core.pipeline.RegressionTest.perf_patterns` attributes.
 The performance log handlers are stored in the ``handlers_perflog`` property.
 The ``filelog`` handler used in this example will create a file per test and per system/partition combination (``./<system>/<partition>/<testname>.log``) and will append to it the obtained performance data every time a performance test is run.
-Notice how the message to be logged is structured in the ``format`` property, such that it can be easily parsed from post processing tools.
-Apart from file logging, ReFrame offers more advanced performance logging capabilities through Syslog and Graylog.
-
+Notice how the message to be logged is structured in the ``format`` and ``format_perfvars`` properties, such that it can be easily parsed from post processing tools.
+Apart from file logging, ReFrame offers more advanced performance logging capabilities through Syslog, Graylog and HTTP.
 
 For a complete reference of logging configuration parameters, please refer to the :doc:`config_reference`.
 

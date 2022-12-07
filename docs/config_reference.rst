@@ -782,6 +782,8 @@ They are associated with `system partitions <#system-partition-configuration>`__
    It first looks for definitions for the current partition, then for the containing system and, finally, for global definitions (the ``*`` pseudo-system).
 
 
+.. _logging-config-reference:
+
 Logging Configuration
 ---------------------
 
@@ -829,6 +831,14 @@ You may define different logger objects per system but *not* per partition.
 
    A list of logging handlers responsible for handling performance data from tests.
 
+
+.. js:attribute:: .logging[].perflog_compat
+
+   :required: No
+   :default: ``false``
+
+   Emit a separate log record for each performance variable.
+   Set this option to ``true`` if you want to keep compatibility with the performance logging prior to ReFrame 4.0.
 
 .. js:attribute:: .logging[].target_systems
 
@@ -889,6 +899,7 @@ All logging handlers share the following set of common attributes:
    :default: ``"%(message)s"``
 
    Log record format string.
+
    ReFrame accepts all log record attributes from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following:
 
    .. csv-table::
@@ -925,13 +936,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_num_tasks_per_socket)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_tasks_per_socket` attribute.
       ``%(check_outputdir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.outputdir` attribute.
       ``%(check_partition)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_partition`.
-      ``%(check_perf_lower_thres)s``, The lower threshold of the logged performance variable.
-      ``%(check_perf_ref)s``, The reference value of the logged performance variable.
-      ``%(check_perf_unit)s``, The measurement unit of the logged performance variable.
-      ``%(check_perf_upper)s``, The upper thresholds of the logged performance variable.
-      ``%(check_perf_value)s``, The actual value of the logged performance variable.
-      ``%(check_perf_var)s``, The name of the logged performance variable.
-      ``%(check_perfvalues)s``, All the performance variables of the test combined along with their values, references and thresholds.
+      ``%(check_perfvalues)s``, All the performance variables of the test combined. These will be formatted according to ``format_perfvars``.
       ``%(check_postbuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postbuild_cmds` attribute.
       ``%(check_postrun_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postrun_cmds` attribute.
       ``%(check_prebuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute.
@@ -967,6 +972,37 @@ All logging handlers share the following set of common attributes:
 .. versionchanged:: 3.11.0
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
 
+
+.. js:attribute:: .logging[].handlers[].format_perfvars
+.. js:attribute:: .logging[].handlers_perflog[].format_perfvars
+
+   Format specifier for logging the performance variables.
+
+   This defines how the ``%(check_perfvalues)s`` will be formatted.
+   Since a test may define multiple performance variables, the formatting specified in this field will be repeated for each performance variable sequentially in the *same* line.
+
+   .. important::
+      The last character of this format will be interpreted as the final delimiter of the formatted performance variables to the rest of the record.
+
+   The following log record attributes are defined additionally by this format specifier:
+
+   .. csv-table::
+      :header: "Log record attribute", "Description"
+
+      ``%(check_perf_lower_thres)s``, The lower threshold of the logged performance variable.
+      ``%(check_perf_ref)s``, The reference value of the logged performance variable.
+      ``%(check_perf_unit)s``, The measurement unit of the logged performance variable.
+      ``%(check_perf_upper)s``, The upper thresholds of the logged performance variable.
+      ``%(check_perf_value)s``, The actual value of the logged performance variable.
+      ``%(check_perf_var)s``, The name of the logged performance variable.
+
+
+   .. important::
+      ReFrame versions prior to 4.0 logged a separate line for each performance variable and the ``%(check_perf_*)s`` attributes could be used directly in the ``format``.
+      You can re-enable this behaviour by setting the ``perflog_compat`` logging configuration parameter.
+
+
+   .. versionadded:: 4.0.0
 
 .. js:attribute:: .logging[].handlers[].datefmt
 

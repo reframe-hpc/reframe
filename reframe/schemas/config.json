@@ -55,6 +55,7 @@
                 },
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},
+                "format_perfvars": {"type": "string"},
                 "datefmt": {"type": "string"}
             },
             "required": ["type"]
@@ -410,6 +411,7 @@
                 "type": "object",
                 "properties": {
                     "level": {"$ref": "#/defs/loglevel"},
+                    "perflog_compat": {"type": "boolean"},
                     "handlers": {
                         "type": "array",
                         "items": {
@@ -558,11 +560,13 @@
         "general/user_modules": [],
         "general/verbose": 0,
         "logging/level": "undefined",
+        "logging/perflog_compat": false,
         "logging/target_systems": ["*"],
         "logging/handlers": [],
         "logging/handlers_perflog": [],
         "logging/handlers*/*_level": "info",
         "logging/handlers*/*_format": "%(message)s",
+        "logging/handlers*/*_format_perfvars": "",
         "logging/handlers*/*_datefmt": "%FT%T",
         "logging/handlers*/file_append": false,
         "logging/handlers*/file_name": "",
