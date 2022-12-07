@@ -613,6 +613,8 @@ Let's see how the generated job script looks like:
 The first three ``srun`` commands are emitted through the :attr:`prerun_cmds` whereas the last one comes from the test's :attr:`executable` attribute.
 
 
+.. _custom_launchers:
+
 Adding a custom launcher to a partition
 =======================================
 

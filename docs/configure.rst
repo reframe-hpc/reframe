@@ -7,8 +7,6 @@ This will allow you to run simple local tests using the default compiler of the 
 Of course, ReFrame is much more powerful than that.
 This section will guide you through configuring ReFrame for your site.
 
-If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the :doc:`migration_2_to_3` page.
-
 ReFrame's configuration can be either in JSON or in Python format and can be split into multiple files.
 The Python format is useful in cases that you want to generate configuration parameters on-the-fly, since ReFrame will import that Python file and the load the resulting configuration.
 In the following we will use a single Python-based configuration file also for historical reasons, since it was the only way to configure ReFrame in versions prior to 3.0.
@@ -221,6 +219,8 @@ There is finally one additional optional configuration section that is not discu
 The ``modes`` section defines different execution modes for the framework.
 Execution modes are discussed in the :doc:`pipeline` page.
 
+
+.. _building-the-final-config:
 
 Building the Final Configuration
 --------------------------------

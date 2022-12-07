@@ -1135,6 +1135,8 @@ The additional properties for the ``file`` handler are the following:
    If the handler's |handler_name|_ property is set to ``filename.log`` and this property is set to ``true`` or to a specific timestamp format, the resulting log file will be ``filename_<timestamp>.log``.
 
 
+.. _filelog-handler:
+
 ---------------------------
 The ``filelog`` log handler
 ---------------------------

@@ -403,6 +403,8 @@ To fix this test, we need to compile with ``-DSYNC_MESSAGES``, which will synchr
    :emphasize-lines: 15
 
 
+.. _perftest-basics:
+
 Writing A Performance Test
 --------------------------
 
