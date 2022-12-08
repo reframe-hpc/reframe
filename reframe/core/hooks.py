@@ -59,6 +59,10 @@ def require_deps(func):
           Using this functionality from the :py:mod:`reframe` or
           :py:mod:`reframe.core.decorators` modules is now deprecated. You
           should use the built-in function described here.
+
+       .. versionchanged:: 4.0.0
+          You may only use this function as framework built-in.
+
     '''
 
     tests = inspect.getfullargspec(func).args[1:]
