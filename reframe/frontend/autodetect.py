@@ -237,12 +237,12 @@ def detect_topology():
                 vars.update(part.local_env.env_vars)
 
                 # Unconditionally detect the system for fully local partitions
-                with runtime.temp_environment(modules=modules, variables=vars):
+                with runtime.temp_environment(modules=modules, env_vars=vars):
                     part._processor = ProcessorInfo(cpuinfo())
 
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
-                with runtime.temp_environment(modules=modules, variables=vars):
+                with runtime.temp_environment(modules=modules, env_vars=vars):
                     part._processor = ProcessorInfo(_remote_detect(part))
 
                 if part.processor.info:
