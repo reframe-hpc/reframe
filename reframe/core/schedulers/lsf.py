@@ -14,7 +14,6 @@ import functools
 import re
 import time
 
-import reframe.core.runtime as rt
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobSchedulerError
@@ -27,9 +26,7 @@ _run_strict = functools.partial(osext.run_command, check=True)
 class LsfJobScheduler(PbsJobScheduler):
     def __init__(self):
         self._prefix = '#BSUB'
-        self._submit_timeout = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/job_submit_timeout'
-        )
+        self._submit_timeout = self.get_option('job_submit_timeout')
 
     def _format_option(self, var, option):
         if var is not None:

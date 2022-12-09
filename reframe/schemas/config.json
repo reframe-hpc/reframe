@@ -102,6 +102,18 @@
                 }
             ]
         },
+        "sched_options": {
+            "type": "object",
+            "properties": {
+                "ignore_reqnodenotavail": {"type": "boolean"},
+                "job_submit_timeout": {"type": "number"},
+                "resubmit_on_errors": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "use_nodes_option": {"type": "boolean"}
+            }
+        },
         "stream_handler": {
             "allOf": [
                 {"$ref": "#/defs/handler_common"},
@@ -382,29 +394,6 @@
                 "additionalProperties": false
             }
         },
-        "schedulers": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "enum": ["flux", "local", "lsf", "oar", "pbs",
-                                 "sge", "slurm", "squeue", "torque"]
-                    },
-                    "ignore_reqnodenotavail": {"type": "boolean"},
-                    "resubmit_on_errors": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "job_submit_timeout": {"type": "number"},
-                    "target_systems": {"$ref": "#/defs/system_ref"},
-                    "use_nodes_option": {"type": "boolean"}
-                },
-                "required": ["name"],
-                "additionalProperties": false
-            }
-        },
         "logging": {
             "type": "array",
             "items": {
@@ -579,11 +568,6 @@
         "logging/handlers*/syslog_facility": "user",
         "modes/options": [],
         "modes/target_systems": ["*"],
-        "schedulers/ignore_reqnodenotavail": false,
-        "schedulers/resubmit_on_errors": [],
-        "schedulers/job_submit_timeout": 60,
-        "schedulers/target_systems": ["*"],
-        "schedulers/use_nodes_option": false,
         "systems/descr": "",
         "systems/max_local_jobs": 8,
         "systems/modules_system": "nomod",
@@ -613,6 +597,10 @@
         "systems/partitions/processor": {},
         "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
-        "systems/partitions/extras": {}
+        "systems/partitions/extras": {},
+        "systems*/sched_options/ignore_reqnodenotavail": false,
+        "systems*/sched_options/job_submit_timeout": 60,
+        "systems*/sched_options/resubmit_on_errors": [],
+        "systems*/sched_options/use_nodes_option": false
     }
 }
