@@ -486,7 +486,6 @@
                     "colorize": {"type": "boolean"},
                     "compress_report": {"type": "boolean"},
                     "git_timeout": {"type": "number"},
-                    "ignore_check_conflicts": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
                     "module_map_file": {"type": "string"},
                     "module_mappings": {
@@ -540,7 +539,6 @@
         "general/colorize": true,
         "general/compress_report": false,
         "general/git_timeout": 5,
-        "general/ignore_check_conflicts": false,
         "general/keep_stage_files": false,
         "general/module_map_file": "",
         "general/module_mappings": [],
