@@ -571,7 +571,12 @@ class _SiteConfig:
                         f"for system '{system_fullname}'"
                     )
 
-        # Verify that all environments defined by the system are defined for
+        # Check that handlers$ are defined for the current system
+        if 'handlers$' not in local_config['logging'][0]:
+            raise ConfigError(f"'logging/handlers$' are not defined "
+                              f"for system {system_fullname!r}")
+
+        # Check that all environments defined by the system are defined for
         # the current system
         if not ignore_resolve_errors:
             sys_environs = {
