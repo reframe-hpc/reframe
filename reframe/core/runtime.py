@@ -377,13 +377,13 @@ def valid_sysenv_comb(valid_systems, valid_prog_environs,
 class temp_environment:
     '''Context manager to temporarily change the environment.'''
 
-    def __init__(self, modules=[], variables=[]):
-        self._modules = modules
-        self._variables = variables
+    def __init__(self, modules=None, env_vars=None):
+        self._modules = modules or []
+        self._env_vars = env_vars or {}
 
     def __enter__(self):
         new_env = Environment('_rfm_temp_env', self._modules,
-                              self._variables.items())
+                              self._env_vars.items())
         self._environ_save, _ = loadenv(new_env)
         return new_env
 

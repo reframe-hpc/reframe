@@ -418,7 +418,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not jobs:
             return
 
-        with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
+        with rt.temp_environment(env_vars={'SLURM_TIME_FORMAT': '%s'}):
             t_start = time.strftime(
                 '%F', time.localtime(min(job.submit_time for job in jobs))
             )
