@@ -8,9 +8,13 @@
 #
 
 import contextlib
+import copy
 import pytest
+import tempfile
 
+import reframe.core.settings as settings
 import reframe.core.runtime as rt
+import reframe.utility as util
 
 from .utility import TEST_CONFIG_FILE
 
@@ -74,3 +78,34 @@ def make_exec_ctx_g(make_exec_ctx):
         yield ctx
 
     yield _make_exec_ctx
+
+
+@pytest.fixture
+def make_config_file(tmp_path):
+    '''Create a temporary configuration file from the given configuration.
+
+    Returns the name of the temporary configuration file.
+    '''
+
+    def _make_config_file(config):
+        site_config = copy.deepcopy(settings.site_configuration)
+        site_config.update(config)
+        with tempfile.NamedTemporaryFile(mode='w+t', dir=str(tmp_path),
+                                         suffix='.py', delete=False) as fp:
+            fp.write(f'site_configuration = {util.ppretty(site_config)}')
+
+        return fp.name
+
+    return _make_config_file
+
+
+@pytest.fixture
+def make_config_file_g(make_config_file):
+    '''Same as the `make_config_file` but to be used in `yield from`
+    expressions.'''
+
+    def _make_config_file(*args, **kwargs):
+        config_file = make_config_file(*args, **kwargs)
+        yield config_file
+
+    yield _make_config_file

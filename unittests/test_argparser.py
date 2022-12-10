@@ -140,7 +140,7 @@ def extended_parser():
 
 
 def test_option_precedence(default_exec_ctx, extended_parser):
-    with rt.temp_environment(variables={
+    with rt.temp_environment(env_vars={
             'RFM_TIMESTAMP': '%F',
             'RFM_NON_DEFAULT_CRAYPE': 'yes',
             'RFM_MODULES_PRELOAD': 'a,b,c',
@@ -162,7 +162,7 @@ def test_option_precedence(default_exec_ctx, extended_parser):
 
 
 def test_option_with_config(default_exec_ctx, extended_parser, tmp_path):
-    with rt.temp_environment(variables={
+    with rt.temp_environment(env_vars={
             'RFM_TIMESTAMP': '%F',
             'RFM_NON_DEFAULT_CRAYPE': 'yes',
             'RFM_MODULES_PRELOAD': 'a,b,c',
@@ -187,7 +187,7 @@ def test_option_with_config(default_exec_ctx, extended_parser, tmp_path):
 
 
 def test_option_envvar_conversion_error(default_exec_ctx, extended_parser):
-    with rt.temp_environment(variables={
+    with rt.temp_environment(env_vars={
             'RFM_NON_DEFAULT_CRAYPE': 'foo',
             'RFM_GIT_TIMEOUT': 'non-float'
     }):
@@ -198,7 +198,7 @@ def test_option_envvar_conversion_error(default_exec_ctx, extended_parser):
 
 
 def test_envvar_option(default_exec_ctx, extended_parser):
-    with rt.temp_environment(variables={'RFM_ENV_OPT': 'BAR'}):
+    with rt.temp_environment(env_vars={'RFM_ENV_OPT': 'BAR'}):
         options = extended_parser.parse_args([])
         assert options.env_option == 'BAR'
 

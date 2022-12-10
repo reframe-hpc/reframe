@@ -25,11 +25,44 @@ class JobMeta(RegressionTestMeta, abc.ABCMeta):
     '''Job metaclass.'''
 
 
-class JobScheduler(abc.ABC):
+class JobSchedulerMeta(abc.ABCMeta):
+    '''Metaclass for JobSchedulers.
+
+    The purpose of this metaclass is to intercept the constructor call and
+    consume the `part_name` argument for setting up the configuration prefix
+    without requiring the users to call `super().__init__()` in their
+    constructors. This allows the base class to have the look and feel of a
+    pure interface.
+
+    :meta private:
+
+    '''
+    def __call__(cls, *args, **kwargs):
+        part_name = kwargs.pop('part_name', None)
+        obj = cls.__new__(cls, *args, **kwargs)
+        if part_name:
+            obj._config_prefix = (
+                f'systems/0/paritions/@{part_name}/sched_options'
+            )
+        else:
+            obj._config_prefix = 'systems/0/sched_options'
+
+        obj.__init__(*args, **kwargs)
+        return obj
+
+
+class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
     '''Abstract base class for job scheduler backends.
 
     :meta private:
     '''
+
+    def get_option(self, name):
+        '''Get scheduler-specific option.
+
+        :meta private:
+        '''
+        return runtime.runtime().get_option(f'{self._config_prefix}/{name}')
 
     @abc.abstractmethod
     def make_job(self, *args, **kwargs):
