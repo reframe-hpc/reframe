@@ -154,6 +154,10 @@ class ContainerError(ReframeError):
     '''Raised when a container platform is not configured properly.'''
 
 
+class CommandLineError(ReframeError):
+    '''Raised when an error in command-line arguments occurs.'''
+
+
 class BuildError(ReframeError):
     '''Raised when a build fails.'''
 
@@ -324,8 +328,8 @@ def is_user_error(exc_type, exc_value, tb):
     '''Check if error is a user programming error.
 
     A user error is any of :py:class:`AttributeError`, :py:class:`NameError`,
-    :py:class:`TypeError` or :py:class:`ValueError` and the exception is
-    thrown from user context.
+    :py:class:`ModuleNotFoundError`, :py:class:`TypeError` or
+    :py:class:`ValueError` and the exception isthrown from user context.
     '''
 
     frame = user_frame(exc_type, exc_value, tb)
@@ -333,7 +337,8 @@ def is_user_error(exc_type, exc_value, tb):
         return False
 
     return isinstance(exc_value,
-                      (AttributeError, NameError, TypeError, ValueError))
+                      (AttributeError, ModuleNotFoundError, NameError,
+                       TypeError, ValueError))
 
 
 def is_severe(exc_type, exc_value, tb):
@@ -366,7 +371,7 @@ def what(exc_type, exc_value, tb):
     elif is_user_error(exc_type, exc_value, tb):
         frame = user_frame(exc_type, exc_value, tb)
         relpath = os.path.relpath(frame.filename)
-        source = ''.join(frame.code_context)
+        source = ''.join(frame.code_context or '<n/a>')
         reason += f': {relpath}:{frame.lineno}: {exc_value}\n{source}'
     else:
         if str(exc_value):

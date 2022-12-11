@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: parameterized
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -15,13 +14,13 @@ class StreamMultiSysTest(rfm.RegressionTest):
     ntimes = variable(int)
 
     valid_systems = ['*']
-    valid_prog_environs = ['cray', 'gnu', 'intel', 'pgi']
+    valid_prog_environs = ['cray', 'gnu', 'intel', 'nvidia']
     prebuild_cmds = [
         'wget https://raw.githubusercontent.com/jeffhammond/STREAM/master/stream.c'  # noqa: E501
     ]
     build_system = 'SingleSource'
     sourcepath = 'stream.c'
-    variables = {
+    env_vars = {
         'OMP_NUM_THREADS': '4',
         'OMP_PLACES': 'cores'
     }
@@ -36,7 +35,7 @@ class StreamMultiSysTest(rfm.RegressionTest):
         'cray':  ['-fopenmp', '-O3', '-Wall'],
         'gnu':   ['-fopenmp', '-O3', '-Wall'],
         'intel': ['-qopenmp', '-O3', '-Wall'],
-        'pgi':   ['-mp', '-O3']
+        'nvidia':   ['-mp', '-O3']
     })
 
     # Number of cores for each system
@@ -48,7 +47,7 @@ class StreamMultiSysTest(rfm.RegressionTest):
     })
 
     @run_after('init')
-    def set_variables(self):
+    def setup_build(self):
         self.array_size = (self.num_bytes >> 3) // 3
         self.ntimes = 100*1024*1024 // self.array_size
         self.descr = (
@@ -67,8 +66,8 @@ class StreamMultiSysTest(rfm.RegressionTest):
     def set_num_threads(self):
         num_threads = self.cores.get(self.current_partition.fullname, 1)
         self.num_cpus_per_task = num_threads
-        self.variables = {
-            'OMP_NUM_THREADS': str(num_threads),
+        self.env_vars = {
+            'OMP_NUM_THREADS': num_threads,
             'OMP_PLACES': 'cores'
         }
 
@@ -79,4 +78,3 @@ class StreamMultiSysTest(rfm.RegressionTest):
     @performance_function('MB/s', perf_key='Triad')
     def extract_triad_bw(self):
         return sn.extractsingle(r'Triad:\s+(\S+)\s+.*', self.stdout, 1, float)
-# rfmdocend: parameterized

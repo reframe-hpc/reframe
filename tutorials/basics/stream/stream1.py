@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: streamtest
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -17,7 +16,7 @@ class StreamTest(rfm.RegressionTest):
     ]
     build_system = 'SingleSource'
     sourcepath = 'stream.c'
-    variables = {
+    env_vars = {
         'OMP_NUM_THREADS': '4',
         'OMP_PLACES': 'cores'
     }
@@ -46,4 +45,3 @@ class StreamTest(rfm.RegressionTest):
     @performance_function('MB/s', perf_key='Triad')
     def extract_triad_perf(self):
         return sn.extractsingle(r'Triad:\s+(\S+)\s+.*', self.stdout, 1, float)
-# rfmdocend: streamtest

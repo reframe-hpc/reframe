@@ -9,6 +9,7 @@ import re
 import sys
 
 import reframe as rfm
+import reframe.core.builtins as builtins
 import reframe.core.runtime as rt
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
@@ -19,6 +20,7 @@ from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError,
                                      SkipTestError, ReframeSyntaxError)
 from reframe.core.meta import make_test
+from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def _run(test, partition, prgenv):
@@ -64,7 +66,7 @@ def generic_system(make_exec_ctx_g):
 
 
 @pytest.fixture
-def testsys_system(make_exec_ctx_g):
+def testsys_exec_ctx(make_exec_ctx_g):
     yield from make_exec_ctx_g(test_util.TEST_CONFIG_FILE, 'testsys')
 
 
@@ -158,9 +160,9 @@ def test_eq():
 
 def test_environ_setup(hellotest, local_exec_ctx):
     # Use test environment for the regression check
-    hellotest.variables = {'_FOO_': '1', '_BAR_': '2'}
+    hellotest.env_vars = {'_FOO_': 1, '_BAR_': 2}
     hellotest.setup(*local_exec_ctx)
-    for k in hellotest.variables.keys():
+    for k in hellotest.env_vars.keys():
         assert k not in os.environ
 
 
@@ -337,60 +339,374 @@ def test_pinned_test(pinnedtest, local_exec_ctx):
     assert pinned._prefix == expected_prefix
 
 
-def test_supports_system(hellotest, testsys_system):
+def test_valid_systems_syntax(hellotest):
     hellotest.valid_systems = ['*']
-    assert hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
-
     hellotest.valid_systems = ['*:*']
-    assert hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    hellotest.valid_systems = ['sys:*']
+    hellotest.valid_systems = ['*:part']
+    hellotest.valid_systems = ['sys']
+    hellotest.valid_systems = ['sys:part']
+    hellotest.valid_systems = ['sys-0']
+    hellotest.valid_systems = ['sys:part-0']
+    hellotest.valid_systems = ['+x0']
+    hellotest.valid_systems = ['-y0']
+    hellotest.valid_systems = ['%z0=w0']
+    hellotest.valid_systems = ['+x0 -y0 %z0=w0']
+    hellotest.valid_systems = ['-y0 +x0 %z0=w0']
+    hellotest.valid_systems = ['%z0=w0 +x0 -y0']
 
-    hellotest.valid_systems = ['testsys']
-    assert hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['']
 
-    hellotest.valid_systems = ['testsys:gpu']
-    assert hellotest.supports_system('gpu')
-    assert not hellotest.supports_system('login')
-    assert hellotest.supports_system('testsys:gpu')
-    assert not hellotest.supports_system('testsys:login')
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['   sys:part']
 
-    hellotest.valid_systems = ['testsys:login']
-    assert not hellotest.supports_system('gpu')
-    assert hellotest.supports_system('login')
-    assert not hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('testsys:login')
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = [' sys:part   ']
 
-    hellotest.valid_systems = ['foo']
-    assert not hellotest.supports_system('gpu')
-    assert not hellotest.supports_system('login')
-    assert not hellotest.supports_system('testsys:gpu')
-    assert not hellotest.supports_system('testsys:login')
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = [':']
 
-    hellotest.valid_systems = ['*:gpu']
-    assert hellotest.supports_system('testsys:gpu')
-    assert hellotest.supports_system('foo:gpu')
-    assert not hellotest.supports_system('testsys:cpu')
-    assert not hellotest.supports_system('testsys:login')
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = [':foo']
 
-    hellotest.valid_systems = ['testsys:*']
-    assert hellotest.supports_system('testsys:login')
-    assert hellotest.supports_system('gpu')
-    assert not hellotest.supports_system('foo:gpu')
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['foo:']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['+']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['-']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['%']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['%foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['%foo=']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['+x0 -y0 %z0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['+x0 - %z0=w0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['%']
+
+    for sym in '!@#$^&()=<>':
+        with pytest.raises(TypeError):
+            hellotest.valid_systems = [f'{sym}foo']
+
+    for sym in '!@#$%^&*()+=<>':
+        with pytest.raises(TypeError):
+            hellotest.valid_systems = [f'foo{sym}']
 
 
-def test_supports_environ(hellotest, generic_system):
+def test_valid_prog_environs_syntax(hellotest):
     hellotest.valid_prog_environs = ['*']
-    assert hellotest.supports_environ('foo1')
-    assert hellotest.supports_environ('foo-env')
-    assert hellotest.supports_environ('*')
+    hellotest.valid_prog_environs = ['env']
+    hellotest.valid_prog_environs = ['env-0']
+    hellotest.valid_prog_environs = ['env.0']
+    hellotest.valid_prog_environs = ['+x0']
+    hellotest.valid_prog_environs = ['-y0']
+    hellotest.valid_prog_environs = ['%z0=w0']
+    hellotest.valid_prog_environs = ['+x0 -y0 %z0=w0']
+    hellotest.valid_prog_environs = ['-y0 +x0 %z0=w0']
+    hellotest.valid_prog_environs = ['%z0=w0 +x0 -y0']
+    hellotest.valid_prog_environs = ['+foo.bar']
+    hellotest.valid_prog_environs = ['%foo.bar=a$xx']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['  env0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['env0  ']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = [':']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = [':foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['foo:']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['+']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['-']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['%']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['%foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['%foo=']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['+x0 -y0 %z0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['+x0 - %z0=w0']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_prog_environs = ['%']
+
+    for sym in '!@#$^&()=<>:':
+        with pytest.raises(TypeError):
+            hellotest.valid_prog_environs = [f'{sym}foo']
+
+    for sym in '!@#$%^&*()+=<>:':
+        with pytest.raises(TypeError):
+            hellotest.valid_prog_environs = [f'foo{sym}']
+
+
+def test_supports_sysenv(testsys_exec_ctx):
+    def _named_comb(valid_sysenv):
+        ret = {}
+        for part, environs in valid_sysenv.items():
+            ret[part.fullname] = [env.name for env in environs]
+
+        return ret
+
+    def _assert_supported(valid_systems, valid_prog_environs,
+                          expected, **kwargs):
+        valid_comb = _named_comb(
+            rt.valid_sysenv_comb(valid_systems, valid_prog_environs, **kwargs)
+        )
+        assert expected == valid_comb
+
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*:*'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['testsys'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['testsys:*'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['testsys:gpu'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+    _assert_supported(
+        valid_systems=['testsys:login'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+        }
+    )
+    _assert_supported(
+        valid_systems=['foo'],
+        valid_prog_environs=['*'],
+        expected={}
+    )
+    _assert_supported(
+        valid_systems=['*:gpu'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+
+    # Check feature support
+    _assert_supported(
+        valid_systems=['+cuda'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+
+    # Check AND in features and extras
+    _assert_supported(
+        valid_systems=['+cuda +mpi %gpu_arch=v100'],
+        valid_prog_environs=['*'],
+        expected={}
+    )
+    _assert_supported(
+        valid_systems=['+cuda -mpi'],
+        valid_prog_environs=['*'],
+        expected={}
+    )
+
+    # Check OR in features ad extras
+    _assert_supported(
+        valid_systems=['+cuda +mpi', '%gpu_arch=v100'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+
+    # Check that resources are taken into account
+    _assert_supported(
+        valid_systems=['+gpu +datawarp'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+
+    # Check negation
+    _assert_supported(
+        valid_systems=['-mpi -gpu'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['-mpi -foo'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['+gpu -datawarp'],
+        valid_prog_environs=['*'],
+        expected={}
+    )
+
+    # Test environment scoping
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['PrgEnv-cray'],
+        expected={
+            'testsys:gpu': [],
+            'testsys:login': ['PrgEnv-cray']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+cxx14'],
+        expected={
+            'testsys:gpu': [],
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+cxx14 -cxx14'],
+        expected={
+            'testsys:gpu': [],
+            'testsys:login': []
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+cxx14', '-cxx14'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin'],
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['%bar=x'],
+        expected={
+            'testsys:gpu': [],
+            'testsys:login': ['PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['%foo=2'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu'],
+            'testsys:login': []
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['%foo=bar'],
+        expected={
+            'testsys:gpu': [],
+            'testsys:login': []
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['-cxx14'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin'],
+            'testsys:login': []
+        }
+    )
+
+    # Check valid_systems / valid_prog_environs combinations
+    _assert_supported(
+        valid_systems=['testsys:login'],
+        valid_prog_environs=['-cxx14'],
+        expected={
+            'testsys:login': []
+        }
+    )
+    _assert_supported(
+        valid_systems=['+cross_compile'],
+        valid_prog_environs=['-cxx14'],
+        expected={
+            'testsys:login': []
+        }
+    )
+
+    # Test skipping validity checks
+    _assert_supported(
+        valid_systems=['foo'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        },
+        check_systems=False
+    )
+    _assert_supported(
+        valid_systems=['foo'],
+        valid_prog_environs=['xxx'],
+        expected={
+            'testsys:login': ['PrgEnv-cray', 'PrgEnv-gnu'],
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        },
+        check_systems=False,
+        check_environs=False
+    )
 
 
 def test_sourcesdir_none(local_exec_ctx):
@@ -507,7 +823,7 @@ def test_sourcepath_non_existent(local_exec_ctx):
         test.compile_wait()
 
 
-def test_extra_resources(HelloTest, testsys_system):
+def test_extra_resources(HelloTest, testsys_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(HelloTest):
         local = True
@@ -831,6 +1147,21 @@ def test_overriden_hooks(HelloTest, local_exec_ctx):
     assert test.foo == 10
 
 
+def test_overriden_hook_different_stages(HelloTest, local_exec_ctx):
+    @test_util.custom_prefix('unittests/resources/checks')
+    class MyTest(HelloTest):
+        @run_after('init')
+        def foo(self):
+            pass
+
+        @run_after('setup')
+        def foo(self):
+            pass
+
+    test = MyTest()
+    assert test.pipeline_hooks() == {'post_setup': [MyTest.foo]}
+
+
 def test_disabled_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):
@@ -880,7 +1211,7 @@ def test_require_deps(HelloTest, local_exec_ctx):
         def setz(self, T0):
             self.z = T0().x + 2
 
-    cases = executors.generate_testcases([T0(), T1()])
+    cases = executors.generate_testcases([T0(), T1()], prepare=True)
     deps, _ = dependencies.build_deps(cases)
     for c in dependencies.toposort(deps):
         _run(*c)
@@ -892,73 +1223,6 @@ def test_require_deps(HelloTest, local_exec_ctx):
         elif t.name == 'T1':
             assert t.y == 2
             assert t.z == 3
-
-
-# All the following tests about naming are for the deprecated
-# @parameterized_test decorator
-
-def test_regression_test_name():
-    class MyTest(rfm.RegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    test = MyTest(1, 2)
-    assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
-    assert 'MyTest_1_2' == test.name
-
-
-def test_strange_test_names():
-    class C:
-        def __init__(self, a):
-            self.a = a
-
-        def __repr__(self):
-            return f'C({self.a})'
-
-    class MyTest(rfm.RegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    test = MyTest('(a*b+c)/12', C(33))
-    assert 'MyTest__a_b_c__12_C_33_' == test.name
-
-
-def test_name_user_inheritance():
-    class MyBaseTest(rfm.RegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    class MyTest(MyBaseTest):
-        def __init__(self):
-            super().__init__(1, 2)
-
-    test = MyTest()
-    assert 'MyTest' == test.name
-
-
-def test_name_runonly_test():
-    class MyTest(rfm.RunOnlyRegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    test = MyTest(1, 2)
-    assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
-    assert 'MyTest_1_2' == test.name
-
-
-def test_name_compileonly_test():
-    class MyTest(rfm.CompileOnlyRegressionTest):
-        def __init__(self, a, b):
-            self.a = a
-            self.b = b
-
-    test = MyTest(1, 2)
-    assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
-    assert 'MyTest_1_2' == test.name
 
 
 def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
@@ -1000,7 +1264,7 @@ def _run_sanity(test, *exec_ctx, skip_perf=False):
 
 
 @pytest.fixture
-def dummy_gpu_exec_ctx(testsys_system):
+def dummy_gpu_exec_ctx(testsys_exec_ctx):
     partition = test_util.partition_by_name('gpu')
     environ = test_util.environment_by_name('builtin', partition)
     yield partition, environ
@@ -1020,7 +1284,7 @@ def sanity_file(tmp_path):
 # should not change to the `@performance_function` syntax`
 
 @pytest.fixture
-def dummytest(testsys_system, perf_file, sanity_file):
+def dummytest(testsys_exec_ctx, perf_file, sanity_file):
     class MyTest(rfm.RunOnlyRegressionTest):
         def __init__(self):
             self.perf_file = perf_file
@@ -1050,6 +1314,49 @@ def dummytest(testsys_system, perf_file, sanity_file):
             )
 
     yield MyTest()
+
+
+@pytest.fixture
+def dummytest_modern(testsys_exec_ctx, perf_file, sanity_file):
+    '''Modern version of the dummytest above'''
+
+    class MyTest(rfm.RunOnlyRegressionTest):
+        perf_file = perf_file
+        reference = {
+            'testsys': {
+                'value1': (1.4, -0.1, 0.1, None),
+                'value2': (1.7, -0.1, 0.1, None),
+            },
+            'testsys:gpu': {
+                'value3': (3.1, -0.1, 0.1, None),
+            }
+        }
+
+        @sanity_function
+        def validate(self):
+            return sn.assert_found(r'result = success', sanity_file)
+
+        @performance_function('unit')
+        def value1(self):
+            return sn.extractsingle(r'perf1 = (\S+)', perf_file, 1, float)
+
+        @performance_function('unit')
+        def value2(self):
+            return sn.extractsingle(r'perf2 = (\S+)', perf_file, 1, float)
+
+        @performance_function('unit')
+        def value3(self):
+            return sn.extractsingle(r'perf3 = (\S+)', perf_file, 1, float)
+
+    yield MyTest()
+
+
+@pytest.fixture(params=['classic', 'modern'])
+def dummy_perftest(request, dummytest, dummytest_modern):
+    if request.param == 'modern':
+        return dummytest_modern
+    else:
+        return dummytest
 
 
 def test_sanity_success(dummytest, sanity_file, perf_file, dummy_gpu_exec_ctx):
@@ -1127,8 +1434,7 @@ def test_reference_unknown_tag(dummytest, sanity_file,
             'foo': (3.1, -0.1, 0.1, None),
         }
     }
-    with pytest.raises(SanityError):
-        _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+    _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
 def test_reference_unknown_system(dummytest, sanity_file,
@@ -1193,6 +1499,27 @@ def test_reference_tag_resolution(dummytest, sanity_file,
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
+def test_required_reference(dummy_perftest, sanity_file,
+                            perf_file, dummy_gpu_exec_ctx):
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n'
+                         'perf2 = 1.8\n'
+                         'perf3 = 3.3\n')
+
+    dummy_perftest.require_reference = True
+    dummy_perftest.reference = {
+        'testsys:login': {
+            'value1': (1.4, -0.1, 0.1, None),
+            'value3': (3.1, -0.1, 0.1, None),
+        },
+        'foo': {
+            'value2': (1.7, -0.1, 0.1, None)
+        }
+    }
+    with pytest.raises(PerformanceError):
+        _run_sanity(dummy_perftest, *dummy_gpu_exec_ctx)
+
+
 def test_performance_invalid_value(dummytest, sanity_file,
                                    perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
@@ -1248,7 +1575,7 @@ def test_perf_patterns_evaluation(dummytest, sanity_file,
 
 
 @pytest.fixture
-def perftest(testsys_system, perf_file, sanity_file):
+def perftest(testsys_exec_ctx, perf_file, sanity_file):
     class MyTest(rfm.RunOnlyRegressionTest):
         sourcesdir = None
 
@@ -1385,7 +1712,9 @@ def container_test(tmp_path):
 
             @run_after('init')
             def setup_container_platf(self):
-                self.container_platform = platform
+                if platform:
+                    self.container_platform = platform
+
                 self.container_platform.image = image
                 self.container_platform.command = (
                     f"bash -c 'cd {_STAGEDIR_MOUNT}; pwd; ls; "
@@ -1446,17 +1775,9 @@ def test_unknown_container_platform(container_test, local_exec_ctx):
 
 def test_not_configured_container_platform(container_test, local_exec_ctx):
     partition, environ = local_exec_ctx
-    platform = None
-    for cp in ['Docker', 'Singularity', 'Sarus', 'ShifterNG']:
-        if cp not in partition.container_environs.keys():
-            platform = cp
-            break
-
-    if platform is None:
-        pytest.skip('cannot find a supported platform that is not configured')
 
     with pytest.raises(PipelineError):
-        _run(container_test(platform, 'ubuntu:18.04'), *local_exec_ctx)
+        _run(container_test(None, 'ubuntu:18.04'), *local_exec_ctx)
 
 
 def test_skip_if_no_topo(HelloTest, local_exec_ctx):
@@ -1527,6 +1848,31 @@ def test_make_test_with_builtins(local_exec_ctx):
     _run(hello_cls(), *local_exec_ctx)
 
 
+def test_make_test_with_builtins_inline(local_exec_ctx):
+    def set_message(obj):
+        obj.executable_opts = [obj.message]
+
+    def validate(obj):
+        return sn.assert_found(obj.message, obj.stdout)
+
+    hello_cls = make_test(
+        'HelloTest', (rfm.RunOnlyRegressionTest,),
+        {
+            'valid_systems': ['*'],
+            'valid_prog_environs': ['*'],
+            'executable': 'echo',
+            'message': builtins.variable(str),
+        },
+        methods=[
+            builtins.run_before('run')(set_message),
+            builtins.sanity_function(validate)
+        ]
+    )
+    hello_cls.setvar('message', 'hello')
+    assert hello_cls.__name__ == 'HelloTest'
+    _run(hello_cls(), *local_exec_ctx)
+
+
 def test_set_var_default():
     class _X(rfm.RunOnlyRegressionTest):
         foo = variable(int, value=10)
@@ -1545,25 +1891,15 @@ def test_set_var_default():
     assert x.bar == 100
 
 
-def test_set_name_deprecation():
-    from reframe.core.warnings import ReframeDeprecationWarning
+def test_variables_deprecation():
+    with pytest.warns(ReframeDeprecationWarning):
+        class _X(rfm.RunOnlyRegressionTest):
+            variables = {'FOO': 1}
+
+    test = _X()
+    assert test.env_vars['FOO'] == 1
 
     with pytest.warns(ReframeDeprecationWarning):
-        class _X(rfm.RegressionTest):
-            @run_after('init')
-            def set_name(self):
-                self.name = 'foo'
+        test.variables['BAR'] = 2
 
-        x = _X()
-
-    assert x.name == 'foo'
-    assert x.unique_name == 'foo'
-
-    with pytest.warns(ReframeDeprecationWarning):
-        class _X(rfm.RegressionTest):
-            name = 'foo'
-
-        x = _X()
-
-    assert x.name == 'foo'
-    assert x.unique_name == 'foo'
+    assert test.env_vars['BAR'] == 2

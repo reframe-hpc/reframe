@@ -33,16 +33,18 @@ site_configuration = {
     ],
     'logging': [
         {
-            'handlers': [
+            'handlers$': [
                 {
                     'type': 'stream',
                     'name': 'stdout',
                     'level': 'info',
                     'format': '%(message)s'
                 },
+            ],
+            'handlers': [
                 {
                     'type': 'file',
-                    'level': 'debug',
+                    'level': 'debug2',
                     'format': '[%(asctime)s] %(levelname)s: %(check_info)s: %(message)s',   # noqa: E501
                     'append': False
                 }
@@ -53,17 +55,19 @@ site_configuration = {
                     'prefix': '%(check_system)s/%(check_partition)s',
                     'level': 'info',
                     'format': (
-                        '%(check_job_completion_time)s|reframe %(version)s|'
-                        '%(check_info)s|jobid=%(check_jobid)s|'
-                        '%(check_perf_var)s=%(check_perf_value)s|'
-                        'ref=%(check_perf_ref)s '
-                        '(l=%(check_perf_lower_thres)s, '
-                        'u=%(check_perf_upper_thres)s)|'
-                        '%(check_perf_unit)s'
+                        '%(check_job_completion_time)s,%(version)s,'
+                        '%(check_display_name)s,%(check_system)s,'
+                        '%(check_partition)s,%(check_environ)s,'
+                        '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
+                    ),
+                    'format_perfvars': (
+                        '%(check_perf_value)s,%(check_perf_unit)s,'
+                        '%(check_perf_ref)s,%(check_perf_lower)s,'
+                        '%(check_perf_upper)s,'
                     ),
                     'append': True
                 }
             ]
         }
-    ],
+    ]   # end of logging
 }

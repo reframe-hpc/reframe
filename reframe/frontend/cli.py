@@ -7,6 +7,7 @@ import inspect
 import itertools
 import json
 import os
+import random
 import shlex
 import socket
 import sys
@@ -18,22 +19,25 @@ import reframe.core.config as config
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
-import reframe.core.warnings as warnings
 import reframe.frontend.argparse as argparse
 import reframe.frontend.autodetect as autodetect
 import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
 import reframe.frontend.runreport as runreport
+import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
+import reframe.utility.typecheck as typ
 
 
-from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.testgenerators import (distribute_tests,
+                                             getallnodes, repeat_tests)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
+from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.printer import PrettyPrinter
 
 
 def format_env(envvars):
@@ -44,6 +48,7 @@ def format_env(envvars):
     return ret
 
 
+@logging.time_function
 def list_checks(testcases, printer, detailed=False, concretized=False):
     printer.info('[List of matched checks]')
     unique_checks = set()
@@ -67,6 +72,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
                 unique_checks.add(v.check.unique_name)
 
         if depth:
+            name_info = f'{u.check.display_name} /{u.check.hashcode}'
             tc_info = ''
             details = ''
             if concretized:
@@ -74,17 +80,16 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
             location = inspect.getfile(type(u.check))
             if detailed:
-                details = f' [id: {u.check.unique_name}, file: {location!r}]'
+                details = f' [variant: {u.check.variant_num}, file: {location!r}]'
 
-            lines.append(
-                f'{prefix}^{u.check.display_name}{tc_info}{details}'
-            )
+            lines.append(f'{prefix}^{name_info}{tc_info}{details}')
 
         return lines
 
     # We need the leaf test cases to be printed at the leftmost
     leaf_testcases = list(t for t in testcases if t.in_degree == 0)
     for t in leaf_testcases:
+        name_info = f'{t.check.display_name} /{t.check.hashcode}'
         tc_info = ''
         details = ''
         if concretized:
@@ -92,12 +97,11 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
         location = inspect.getfile(type(t.check))
         if detailed:
-            details = f' [id: {t.check.unique_name}, file: {location!r}]'
+            details = f' [variant: {t.check.variant_num}, file: {location!r}]'
 
-        # if not concretized and t.check.name not in unique_checks:
         if concretized or (not concretized and
                            t.check.unique_name not in unique_checks):
-            printer.info(f'- {t.check.display_name}{tc_info}{details}')
+            printer.info(f'- {name_info}{tc_info}{details}')
 
         if not t.check.is_fixture():
             unique_checks.add(t.check.unique_name)
@@ -111,6 +115,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
         printer.info(f'Found {len(unique_checks)} check(s)\n')
 
 
+@logging.time_function
 def describe_checks(testcases, printer):
     records = []
     unique_names = set()
@@ -149,8 +154,9 @@ def describe_checks(testcases, printer):
 
             # List all required variables
             required = []
-            for var in tc.check._rfm_var_space:
-                if not tc.check._rfm_var_space[var].is_defined():
+            var_space = type(tc.check).var_space
+            for var in var_space:
+                if not var_space[var].is_defined():
                     required.append(var)
 
             rec['@required'] = required
@@ -183,6 +189,7 @@ def calc_verbosity(site_config, quiesce):
     return curr_verbosity - quiesce
 
 
+@logging.time_function_noexit
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
@@ -207,6 +214,11 @@ def main():
     misc_options = argparser.add_argument_group('Miscellaneous options')
 
     # Output directory options
+    output_options.add_argument(
+        '--compress-report', action='store_true',
+        help='Compress the run report file',
+        envvar='RFM_COMPRESS_REPORT', configvar='general/compress_report'
+    )
     output_options.add_argument(
         '--dont-restage', action='store_false', dest='clean_stagedir',
         help='Reuse the test stage directory',
@@ -271,13 +283,6 @@ def main():
         envvar='RFM_CHECK_SEARCH_PATH :', configvar='general/check_search_path'
     )
     locate_options.add_argument(
-        '--ignore-check-conflicts', action='store_true',
-        help=('Skip checks with conflicting names '
-              '(this option is deprecated and has no effect)'),
-        envvar='RFM_IGNORE_CHECK_CONFLICTS',
-        configvar='general/ignore_check_conflicts'
-    )
-    locate_options.add_argument(
         '-R', '--recursive', action='store_true',
         help='Search for checks in the search path recursively',
         envvar='RFM_CHECK_SEARCH_RECURSIVE',
@@ -312,7 +317,7 @@ def main():
     # partition environments as the runtime is created, similarly to how the
     # system partitions are treated. Currently, this facilitates the
     # implementation of fixtures, but we should reconsider it: see discussion
-    # in https://github.com/eth-cscs/reframe/issues/2245
+    # in https://github.com/reframe-hpc/reframe/issues/2245
     select_options.add_argument(
         '-p', '--prgenv', action='append', default=[r'.*'],  metavar='PATTERN',
         configvar='general/valid_env_names',
@@ -370,6 +375,17 @@ def main():
         default=[], help='Disable a pipeline hook for this run'
     )
     run_options.add_argument(
+        '--distribute', action='store', metavar='{all|STATE}',
+        nargs='?', const='idle',
+        help=('Distribute the selected single-node jobs on every node that'
+              'is in STATE (default: "idle"')
+    )
+    run_options.add_argument(
+        '--exec-order', metavar='ORDER', action='store',
+        choices=['name', 'random', 'rname', 'ruid', 'uid'],
+        help='Impose an execution order for independent tests'
+    )
+    run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
         choices=['async', 'serial'], default='async',
         help='Set the execution policy of ReFrame (default: "async")'
@@ -399,6 +415,10 @@ def main():
     )
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use'
+    )
+    run_options.add_argument(
+        '--repeat', action='store', metavar='N',
+        help='Repeat selected tests N times'
     )
     run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
@@ -475,10 +495,10 @@ def main():
 
     # Miscellaneous options
     misc_options.add_argument(
-        '-C', '--config-file', action='store',
-        dest='config_file', metavar='FILE',
+        '-C', '--config-file', action='append', metavar='FILE',
+        dest='config_files',
         help='Set configuration file',
-        envvar='RFM_CONFIG_FILE'
+        envvar='RFM_CONFIG_FILES :'
     )
     misc_options.add_argument(
         '--detect-host-topology', action='store', nargs='?', const='-',
@@ -506,10 +526,6 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
-        '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
-        help='Upgrade ReFrame 2.x configuration file to ReFrame 3.x syntax'
-    )
-    misc_options.add_argument(
         '-V', '--version', action='version', version=osext.reframe_version()
     )
     misc_options.add_argument(
@@ -524,6 +540,35 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
+        dest='autodetect_fqdn',
+        envvar='RFM_AUTODETECT_FQDN',
+        action='store',
+        default=False,
+        type=typ.Bool,
+        help='Use the full qualified domain name as host name'
+    )
+    argparser.add_argument(
+        dest='autodetect_method',
+        envvar='RFM_AUTODETECT_METHOD',
+        action='store',
+        default='hostname',
+        help='Method to detect the system'
+    )
+    argparser.add_argument(
+        dest='config_path',
+        envvar='RFM_CONFIG_PATH :',
+        action='append',
+        help='Directories where ReFrame will look for base configuration'
+    )
+    argparser.add_argument(
+        dest='autodetect_xthostname',
+        envvar='RFM_AUTODETECT_XTHOSTNAME',
+        action='store',
+        default=False,
+        type=typ.Bool,
+        help="Use Cray's xthostname file to retrieve the host name"
+    )
+    argparser.add_argument(
         dest='git_timeout',
         envvar='RFM_GIT_TIMEOUT',
         configvar='general/git_timeout',
@@ -531,12 +576,6 @@ def main():
         help=('Timeout in seconds when checking if the url is a '
               'valid repository.'),
         type=float
-    )
-    argparser.add_argument(
-        dest='graylog_server',
-        envvar='RFM_GRAYLOG_ADDRESS',
-        configvar='logging/handlers_perflog/graylog_address',
-        help='Graylog server address'
     )
     argparser.add_argument(
         dest='httpjson_url',
@@ -547,16 +586,9 @@ def main():
     argparser.add_argument(
         dest='ignore_reqnodenotavail',
         envvar='RFM_IGNORE_REQNODENOTAVAIL',
-        configvar='schedulers/ignore_reqnodenotavail',
+        configvar='systems*/sched_options/ignore_reqnodenotavail',
         action='store_true',
-        help='Graylog server address'
-    )
-    argparser.add_argument(
-        dest='compact_test_names',
-        envvar='RFM_COMPACT_TEST_NAMES',
-        configvar='general/compact_test_names',
-        action='store_true',
-        help='Use a compact test naming scheme'
+        help='Ignore ReqNodeNotAvail Slurm error'
     )
     argparser.add_argument(
         dest='dump_pipeline_progress',
@@ -654,46 +686,32 @@ def main():
     if not restrict_logging():
         printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
 
-    if os.getenv('RFM_GRAYLOG_SERVER'):
-        printer.warning(
-            'RFM_GRAYLOG_SERVER environment variable is deprecated; '
-            'please use RFM_GRAYLOG_ADDRESS instead'
-        )
-        os.environ['RFM_GRAYLOG_ADDRESS'] = os.getenv('RFM_GRAYLOG_SERVER')
-
-    if options.upgrade_config_file is not None:
-        old_config, *new_config = options.upgrade_config_file.split(
-            ':', maxsplit=1
-        )
-        new_config = new_config[0] if new_config else None
-
-        try:
-            new_config = config.convert_old_config(old_config, new_config)
-        except Exception as e:
-            printer.error(f'could not convert file: {e}')
-            sys.exit(1)
-
-        printer.info(
-            f'Conversion successful! '
-            f'The converted file can be found at {new_config!r}.'
-        )
-        sys.exit(0)
-
     # Now configure ReFrame according to the user configuration file
     try:
-        try:
-            printer.debug('Loading user configuration')
-            site_config = config.load_config(options.config_file)
-        except warnings.ReframeDeprecationWarning as e:
-            printer.warning(e)
-            converted = config.convert_old_config(options.config_file)
-            printer.warning(
-                f"configuration file has been converted "
-                f"to the new syntax here: '{converted}'"
-            )
-            site_config = config.load_config(converted)
+        # Issue a deprecation warning if the old `RFM_CONFIG_FILE` is used
+        config_file = os.getenv('RFM_CONFIG_FILE')
+        if config_file is not None:
+            printer.warning('RFM_CONFIG_FILE is deprecated; '
+                            'please use RFM_CONFIG_FILES instead')
+            if os.getenv('RFM_CONFIG_FILES'):
+                printer.warning(
+                    'both RFM_CONFIG_FILE and RFM_CONFIG_FILES are specified; '
+                    'the former will be ignored'
+                )
+            else:
+                os.environ['RFM_CONFIG_FILES'] = config_file
 
+        printer.debug('Loading user configuration')
+        conf_files = config.find_config_files(
+            options.config_path, options.config_files
+        )
+        site_config = config.load_config(*conf_files)
         site_config.validate()
+        site_config.set_autodetect_meth(
+            options.autodetect_method,
+            use_fqdn=options.autodetect_fqdn,
+            use_xthostname=options.autodetect_xthostname
+        )
 
         # We ignore errors about unresolved sections or configuration
         # parameters here, because they might be defined at the individual
@@ -720,7 +738,7 @@ def main():
         logging.configure_logging(site_config)
     except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
-        printer.error(logfiles_message())
+        printer.info(logfiles_message())
         sys.exit(1)
 
     printer.colorize = site_config.get('general/0/colorize')
@@ -732,14 +750,8 @@ def main():
         runtime.init_runtime(site_config)
     except errors.ConfigError as e:
         printer.error(f'failed to initialize runtime: {e}')
-        printer.error(logfiles_message())
+        printer.info(logfiles_message())
         sys.exit(1)
-
-    if site_config.get('general/0/ignore_check_conflicts'):
-        logging.getlogger().warning(
-            "the 'ignore_check_conflicts' option is deprecated "
-            "and will be removed in the future"
-        )
 
     rt = runtime.runtime()
     try:
@@ -761,7 +773,7 @@ def main():
         printer.error("stage and output refer to the same directory; "
                       "if this is on purpose, please use the "
                       "'--keep-stage-files' option.")
-        printer.error(logfiles_message())
+        printer.info(logfiles_message())
         sys.exit(1)
 
     # Show configuration after everything is set up
@@ -772,8 +784,11 @@ def main():
         if config_param == 'all':
             printer.info(str(rt.site_config))
         else:
-            value = rt.get_option(config_param)
-            if value is None:
+            # Create a unique value to differentiate between configuration
+            # parameters with value `None` and invalid ones
+            default = {'token'}
+            value = rt.get_option(config_param, default)
+            if value is default:
                 printer.error(
                     f'no such configuration parameter found: {config_param}'
                 )
@@ -864,7 +879,9 @@ def main():
 
     loader = RegressionCheckLoader(check_search_path,
                                    check_search_recursive,
-                                   external_vars)
+                                   external_vars,
+                                   options.skip_system_check,
+                                   options.skip_prgenv_check)
 
     def print_infoline(param, value):
         param = param + ':'
@@ -872,9 +889,9 @@ def main():
 
     session_info = {
         'cmdline': ' '.join(sys.argv),
-        'config_file': rt.site_config.filename,
+        'config_files': rt.site_config.sources,
         'data_version': runreport.DATA_VERSION,
-        'hostname': socket.getfqdn(),
+        'hostname': socket.gethostname(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
@@ -891,25 +908,49 @@ def main():
         f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
     )
     print_infoline('working directory', repr(session_info['workdir']))
-    print_infoline('settings file', f"{session_info['config_file']!r}")
+    print_infoline(
+        'settings files',
+        ', '.join(repr(x) for x in session_info['config_files'])
+    )
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")
     print_infoline('stage directory', repr(session_info['prefix_stage']))
     print_infoline('output directory', repr(session_info['prefix_output']))
+    print_infoline('log files',
+                   ', '.join(repr(s) for s in logging.log_files()))
     printer.info('')
     try:
-        # Locate and load checks
-        checks_found = loader.load_all()
+        logging.getprofiler().enter_region('test processing')
+
+        # Need to parse the cli options before loading the tests
+        parsed_job_options = []
+        for opt in options.job_options:
+            opt_split = opt.split('=', maxsplit=1)
+            optstr = opt_split[0]
+            valstr = opt_split[1] if len(opt_split) > 1 else ''
+            if opt.startswith('-') or opt.startswith('#'):
+                parsed_job_options.append(opt)
+            elif len(optstr) == 1:
+                parsed_job_options.append(f'-{optstr} {valstr}')
+            else:
+                parsed_job_options.append(f'--{optstr} {valstr}')
+
+        # Locate and load checks; `force=True` is not needed for normal
+        # invocations from the command line and has practically no effect, but
+        # it is needed to better emulate the behavior of running reframe's CLI
+        # from within the unit tests, which call repeatedly `main()`.
+        checks_found = loader.load_all(force=True)
         printer.verbose(f'Loaded {len(checks_found)} test(s)')
 
         # Generate all possible test cases first; we will need them for
         # resolving dependencies after filtering
-        testcases_all = generate_testcases(checks_found,
-                                           options.skip_system_check,
-                                           options.skip_prgenv_check)
+        testcases_all = generate_testcases(checks_found)
         testcases = testcases_all
         printer.verbose(f'Generated {len(testcases)} test case(s)')
+
+        # Filter out fixtures
+        testcases = [t for t in testcases if not t.check.is_fixture()]
 
         # Filter test cases by name
         if options.exclude_names:
@@ -917,9 +958,7 @@ def main():
                 testcases = filter(filters.have_not_name(name), testcases)
 
         if options.names:
-            testcases = filter(
-                filters.have_name('|'.join(options.names)), testcases
-            )
+            testcases = filter(filters.have_any_name(options.names), testcases)
 
         testcases = list(testcases)
         printer.verbose(
@@ -982,12 +1021,58 @@ def main():
                 f'{len(testcases)} remaining'
             )
 
+        if options.repeat is not None:
+            try:
+                num_repeats = int(options.repeat)
+                if num_repeats <= 0:
+                    raise ValueError
+            except ValueError:
+                raise errors.CommandLineError(
+                    "argument to '--repeat' option must be "
+                    "a non-negative integer"
+                ) from None
+
+            testcases_all = repeat_tests(testcases, num_repeats)
+            testcases = testcases_all
+
+        if options.distribute:
+            node_map = getallnodes(options.distribute, parsed_job_options)
+
+            # Remove the job options that begin with '--nodelist' and '-w', so
+            # that they do not override those set from the distribute feature.
+            #
+            # NOTE: This is Slurm-specific. When support of distributing tests
+            # is added to other scheduler backends, this needs to be updated,
+            # too.
+            parsed_job_options = [
+                x for x in parsed_job_options
+                if (not x.startswith('-w') and not x.startswith('--nodelist'))
+            ]
+            testcases_all = distribute_tests(testcases, node_map)
+            testcases = testcases_all
+
+        @logging.time_function
+        def _sort_testcases(testcases):
+            if options.exec_order in ('name', 'rname'):
+                testcases.sort(key=lambda c: c.check.display_name,
+                               reverse=(options.exec_order == 'rname'))
+            elif options.exec_order in ('uid', 'ruid'):
+                testcases.sort(key=lambda c: c.check.unique_name,
+                               reverse=(options.exec_order == 'ruid'))
+            elif options.exec_order == 'random':
+                random.shuffle(testcases)
+
+        _sort_testcases(testcases)
+        if testcases_all is not testcases:
+            _sort_testcases(testcases_all)
+
         # Prepare for running
         printer.debug('Building and validating the full test DAG')
         testgraph, skipped_cases = dependencies.build_deps(testcases_all)
         if skipped_cases:
             # Some cases were skipped, so adjust testcases
-            testcases = list(set(testcases) - set(skipped_cases))
+            testcases = list(util.OrderedSet(testcases) -
+                             util.OrderedSet(skipped_cases))
             printer.verbose(
                 f'Filtering test case(s) due to unresolved dependencies: '
                 f'{len(testcases)} remaining'
@@ -1041,7 +1126,11 @@ def main():
             list_checks(testcases, printer)
             printer.info('[Generate CI]')
             with open(options.ci_generate, 'wt') as fp:
-                ci.emit_pipeline(fp, testcases)
+                child_pipeline_opts = []
+                if options.mode:
+                    child_pipeline_opts.append(f'--mode={options.mode}')
+
+                ci.emit_pipeline(fp, testcases, child_pipeline_opts)
 
             printer.info(
                 f'  Gitlab pipeline generated successfully '
@@ -1122,11 +1211,12 @@ def main():
             try:
                 rt.modules_system.load_module(**m, force=True)
             except errors.EnvironError as e:
-                printer.warning(
-                    f'could not load module {m["name"]!r} correctly; '
-                    f'skipping...'
+                printer.error(
+                    f'could not load module {m["name"]!r} correctly; rerun '
+                    f'with -vv for more information'
                 )
                 printer.debug(str(e))
+                sys.exit(1)
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
 
@@ -1143,7 +1233,6 @@ def main():
             printer.error("unknown execution policy `%s': Exiting...")
             sys.exit(1)
 
-        exec_policy.skip_system_check = options.skip_system_check
         exec_policy.force_local = options.force_local
         exec_policy.strict_check = options.strict
         exec_policy.skip_sanity_check = options.skip_sanity_check
@@ -1155,28 +1244,16 @@ def main():
             errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
             sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
             if sched_flex_alloc_nodes <= 0:
-                raise errors.ConfigError(
+                raise errors.CommandLineError(
                     errmsg.format(options.flex_alloc_nodes)
                 )
         except ValueError:
             sched_flex_alloc_nodes = options.flex_alloc_nodes
 
         exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
-        parsed_job_options = []
-        for opt in options.job_options:
-            opt_split = opt.split('=', maxsplit=1)
-            optstr = opt_split[0]
-            valstr = opt_split[1] if len(opt_split) > 1 else ''
-            if opt.startswith('-') or opt.startswith('#'):
-                parsed_job_options.append(opt)
-            elif len(optstr) == 1:
-                parsed_job_options.append(f'-{optstr} {valstr}')
-            else:
-                parsed_job_options.append(f'--{optstr} {valstr}')
-
         exec_policy.sched_options = parsed_job_options
         if options.maxfail < 0:
-            raise errors.ConfigError(
+            raise errors.CommandLineError(
                 f'--maxfail should be a non-negative integer: '
                 f'{options.maxfail!r}'
             )
@@ -1204,7 +1281,9 @@ def main():
             success = True
             if runner.stats.failed():
                 success = False
-                runner.stats.print_failure_report(printer)
+                runner.stats.print_failure_report(
+                    printer, not options.distribute
+                )
                 if options.failure_stats:
                     runner.stats.print_failure_stats(printer)
 
@@ -1237,8 +1316,11 @@ def main():
             report_file = runreport.next_report_filename(report_file)
             try:
                 with open(report_file, 'w') as fp:
-                    jsonext.dump(json_report, fp, indent=2)
-                    fp.write('\n')
+                    if rt.get_option('general/0/compress_report'):
+                        jsonext.dump(json_report, fp)
+                    else:
+                        jsonext.dump(json_report, fp, indent=2)
+                        fp.write('\n')
 
                 printer.info(f'Run report saved in {report_file!r}')
             except OSError as e:
@@ -1280,13 +1362,16 @@ def main():
         sys.exit(1)
     finally:
         try:
+            logging.getprofiler().exit_region()     # region: 'test processing'
             log_files = logging.log_files()
             if site_config.get('general/0/save_log_files'):
                 log_files = logging.save_log_files(rt.output_prefix)
-
         except OSError as e:
             printer.error(f'could not save log file: {e}')
             sys.exit(1)
         finally:
             if not restrict_logging():
                 printer.info(logfiles_message())
+
+            logging.getprofiler().exit_region()     # region: 'main'
+            logging.getprofiler().print_report(printer.debug)

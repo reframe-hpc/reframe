@@ -25,7 +25,8 @@ def environ():
                            ldflags=['-dynamic'])
 
 
-@pytest.fixture(params=['Autotools', 'CMake', 'Make', 'SingleSource'])
+@pytest.fixture(params=['Autotools', 'CMake',
+                        'CustomBuild', 'Make', 'SingleSource'])
 def build_system(request):
     return bs.__dict__[request.param]()
 
@@ -127,6 +128,12 @@ def _emit_from_env_SingleSource(build_system, environ):
     assert expected == build_system.emit_build_commands(environ)
 
 
+def _emit_from_env_CustomBuild(build_system, environ):
+    build_system.commands = ['./custom-configure --foo', 'make']
+    expected = ['./custom-configure --foo', 'make']
+    assert expected == build_system.emit_build_commands(environ)
+
+
 def _emit_from_buildsystem_Make(build_system_with_flags, environ):
     build_system_with_flags.makefile = 'Makefile_foo'
     build_system_with_flags.srcdir = 'foodir'
@@ -188,6 +195,12 @@ def _emit_from_buildsystem_SingleSource(build_system_with_flags, environ):
     assert expected == build_system_with_flags.emit_build_commands(environ)
 
 
+def _emit_from_buildsystem_CustomBuild(build_system_with_flags, environ):
+    build_system_with_flags.commands = ['./custom-configure --foo', 'make']
+    expected = ['./custom-configure --foo', 'make']
+    assert expected == build_system_with_flags.emit_build_commands(environ)
+
+
 def _emit_no_env_defaults_Make(build_system, environ):
     build_system.flags_from_environ = False
     assert ['make -j 1'] == build_system.emit_build_commands(environ)
@@ -211,6 +224,12 @@ def _emit_no_env_defaults_SingleSource(build_system, environ):
     build_system.flags_from_environ = False
     assert (['gcc foo.c -o foo.x'] ==
             build_system.emit_build_commands(environ))
+
+
+def _emit_no_env_defaults_CustomBuild(build_system, environ):
+    build_system.commands = ['./custom-configure --foo', 'make']
+    expected = ['./custom-configure --foo', 'make']
+    assert expected == build_system.emit_build_commands(environ)
 
 
 @pytest.fixture(params=['C', 'C++', 'Fortran', 'CUDA'])
@@ -249,13 +268,9 @@ def test_spack(environ, tmp_path):
     build_system.install_opts = ['-j 10']
     with osext.change_dir(tmp_path):
         assert build_system.emit_build_commands(environ) == [
-            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
-            f'spack env activate -V -d {build_system.environment}',
-            f'spack install -j 10'
+            f'spack -e {build_system.environment} install -j 10'
         ]
         assert build_system.prepare_cmds() == [
-            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
-            f'spack env activate -V -d {build_system.environment}',
         ]
 
 
@@ -266,15 +281,11 @@ def test_spack_with_spec(environ, tmp_path):
     specs_str = ' '.join(build_system.specs)
     with osext.change_dir(tmp_path):
         assert build_system.emit_build_commands(environ) == [
-            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
-            f'spack env activate -V -d {build_system.environment}',
-            f'spack add {specs_str}',
-            f'spack install'
+            f'spack -e {build_system.environment} add {specs_str}',
+            f'spack -e {build_system.environment} install'
         ]
         assert build_system.prepare_cmds() == [
-            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
-            f'spack env activate -V -d {build_system.environment}',
-            f'spack load {specs_str}',
+            f'eval `spack -e {build_system.environment} load --sh {specs_str}`'
         ]
 
 
@@ -282,11 +293,10 @@ def test_spack_no_env(environ, tmp_path):
     build_system = bs.Spack()
     with osext.change_dir(tmp_path):
         assert build_system.emit_build_commands(environ) == [
-            f'. "$(spack location --spack-root)/share/spack/setup-env.sh"',
             f'spack env create -d rfm_spack_env',
-            f'spack env activate -V -d rfm_spack_env',
-            f'spack config add "config:install_tree:root:opt/spack"',
-            f'spack install'
+            f'spack -e rfm_spack_env config add '
+            '"config:install_tree:root:opt/spack"',
+            f'spack -e rfm_spack_env install'
         ]
 
     assert build_system.environment == 'rfm_spack_env'

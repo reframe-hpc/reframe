@@ -3,15 +3,52 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import semver
+import re
+
+import reframe.utility.osext as osext
 from reframe.core.backends import register_launcher
 from reframe.core.launchers import JobLauncher
+from reframe.core.logging import getlogger
 from reframe.utility import seconds_to_hms
 
 
 @register_launcher('srun')
 class SrunLauncher(JobLauncher):
+    def __init__(self):
+        self.options = []
+        self.use_cpus_per_task = True
+        try:
+            out = osext.run_command('srun --version')
+            match = re.search('slurm (\d+)\.(\d+)\.(\d+)', out.stdout)
+            if match:
+                # We cannot pass to semver strings like 22.05.1 directly
+                # because it is not a valid version string for semver. We
+                # need to remove all the leading zeros.
+                slurm_version = (
+                    semver.VersionInfo(
+                        match.group(1), match.group(2), match.group(3)
+                    )
+                )
+                if slurm_version < semver.VersionInfo(22, 5, 0):
+                    self.use_cpus_per_task = False
+            else:
+                getlogger().warning(
+                    'could not get version of Slurm, --cpus-per-task will be '
+                    'set according to the num_cpus_per_task attribute'
+                )
+        except Exception:
+            getlogger().warning(
+                'could not get version of Slurm, --cpus-per-task will be set '
+                'according to the num_cpus_per_task attribute'
+            )
+
     def command(self, job):
-        return ['srun']
+        ret = ['srun']
+        if self.use_cpus_per_task and job.num_cpus_per_task:
+            ret.append(f'--cpus-per-task={job.num_cpus_per_task}')
+
+        return ret
 
 
 @register_launcher('ibrun')
@@ -110,7 +147,7 @@ class SrunAllocationLauncher(JobLauncher):
         if job.num_cpus_per_task:
             ret += ['--cpus-per-task=%s' % str(job.num_cpus_per_task)]
 
-        if job.sched_exclusive_access:
+        if job.exclusive_access:
             ret += ['--exclusive']
 
         if job.use_smt is not None:

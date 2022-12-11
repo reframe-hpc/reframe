@@ -30,7 +30,7 @@ TEST_MODULES = os.path.join(
 BUILTIN_CONFIG_FILE = 'reframe/core/settings.py'
 
 # Unit tests site configuration
-TEST_CONFIG_FILE = 'unittests/resources/settings.py'
+TEST_CONFIG_FILE = 'unittests/resources/config/settings.py'
 
 # User supplied configuration file and site configuration
 USER_CONFIG_FILE = None
@@ -38,7 +38,7 @@ USER_SYSTEM = None
 
 
 def init_runtime():
-    site_config = config.load_config('unittests/resources/settings.py')
+    site_config = config.load_config('unittests/resources/config/settings.py')
     site_config.select_subconfig('generic')
     rt.init_runtime(site_config)
 

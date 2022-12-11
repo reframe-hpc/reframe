@@ -3,13 +3,13 @@ Tutorial 2: Customizing Further a Regression Test
 =================================================
 
 In this tutorial we will present common patterns that can come up when writing regression tests with ReFrame.
-All examples use the configuration file presented in :doc:`tutorial_basics`, which you can find in ``tutorials/config/settings.py``.
+All examples use either the configuration files presented in :doc:`tutorial_basics`, which you can find in ``tutorials/config/tresa.py`` and ``tutorials/config/daint.py`` or build on top of them.
 We also assume that the reader is already familiar with the concepts presented in the basic tutorial.
-Finally, to avoid specifying the tutorial configuration file each time, make sure to export it here:
+Finally, to avoid specifying the tutorial configuration every time, make sure to export it here:
 
 .. code:: bash
 
-   export RFM_CONFIG_FILE=$(pwd)/tutorials/config/settings.py
+   export RFM_CONFIG_FILES=$(pwd)/tutorials/config/tresa.py:$(pwd)/tutorials/config/daint.py
 
 
 
@@ -27,8 +27,7 @@ Here is the adapted code with the relevant parts highlighted (for simplicity, we
 
 
 .. literalinclude:: ../tutorials/advanced/parameterized/stream.py
-   :start-after: # rfmdocstart: parameterized
-   :end-before: # rfmdocend: parameterized
+   :start-at: import reframe
    :emphasize-lines: 7-9,44-51,55-56
 
 Any ordinary ReFrame test becomes a parameterized one if the user defines parameters inside the class body of the test.
@@ -92,8 +91,7 @@ Here is the C++ program:
 
 .. literalinclude:: ../tutorials/advanced/makefiles/src/dotprod.cpp
    :language: cpp
-   :start-after: // rfmdocstart: dotprod
-   :end-before: // rfmdocend: dotprod
+   :start-at: #include
 
 The directory structure for this test is the following:
 
@@ -114,9 +112,7 @@ Let's have a look at the test itself:
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :start-after: # rfmdocstart: maketest
-   :end-before: # rfmdocend: maketest
-   :emphasize-lines: 18,22
+   :pyobject: MakefileTest
 
 First, if you're using any build system other than ``SingleSource``, you must set the :attr:`executable` attribute of the test, because ReFrame cannot know what is the actual executable to be run.
 We then set the build system to :class:`~reframe.core.buildsystems.Make` and set the preprocessor flags as we would do with the :class:`SingleSource` build system.
@@ -238,8 +234,7 @@ Here is the full regression test:
 
 
 .. literalinclude:: ../tutorials/advanced/runonly/echorand.py
-   :start-after: # rfmdocstart: echorand
-   :end-before: # rfmdocend: echorand
+   :start-at: import reframe
    :emphasize-lines: 6
 
 There is nothing special for this test compared to those presented so far except that it derives from the :class:`~reframe.core.pipeline.RunOnlyRegressionTest` class.
@@ -262,8 +257,7 @@ The following test is a compile-only version of the :class:`MakefileTest` presen
 
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest.py
-   :start-after: # rfmdocstart: makeonlytest
-   :end-before: # rfmdocend: makeonlytest
+   :pyobject: MakeOnlyTest
    :emphasize-lines: 2
 
 What is worth noting here is that the standard output and standard error of the test, which are accessible through the :attr:`~reframe.core.pipeline.RegressionTest.stdout` and :attr:`~reframe.core.pipeline.RegressionTest.stderr` attributes, correspond now to the standard output and error of the compilation command.
@@ -282,8 +276,7 @@ ReFrame offers the :class:`~reframe.core.pipeline.RegressionMixin` class that al
 In the example below, we create an :class:`ElemTypeParam` mixin that holds the definition of the :attr:`elem_type` parameter which is inherited by both the concrete test classes:
 
 .. literalinclude:: ../tutorials/advanced/makefiles/maketest_mixin.py
-   :start-after: # rfmdocstart: maketestmixin
-   :end-before: # rfmdocend: maketestmixin
+   :start-at: import reframe
    :emphasize-lines: 5-6,10,30
 
 
@@ -323,8 +316,7 @@ Here is the corresponding regression test:
 
 
 .. literalinclude:: ../tutorials/advanced/random/randint.py
-  :start-after: # rfmdocstart: randint
-  :end-before: # rfmdocend: randint
+  :start-at: import reframe
   :emphasize-lines: 12-
 
 First, we extract all the generated random numbers from the output.
@@ -365,8 +357,7 @@ Here is the modified test file:
 
 
 .. literalinclude:: ../tutorials/advanced/random/prepostrun.py
-   :start-after: # rfmdocstart: prepostrun
-   :end-before: # rfmdocend: prepostrun
+   :start-at: import reframe
    :emphasize-lines: 10-11,19,22
 
 The :attr:`prerun_cmds` and :attr:`postrun_cmds` are lists of commands to be emitted in the generated job script before and after the parallel launch of the executable.
@@ -425,8 +416,7 @@ Here is the test:
 
 
 .. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
-   :start-after: # rfmdocstart: memorylimit
-   :end-before: # rfmdocend: memorylimit
+   :pyobject: MemoryLimitTest
    :emphasize-lines: 12-14
 
 Each ReFrame test has an associated `run job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ which represents the scheduler job that will be used to run this test.
@@ -466,12 +456,12 @@ The answer is yes and this can be achieved through so-called *extra resources*.
 ReFrame gives you the possibility to associate scheduler options to a "resource" managed by the partition scheduler.
 You can then use those resources transparently from within your test.
 
-To achieve this in our case, we first need to define a ``memory`` resource in the configuration:
+To achieve this in our case, we first need to define a ``memory`` resource in the configuration of both of our ``daint`` partitions:
 
-.. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: all-partitions
-   :end-before: # rfmdocend: all-partitions
-   :emphasize-lines: 10-15,36-41
+
+.. literalinclude:: ../tutorials/config/daint_mem.py
+   :start-after: # rfmdocstart: memory
+   :end-before: # rfmdocend: memory
 
 Notice that we do not define the resource for all the partitions, but only for those that it makes sense.
 Each resource has a name and a set of scheduler options that will be passed to the scheduler when this resource will be requested by the test.
@@ -484,8 +474,7 @@ Let's see how we can rewrite the :class:`MemoryLimitTest` using the ``memory`` r
 
 
 .. literalinclude:: ../tutorials/advanced/jobopts/eatmemory.py
-   :start-after: # rfmdocstart: memorylimitresources
-   :end-before: # rfmdocend: memorylimitresources
+   :pyobject: MemoryLimitWithResourcesTest
    :emphasize-lines: 7-9
 
 The extra resources that the test needs to obtain through its scheduler are specified in the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute, which is a dictionary with the resource names as its keys and another dictionary assigning values to the resource placeholders as its values.
@@ -518,8 +507,7 @@ In the following test we run a CPU affinity test using `this <https://github.com
 
 
 .. literalinclude:: ../tutorials/advanced/affinity/affinity.py
-   :start-after: # rfmdocstart: affinitytest
-   :end-before: # rfmdocend: affinitytest
+   :start-at: import reframe
 
 The approach is identical to the approach we took in the :class:`MemoryLimitTest` test `above <#adding-job-scheduler-options-per-test>`__, except that we now set the launcher options.
 
@@ -576,8 +564,6 @@ The trick here is to replace the parallel launcher with the local one, which pra
 The :func:`~reframe.core.backends.getlauncher` function takes the `registered <config_reference.html#systems-.partitions-.launcher>`__ name of a launcher and returns the class that implements it.
 You then instantiate the launcher and assign to the :attr:`~reframe.core.schedulers.Job.launcher` attribute of the job descriptor.
 
-An alternative to this approach would be to define your own custom parallel launcher and register it with the framework.
-You could then use it as the scheduler of a system partition in the configuration, but this approach is less test-specific.
 
 Adding more parallel launch commands
 ====================================
@@ -595,8 +581,7 @@ It resembles a scaling test, except that all happens inside a single ReFrame tes
 
 
 .. literalinclude:: ../tutorials/advanced/multilaunch/multilaunch.py
-   :start-after: # rfmdocstart: multilaunchtest
-   :end-before: # rfmdocend: multilaunchtest
+   :start-at: import reframe
    :emphasize-lines: 13-19
 
 The additional parallel launch commands are inserted in either the :attr:`prerun_cmds` or :attr:`postrun_cmds` lists.
@@ -628,6 +613,65 @@ Let's see how the generated job script looks like:
 The first three ``srun`` commands are emitted through the :attr:`prerun_cmds` whereas the last one comes from the test's :attr:`executable` attribute.
 
 
+Adding a custom launcher to a partition
+=======================================
+
+.. versionadded:: 4.0.0
+
+An alternative to the approaches above would be to define your own custom parallel launcher and register it with the framework.
+You could then use it as the launcher of a system partition in the configuration and use it in multiple tests.
+
+Each `launcher <regression_test_api.html#reframe.core.launchers.JobLauncher>`__ needs to implement the :func:`~reframe.core.launchers.JobLauncher.command` method and can optionally change the default :func:`~reframe.core.launchers.JobLauncher.run_command` method.
+
+As an example of how easy it is to define a new parallel launcher backend, here is the actual implementation of the ``mpirun`` launcher:
+
+.. code:: python
+
+    from reframe.core.backends import register_launcher
+    from reframe.core.launchers import JobLauncher
+
+
+    @register_launcher('mpirun')
+    class MpirunLauncher(JobLauncher):
+        def command(self, job):
+            return ['mpirun', '-np', str(job.num_tasks)]
+
+
+The :func:`~reframe.core.launchers.JobLauncher.command` returns a list of command tokens that will be combined with any user-supplied `options <regression_test_api.html#reframe.core.launchers.JobLauncher.options>`__ by the :func:`~reframe.core.launchers.JobLauncher.run_command` method to generate the actual launcher command line.
+Notice you can use the ``job`` argument to get job-specific information that will allow you to construct the correct launcher invocation.
+
+If you use a Python-based configuration file, you can define your custom launcher directly inside your config as follows:
+
+.. code:: python
+
+   from reframe.core.backends import register_launcher
+   from reframe.core.launchers import JobLaucher
+
+
+   @register_launcher('slrun')
+   class MySmartLauncher(JobLauncher):
+       def command(self, job):
+           return ['slrun', ...]
+
+   site_configuration = {
+       'systems': [
+           {
+               'name': 'my_system',
+               'partitions': [
+                   {
+                       'name': 'my_partition',
+                       'launcher': 'slrun'
+                       ...
+                   }
+               ],
+               ...
+           },
+           ...
+       ],
+       ...
+   }
+
+
 Flexible Regression Tests
 -------------------------
 
@@ -649,8 +693,7 @@ The test will verify that all the nodes print the expected host name:
 
 
 .. literalinclude:: ../tutorials/advanced/flexnodes/flextest.py
-   :start-after: # rfmdocstart: flextest
-   :end-before: # rfmdocend: flextest
+   :start-at: import reframe
    :emphasize-lines: 10-
 
 The first thing to notice in this test is that :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` is set to zero as default, which is a requirement for flexible tests.
@@ -675,14 +718,17 @@ Testing containerized applications
 ReFrame can be used also to test applications that run inside a container.
 First, we need to enable the container platform support in ReFrame's configuration and, specifically, at the partition configuration level:
 
-.. literalinclude:: ../tutorials/config/settings.py
-   :start-after: # rfmdocstart: gpu-partition
-   :end-before: # rfmdocend: gpu-partition
-   :emphasize-lines: 15-24
+.. literalinclude:: ../tutorials/config/daint_containers.py
+   :start-after: # rfmdocstart: containers
+   :end-before: # rfmdocend: containers
+   :emphasize-lines: 9-18
 
 For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
 In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
 Similarly, we add an entry for the `Singularity <https://sylabs.io>`__ platform.
+Optionally, users are allowed to set the ``default`` attribute to :obj:`True` in order to mark a specific container platform as the default of that partition (see below on how this information is being used).
+If no default container platform is specified explicitly, then always the first in the list will be considered as successful.
+
 
 The following parameterized test, will create two tests, one for each of the supported container platforms:
 
@@ -692,20 +738,22 @@ The following parameterized test, will create two tests, one for each of the sup
 
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
-   :start-after: # rfmdocstart: containertest
-   :end-before: # rfmdocend: containertest
+   :start-at: import reframe
    :emphasize-lines: 11-19
 
 A container-based test can be written as :class:`~reframe.core.pipeline.RunOnlyRegressionTest` that sets the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` attribute.
 This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
-If such a platform is not `configured <config_reference.html#container-platform-configuration>`__ for the current system, the test will fail.
+It is not necessary to specify this attribute, in which case, the default container platform of the current partition will be used.
+You can still differentiate your test based on the actual container platform that is being used by checking the ``self.container_platform.name`` variable.
 
-As soon as the container platform to be used is defined, you need to specify the container image to use by setting the :attr:`~reframe.core.containers.ContainerPlatform.image`.
+As soon as the container platform to be used is determined, you need to specify the container image to use by setting the :attr:`~reframe.core.containers.ContainerPlatform.image`.
+If the image is not specified, then the container logic is skipped and the test executes as if the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` was never set.
+
 In the ``Singularity`` test variant, we add the ``docker://`` prefix to the image name, in order to instruct ``Singularity`` to pull the image from `DockerHub <https://hub.docker.com/>`__.
 The default command that the container runs can be overwritten by setting the :attr:`~reframe.core.containers.ContainerPlatform.command` attribute of the container platform.
 
 The :attr:`~reframe.core.containers.ContainerPlatform.image` is the only mandatory attribute for container-based checks.
-It is important to note that the :attr:`~reframe.core.pipeline.RegressionTest.executable` and :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attributes of the actual test are ignored in case of container-based tests.
+It is important to note that the :attr:`~reframe.core.pipeline.RegressionTest.executable` and :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attributes of the actual test are ignored if the containerized code path is taken, i.e., when :attr:`~reframe.core.containers.ContainerPlatform.image` is not :obj:`None`.
 
 ReFrame will run the container according to the given platform as follows:
 
@@ -751,12 +799,123 @@ and ``/rfm_workdir`` corresponds to the stage directory on the host system.
 Therefore, the ``release.txt`` file can now be used in the subsequent sanity checks:
 
 .. literalinclude:: ../tutorials/advanced/containers/container_test.py
-   :start-after: # rfmdocstart: assert_release
-   :end-before: # rfmdocend: assert_release
+   :start-at: @sanity_function
+   :end-at: return
 
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
 On how to configure ReFrame for running containerized tests, please have a look at the :ref:`container-platform-configuration` section of the :doc:`config_reference`.
+
+
+.. versionchanged:: 3.12.0
+   There is no need any more to explicitly set the :attr:`container_platform` in the test.
+   This is automatically initialized from the default platform of the current partition.
+
+
+
+Combining containerized and native application tests
+====================================================
+
+.. versionadded:: 3.12.0
+
+It is very easy in ReFrame to have a single run-only test to either test the native or the containerized version of an application.
+This is possible, since the framework will only take the "containerized" code path only if the :attr:`~reframe.core.containers.ContainerPlatform.image` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.container_platform` is not :obj:`None`.
+Otherwise, the *bare metal* version of the tested application will be run.
+The following test uses exactly this trick to test a series of GROMACS images as well as the native one provided on the Piz Daint supercomputer.
+It also extends the GROMACS benchmark tests that are provided with ReFrame's test library (see :doc:`hpctestlib`).
+For simplicity, we are assuming a single system here (the hybrid partition of Piz Daint) and we set fixed values for the :attr:`num_cpus_per_task` as well as the ``-ntomp`` option of GROMACS (NB: in a real-world test we would use the auto-detected processor topology information to set these values; see :ref:`proc-autodetection` for more information).
+We also redefine and restrict the benchmark's parameters ``benchmark_info`` and ``nb_impl`` to the values that are of interest for the demonstration of this test.
+Finally, we also reset the executable to use ``gmx`` instead of the ``gmx_mpi`` that is used from the library test.
+
+
+.. literalinclude:: ../tutorials/advanced/containers/gromacs_test.py
+   :start-at: import reframe
+
+All this test does in addition to the library test it inherits from is to set the :attr:`~reframe.core.containers.ContainerPlatform.image` and the :attr:`~reframe.core.containers.ContainerPlatform.command` attributes of the :attr:`~reframe.core.pipeline.RegressionTest.container_platform`.
+The former is set from the ``gromacs_image`` test parameter whereas the latter from the test's :attr:`~reframe.core.pipeline.RegressionTest.executable` and :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attributes.
+Remember that these attributes are ignored if the framework takes the path of launching  a container.
+Finally, if the image is :obj:`None` we handle the case of the native run, in which case we load the modules required to run GROMACS natively on the target system.
+
+In the following, we run the GPU version of a single benchmark with a series of images from NVIDIA and natively:
+
+.. code-block:: console
+
+   $ ./bin/reframe -C tutorials/config/daint.py -c tutorials/advanced/containers/gromacs_test.py -r
+
+.. code-block:: console
+
+   [==========] Running 6 check(s)
+   [==========] Started on Fri Jun 17 16:20:16 2022
+
+   [----------] start processing checks
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2022.1 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2021.3 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2021 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2020.2 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2020 @daint:gpu+gnu
+   [ RUN      ] gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=None @daint:gpu+gnu
+   [       OK ] (1/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2020.2 @daint:gpu+gnu
+   [       OK ] (2/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2020 @daint:gpu+gnu
+   [       OK ] (3/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=None @daint:gpu+gnu
+   [       OK ] (4/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2022.1 @daint:gpu+gnu
+   [       OK ] (5/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2021 @daint:gpu+gnu
+   [       OK ] (6/6) gromacs_containerized_test %benchmark_info=HECBioSim/hEGFRDimerSmallerPL %nb_impl=gpu %gromacs_image=nvcr.io/hpc/gromacs:2021.3 @daint:gpu+gnu
+   [----------] all spawned checks have finished
+
+   [  PASSED  ] Ran 6/6 test case(s) from 6 check(s) (0 failure(s), 0 skipped)
+   [==========] Finished on Fri Jun 17 16:23:47 2022
+
+
+We can also inspect the generated job scripts for the native and a containerized run:
+
+.. code-block:: console
+
+   cat output/daint/gpu/gnu/gromacs_containerized_test_0/rfm_gromacs_containerized_test_0_job.sh
+
+.. code-block:: bash
+
+   #!/bin/bash
+   #SBATCH --job-name="rfm_gromacs_containerized_test_0_job"
+   #SBATCH --ntasks=1
+   #SBATCH --ntasks-per-node=1
+   #SBATCH --cpus-per-task=12
+   #SBATCH --output=rfm_gromacs_containerized_test_0_job.out
+   #SBATCH --error=rfm_gromacs_containerized_test_0_job.err
+   #SBATCH -A csstaff
+   #SBATCH --constraint=gpu
+   #SBATCH --hint=nomultithread
+   module unload PrgEnv-cray
+   module load PrgEnv-gnu
+   module load daint-gpu
+   module load GROMACS
+   curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/1.0.0/HECBioSim/hEGFRDimerSmallerPL/benchmark.tpr
+   srun gmx mdrun -dlb yes -ntomp 12 -npme -1 -v -nb gpu -s benchmark.tpr
+
+And the containerized run:
+
+.. code-block:: console
+
+   cat output/daint/gpu/gnu/gromacs_containerized_test_1/rfm_gromacs_containerized_test_1_job.sh
+
+.. code-block:: bash
+
+   #!/bin/bash
+   #SBATCH --job-name="rfm_gromacs_containerized_test_1_job"
+   #SBATCH --ntasks=1
+   #SBATCH --ntasks-per-node=1
+   #SBATCH --cpus-per-task=12
+   #SBATCH --output=rfm_gromacs_containerized_test_1_job.out
+   #SBATCH --error=rfm_gromacs_containerized_test_1_job.err
+   #SBATCH -A csstaff
+   #SBATCH --constraint=gpu
+   #SBATCH --hint=nomultithread
+   module unload PrgEnv-cray
+   module load PrgEnv-gnu
+   module load sarus
+   curl -LJO https://github.com/victorusu/GROMACS_Benchmark_Suite/raw/1.0.0/HECBioSim/hEGFRDimerSmallerPL/benchmark.tpr
+   sarus pull nvcr.io/hpc/gromacs:2020
+   srun sarus run --mount=type=bind,source="/users/user/Devel/reframe/stage/daint/gpu/gnu/gromacs_containerized_test_43",destination="/rfm_workdir" -w /rfm_workdir nvcr.io/hpc/gromacs:2020 gmx mdrun -dlb yes -ntomp 12 -npme -1 -v -nb gpu -s benchmark.tpr
+
 
 
 Writing reusable tests
@@ -779,8 +938,7 @@ Thus, removing all the system and configuration specific variables, and moving a
 
 
 .. literalinclude:: ../tutorials/advanced/library/lib/__init__.py
-   :start-after: # rfmdocstart: containerbase
-   :end-before: # rfmdocend: containerbase
+   :start-at: import reframe
    :emphasize-lines: 8-17
 
 Note that the class :class:`ContainerBase` is not decorated since it does not specify the required variables ``valid_systems`` and ``valid_prog_environs``, and it declares the ``platform`` parameter without any defined values assigned.
@@ -814,8 +972,7 @@ Hence, the above :class:`ContainerTest` is now reduced to the following:
 
 
 .. literalinclude:: ../tutorials/advanced/library/usr/container_test.py
-   :start-after: # rfmdocstart: container_test
-   :end-before: # rfmdocend: container_test
+   :start-after: import reframe
 
 In a similar fashion, any other user could reuse the above :class:`ContainerBase` class and write the test for their own system with a few lines of code.
 

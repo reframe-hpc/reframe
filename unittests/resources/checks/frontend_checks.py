@@ -23,6 +23,15 @@ class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
     executable = 'echo hello && echo perf: 10 Gflop/s'
     local = True
 
+    # Add two required variables that may affect the final run report
+    x = variable(int)
+    xlog = variable(int, loggable=True)
+
+    @run_after('setup')
+    def setx(self):
+        self.x = 1
+        self.xlog = 1
+
     @sanity_function
     def validate_output(self):
         return sn.assert_found('hello', self.stdout)

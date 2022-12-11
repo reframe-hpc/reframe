@@ -10,6 +10,7 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import (Environment, ProgEnvironment)
+from reframe.core.exceptions import ConfigError
 from reframe.core.logging import getlogger
 from reframe.core.modules import ModulesSystem
 
@@ -163,10 +164,10 @@ class SystemPartition(jsonext.JSONSerializable):
        Users may not create :class:`SystemPartition` objects directly.
     '''
 
-    def __init__(self, parent, name, sched_type, launcher_type,
-                 descr, access, container_environs, resources,
-                 local_env, environs, max_jobs, prepare_cmds,
-                 processor, devices, extras):
+    def __init__(self, *, parent, name, sched_type, launcher_type,
+                 descr, access, container_runtime, container_environs,
+                 resources, local_env, environs, max_jobs, prepare_cmds,
+                 processor, devices, extras, features, time_limit):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -175,6 +176,7 @@ class SystemPartition(jsonext.JSONSerializable):
         self._launcher_type = launcher_type
         self._descr = descr
         self._access = access
+        self._container_runtime = container_runtime
         self._container_environs = container_environs
         self._local_env = local_env
         self._environs = environs
@@ -184,6 +186,8 @@ class SystemPartition(jsonext.JSONSerializable):
         self._processor = ProcessorInfo(processor)
         self._devices = [DeviceInfo(d) for d in devices]
         self._extras = extras
+        self._features = features
+        self._time_limit = time_limit
 
     @property
     def access(self):
@@ -209,6 +213,14 @@ class SystemPartition(jsonext.JSONSerializable):
         '''
 
         return util.SequenceView(self._environs)
+
+    @property
+    def container_runtime(self):
+        '''The default container runtime of this partition.
+
+        :type: :class:`str` or ``None``
+        '''
+        return self._container_runtime
 
     @property
     def container_environs(self):
@@ -245,6 +257,17 @@ class SystemPartition(jsonext.JSONSerializable):
         :type: integral
         '''
         return self._max_jobs
+
+    @property
+    def time_limit(self):
+        '''The time limit that will be used when submitting jobs to this
+        partition.
+
+        :type: :class:`str` or :obj:`None`
+
+        .. versionadded:: 3.11.0
+        '''
+        return self._time_limit
 
     @property
     def prepare_cmds(self):
@@ -291,7 +314,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         '''
         if self._scheduler is None:
-            self._scheduler = self._sched_type()
+            self._scheduler = self._sched_type(part_name=self.name)
 
         return self._scheduler
 
@@ -304,20 +327,6 @@ class SystemPartition(jsonext.JSONSerializable):
         :type: a subclass of :class:`reframe.core.launchers.JobLauncher`.
         '''
         return self._launcher_type
-
-    @property
-    def launcher(self):
-        '''See :attr:`launcher_type`.
-
-        .. deprecated:: 3.2
-           Please use :attr:`launcher_type` instead.
-        '''
-
-        from reframe.core.warnings import user_deprecation_warning
-
-        user_deprecation_warning("the 'launcher' attribute is deprecated; "
-                                 "please use 'launcher_type' instead")
-        return self.launcher_type
 
     def get_resource(self, name, **values):
         '''Instantiate managed resource ``name`` with ``value``.
@@ -365,13 +374,35 @@ class SystemPartition(jsonext.JSONSerializable):
 
     @property
     def extras(self):
-        '''User defined properties defined in the configuration.
+        '''User defined properties associated with this partition.
+
+        These extras are defined in the configuration.
 
         .. versionadded:: 3.5.0
 
         :type: :class:`Dict[str, object]`
         '''
         return self._extras
+
+    @property
+    def features(self):
+        '''User defined features associated with this partition.
+
+        These features are defined in the configuration.
+
+        .. versionadded:: 3.11.0
+
+        :type: :class:`List[str]`
+        '''
+        return self._features
+
+    def select_devices(self, devtype):
+        '''Return all devices of the requested type:
+
+        :arg devtype: The type of the device info objects to return.
+        :returns: A list of :class:`DeviceInfo` objects of the specified type.
+        '''
+        return [d for d in self.devices if d.device_type == devtype]
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -401,13 +432,12 @@ class SystemPartition(jsonext.JSONSerializable):
                 {
                     'type': ctype,
                     'modules': [m for m in cpenv.modules],
-                    'variables': [[n, v] for n, v in cpenv.variables.items()]
+                    'env_vars': [[n, v] for n, v in cpenv.env_vars.items()]
                 }
                 for ctype, cpenv in self._container_environs.items()
             ],
             'modules': [m for m in self._local_env.modules],
-            'variables': [[n, v]
-                          for n, v in self._local_env.variables.items()],
+            'env_vars': [[n, v] for n, v in self._local_env.env_vars.items()],
             'environs': [e.name for e in self._environs],
             'max_jobs': self._max_jobs,
             'resources': [
@@ -456,30 +486,51 @@ class System(jsonext.JSONSerializable):
             site_config.select_subconfig(f'{sysname}:{p["name"]}')
             partid = f"systems/0/partitions/@{p['name']}"
             part_name = site_config.get(f'{partid}/name')
-            part_sched = getscheduler(site_config.get(f'{partid}/scheduler'))
-            part_launcher = getlauncher(site_config.get(f'{partid}/launcher'))
+            try:
+                part_sched = getscheduler(
+                    site_config.get(f'{partid}/scheduler')
+                )
+                part_launcher = getlauncher(
+                    site_config.get(f'{partid}/launcher')
+                )
+            except ConfigError as err:
+                # Re-raise with more information
+                sys_name = site_config.get('systems/0/name')
+                part_fullname = f'{sys_name}:{part_name}'
+                raise ConfigError(
+                    f'failed to initialize partition {part_fullname!r}'
+                ) from err
+
             part_container_environs = {}
-            for i, p in enumerate(
-                    site_config.get(f'{partid}/container_platforms')
-            ):
+            part_container_runtime = None
+            container_platforms = site_config.get(
+                f'{partid}/container_platforms')
+            for i, p in enumerate(container_platforms):
                 ctype = p['type']
                 part_container_environs[ctype] = Environment(
                     name=f'__rfm_env_{ctype}',
                     modules=site_config.get(
                         f'{partid}/container_platforms/{i}/modules'
                     ),
-                    variables=site_config.get(
-                        f'{partid}/container_platforms/{i}/variables'
+                    env_vars=site_config.get(
+                        f'{partid}/container_platforms/{i}/env_vars'
                     )
                 )
+                if p.get('default', None):
+                    part_container_runtime = ctype
+
+            if not part_container_runtime and container_platforms:
+                # No default set, pick the first one
+                part_container_runtime = container_platforms[0]['type']
 
             env_patt = site_config.get('general/0/valid_env_names') or [r'.*']
             part_environs = [
                 ProgEnvironment(
                     name=e,
                     modules=site_config.get(f'environments/@{e}/modules'),
-                    variables=site_config.get(f'environments/@{e}/variables'),
+                    env_vars=site_config.get(f'environments/@{e}/env_vars'),
                     extras=site_config.get(f'environments/@{e}/extras'),
+                    features=site_config.get(f'environments/@{e}/features'),
                     cc=site_config.get(f'environments/@{e}/cc'),
                     cxx=site_config.get(f'environments/@{e}/cxx'),
                     ftn=site_config.get(f'environments/@{e}/ftn'),
@@ -501,17 +552,20 @@ class System(jsonext.JSONSerializable):
                     access=site_config.get(f'{partid}/access'),
                     resources=site_config.get(f'{partid}/resources'),
                     environs=part_environs,
+                    container_runtime=part_container_runtime,
                     container_environs=part_container_environs,
                     local_env=Environment(
                         name=f'__rfm_env_{part_name}',
                         modules=site_config.get(f'{partid}/modules'),
-                        variables=site_config.get(f'{partid}/variables')
+                        env_vars=site_config.get(f'{partid}/env_vars')
                     ),
                     max_jobs=site_config.get(f'{partid}/max_jobs'),
                     prepare_cmds=site_config.get(f'{partid}/prepare_cmds'),
                     processor=site_config.get(f'{partid}/processor'),
                     devices=site_config.get(f'{partid}/devices'),
-                    extras=site_config.get(f'{partid}/extras')
+                    extras=site_config.get(f'{partid}/extras'),
+                    features=site_config.get(f'{partid}/features'),
+                    time_limit=site_config.get(f'{partid}/time_limit')
                 )
             )
 
@@ -527,7 +581,7 @@ class System(jsonext.JSONSerializable):
             preload_env=Environment(
                 name=f'__rfm_env_{sysname}',
                 modules=site_config.get('systems/0/modules'),
-                variables=site_config.get('systems/0/variables')
+                env_vars=site_config.get('systems/0/env_vars')
             ),
             prefix=site_config.get('systems/0/prefix'),
             outputdir=site_config.get('systems/0/outputdir'),
@@ -641,9 +695,9 @@ class System(jsonext.JSONSerializable):
             'hostnames': self._hostnames,
             'modules_system': self._modules_system.name,
             'modules': [m for m in self._preload_env.modules],
-            'variables': [
+            'env_vars': [
                 [name, value]
-                for name, value in self._preload_env.variables.items()
+                for name, value in self._preload_env.env_vars.items()
             ],
             'prefix': self._prefix,
             'outputdir': self._outputdir,

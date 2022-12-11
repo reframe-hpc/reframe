@@ -39,6 +39,18 @@ def _cleanup_all(tasks, *args, **kwargs):
     tasks[:] = [t for t in tasks if t.ref_count]
 
 
+def _print_perf(task):
+    '''Get performance info of the current task.'''
+
+    perfvars = task.testcase.check.perfvalues
+    for key, info in perfvars.items():
+        name = key.split(':')[-1]
+        getlogger().info(
+            f'P: {name}: {info[0]} {info[4]} '
+            f'(r:{info[1]}, l:{info[2]}, u:{info[3]})'
+        )
+
+
 class _PollController:
     SLEEP_MIN = 0.1
     SLEEP_MAX = 10
@@ -46,28 +58,16 @@ class _PollController:
 
     def __init__(self):
         self._num_polls = 0
-        self._num_tasks = 0
         self._sleep_duration = None
         self._t_init = None
 
-    def running_tasks(self, num_tasks):
-        if self._sleep_duration is None:
-            self._sleep_duration = self.SLEEP_MIN
-
-        if self._num_polls == 0:
-            self._t_init = time.time()
-        else:
-            if self._num_tasks != num_tasks:
-                self._sleep_duration = self.SLEEP_MIN
-            else:
-                self._sleep_duration = min(
-                    self._sleep_duration*self.SLEEP_INC_RATE, self.SLEEP_MAX
-                )
-
-        self._num_tasks = num_tasks
-        return self
+    def reset_snooze_time(self):
+        self._sleep_duration = self.SLEEP_MIN
 
     def snooze(self):
+        if self._num_polls == 0:
+            self._t_init = time.time()
+
         t_elapsed = time.time() - self._t_init
         self._num_polls += 1
         poll_rate = self._num_polls / t_elapsed if t_elapsed else math.inf
@@ -76,6 +76,9 @@ class _PollController:
             f'(current poll rate: {poll_rate} polls/s)'
         )
         time.sleep(self._sleep_duration)
+        self._sleep_duration = min(
+            self._sleep_duration*self.SLEEP_INC_RATE, self.SLEEP_MAX
+        )
 
 
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
@@ -94,12 +97,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def runcase(self, case):
         super().runcase(case)
         check, partition, environ = case
-
-        self.printer.status(
-            'RUN',
-            f'{check.name} @{partition.fullname}+{environ.name}'
-        )
         task = RegressionTask(case, self.task_listeners)
+        self.printer.status('RUN', task.info())
         self._task_index[case] = task
         self.stats.add_task(task)
         try:
@@ -120,7 +119,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     task.skip()
                     raise TaskExit from e
 
-            partname = task.testcase.partition.fullname
             task.setup(task.testcase.partition,
                        task.testcase.environ,
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
@@ -136,12 +134,13 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             else:
                 sched = partition.scheduler
 
+            self._pollctl.reset_snooze_time()
             while True:
                 sched.poll(task.check.job)
                 if task.run_complete():
                     break
 
-                self._pollctl.running_tasks(1).snooze()
+                self._pollctl.snooze()
 
             task.run_wait()
             if not self.skip_sanity_check:
@@ -181,15 +180,13 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.info()}'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
         else:
             self.printer.status('FAIL', msg, just='right')
 
+        _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -205,11 +202,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             )
 
     def on_task_success(self, task):
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.info()}'
         self.printer.status('OK', msg, just='right')
+        _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -327,6 +322,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if self._pipeline_statistics:
             self._init_pipeline_progress(len(self._current_tasks))
 
+        self._pollctl.reset_snooze_time()
         while self._current_tasks:
             try:
                 self._poll_tasks()
@@ -355,7 +351,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     )
 
                 if num_running:
-                    self._pollctl.running_tasks(num_running).snooze()
+                    self._pollctl.snooze()
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise
@@ -433,8 +429,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
         elif self.deps_succeeded(task):
             try:
-                part = task.testcase.partition
-                env  = task.testcase.environ.name
                 self.printer.status('RUN', task.info())
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
@@ -459,7 +453,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             return 1
         else:
             # Not all dependencies have finished yet
-            getlogger().debug2(f'{task.check.info()} waiting for dependencies')
+            getlogger().debug2(f'{task.info()} waiting for dependencies')
             return 0
 
     def _advance_ready_compile(self, task):
@@ -573,10 +567,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_exit(self, task):
-        pass
+        self._pollctl.reset_snooze_time()
 
     def on_task_compile_exit(self, task):
-        pass
+        self._pollctl.reset_snooze_time()
 
     def on_task_skip(self, task):
         msg = str(task.exc_info[1])
@@ -584,15 +578,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.info()} [{timings}]'
+        msg = f'{task.info()}'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', msg, just='right')
         else:
             self.printer.status('FAIL', msg, just='right')
 
+        _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -608,11 +600,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             )
 
     def on_task_success(self, task):
-        timings = task.pipeline_timings(['compile_complete',
-                                         'run_complete',
-                                         'total'])
-        msg = f'{task.info()} [{timings}]'
+        msg = f'{task.info()}'
         self.printer.status('OK', msg, just='right')
+        _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -620,7 +610,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                          'performance',
                                          'total'])
         getlogger().verbose(f'==> {timings}')
-
         for c in task.testcase.deps:
             # NOTE: Restored dependencies are not in the task_index
             if c in self._task_index:

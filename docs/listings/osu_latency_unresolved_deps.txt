@@ -1,40 +1,41 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+605af31a
+  version:           4.0.0-dev.2
   command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py -n OSULatencyTest --system=daint:gpu -l'
   launched by:       user@host
   working directory: '/home/user/Devel/reframe'
-  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/daint.py'
   check search path: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
+  log files:         '/tmp/rfm-12gjxnvc.log'
 
-./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'gnu') -> 'OSUDownloadTest'
-./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'intel') -> 'OSUDownloadTest'
-./bin/reframe: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'pgi') -> 'OSUDownloadTest'
-./bin/reframe: skipping all dependent test cases
-  - ('OSUBuildTest', 'daint:gpu', 'pgi')
+WARNING: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'gnu') -> 'OSUDownloadTest'
+WARNING: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'intel') -> 'OSUDownloadTest'
+WARNING: could not resolve dependency: ('OSUBuildTest', 'daint:gpu', 'nvidia') -> 'OSUDownloadTest'
+WARNING: skipping all dependent test cases
   - ('OSUBuildTest', 'daint:gpu', 'intel')
-  - ('OSUAllreduceTest_8', 'daint:gpu', 'pgi')
-  - ('OSUAllreduceTest_16', 'daint:gpu', 'pgi')
-  - ('OSUBuildTest', 'daint:gpu', 'gnu')
-  - ('OSUAllreduceTest_4', 'daint:gpu', 'intel')
-  - ('OSUAllreduceTest_8', 'daint:gpu', 'intel')
-  - ('OSUAllreduceTest_4', 'daint:gpu', 'pgi')
-  - ('OSUAllreduceTest_16', 'daint:gpu', 'intel')
-  - ('OSULatencyTest', 'daint:gpu', 'pgi')
-  - ('OSUAllreduceTest_8', 'daint:gpu', 'gnu')
-  - ('OSUAllreduceTest_2', 'daint:gpu', 'pgi')
-  - ('OSUBandwidthTest', 'daint:gpu', 'pgi')
-  - ('OSUAllreduceTest_16', 'daint:gpu', 'gnu')
   - ('OSUBandwidthTest', 'daint:gpu', 'intel')
+  - ('OSUBuildTest', 'daint:gpu', 'nvidia')
   - ('OSULatencyTest', 'daint:gpu', 'intel')
-  - ('OSUAllreduceTest_2', 'daint:gpu', 'intel')
-  - ('OSUAllreduceTest_4', 'daint:gpu', 'gnu')
-  - ('OSUAllreduceTest_2', 'daint:gpu', 'gnu')
+  - ('OSUAllreduceTest_3', 'daint:gpu', 'nvidia')
+  - ('OSUBuildTest', 'daint:gpu', 'gnu')
+  - ('OSUAllreduceTest_1', 'daint:gpu', 'nvidia')
+  - ('OSUAllreduceTest_0', 'daint:gpu', 'intel')
+  - ('OSUAllreduceTest_2', 'daint:gpu', 'nvidia')
   - ('OSUBandwidthTest', 'daint:gpu', 'gnu')
   - ('OSULatencyTest', 'daint:gpu', 'gnu')
+  - ('OSUAllreduceTest_2', 'daint:gpu', 'intel')
+  - ('OSUAllreduceTest_3', 'daint:gpu', 'intel')
+  - ('OSUAllreduceTest_1', 'daint:gpu', 'intel')
+  - ('OSUAllreduceTest_0', 'daint:gpu', 'nvidia')
+  - ('OSUBandwidthTest', 'daint:gpu', 'nvidia')
+  - ('OSULatencyTest', 'daint:gpu', 'nvidia')
+  - ('OSUAllreduceTest_2', 'daint:gpu', 'gnu')
+  - ('OSUAllreduceTest_1', 'daint:gpu', 'gnu')
+  - ('OSUAllreduceTest_3', 'daint:gpu', 'gnu')
+  - ('OSUAllreduceTest_0', 'daint:gpu', 'gnu')
 
 [List of matched checks]
 Found 0 check(s)
 
-Log file(s) saved in '/tmp/rfm-k1w20m9z.log'
+Log file(s) saved in '/tmp/rfm-12gjxnvc.log'

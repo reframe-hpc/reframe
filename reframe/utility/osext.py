@@ -23,12 +23,13 @@ import tempfile
 from urllib.parse import urlparse
 
 import reframe
+import reframe.utility as util
 from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
                                      SpawnedProcessTimeout)
 from . import OrderedSet
 
 
-def run_command(cmd, check=False, timeout=None, shell=False, log=True):
+def run_command(cmd, check=False, timeout=None, **kwargs):
     '''Run command synchronously.
 
     This function will block until the command executes or the timeout is
@@ -39,9 +40,7 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
         :func:`run_command_async` for more details.
     :arg check: Raise an error if the command exits with a non-zero exit code.
     :arg timeout: Timeout in seconds.
-    :arg shell: Spawn a new shell to execute the command.
-    :arg log: Log the execution of the command through ReFrame's logging
-        facility.
+    :arg kwargs: Keyword arguments to be passed :func:`run_command_async`.
     :returns: A :py:class:`subprocess.CompletedProcess` object with
         information about the command's outcome.
     :raises reframe.core.exceptions.SpawnedProcessError: If ``check``
@@ -52,8 +51,7 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
     '''
 
     try:
-        proc = run_command_async(cmd, shell=shell, start_new_session=True,
-                                 log=log)
+        proc = run_command_async(cmd, start_new_session=True, **kwargs)
         proc_stdout, proc_stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
@@ -109,10 +107,10 @@ def run_command_async(cmd,
     if isinstance(cmd, str) and not shell:
         cmd = shlex.split(cmd)
 
+    popen_args.setdefault('stdin', subprocess.DEVNULL)
     return subprocess.Popen(args=cmd,
                             stdout=stdout,
                             stderr=stderr,
-                            stdin=subprocess.DEVNULL,
                             universal_newlines=True,
                             shell=shell,
                             **popen_args)
@@ -269,11 +267,11 @@ def rmtree(*args, max_retries=3, **kwargs):
     This version of :func:`rmtree` is mostly provided to work around a race
     condition between when ``sacct`` reports a job as completed and when the
     Slurm epilog runs. See `gh #291
-    <https://github.com/eth-cscs/reframe/issues/291>`__ for more information.
+    <https://github.com/reframe-hpc/reframe/issues/291>`__ for more information.
     Furthermore, it offers a work around for NFS file systems where stale
     file handles may be present during the :func:`rmtree` call, causing it to
     throw a busy device/resource error. See `gh #712
-    <https://github.com/eth-cscs/reframe/issues/712>`__ for more information.
+    <https://github.com/reframe-hpc/reframe/issues/712>`__ for more information.
 
     ``args`` and ``kwargs`` are passed through to :py:func:`shutil.rmtree`.
 
@@ -483,6 +481,7 @@ def git_repo_hash(commit='HEAD', short=True, wd=None):
         return None
 
 
+@util.cache_return_value
 def reframe_version():
     '''Return ReFrame version.
 
@@ -574,21 +573,28 @@ def unique_abs_paths(paths, prune_children=True):
 
 
 def cray_cdt_version():
-    '''Return the Cray Development Toolkit (CDT) version or :class:`None` if
-    the version cannot be retrieved.'''
+    '''Return either the Cray Development Toolkit (CDT) version, the Cray
+    Programming Environment (CPE) version or :class:`None` if the version
+    cannot be retrieved.'''
 
-    rcfile = os.getenv('MODULERCFILE', '/opt/cray/pe/cdt/default/modulerc')
+    modulerc_path = '/opt/cray/pe/{cray_module}/default/modulerc'
+    cray_module = 'cdt' if os.path.exists(
+        modulerc_path.format(cray_module='cdt')
+    ) else 'cpe'
+
+    rcfile = os.getenv('MODULERCFILE',
+                       modulerc_path.format(cray_module=cray_module))
     try:
         with open(rcfile) as fp:
             header = fp.readline()
             if not header:
                 return None
 
-        match = re.search(r'^#%Module CDT (\S+)', header)
+        match = re.search(r'^#%Module (CDT|CPE) (\S+)', header)
         if not match:
             return None
 
-        return match.group(1)
+        return match.group(2)
     except OSError:
         return None
 

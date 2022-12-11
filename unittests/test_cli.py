@@ -62,7 +62,7 @@ def run_reframe(tmp_path, perflogdir, monkeypatch):
                      action='run',
                      more_options=None,
                      mode=None,
-                     config_file='unittests/resources/settings.py',
+                     config_file='unittests/resources/config/settings.py',
                      perflogdir=str(perflogdir)):
         import reframe.frontend.cli as cli
 
@@ -574,7 +574,7 @@ def test_list_tags(run_reframe):
     assert returncode == 0
 
 
-def test_filtering_multiple_criteria(run_reframe):
+def test_filtering_multiple_criteria_name(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
@@ -583,6 +583,30 @@ def test_filtering_multiple_criteria(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert 'Found 1 check(s)' in stdout
+    assert returncode == 0
+
+
+def test_filtering_multiple_criteria_hash(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks'],
+        action='list',
+        more_options=['-t', 'foo', '-n', '/2b3e4546']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 1 check(s)' in stdout
+    assert returncode == 0
+
+
+def test_filtering_exclude_hash(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks'],
+        action='list',
+        more_options=['-x', '/2b3e4546']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 8 check(s)' in stdout
     assert returncode == 0
 
 
@@ -615,6 +639,17 @@ def test_show_config_unknown_param(run_reframe):
         system='testsys'
     )
     assert 'no such configuration parameter found' in stdout
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
+def test_show_config_null_param(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--show-config=general/report_junit'],
+        system='testsys'
+    )
+    assert 'null' in stdout
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
@@ -710,7 +745,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx):
     ms.searchpath_remove(module_path)
     assert "could not load module 'testmod_foo' correctly" in stdout
     assert 'Traceback' not in stderr
-    assert returncode == 0
+    assert returncode == 1
 
 
 def test_use_module_path(run_reframe, user_exec_ctx):
@@ -797,6 +832,80 @@ def test_maxfail_negative(run_reframe):
     assert returncode == 1
 
 
+def test_repeat_option(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--repeat', '2', '-n', 'HelloTest'],
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert ('Ran 2/2 test case(s) from 2 check(s) '
+            '(0 failure(s), 0 skipped)') in stdout
+    assert returncode == 0
+
+
+def test_repeat_invalid_option(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--repeat', 'foo'],
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    errmsg = "argument to '--repeat' option must be a non-negative integer"
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert errmsg in stdout
+    assert returncode == 1
+
+
+def test_repeat_negative(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--repeat', '-1'],
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    errmsg = "argument to '--repeat' option must be a non-negative integer"
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert errmsg in stdout
+    assert returncode == 1
+
+
+@pytest.fixture(params=['name', 'rname', 'uid', 'ruid', 'random'])
+def exec_order(request):
+    return request.param
+
+
+def test_exec_order(run_reframe, exec_order):
+    import reframe.utility.sanity as sn
+
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--repeat', '11', '-n', 'HelloTest',
+                      f'--exec-order={exec_order}'],
+        checkpath=['unittests/resources/checks/hellocheck.py'],
+        action='list_detailed',
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 11 check(s)' in stdout
+    assert returncode == 0
+
+    # Verify the order
+    if exec_order == 'name':
+        repeat_no = sn.extractsingle_s(r'- HelloTest.*repeat_no=(\d+)',
+                                       stdout, 1, int, 2).evaluate()
+        assert repeat_no == 10
+    elif exec_order == 'rname':
+        repeat_no = sn.extractsingle_s(r'- HelloTest.*repeat_no=(\d+)',
+                                       stdout, 1, int, -3).evaluate()
+        assert repeat_no == 10
+    elif exec_order == 'uid':
+        repeat_no = sn.extractsingle_s(r'- HelloTest.*repeat_no=(\d+)',
+                                       stdout, 1, int, -1).evaluate()
+        assert repeat_no == 10
+    elif exec_order == 'ruid':
+        repeat_no = sn.extractsingle_s(r'- HelloTest.*repeat_no=(\d+)',
+                                       stdout, 1, int, 0).evaluate()
+        assert repeat_no == 10
+
+
 def test_detect_host_topology(run_reframe):
     from reframe.utility.cpuinfo import cpuinfo
 
@@ -826,13 +935,17 @@ def test_detect_host_topology_file(run_reframe, tmp_path):
 def test_external_vars(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks_unlisted/externalvars.py'],
-        more_options=['-S', 'external_x.foo=3', '-S', 'external_y.foo=2',
-                      '-S', 'foolist=3,4', '-S', 'bar=@none',
+        more_options=['-S', 'external_x.foo=3',
                       '-S', 'external_x.ham=true',
-                      '-S', 'external_y.baz=false']
+                      '-S', 'external_x.spam.eggs.bacon=10',
+                      '-S', 'external_y.foo=2',
+                      '-S', 'external_y.baz=false',
+                      '-S', 'foolist=3,4',
+                      '-S', 'bar=@none']
     )
+    assert 'PASSED' in stdout
+    assert 'Ran 6/6 test case(s)' in stdout
     assert 'Traceback' not in stdout
-    assert 'Ran 2/2 test case(s)' in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
 
@@ -906,3 +1019,29 @@ def test_fixture_resolution(run_reframe):
         action='run'
     )
     assert returncode == 0
+
+
+def test_dynamic_tests(run_reframe, tmp_path):
+    returncode, stdout, _ = run_reframe(
+        system='sys0',
+        environs=[],
+        checkpath=['unittests/resources/checks_unlisted/distribute.py'],
+        action='run',
+        more_options=['-n', 'Complex', '--distribute=idle']
+    )
+    assert returncode == 0
+    assert 'Ran 10/10 test case(s)' in stdout
+    assert 'FAILED' not in stdout
+
+
+def test_dynamic_tests_filtering(run_reframe, tmp_path):
+    returncode, stdout, _ = run_reframe(
+        system='sys1',
+        environs=[],
+        checkpath=['unittests/resources/checks_unlisted/distribute.py'],
+        action='run',
+        more_options=['-n', 'Complex@1', '--distribute=idle']
+    )
+    assert returncode == 0
+    assert 'Ran 7/7 test case(s)' in stdout
+    assert 'FAILED' not in stdout

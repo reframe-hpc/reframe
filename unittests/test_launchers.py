@@ -76,7 +76,6 @@ def job(make_job, launcher):
                    stdout='fake_stdout',
                    stderr='fake_stderr',
                    sched_access=access,
-                   sched_exclusive_access='fake_exclude_access',
                    sched_options=['--fake'])
     job.num_tasks = 4
     job.num_tasks_per_node = 2
@@ -85,6 +84,7 @@ def job(make_job, launcher):
     job.num_cpus_per_task = 2
     job.use_smt = True
     job.time_limit = '10m'
+    job.exclusive_access = True
     job.options = ['--gres=gpu:4', '#DW jobdw anything']
     job.launcher.options = ['--foo']
     return job
@@ -104,6 +104,9 @@ def minimal_job(make_job, launcher):
 
 def test_run_command(job):
     launcher_name = type(job.launcher).registered_name
+    # This is relevant only for the srun launcher, because it may
+    # run in different platforms with older versions of Slurm
+    job.launcher.use_cpus_per_task = True
     command = job.launcher.run_command(job)
     if launcher_name == 'alps':
         assert command == 'aprun -n 4 -N 2 -d 2 -j 0 --foo'
@@ -116,7 +119,7 @@ def test_run_command(job):
     elif launcher_name == 'mpirun':
         assert command == 'mpirun -np 4 --foo'
     elif launcher_name == 'srun':
-        assert command == 'srun --foo'
+        assert command == 'srun --cpus-per-task=2 --foo'
     elif launcher_name == 'srunalloc':
         assert command == ('srun '
                            '--job-name=fake_job '
@@ -147,6 +150,9 @@ def test_run_command(job):
 
 def test_run_command_minimal(minimal_job):
     launcher_name = type(minimal_job.launcher).registered_name
+    # This is relevant only for the srun launcher, because it may
+    # run in different platforms with older versions of Slurm
+    minimal_job.launcher.use_cpus_per_task = True
     command = minimal_job.launcher.run_command(minimal_job)
     if launcher_name == 'alps':
         assert command == 'aprun -n 1 --foo'

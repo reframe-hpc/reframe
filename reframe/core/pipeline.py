@@ -9,20 +9,18 @@
 
 __all__ = [
     'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final',
     'RegressionMixin'
 ]
 
 
-import functools
 import glob
+import hashlib
 import inspect
 import itertools
 import numbers
 import os
 import shutil
 
-import reframe.core.environments as env
 import reframe.core.fields as fields
 import reframe.core.hooks as hooks
 import reframe.core.logging as logging
@@ -35,51 +33,43 @@ import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.containers import ContainerPlatformField
+from reframe.core.containers import (ContainerPlatform, ContainerPlatformField)
 from reframe.core.deferrable import (_DeferredExpression,
                                      _DeferredPerformanceExpression)
+from reframe.core.environments import Environment
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
                                      SanityError, SkipTestError,
                                      ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
-from reframe.core.variables import DEPRECATE_WR
-from reframe.core.warnings import user_deprecation_warning
 
 
-# Dependency kinds
+class _NoRuntime(ContainerPlatform):
+    '''Proxy container runtime for storing container platform info early enough.
 
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`~RegressionTest.depends_on` method. It denotes that test case
-#: dependencies will be explicitly specified by the user.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_EXACT = 1
+    This will be replaced by the framework with a concrete implementation
+    based on the current partition info.
+    '''
 
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
-#: the current test will depend only on the corresponding test cases of the
-#: target test that use the same programming environment.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_BY_ENV = 2
+    def emit_prepare_commands(self, stagedir):
+        raise NotImplementedError
 
-#: Constant to be passed as the ``how`` argument of the
-#: :func:`RegressionTest.depends_on` method. It denotes that each test case of
-#: this test depends on all the test cases of the target test.
-#:
-#:  This constant is directly available under the :mod:`reframe` module.
-#:
-#: .. deprecated:: 3.3
-#:    Please use a callable as the ``how`` argument.
-DEPEND_FULLY = 3
+    def launch_command(self, stagedir):
+        raise NotImplementedError
+
+
+# Valid systems/environments mini-language
+_N = r'(\w[-.\w]*)'         # name
+_NW = rf'(\*|{_N})'         # name or wildcard
+_F = rf'([+-]{_N})'         # feature
+_OP = r'([=<>]|!=|>=|<=)'   # relational operator (unused for the moment)
+_KV = rf'(%{_N}=\S+)'       # key/value pair
+_FKV = rf'({_F}|{_KV})'     # feature | key/value pair
+_VALID_ENV_SYNTAX = rf'^({_NW}|{_FKV}(\s+{_FKV})*)$'
+
+_S = rf'({_NW}(:{_NW})?)'   # system/partition
+_VALID_SYS_SYNTAX = rf'^({_S}|{_FKV}(\s+{_FKV})*)$'
 
 
 _PIPELINE_STAGES = (
@@ -96,21 +86,6 @@ _PIPELINE_STAGES = (
 _USER_PIPELINE_STAGES = (
     'init', 'setup', 'compile', 'run', 'sanity', 'performance', 'cleanup'
 )
-
-
-def final(fn):
-    fn._rfm_final = True
-    user_deprecation_warning(
-        'using the @rfm.final decorator from the rfm module is '
-        'deprecated; please use the built-in decorator @final instead.',
-        from_version='3.7.0'
-    )
-
-    @functools.wraps(fn)
-    def _wrapped(*args, **kwargs):
-        return fn(*args, **kwargs)
-
-    return _wrapped
 
 
 _RFM_TEST_KIND_MIXIN = 0
@@ -209,67 +184,109 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         return ret
 
-    #: The name of the test.
-    #:
-    #: This is an alias of :attr:`unique_name`.
-    #:
-    #: .. warning::
-    #:
-    #:    Setting the name of a test is deprecated and will be disabled in the
-    #:    future. If you were setting the name of a test to circumvent the old
-    #:    long parameterized test names in order to reference them in
-    #:    dependency chains, please refer to :ref:`param_deps` for more details on how
-    #:    to achieve this.
-    #:
-    #: .. versionchanged:: 3.10.0
-    #:    Setting the :attr:`name` attribute is deprecated.
-    #:
-    name = deprecate(variable(typ.Str[r'[^\/]+'], attr_name='_rfm_unique_name'),
-                     "setting the 'name' attribute is deprecated and "
-                     "will be disabled in the future", DEPRECATE_WR)
-
     #: List of programming environments supported by this test.
     #:
-    #: If ``*`` is in the list then all programming environments are supported
-    #: by this test.
+    #: The syntax of this attribute is exactly the same as of the
+    #: :attr:`valid_systems` except that the ``a:b`` entries are invalid.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``required``
     #:
-    #: .. note::
-    #:     .. versionchanged:: 2.12
-    #:        Programming environments can now be specified using wildcards.
+    #: .. seealso::
+    #:    - `Environment features
+    #:      <config_reference.html#environments-.features>`__
+    #:    - `Environment extras
+    #:      <config_reference.html#environments-.extras>`__
     #:
-    #:     .. versionchanged:: 2.17
-    #:        Support for wildcards is dropped.
+    #: .. versionchanged:: 2.12
+    #:    Programming environments can now be specified using wildcards.
     #:
-    #:     .. versionchanged:: 3.3
-    #:        Default value changed from ``[]`` to ``None``.
+    #: .. versionchanged:: 2.17
+    #:    Support for wildcards is dropped.
     #:
-    #:     .. versionchanged:: 3.6
-    #:        Default value changed from ``None`` to ``required``.
-    valid_prog_environs = variable(typ.List[str])
+    #: .. versionchanged:: 3.3
+    #:    Default value changed from ``[]`` to ``None``.
+    #:
+    #: .. versionchanged:: 3.6
+    #:    Default value changed from ``None`` to ``required``.
+    #:
+    #: .. versionchanged:: 3.11.0
+    #:    Extend syntax to support features and key/value pairs.
+    valid_prog_environs = variable(typ.List[typ.Str[_VALID_ENV_SYNTAX]],
+                                   loggable=True)
 
-    #: List of systems supported by this test.
-    #: The general syntax for systems is ``<sysname>[:<partname>]``.
-    #: Both <sysname> and <partname> accept the value ``*`` to mean any value.
-    #: ``*`` is an alias of ``*:*``
+    #: List of systems or system features or system properties required by this
+    #: test.
+    #:
+    #: Each entry in this list is a requirement and can have one of the
+    #: following forms:
+    #:
+    #: - ``sysname``: The test is valid for system named ``sysname``.
+    #: - ``sysname:partname``: The test is valid for the partition ``partname``
+    #:   of system ``sysname``.
+    #: - ``*``: The test is valid for any system.
+    #: - ``*:partname``: The test is valid for any partition named ``partname``
+    #:   in any system.
+    #: - ``+feat``: The test is valid for all partitions that define feature
+    #:   ``feat`` as a feature.
+    #: - ``-feat``: The test is valid for all partitions that do not define
+    #:   feature ``feat`` as a feature.
+    #: - ``%key=val``: The test is valid for all partitions that define the
+    #:   extra property ``key`` with the value ``val``.
+    #:
+    #: Multiple features and key/value pairs can be included in a single entry
+    #: of the :attr:`valid_systems` list, in which case an AND operation on
+    #: these constraints is implied. For example, the test defining the
+    #: following will be valid for all systems that have define both ``feat1``
+    #: and ``feat2`` and set ``foo=1``
+    #:
+    #: .. code-block:: python
+    #:
+    #:    valid_systems = ['+feat1 +feat2 %foo=1']
+    #:
+    #: For key/value pairs comparisons, ReFrame will automatically convert the
+    #: value in the key/value spec to the type of the value of the
+    #: corresponding entry in the partitions ``extras`` property. In the above
+    #: example, if the type of ``foo`` property is integer, ``1`` will be
+    #: converted to an integer value. If a conversion to the target type is not
+    #: possible, then the requested key/value pair is not matched.
+    #:
+    #: Multiple entries in the :attr:`valid_systems` list are implicitly ORed,
+    #: such that the following example implies that the test is valid for
+    #: either ``sys1`` or for any other system that does not define ``feat``.
+    #:
+    #: .. code-block:: python
+    #:
+    #:    valid_systems = ['sys1', '-feat']
     #:
     #: :type: :class:`List[str]`
     #: :default: ``None``
     #:
-    #:     .. versionchanged:: 3.3
-    #:        Default value changed from ``[]`` to ``None``.
+    #: .. seealso::
+    #:    - `System partition features
+    #:      <config_reference.html#systems-.partitions-.features>`__
+    #:    - `System partition extras
+    #:      <config_reference.html#systems-.partitions-.extras>`__
     #:
-    #:     .. versionchanged:: 3.6
-    #:        Default value changed from ``None`` to ``required``.
-    valid_systems = variable(typ.List[str])
+    #: .. versionchanged:: 3.3
+    #:    Default value changed from ``[]`` to ``None``.
+    #:
+    #: .. versionchanged:: 3.6
+    #:    Default value changed from ``None`` to ``required``.
+    #:
+    #:  .. versionchanged:: 3.11.0
+    #:     Extend syntax to support features and key/value pairs.
+    valid_systems = variable(typ.List[typ.Str[_VALID_SYS_SYNTAX]],
+                             loggable=True)
 
     #: A detailed description of the test.
     #:
     #: :type: :class:`str`
-    #: :default: ``self.display_name``
-    descr = variable(str)
+    #: :default: ``''``
+    #:
+    #: .. versionchanged:: 4.0
+    #:    The default value is now the empty string.
+    descr = variable(str, value='', loggable=True)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -287,7 +304,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    sourcepath = variable(str, value='')
+    sourcepath = variable(str, value='', loggable=True)
 
     #: The directory containing the test's resources.
     #:
@@ -317,7 +334,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        Default value is now conditionally set to either ``'src'`` or
     #:        :class:`None`.
-    sourcesdir = variable(str, type(None), value='src')
+    sourcesdir = variable(str, type(None), value='src', loggable=True)
 
     #: .. versionadded:: 2.14
     #:
@@ -346,7 +363,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prebuild_cmds = variable(typ.List[str], value=[])
+    prebuild_cmds = variable(typ.List[str], value=[], loggable=True)
 
     #: .. versionadded:: 3.0
     #:
@@ -358,7 +375,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postbuild_cmds = variable(typ.List[str], value=[])
+    postbuild_cmds = variable(typ.List[str], value=[], loggable=True)
 
     #: The name of the executable to be launched during the run phase.
     #:
@@ -373,38 +390,53 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.7.3
     #:    Default value changed from ``os.path.join('.', self.unique_name)`` to
     #:    :class:`required`.
-    executable = variable(str)
+    executable = variable(str, loggable=True)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    executable_opts = variable(typ.List[str], value=[])
+    executable_opts = variable(typ.List[str], value=[], loggable=True)
 
     #: .. versionadded:: 2.20
     #:
     #: The container platform to be used for launching this test.
     #:
-    #: If this field is set, the test will run inside a container using the
-    #: specified container runtime. Container-specific options must be defined
-    #: additionally after this field is set:
+    #: This field is set automatically by the default container runtime
+    #: associated with the current system partition. Users may also set this,
+    #: explicitly overriding any partition setting. If the
+    #: :attr:`~reframe.core.containers.ContainerPlatform.image` attribute of
+    #: :attr:`container_platform` is set, then the test will run inside a
+    #: container using the specified container runtime.
     #:
     #: .. code:: python
     #:
     #:    self.container_platform = 'Singularity'
     #:    self.container_platform.image = 'docker://ubuntu:18.04'
-    #:    self.container_platform.commands = ['cat /etc/os-release']
+    #:    self.container_platform.command = 'cat /etc/os-release'
     #:
-    #: If this field is set, :attr:`executable` and :attr:`executable_opts`
-    #: attributes are ignored. The container platform's :attr:`commands
-    #: <reframe.core.containers.ContainerPlatform.commands>` will be used
+    #: If the test will run inside a container, the :attr:`executable` and
+    #: :attr:`executable_opts` attributes are ignored. The container platform's
+    #: :attr:`~reframe.core.containers.ContainerPlatform.command` will be used
     #: instead.
     #:
+    #: .. note::
+    #:
+    #:    Only the run phase of the test will run inside the container.
+    #:    If you enable the containerized run in a non run-only test, the
+    #:    compilation phase will still run natively.
+    #:
     #: :type: :class:`str` or
-    #:     :class:`reframe.core.containers.ContainerPlatform`.
-    #: :default: :class:`None`.
-    container_platform = variable(type(None),
-                                  field=ContainerPlatformField, value=None)
+    #:     :class:`~reframe.core.containers.ContainerPlatform`.
+    #: :default: the container runtime specified in the current system
+    #:   partition's configuration (see also
+    #:   :ref:`container-platform-configuration`).
+    #:
+    #: .. versionchanged:: 3.12.0
+    #:    This field is now set automatically from the current partition's
+    #:    configuration.
+    container_platform = variable(field=ContainerPlatformField,
+                                  value=_NoRuntime())
 
     #: .. versionadded:: 3.0
     #:
@@ -416,7 +448,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prerun_cmds = variable(typ.List[str], value=[])
+    prerun_cmds = variable(typ.List[str], value=[], loggable=True)
 
     #: .. versionadded:: 3.0
     #:
@@ -427,7 +459,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postrun_cmds = variable(typ.List[str], value=[])
+    postrun_cmds = variable(typ.List[str], value=[], loggable=True)
 
     #: List of files to be kept after the test finishes.
     #:
@@ -447,7 +479,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.3
     #:    This field accepts now also file glob patterns.
     #:
-    keep_files = variable(typ.List[str], value=[])
+    keep_files = variable(typ.List[str], value=[], loggable=True)
 
     #: List of files or directories (relative to the :attr:`sourcesdir`) that
     #: will be symlinked in the stage directory and not copied.
@@ -457,7 +489,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    readonly_files = variable(typ.List[str], value=[])
+    readonly_files = variable(typ.List[str], value=[], loggable=True)
 
     #: Set of tags associated with this test.
     #:
@@ -465,7 +497,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`Set[str]`
     #: :default: an empty set
-    tags = variable(typ.Set[str], value=set())
+    tags = variable(typ.Set[str], value=set(), loggable=True)
 
     #: List of people responsible for this test.
     #:
@@ -473,7 +505,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    maintainers = variable(typ.List[str], value=[])
+    maintainers = variable(typ.List[str], value=[], loggable=True)
 
     #: Mark this test as a strict performance test.
     #:
@@ -483,7 +515,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean
     #: :default: :class:`True`
-    strict_check = variable(typ.Bool, value=True)
+    strict_check = variable(typ.Bool, value=True, loggable=True)
 
     #: Number of tasks required by this test.
     #:
@@ -509,7 +541,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
     #: .. _--flex-alloc-nodes: manpage.html#cmdoption-flex-alloc-nodes
-    num_tasks = variable(int, value=1)
+    num_tasks = variable(int, value=1, loggable=True)
 
     #: Number of tasks per node required by this test.
     #:
@@ -517,16 +549,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_node = variable(int, type(None), value=None)
+    num_tasks_per_node = variable(int, type(None), value=None, loggable=True)
 
     #: Number of GPUs per node required by this test.
     #: This attribute is translated internally to the ``_rfm_gpu`` resource.
     #: For more information on test resources, have a look at the
     #: :attr:`extra_resources` attribute.
     #:
-    #: :type: integral
-    #: :default: ``0``
-    num_gpus_per_node = variable(int, value=0)
+    #: :type: integral or :const:`None`
+    #: :default: :const:`None`
+    #:
+    #: .. versionchanged:: 4.0.0
+    #:    The default value changed to :const:`None`.
+    num_gpus_per_node = variable(int, type(None), value=None, loggable=True)
 
     #: Number of CPUs per task required by this test.
     #:
@@ -534,7 +569,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_cpus_per_task = variable(int, type(None), value=None)
+    num_cpus_per_task = variable(int, type(None), value=None, loggable=True)
 
     #: Number of tasks per core required by this test.
     #:
@@ -542,7 +577,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core = variable(int, type(None), value=None)
+    num_tasks_per_core = variable(int, type(None), value=None, loggable=True)
 
     #: Number of tasks per socket required by this test.
     #:
@@ -550,7 +585,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_socket = variable(int, type(None), value=None)
+    num_tasks_per_socket = variable(int, type(None), value=None, loggable=True)
 
     #: Specify whether this tests needs simultaneous multithreading enabled.
     #:
@@ -558,7 +593,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean or :class:`None`
     #: :default: :class:`None`
-    use_multithreading = variable(typ.Bool, type(None), value=None)
+    use_multithreading = variable(
+        typ.Bool, type(None), value=None, loggable=True)
 
     #: .. versionadded:: 3.0
     #:
@@ -569,19 +605,20 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: :class:`None`
     max_pending_time = variable(
-        type(None), field=fields.TimerField, value=None)
+        type(None), field=fields.TimerField, value=None, loggable=True
+    )
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    exclusive_access = variable(typ.Bool, value=False)
+    exclusive_access = variable(typ.Bool, value=False, loggable=True)
 
     #: Always execute this test locally.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    local = variable(typ.Bool, value=False)
+    local = variable(typ.Bool, value=False, loggable=True)
 
     #: The set of reference values for this test.
     #:
@@ -606,6 +643,25 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:        }
     #:    }
     #:
+    #: To better understand how to set the performance reference tuple, here
+    #: are some examples with both positive and negative reference values:
+    #:
+    #:   ============================== ============  ==========  ===========
+    #:   **Performance Tuple**          **Expected**  **Lowest**  **Highest**
+    #:   ``(100, -0.01, 0.02, 'MB/s')`` 100 MB/s      99 MB/s     102 MB/s
+    #:   ``(100, -0.01, None, 'MB/s')`` 100 MB/s      99 MB/s     inf MB/s
+    #:   ``(100, None, 0.02, 'MB/s')``  100 MB/s      -inf MB/s   102 MB/s
+    #:   ``(-100, -0.01, 0.02, 'C')``     -100 C        -101 C      -98 C
+    #:   ``(-100, -0.01, None, 'C')``     -100 C        -101 C      inf C
+    #:   ``(-100, None, 0.02, 'C')``      -100 C        -inf C      -98 C
+    #:   ============================== ============  ==========  ===========
+    #:
+    #: During the performance stage of the pipeline, the reference tuple
+    #: elements, except the unit, are passed to the
+    #: :func:`~reframe.utility.sanity.assert_reference` function along with the
+    #: obtained performance value in order to actually assess whether the test
+    #: passes the performance check or not.
+    #:
     #: :type: A scoped dictionary with system names as scopes or :class:`None`
     #: :default: ``{}``
     #:
@@ -619,6 +675,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     ], field=fields.ScopedDictField, value={})
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
+
+    #: Require that a reference is defined for each system that this test is
+    #: run on.
+    #:
+    #: If this is set and a reference is not found for the current system, the
+    #: test will fail.
+    #:
+    #: :type: boolean
+    #: :default: :const:`False`
+    #:
+    #: .. versionadded:: 4.0.0
+    require_reference = variable(typ.Bool, value=False)
 
     #:
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
@@ -649,9 +717,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: Patterns for verifying the performance of this test.
     #:
-    #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
-    #: examples.
-    #:
     #: If set to :class:`None`, no performance checking will be performed.
     #:
     #: :type: A dictionary with keys of type :class:`str` and deferrable
@@ -659,6 +724,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     </deferrable_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
+    #:
+    #: .. warning::
+    #:
+    #:    You are advised to follow the new syntax for defining performance
+    #:    variables in your tests using either the :func:`@performance_function
+    #:    <reframe.core.builtins.performance_function>` builtin or the
+    #:    :attr:`perf_variables`, as :attr:`perf_patterns` will likely be
+    #:    deprecated in the future.
     perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None))
 
     #: The performance variables associated with the test.
@@ -672,7 +745,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: By default, ReFrame will populate this field during the test's
     #: instantiation with all the member functions decorated with the
     #: :func:`@performance_function
-    #: <reframe.core.pipeline.RegressionMixin.performance_function>` decorator.
+    #: <reframe.core.builtins.performance_function>` decorator.
     #: If no performance functions are present in the class, no performance
     #: checking or reporting will be carried out.
     #:
@@ -690,7 +763,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     :ref:`deferrable-performance-functions`).
     #: :default: Collection of performance variables associated to each of
     #:     the member functions decorated with the :func:`@performance_function
-    #:     <reframe.core.pipeline.RegressionMixin.performance_function>`
+    #:     <reframe.core.builtins.performance_function>`
     #:     decorator.
     #:
     #: .. versionadded:: 3.8.0
@@ -701,25 +774,43 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: These modules will be loaded during the :func:`setup` phase.
     #:
-    #: :type: :class:`List[str]`
+    #: :type: :class:`List[str]` or :class:`Dict[str, object]`
     #: :default: ``[]``
     modules = variable(typ.List[str], typ.List[typ.Dict[str, object]],
-                       value=[])
+                       value=[], loggable=True)
 
     #: Environment variables to be set before running this test.
     #:
-    #: These variables will be set during the :func:`setup` phase.
+    #: The value of the environment variables can be of any type. ReFrame will
+    #: invoke :func:`str` on it whenever it needs to emit it in a script.
     #:
-    #: :type: :class:`Dict[str, str]`
+    #: :type: :class:`Dict[str, object]`
     #: :default: ``{}``
-    variables = variable(typ.Dict[str, str], value={})
+    #:
+    #: .. versionadded:: 4.0.0
+    env_vars = variable(typ.Dict[str, str],
+                        typ.Dict[str, object], value={}, loggable=True)
+    # NOTE: We still keep the original type, just to allow setting this
+    # variable from the command line, because otherwise, ReFrame will not know
+    # how to convert a value to an arbitrary object.
+
+    #: Environment variables to be set before running this test.
+    #:
+    #: This is an alias of :attr:`env_vars`.
+    #:
+    #: .. deprecated:: 4.0.0
+    #:    Please use :attr:`env_vars` instead.
+    variables = deprecate(variable(alias=env_vars, loggable=True),
+                          f"the use of 'variables' is deprecated; "
+                          f"please use 'env_vars' instead")
 
     #: Time limit for this test.
     #:
     #: Time limit is specified as a string in the form
-    #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds.
-    #: If set to :class:`None`, the |time_limit|_
-    #: of the current system partition will be used.
+    #: ``<days>d<hours>h<minutes>m<seconds>s`` or as number of seconds. If set
+    #: to :class:`None`, the
+    #: :attr:`~reframe.core.systems.SystemPartition.time_limit` of the current
+    #: system partition will be used.
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: :class:`None`
@@ -740,10 +831,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    .. versionchanged:: 3.5.1
     #:       The default value is now :class:`None` and it can be set globally
     #:       per partition via the configuration.
-    #:
-    #:    .. |time_limit| replace:: :attr:`time_limit`
-    #:    .. _time_limit: #.systems[].partitions[].time_limit
-    time_limit = variable(type(None), field=fields.TimerField, value=None)
+    time_limit = variable(type(None), field=fields.TimerField,
+                          value=None, loggable=True)
 
     #: .. versionadded:: 3.5.1
     #:
@@ -754,7 +843,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: :class:`None`
     build_time_limit = variable(type(None), field=fields.TimerField,
-                                value=None)
+                                value=None, loggable=True)
 
     #: .. versionadded:: 2.8
     #:
@@ -826,7 +915,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    .. versionchanged:: 2.9
     #:       A new more powerful syntax was introduced
     #:       that allows also custom job script directive prefixes.
-    extra_resources = variable(typ.Dict[str, typ.Dict[str, object]], value={})
+    extra_resources = variable(typ.Dict[str, typ.Dict[str, object]],
+                               value={}, loggable=True)
 
     #: .. versionadded:: 3.3
     #:
@@ -840,8 +930,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: responsibility to check whether the build phase failed by adding an
     #: appropriate sanity check.
     #:
-    #: :type: boolean : :default: :class:`True`
-    build_locally = variable(typ.Bool, value=True)
+    #: :type: boolean
+    #: :default: :class:`True`
+    build_locally = variable(typ.Bool, value=True, loggable=True)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
@@ -863,8 +954,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Prepare initialization of test defaults (variables and parameters are
         # injected after __new__ has returned, so we schedule this function
         # call as a pre-init hook).
-        obj.__deferred_rfm_init = obj.__rfm_init__(*args,
-                                                   prefix=prefix, **kwargs)
+        obj.__deferred_rfm_init = obj.__rfm_init__(prefix)
 
         # Build pipeline hook registry and add the pre-init hook
         cls._rfm_pipeline_hooks = cls._process_hook_registry()
@@ -908,21 +998,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
 
     @deferrable
-    def __rfm_init__(self, *args, prefix=None, **kwargs):
-        if not self.is_fixture() and not hasattr(self, '_rfm_unique_name'):
-            self._rfm_unique_name = type(self).variant_name(self.variant_num)
-
-            # Add the parameters from the parameterized_test decorator.
-            if args or kwargs:
-                arg_names = map(lambda x: util.toalphanum(str(x)),
-                                itertools.chain(args, kwargs.values()))
-                self._rfm_unique_name += '_' + '_'.join(arg_names)
-                self._rfm_old_style_params = True
-
-        # Pass if descr is a required variable.
-        if not hasattr(self, 'descr'):
-            self.descr = self.display_name
-
+    def __rfm_init__(self, prefix=None):
         self._perfvalues = {}
 
         # Static directories of the regression check
@@ -948,9 +1024,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._build_job = None
         self._compile_proc = None
 
-        # Performance logging
-        self._perf_logger = logging.null_logger
-
         # List of dependencies specified by the user
         self._userdeps = []
 
@@ -958,15 +1031,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._case = None
 
         if rt.runtime().get_option('general/0/non_default_craype'):
-            self._cdt_environ = env.Environment(
+            self._cdt_environ = Environment(
                 name='__rfm_cdt_environ',
-                variables={
+                env_vars={
                     'LD_LIBRARY_PATH': '$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH'
                 }
             )
         else:
             # Just an empty environment
-            self._cdt_environ = env.Environment('__rfm_cdt_environ')
+            self._cdt_environ = Environment('__rfm_cdt_environ')
 
         # Disabled hooks
         self._disabled_hooks = set()
@@ -976,7 +1049,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''Process and validate the pipeline hooks.'''
 
         _pipeline_hooks = {}
-        for stage, hooks in cls.pipeline_hooks().items():
+        for stage, hks in cls.pipeline_hooks().items():
             # Pop the stage pre_/post_ prefix
             stage_name = stage.split('_', maxsplit=1)[1]
 
@@ -996,7 +1069,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             elif stage == 'post_run':
                 stage = 'post_run_wait'
 
-            _pipeline_hooks[stage] = hooks
+            _pipeline_hooks[stage] = hks
 
         return _pipeline_hooks
 
@@ -1023,11 +1096,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             raise AttributeError(
                 f'required variable {name!r} has not been set'
             ) from None
-        elif name in self._rfm_fixture_space:
-            raise AttributeError(
-                f'fixture {name!r} has not yet been resolved: '
-                f'fixtures are resolved during the setup stage'
-            )
         else:
             raise AttributeError(
                 f'{type(self).__qualname__!r} object has no attribute {name!r}'
@@ -1035,6 +1103,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     # Export read-only views to interesting fields
 
+    @loggable
     @property
     def unique_name(self):
         '''The unique name of this test.
@@ -1045,6 +1114,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return self._rfm_unique_name
 
+    @loggable
+    @property
+    def name(self):
+        '''The name of the test.
+
+        This is an alias of :attr:`display_name`.
+        '''
+        return self.display_name
+
+    @loggable
     @property
     def display_name(self):
         '''A human-readable version of the name this test.
@@ -1080,9 +1159,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
             return name
 
-        if hasattr(self, '_rfm_old_style_params'):
-            return self.unique_name
-
         if hasattr(self, '_rfm_display_name'):
             return self._rfm_display_name
 
@@ -1099,6 +1175,42 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self._rfm_display_name += suffix
 
         return self._rfm_display_name
+
+    @loggable
+    @property
+    def hashcode(self):
+        if hasattr(self, '_rfm_hashcode'):
+            return self._rfm_hashcode
+
+        m = hashlib.sha256()
+        if self.is_fixture:
+            m.update(self.unique_name.encode('utf-8'))
+        else:
+            basename, *params = self.display_name.split(' %')
+            m.update(basename.encode('utf-8'))
+            for p in sorted(params):
+                m.update(p.encode('utf-8'))
+
+        self._rfm_hashcode = m.hexdigest()[:8]
+        return self._rfm_hashcode
+
+    @loggable
+    @property
+    def short_name(self):
+        '''A short version of the test's display name.
+
+        The shortened version coincides with the :attr:`unique_name` for
+        simple tests and combines the test's class name and a hash code for
+        parameterised tests.
+
+        .. versionadded:: 4.0.0
+
+        '''
+
+        if self.unique_name != self.display_name:
+            return f'{type(self).__name__}_{self.hashcode}'
+        else:
+            return self.unique_name
 
     @property
     def current_environ(self):
@@ -1186,6 +1298,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if not var_space[name].is_defined():
             setattr(self, name, value)
 
+    @loggable
     @property
     def perfvalues(self):
         return util.MappingView(self._perfvalues)
@@ -1208,6 +1321,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return logging.getlogger()
 
+    @loggable
     @property
     def prefix(self):
         '''The prefix directory of the test.
@@ -1216,6 +1330,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return self._prefix
 
+    @loggable
     @property
     def stagedir(self):
         '''The stage directory of the test.
@@ -1226,6 +1341,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         return self._stagedir
 
+    @loggable
     @property
     def outputdir(self):
         '''The output directory of the test.
@@ -1282,6 +1398,49 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def build_stderr(self):
         return self.build_job.stderr if self.build_job else None
 
+    # Various properties useful only for logging
+
+    @loggable_as('system')
+    @property
+    def _system_name(self):
+        return self.current_system.name
+
+    @loggable_as('partition')
+    @property
+    def _partition_name(self):
+        if self.current_partition:
+            return self.current_partition.name
+
+    @loggable_as('environ')
+    @property
+    def _environ_name(self):
+        if self.current_environ:
+            return self.current_environ.name
+
+    @loggable_as('jobid')
+    @property
+    def _jobid(self):
+        if self.job:
+            return self.job.jobid
+
+    @loggable_as('job_completion_time_unix')
+    @property
+    def _job_completion_time(self):
+        if self.job:
+            return self.job.completion_time
+
+    @loggable_as('job_exitcode')
+    @property
+    def _job_exitcode(self):
+        if self.job:
+            return self.job.exitcode
+
+    @loggable_as('job_nodelist')
+    @property
+    def _job_nodelist(self):
+        if self.job:
+            return self.job.nodelist
+
     def info(self):
         '''Provide live information for this test.
 
@@ -1304,7 +1463,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
            method may be called at any point of the test's lifetime.
         '''
 
-        ret = self.display_name
+        ret = f'{self.display_name} /{self.hashcode}'
         if self.current_partition:
             ret += f' @{self.current_partition.fullname}'
 
@@ -1312,23 +1471,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             ret += f'+{self.current_environ.name}'
 
         return ret
-
-    def supports_system(self, name):
-        if name.find(':') != -1:
-            system, partition = name.split(':')
-        else:
-            system, partition = self.current_system.name, name
-
-        valid_matches = ['*', '*:*', system, f'{system}:*',
-                         f'*:{partition}', f'{system}:{partition}']
-
-        return any(n in self.valid_systems for n in valid_matches)
-
-    def supports_environ(self, env_name):
-        if '*' in self.valid_prog_environs:
-            return True
-
-        return env_name in self.valid_prog_environs
 
     def is_local(self):
         '''Check if the test will execute locally.
@@ -1432,16 +1574,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             runtime = rt.runtime()
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.unique_name
+                self._current_environ.name, self.short_name
             )
             self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.unique_name
+                self._current_environ.name, self.short_name
             )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _setup_job(self, name, force_local=False, **job_opts):
+    def _create_job(self, name, force_local=False, **job_opts):
         '''Setup the job related to this check.'''
 
         if force_local:
@@ -1460,13 +1602,29 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           launcher,
                           name=name,
                           workdir=self._stagedir,
-                          max_pending_time=self.max_pending_time,
                           sched_access=self._current_partition.access,
-                          sched_exclusive_access=self.exclusive_access,
                           **job_opts)
 
-    def _setup_perf_logging(self):
-        self._perf_logger = logging.getperflogger(self)
+    def _setup_build_job(self, **job_opts):
+        self._build_job = self._create_job(f'rfm_build',
+                                           self.local or self.build_locally,
+                                           **job_opts)
+
+    def _setup_run_job(self, **job_opts):
+        self._job = self._create_job(f'rfm_job', self.local, **job_opts)
+
+    def _setup_container_platform(self):
+        try:
+            self.container_platform.emit_prepare_commands(self.stagedir)
+        except NotImplementedError:
+            cplatf_name = self.current_partition.container_runtime
+            if cplatf_name:
+                try:
+                    self.container_platform = ContainerPlatform.create_from(
+                        cplatf_name, self.container_platform
+                    )
+                except ValueError:
+                    pass
 
     @final
     def setup(self, partition, environ, **job_opts):
@@ -1496,13 +1654,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
+        self._setup_build_job(**job_opts)
+        self._setup_run_job(**job_opts)
+        self._setup_container_platform()
         self._resolve_fixtures()
-        self._job = self._setup_job(f'rfm_{self.unique_name}_job',
-                                    self.local,
-                                    **job_opts)
-        self._build_job = self._setup_job(f'rfm_{self.unique_name}_build',
-                                          self.local or self.build_locally,
-                                          **job_opts)
 
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
@@ -1541,8 +1696,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
-        if not self._current_environ:
-            raise PipelineError('no programming environment set')
 
         # Copy the check's resources to the stage directory
         if self.sourcesdir:
@@ -1603,8 +1756,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
-        user_environ = env.Environment(type(self).__name__,
-                                       self.modules, self.variables.items())
+        user_environ = Environment(self.unique_name,
+                                   self.modules, self.env_vars.items())
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
         self._build_job.time_limit = (
@@ -1612,6 +1765,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 f'systems/0/partitions/@{self.current_partition.name}'
                 f'/time_limit')
         )
+        # Get job options from managed resources and prepend them to
+        # build_job_opts. We want any user supplied options to be able to
+        # override those set by the framework.
+        resources_opts = self._map_resources_to_jobopts()
+        self._build_job.options = resources_opts + self._build_job.options
         with osext.change_dir(self._stagedir):
             # Prepare build job
             build_commands = [
@@ -1682,28 +1840,30 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
-        if not self.current_system or not self._current_partition:
-            raise PipelineError('no system or system partition is set')
 
-        if self.container_platform:
+        def _get_cp_env():
+            '''Retrieve the container platform environment.'''
             try:
-                cp_name = type(self.container_platform).__name__
-                cp_env = self._current_partition.container_environs[cp_name]
-            except KeyError as e:
-                raise PipelineError(
-                    'container platform not configured '
-                    'on the current partition: %s' % e) from None
+                cp_name = self.container_platform.name
+                return self.current_partition.container_environs[cp_name]
+            except KeyError:
+                return None
 
-            self.container_platform.validate()
-
+        cp = self.container_platform
+        if cp.image:
             # We replace executable and executable_opts in case of containers
-            self.executable = self.container_platform.launch_command(
-                self.stagedir)
-            self.executable_opts = []
-            prepare_container = self.container_platform.emit_prepare_commands(
-                self.stagedir)
-            if prepare_container:
-                self.prerun_cmds += prepare_container
+            try:
+                self.executable = cp.launch_command(self.stagedir)
+                self.executable_opts = []
+                prepare_container = cp.emit_prepare_commands(self.stagedir)
+                if prepare_container:
+                    self.prerun_cmds += prepare_container
+            except NotImplementedError:
+                raise PipelineError(
+                    "no container runtime was configured; "
+                    "consider setting the 'container_platform' test attribute "
+                    "or the corresponding partition configuration setting"
+                )
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
@@ -1714,6 +1874,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.job.time_limit = (self.time_limit or rt.runtime().get_option(
             f'systems/0/partitions/@{self.current_partition.name}/time_limit')
         )
+        self.job.max_pending_time = self.max_pending_time
+        self.job.exclusive_access = self.exclusive_access
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
 
@@ -1728,25 +1890,21 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             ' '.join(exec_cmd).strip(),
             *self.postrun_cmds
         ]
-        user_environ = env.Environment(type(self).__name__,
-                                       self.modules, self.variables.items())
+        user_environ = Environment(self.unique_name,
+                                   self.modules, self.env_vars.items())
         environs = [
             self._current_partition.local_env,
             self._current_environ,
             user_environ,
             self._cdt_environ
         ]
-        if self.container_platform and cp_env:
-            environs = [
-                self._current_partition.local_env,
-                self._current_environ,
-                cp_env,
-                user_environ,
-                self._cdt_environ
-            ]
+        if self.container_platform.image:
+            cp_env = _get_cp_env()
+            if cp_env:
+                environs.insert(2, cp_env)
 
         # num_gpus_per_node is a managed resource
-        if self.num_gpus_per_node > 0:
+        if self.num_gpus_per_node:
             self.extra_resources.setdefault(
                 '_rfm_gpu', {'num_gpus_per_node': self.num_gpus_per_node}
             )
@@ -1754,11 +1912,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Get job options from managed resources and prepend them to
         # job_opts. We want any user supplied options to be able to
         # override those set by the framework.
-        resources_opts = []
-        for r, v in self.extra_resources.items():
-            resources_opts.extend(
-                self._current_partition.get_resource(r, **v))
-
+        resources_opts = self._map_resources_to_jobopts()
         self._job.options = resources_opts + self._job.options
         with osext.change_dir(self._stagedir):
             try:
@@ -1781,6 +1935,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Update num_tasks if test is flexible
         if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
+
+    def _map_resources_to_jobopts(self):
+        resources_opts = []
+        for r, v in self.extra_resources.items():
+            resources_opts += self._current_partition.get_resource(r, **v)
+
+        return resources_opts
 
     @final
     def compile_complete(self):
@@ -1829,17 +1990,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._job.finished()
 
     @final
-    def poll(self):
-        '''See :func:`run_complete`.
-
-        .. deprecated:: 3.2
-
-        '''
-        user_deprecation_warning('calling poll() is deprecated; '
-                                 'please use run_complete() instead')
-        return self.run_complete()
-
-    @final
     def run_wait(self):
         '''Wait for the run phase of this test to finish.
 
@@ -1858,16 +2008,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
         self._job.wait()
-
-    @final
-    def wait(self):
-        '''See :func:`run_wait`.
-
-        .. deprecated:: 3.2
-        '''
-        user_deprecation_warning('calling wait() is deprecated; '
-                                 'please use run_wait() instead')
-        self.run_wait()
 
     @final
     def sanity(self):
@@ -1933,6 +2073,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             if not success:
                 raise SanityError()
 
+    def is_performance_check(self):
+        '''Return :obj:`True` if the test is a performance test.'''
+        return self.perf_variables or hasattr(self, 'perf_patterns')
+
     @final
     def check_performance(self):
         '''The performance checking phase of the regression test pipeline.
@@ -1955,98 +2099,74 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
 
+        if not self.is_performance_check():
+            return
+
+        perf_patterns = getattr(self, 'perf_patterns', None)
+
+        if perf_patterns is not None and self.perf_variables:
+            raise ReframeSyntaxError(
+                f"you cannot mix 'perf_patterns' and 'perf_variables' syntax"
+            )
+
+        # Convert `perf_patterns` to `perf_variables`
+        if perf_patterns:
+            for var, expr in self.perf_patterns.items():
+                # Retrieve the unit from the reference tuple
+                key = f'{self._current_partition.fullname}:{var}'
+                try:
+                    unit = self.reference[key][3]
+                    if unit is None:
+                        unit = ''
+                except KeyError:
+                    unit = ''
+
+                self.perf_variables[var] = sn.make_performance_function(expr,
+                                                                        unit)
+
+        # Evaluate the performance function and retrieve the metrics
         with osext.change_dir(self._stagedir):
-            if self.perf_variables or self._rfm_perf_fns:
-                if hasattr(self, 'perf_patterns'):
-                    raise ReframeSyntaxError(
-                        f"assigning a value to 'perf_patterns' conflicts ",
-                        f"with using the 'performance_function' decorator ",
-                        f"or setting a value to 'perf_variables'"
+            for tag, expr in self.perf_variables.items():
+                try:
+                    value = expr.evaluate()
+                    unit = expr.unit
+                except Exception as e:
+                    logging.getlogger().warning(
+                        f'skipping evaluation of performance variable '
+                        f'{tag!r}: {e}'
                     )
+                    continue
 
-                # Log the performance variables
-                self._setup_perf_logging()
-                for tag, expr in self.perf_variables.items():
-                    try:
-                        value = expr.evaluate()
-                        unit = expr.unit
-                    except Exception as e:
-                        logging.getlogger().warning(
-                            f'skipping evaluation of performance variable '
-                            f'{tag!r}: {e}'
-                        )
-                        continue
+                key = f'{self._current_partition.fullname}:{tag}'
+                try:
+                    ref = self.reference[key]
 
-                    key = f'{self._current_partition.fullname}:{tag}'
-                    try:
-                        ref = self.reference[key]
+                    # If units are also provided in the reference, raise
+                    # a warning if they match with the units provided by
+                    # the performance function.
+                    if len(ref) == 4:
+                        if ref[3] != unit:
+                            logging.getlogger().warning(
+                                f'reference unit ({key!r}) for the '
+                                f'performance variable {tag!r} '
+                                f'does not match the unit specified '
+                                f'in the performance function ({unit!r}): '
+                                f'{unit!r} will be used'
+                            )
 
-                        # If units are also provided in the reference, raise
-                        # a warning if they match with the units provided by
-                        # the performance function.
-                        if len(ref) == 4:
-                            if ref[3] != unit:
-                                logging.getlogger().warning(
-                                    f'reference unit ({key!r}) for the '
-                                    f'performance variable {tag!r} '
-                                    f'does not match the unit specified '
-                                    f'in the performance function ({unit!r}): '
-                                    f'{unit!r} will be used'
-                                )
+                        # Pop the unit from the ref tuple (redundant)
+                        ref = ref[:3]
+                except KeyError:
+                    if self.require_reference:
+                        raise PerformanceError(
+                            f'no reference value found for '
+                            f'performance variable {tag!r} on '
+                            f'system {self._current_partition.fullname!r}'
+                        ) from None
 
-                            # Pop the unit from the ref tuple (redundant)
-                            ref = ref[:3]
-                    except KeyError:
-                        ref = (0, None, None)
+                    ref = (0, None, None)
 
-                    self._perfvalues[key] = (value, *ref, unit)
-                    self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                      *ref, unit)
-            elif not hasattr(self, 'perf_patterns'):
-                return
-            else:
-                self._setup_perf_logging()
-                # Check if default reference perf values are provided and
-                # store all the variables tested in the performance check
-                has_default = False
-                variables = set()
-                for key, ref in self.reference.items():
-                    keyparts = key.split(self.reference.scope_separator)
-                    system = keyparts[0]
-                    varname = keyparts[-1]
-                    unit = ref[3]
-                    variables.add((varname, unit))
-                    if system == '*':
-                        has_default = True
-                        break
-
-                if not has_default:
-                    if not variables:
-                        # If empty, it means that self.reference was empty, so
-                        # try to infer their name from perf_patterns
-                        variables = {(name, None)
-                                     for name in self.perf_patterns.keys()}
-
-                    for var in variables:
-                        name, unit = var
-                        ref_tuple = (0, None, None, unit)
-                        self.reference.update({'*': {name: ref_tuple}})
-
-                # We first evaluate and log all performance values and then we
-                # check them against the reference. This way we always log them
-                # even if the don't meet the reference.
-                for tag, expr in self.perf_patterns.items():
-                    value = sn.evaluate(expr)
-                    key = f'{self._current_partition.fullname}:{tag}'
-                    if key not in self.reference:
-                        raise SanityError(
-                            f'tag {tag!r} not resolved in references for '
-                            f'{self._current_partition.fullname}'
-                        )
-
-                    self._perfvalues[key] = (value, *self.reference[key])
-                    self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                      *self.reference[key])
+                self._perfvalues[key] = (value, *ref, unit)
 
             # Check the performance variables against their references.
             for key, values in self._perfvalues.items():
@@ -2068,7 +2188,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                  'expected {1} (l={2}, u={3})' % tag))
                     )
                 except SanityError as e:
-                    raise PerformanceError(e)
+                    raise PerformanceError(e) from None
 
     def _copy_job_files(self, job, dst):
         if job is None:
@@ -2142,42 +2262,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
-    def _depends_on_func(self, how, subdeps=None, *args, **kwargs):
-        if args or kwargs:
-            raise ValueError('invalid arguments passed')
-
-        user_deprecation_warning("passing 'how' as an integer or passing "
-                                 "'subdeps' is deprecated; please have a "
-                                 "look at the user documentation")
-
-        if (subdeps is not None and
-            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
-            raise TypeError("subdeps argument must be of type "
-                            "`Dict[str, List[str]]' or `None'")
-
-        # Now return a proper when function
-        def exact(src, dst):
-            if not subdeps:
-                return False
-
-            p0, e0 = src
-            p1, e1 = dst
-
-            # DEPEND_EXACT allows dependencies inside the same partition
-            return ((p0 == p1) and (e0 in subdeps) and (e1 in subdeps[e0]))
-
-        # Follow the old definitions
-        # DEPEND_BY_ENV used to mean same env and same partition
-        if how == DEPEND_BY_ENV:
-            return udeps.by_case
-        # DEPEND_BY_ENV used to mean same partition
-        elif how == DEPEND_FULLY:
-            return udeps.by_part
-        elif how == DEPEND_EXACT:
-            return exact
-        else:
-            raise ValueError(f"unknown value passed to 'how' argument: {how}")
-
     def depends_on(self, target, how=None, *args, **kwargs):
         '''Add a dependency to another test.
 
@@ -2237,14 +2321,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             Passing an integer to the ``how`` argument as well as using the
             ``subdeps`` argument is deprecated.
 
+        .. versionchanged:: 4.0.0
+           Passing an integer to the ``how`` argument is no longer supported.
+
         '''
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
-
-        if (isinstance(how, int)):
-            # We are probably using the old syntax; try to get a
-            # proper how function
-            how = self._depends_on_func(how, *args, **kwargs)
 
         if how is None:
             how = udeps.by_case
@@ -2372,8 +2454,8 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._job = self._setup_job(f'rfm_{self.unique_name}_job',
-                                    self.local, **job_opts)
+        self._setup_run_job(**job_opts)
+        self._setup_container_platform()
         self._resolve_fixtures()
 
     def compile(self):
@@ -2429,9 +2511,8 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._build_job = self._setup_job(f'rfm_{self.unique_name}_build',
-                                          self.local or self.build_locally,
-                                          **job_opts)
+        self._setup_build_job(**job_opts)
+        self._setup_container_platform()
         self._resolve_fixtures()
 
     @property

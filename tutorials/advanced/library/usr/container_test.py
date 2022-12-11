@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# rfmdocstart: container_test
 import reframe as rfm
 import tutorials.advanced.library.lib as lib
 
@@ -18,4 +17,3 @@ class ContainerTest(lib.ContainerBase):
     def set_image_prefix(self):
         if self.platform == 'Singularity':
             self.image_prefix = 'docker://'
-# rfmdocend: container_test

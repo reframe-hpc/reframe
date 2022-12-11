@@ -1,29 +1,30 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+149af549
+  version:           4.0.0-dev.2+5ea6b7a6
   command:           './bin/reframe -c tutorials/basics/hello -R -l -v'
   launched by:       user@host
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '<builtin>'
+  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
   check search path: (R) '/home/user/Repositories/reframe/tutorials/basics/hello'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-xs3l6jud.log'
 
-./bin/reframe: skipping test file '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:13: name 'paramter' is not defined
+WARNING: skipping test file '/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py': name error: tutorials/basics/hello/hello2.py:13: name 'paramter' is not defined
     lang = paramter(['c', 'cpp'])
  (rerun with '-v' for more information)
 Traceback (most recent call last):
-  File "/home/user/Repositories/reframe/reframe/frontend/loader.py", line 237, in load_from_file
+  File "/home/user/Repositories/reframe/reframe/frontend/loader.py", line 205, in load_from_file
     util.import_module_from_file(filename, force)
   File "/home/user/Repositories/reframe/reframe/utility/__init__.py", line 109, in import_module_from_file
     return importlib.import_module(module_name)
-  File "/usr/local/Cellar/python@3.9/3.9.1_6/Frameworks/Python.framework/Versions/3.9/lib/python3.9/importlib/__init__.py", line 127, in import_module
+  File "/usr/local/Cellar/python@3.10/3.10.7/Frameworks/Python.framework/Versions/3.10/lib/python3.10/importlib/__init__.py", line 126, in import_module
     return _bootstrap._gcd_import(name[level:], package, level)
-  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
-  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
-  File "<frozen importlib._bootstrap_external>", line 790, in exec_module
-  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
   File "/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 12, in <module>
     class HelloMultiLangTest(rfm.RegressionTest):
   File "/home/user/Repositories/reframe/tutorials/basics/hello/hello2.py", line 13, in HelloMultiLangTest
@@ -31,13 +32,13 @@ Traceback (most recent call last):
 NameError: name 'paramter' is not defined
 
 Loaded 1 test(s)
-Generated 1 test case(s)
-Filtering test cases(s) by name: 1 remaining
-Filtering test cases(s) by tags: 1 remaining
-Filtering test cases(s) by other attributes: 1 remaining
-Final number of test cases: 1
+Generated 2 test case(s)
+Filtering test cases(s) by name: 2 remaining
+Filtering test cases(s) by tags: 2 remaining
+Filtering test cases(s) by other attributes: 2 remaining
+Final number of test cases: 2
 [List of matched checks]
-- HelloTest
+- HelloTest /2b3e4546
 Found 1 check(s)
 
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-l21cjjas.log'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-xs3l6jud.log'

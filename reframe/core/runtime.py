@@ -162,13 +162,17 @@ class RuntimeContext:
         '''
         return self._system.modules_system
 
-    def get_option(self, option):
+    def get_option(self, option, default=None):
         '''Get a configuration option.
 
         :arg option: The option to be retrieved.
+        :arg default: The value to return if ``option`` cannot be retrieved.
         :returns: The value of the option.
+
+        .. versionchanged:: 3.11.0
+          Add ``default`` named argument.
         '''
-        return self._site_config.get(option)
+        return self._site_config.get(option, default=default)
 
 
 # Global resources for the current host
@@ -231,7 +235,7 @@ def loadenv(*environs):
             else:
                 commands += modules_system.emit_load_commands(**mod)
 
-        for k, v in env.variables.items():
+        for k, v in env.env_vars.items():
             os.environ[k] = osext.expandvars(v)
             commands.append(f'export {k}={v}')
 
@@ -260,23 +264,145 @@ def is_env_loaded(environ):
     is_module_loaded = runtime().modules_system.is_module_loaded
     return (all(map(is_module_loaded, environ.modules)) and
             all(os.environ.get(k, None) == osext.expandvars(v)
-                for k, v in environ.variables.items()))
+                for k, v in environ.env_vars.items()))
+
+
+def _is_valid_part(part, valid_systems):
+    for spec in valid_systems:
+        if spec[0] not in ('+', '-', '%'):
+            # This is the standard case
+            sysname, partname = part.fullname.split(':')
+            valid_matches = ['*', '*:*', sysname, f'{sysname}:*',
+                             f'*:{partname}', f'{part.fullname}']
+            if spec in valid_matches:
+                return True
+        else:
+            plus_feats = []
+            minus_feats = []
+            props = {}
+            for subspec in spec.split(' '):
+                if subspec.startswith('+'):
+                    plus_feats.append(subspec[1:])
+                elif subspec.startswith('-'):
+                    minus_feats.append(subspec[1:])
+                elif subspec.startswith('%'):
+                    key, val = subspec[1:].split('=')
+                    props[key] = val
+
+            have_plus_feats = all(
+                ft in part.features or ft in part.resources
+                for ft in plus_feats
+            )
+            have_minus_feats = any(
+                ft in part.features or ft in part.resources
+                for ft in minus_feats
+            )
+            try:
+                have_props = True
+                for k, v in props.items():
+                    extra_value = part.extras[k]
+                    extra_type  = type(extra_value)
+                    if extra_value != extra_type(v):
+                        have_props = False
+                        break
+            except (KeyError, ValueError):
+                have_props = False
+
+            if have_plus_feats and not have_minus_feats and have_props:
+                return True
+
+    return False
+
+
+def _is_valid_env(env, valid_prog_environs):
+    if '*' in valid_prog_environs:
+        return True
+
+    for spec in valid_prog_environs:
+        if spec[0] not in ('+', '-', '%'):
+            # This is the standard case
+            if env.name == spec:
+                return True
+        else:
+            plus_feats = []
+            minus_feats = []
+            props = {}
+            for subspec in spec.split(' '):
+                if subspec.startswith('+'):
+                    plus_feats.append(subspec[1:])
+                elif subspec.startswith('-'):
+                    minus_feats.append(subspec[1:])
+                elif subspec.startswith('%'):
+                    key, val = subspec[1:].split('=')
+                    props[key] = val
+
+            have_plus_feats = all(ft in env.features for ft in plus_feats)
+            have_minus_feats = any(ft in env.features
+                                   for ft in minus_feats)
+            try:
+                have_props = True
+                for k, v in props.items():
+                    extra_value = env.extras[k]
+                    extra_type  = type(extra_value)
+                    if extra_value != extra_type(v):
+                        have_props = False
+                        break
+            except (KeyError, ValueError):
+                have_props = False
+
+            if have_plus_feats and not have_minus_feats and have_props:
+                return True
+
+    return False
+
+
+def valid_sysenv_comb(valid_systems, valid_prog_environs,
+                      check_systems=True, check_environs=True):
+    ret = {}
+    curr_sys = runtime().system
+    for part in curr_sys.partitions:
+        if check_systems and not _is_valid_part(part, valid_systems):
+            continue
+
+        ret[part] = []
+        for env in part.environs:
+            if check_environs and not _is_valid_env(env, valid_prog_environs):
+                continue
+
+            ret[part].append(env)
+
+    return ret
 
 
 class temp_environment:
     '''Context manager to temporarily change the environment.'''
 
-    def __init__(self, modules=[], variables=[]):
-        self._modules = modules
-        self._variables = variables
+    def __init__(self, modules=None, env_vars=None):
+        self._modules = modules or []
+        self._env_vars = env_vars or {}
 
     def __enter__(self):
-        new_env = Environment('_rfm_temp_env', self._modules, self._variables)
+        new_env = Environment('_rfm_temp_env', self._modules,
+                              self._env_vars.items())
         self._environ_save, _ = loadenv(new_env)
         return new_env
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._environ_save.restore()
+
+
+class temp_config:
+    '''Context manager to temporarily switch to specific configuration.'''
+
+    def __init__(self, system):
+        self.__to = system
+        self.__from = runtime().system.name
+
+    def __enter__(self):
+        runtime().site_config.select_subconfig(self.__to)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        runtime().site_config.select_subconfig(self.__from)
 
 
 # The following utilities are useful only for the unit tests
@@ -296,6 +422,7 @@ class temp_runtime:
             _runtime_context = None
         else:
             site_config = config.load_config(config_file)
+            site_config.validate()
             site_config.select_subconfig(sysname, ignore_resolve_errors=True)
             for opt, value in options.items():
                 site_config.add_sticky_option(opt, value)

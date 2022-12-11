@@ -15,18 +15,10 @@ ReFrame also offers a high-level and flexible abstraction for writing sanity and
 
 Finally, ReFrame offers a powerful and efficient runtime for running and managing the execution of tests, as well as integration with common logging facilities, where ReFrame can send live data from currently running performance tests.
 
-Use Cases
-=========
-
-A pre-release of ReFrame has been in production at the `Swiss National Supercomputing Centre <http://www.cscs.ch>`__ since early December 2016.
-The `first <https://github.com/eth-cscs/reframe/releases/tag/v2.2>`__ public release was in May 2017 and it is being actively developed since then.
-Several HPC centers around the globe have adopted ReFrame for testing and benchmarking their systems in an easy, consistent and reproducible way.
-You can read a couple of use cases `here <usecases.html>`__.
-
-
 Publications
 ============
 
+* Slides [`pdf <https://drive.google.com/file/d/1vmaWyRHgtq3DrYhSCVBzR8U5ErKbxGNf/view?usp=sharing>`__] @ `7th EasyBuild User Meeting 2022 <https://easybuild.io/eum22/>`__.
 * Slides [`pdf <https://drive.google.com/file/d/1kNZu1QNBDDsbKarzwNWYjTGKgOukg-96/view?usp=sharing>`__] @ `6th EasyBuild User Meeting 2021 <https://easybuild.io/eum21/>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1W7R5lfRkXvBpVDSZ7dVBadk_d3K4dFrS>`__] @ `5th EasyBuild User Meeting 2020 <https://github.com/easybuilders/easybuild/wiki/5th-EasyBuild-User-Meeting>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1Z3faPh9OSSXvlLHL07co3MRRn443dYsY>`__] @ `HPC System Testing BoF <https://sc19.supercomputing.org/session/?sess=sess324>`__, SC'19.
@@ -41,6 +33,12 @@ Publications
 * Slides [`pdf <https://drive.google.com/open?id=18VrCy0MTplGo67uxVbzYZicQChor9VSY>`__] @ `CUG 2017 <https://cug.org/cug-2017/>`__.
 
 
+Webinars
+========
+
+* "ReFrame – Efficient System and Application Performance Testing," CSCS Webinar, Aug. 29, 2022 [`slides <https://drive.google.com/file/d/1nOS_daleR79ZB1IaToVdW5mDpJQYRcY2/view?usp=sharing>`__] [`recording <https://youtu.be/NDxlKATEcQk>`__] [`demo run <https://asciinema.org/a/517693>`__].
+
+
 
 .. toctree::
    :caption: Table of Contents
@@ -50,7 +48,6 @@ Publications
    tutorials
    configure
    topics
-   usecases
    migration_2_to_3
    manuals
    hpctestlib

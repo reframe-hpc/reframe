@@ -231,18 +231,18 @@ def detect_topology():
             # No topology found, try to auto-detect it
             getlogger().debug(f'> no topology file found; auto-detecting...')
             modules = list(rt.system.preload_environ.modules)
-            vars = dict(rt.system.preload_environ.variables.items())
+            vars = dict(rt.system.preload_environ.env_vars.items())
             if _is_part_local(part):
                 modules += part.local_env.modules
-                vars.update(part.local_env.variables)
+                vars.update(part.local_env.env_vars)
 
                 # Unconditionally detect the system for fully local partitions
-                with runtime.temp_environment(modules=modules, variables=vars):
+                with runtime.temp_environment(modules=modules, env_vars=vars):
                     part._processor = ProcessorInfo(cpuinfo())
 
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
-                with runtime.temp_environment(modules=modules, variables=vars):
+                with runtime.temp_environment(modules=modules, env_vars=vars):
                     part._processor = ProcessorInfo(_remote_detect(part))
 
                 if part.processor.info:

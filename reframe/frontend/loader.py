@@ -8,6 +8,7 @@
 #
 
 import ast
+import contextlib
 import inspect
 import os
 import sys
@@ -17,8 +18,7 @@ import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
-from reframe.core.logging import getlogger
-from reframe.core.fixtures import FixtureRegistry
+from reframe.core.logging import getlogger, time_function
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
@@ -28,7 +28,7 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
     @property
     def valid(self):
-        return self._has_import
+        return self._has_import or self._has_regression_test
 
     def visit_Import(self, node):
         for m in node.names:
@@ -39,9 +39,17 @@ class RegressionCheckValidator(ast.NodeVisitor):
         if node.module is not None and node.module.startswith('reframe'):
             self._has_import = True
 
+    def visit_ClassDef(self, node):
+        for deco in node.decorator_list:
+            with contextlib.suppress(AttributeError):
+                if deco.attr == 'simple_test':
+                    self._has_regression_test = True
+                    break
+
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, recurse=False, external_vars=None):
+    def __init__(self, load_path, recurse=False, external_vars=None,
+                 skip_system_check=False, skip_prgenv_check=False):
         # Expand any environment variables and symlinks
         load_path = [os.path.realpath(osext.expandvars(p)) for p in load_path]
         self._load_path = osext.unique_abs_paths(load_path, recurse)
@@ -52,6 +60,8 @@ class RegressionCheckLoader:
 
         # Variables set in the command line
         self._external_vars = external_vars or {}
+        self._skip_system_check = bool(skip_system_check)
+        self._skip_prgenv_check = bool(skip_prgenv_check)
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.
@@ -156,60 +166,18 @@ class RegressionCheckLoader:
         This method tries to load the test registry from a given module and
         instantiates all the tests in the registry. The instantiated checks
         are validated before return.
-
-        For legacy reasons, a module might have the additional legacy registry
-        `_rfm_gettests`, which is a method that instantiates all the tests
-        registered with the deprecated `parameterized_test` decorator.
         '''
-        from reframe.core.pipeline import RegressionTest
-
-        # FIXME: Remove the legacy_registry after dropping parameterized_test
         registry = getattr(module, '_rfm_test_registry', None)
-        legacy_registry = getattr(module, '_rfm_gettests', None)
-        if not any((registry, legacy_registry)):
-            getlogger().debug('No tests registered')
-            return []
-
         self._set_defaults(registry)
-        test_pool = registry.instantiate_all() if registry else []
-        legacy_tests = legacy_registry() if legacy_registry else []
-        if self._external_vars and legacy_tests:
-            getlogger().warning(
-                "variables of tests using the deprecated "
-                "'@parameterized_test' decorator cannot be set externally; "
-                "please use the 'parameter' builtin in your tests"
-            )
-
-        # Merge registries
-        test_pool += legacy_tests
-
-        # Do a level-order traversal of the fixture registries of all tests in
-        # the test pool, instantiate all fixtures and generate the final set
-        # of candidate tests to load; the test pool is consumed at the end of
-        # the traversal and all instantiated tests (including fixtures) are
-        # stored in `candidate_tests`.
-        candidate_tests = []
-        fixture_registry = FixtureRegistry()
-        while test_pool:
-            tmp_registry = FixtureRegistry()
-            while test_pool:
-                c = test_pool.pop()
-                reg = getattr(c, '_rfm_fixture_registry', None)
-                candidate_tests.append(c)
-                if reg:
-                    tmp_registry.update(reg)
-
-            # Instantiate the new fixtures and update the registry
-            new_fixtures = tmp_registry.difference(fixture_registry)
-            test_pool = new_fixtures.instantiate_all()
-            fixture_registry.update(new_fixtures)
+        reset_sysenv = self._skip_prgenv_check << 1 | self._skip_system_check
+        if registry:
+            candidate_tests = registry.instantiate_all(reset_sysenv)
+        else:
+            candidate_tests = []
 
         # Post-instantiation validation of the candidate tests
-        tests = []
+        final_tests = []
         for c in candidate_tests:
-            if not isinstance(c, RegressionTest):
-                continue
-
             if not self._validate_check(c):
                 continue
 
@@ -218,15 +186,15 @@ class RegressionCheckLoader:
                 conflicted = self._loaded[c.unique_name]
             except KeyError:
                 self._loaded[c.unique_name] = testfile
-                tests.append(c)
+                final_tests.append(c)
             else:
                 raise NameConflictError(
                     f'test {c.unique_name!r} from {testfile!r} '
                     f'is already defined in {conflicted!r}'
                 )
 
-        getlogger().debug(f'  > Loaded {len(tests)} test(s)')
-        return tests
+        getlogger().debug(f'  > Loaded {len(final_tests)} test(s)')
+        return final_tests
 
     def load_from_file(self, filename, force=False):
         if not self._validate_source(filename):
@@ -264,6 +232,7 @@ class RegressionCheckLoader:
 
         return checks
 
+    @time_function
     def load_all(self, force=False):
         '''Load all checks in self._load_path.
 

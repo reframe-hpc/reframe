@@ -48,9 +48,9 @@ The :attr:`current_partition` and :attr:`current_environ` test attributes will b
 A `job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ will also be created for the test case containing information about the job to be submitted later in the pipeline.
 
 
----------------
-The Build Phase
----------------
+-----------------
+The Compile Phase
+-----------------
 
 During this phase a job script for the compilation of the test will be created and it will be submitted for execution.
 The source code associated with the test is compiled using the current programming environment.
@@ -160,6 +160,8 @@ There are a number of things to notice in this diagram:
 .. versionchanged:: 3.10.0
    The ``compile`` stage is now also executed asynchronously.
 
+
+.. _execution-contexts:
 
 --------------------------------------
 Where each pipeline stage is executed?

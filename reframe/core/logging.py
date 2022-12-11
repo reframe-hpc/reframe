@@ -11,16 +11,17 @@ import os
 import re
 import requests
 import shutil
-import sys
 import socket
+import sys
 import time
 import urllib
 
-import reframe.utility as util
 import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
+from reframe.core.warnings import suppress_deprecations
+from reframe.utility.profile import TimeProfiler
 
 
 # Global configuration options for logging
@@ -127,7 +128,7 @@ class MultiFileHandler(logging.FileHandler):
     information from the log record.
     '''
 
-    def __init__(self, prefix, mode='a', encoding=None):
+    def __init__(self, prefix, mode='a', encoding=None, fmt=None, perffmt=None):
         super().__init__(prefix, mode, encoding, delay=True)
 
         # Reset FileHandler's filename
@@ -135,7 +136,76 @@ class MultiFileHandler(logging.FileHandler):
         self._prefix = prefix
 
         # Associates filenames with open streams
-        self._streams = {}
+        self.__streams = {}
+
+        # Format specifiers
+        self.__fmt = fmt
+        self.__perffmt = perffmt
+        self.__attr_patt = re.compile(r'\%\((.*?)\)s(.)?')
+
+    def __generate_header(self, record):
+        # Generate the header from the record and fmt
+        header = ''
+        for m in self.__attr_patt.finditer(self.__fmt):
+            attr = m.group(1)
+            delim = m.group(2)
+            if attr == 'check_perfvalues':
+                # Expand based on the perffmt
+                delim_p = ''
+                for var in record.check_perfvalues:
+                    name = var.split(':')[-1]
+                    for m0 in self.__attr_patt.finditer(self.__perffmt):
+                        attr_p  = m0.group(1)
+                        delim_p = m0.group(2)
+                        header += attr_p.replace('check_perf', name)
+                        if delim_p:
+                            header += delim_p
+
+                if delim_p:
+                    header = header.rstrip(delim_p)
+            elif attr.startswith('check_'):
+                header += attr[6:]
+            else:
+                header += attr
+
+            if delim:
+                header += delim
+
+        return header
+
+    def _emit_header(self, record):
+        if self.baseFilename in self.__streams:
+            return
+
+        record_header = self.__generate_header(record)
+
+        # We are opening a file for the first time;
+        # check if the header has changed
+        try:
+            header = None
+            with open(self.baseFilename) as fp:
+                header = fp.readline().strip()
+        except FileNotFoundError:
+            return
+        else:
+            if header == record_header:
+                return
+
+            # Header changed; move the old file
+            hcnt = 0
+            while os.path.exists(self.baseFilename + f'.h{hcnt}'):
+                hcnt += 1
+                continue
+
+            os.rename(self.baseFilename, self.baseFilename + f'.h{hcnt}')
+        finally:
+            # Open the file for writing and write the header
+            fp = open(self.baseFilename,
+                      mode=self.mode, encoding=self.encoding)
+            if record_header != header:
+                fp.write(f'{record_header}\n')
+
+            self.__streams[self.baseFilename] = fp
 
     def emit(self, record):
         try:
@@ -147,15 +217,16 @@ class MultiFileHandler(logging.FileHandler):
         except OSError as e:
             raise LoggingError('logging failed') from e
 
-        self.baseFilename = os.path.join(dirname,
-                                         f'{record.__rfm_check__.name}.log')
-        self.stream = self._streams.get(self.baseFilename, None)
+        self.baseFilename = os.path.join(
+            dirname, f'{record.__rfm_check__.short_name}.log'
+        )
+        self._emit_header(record)
+        self.stream = self.__streams[self.baseFilename]
         super().emit(record)
-        self._streams[self.baseFilename] = self.stream
 
     def close(self):
         # Close all open streams
-        for s in self._streams.values():
+        for s in self.__streams.values():
             self.stream = s
             super().close()
 
@@ -187,11 +258,33 @@ class CheckFieldFormatter(logging.Formatter):
     regression test.'''
 
     # NOTE: This formatter will work only for the '%' style
-    def __init__(self, fmt=None, datefmt=None, style='%'):
+    def __init__(self, fmt=None, datefmt=None, perffmt=None, style='%'):
         super().__init__(fmt, datefmt, style)
 
         self.__fmt = fmt
+        self.__fmtperf = perffmt[:-1] if perffmt else ''
         self.__specs = re.findall(r'\%\((\S+?)\)s', fmt)
+        self.__delim = perffmt[-1] if perffmt else ''
+
+    def _format_perf(self, perfvars):
+        chunks = []
+        for var, info in perfvars.items():
+            val, ref, lower, upper, unit = info
+            record = {
+                'check_perf_var': var.split(':')[-1],
+                'check_perf_value': val,
+                'check_perf_unit': unit,
+                'check_perf_ref': ref,
+                'check_perf_lower': lower,
+                'check_perf_upper': upper
+            }
+            try:
+                chunks.append(self.__fmtperf % record)
+            except ValueError:
+                chunks.append("<error formatting the performance record: "
+                              "please check the 'format_perfvars' string>")
+
+        return self.__delim.join(chunks)
 
     def formatMessage(self, record):
         for s in self.__specs:
@@ -200,7 +293,9 @@ class CheckFieldFormatter(logging.Formatter):
 
         record_proxy = dict(record.__dict__)
         for k, v in record_proxy.items():
-            if k.startswith('check_'):
+            if k == 'check_perfvalues':
+                record_proxy[k] = self._format_perf(v)
+            elif k.startswith('check_'):
                 record_proxy[k] = _xfmt(v)
 
         # Now format `check_job_completion_time` according to `datefmt`
@@ -211,7 +306,11 @@ class CheckFieldFormatter(logging.Formatter):
                 time.localtime(ct), datefmt
             )
 
-        return self.__fmt % record_proxy
+        try:
+            return self.__fmt % record_proxy
+        except ValueError:
+            return ("<error formatting the log message: "
+                    "please check the 'format' string>")
 
 
 class RFC3339Formatter(CheckFieldFormatter):
@@ -224,12 +323,32 @@ class RFC3339Formatter(CheckFieldFormatter):
             return _format_time_rfc3339(timestamp, datefmt)
 
 
-def _create_logger(site_config, handlers_group):
+def _create_logger(site_config, *handlers_groups):
     level = site_config.get('logging/0/level')
     logger = Logger('reframe')
     logger.setLevel(_log_level_values[level])
-    for handler in _extract_handlers(site_config, handlers_group):
-        logger.addHandler(handler)
+
+    def stream_handler_kind(handler):
+        if not isinstance(handler, logging.StreamHandler):
+            return None
+        elif handler.stream is sys.stdout:
+            return 'stdout'
+        elif handler.stream is sys.stderr:
+            return 'stderr'
+        else:
+            return None
+
+    stream_kinds = []
+    for hgrp in handlers_groups:
+        for handler in _extract_handlers(site_config, hgrp):
+            kind = stream_handler_kind(handler)
+            if kind in stream_kinds:
+                continue
+
+            if kind:
+                stream_kinds.append(kind)
+
+            logger.addHandler(handler)
 
     return logger
 
@@ -250,13 +369,17 @@ def _create_file_handler(site_config, config_prefix):
 
 
 def _create_filelog_handler(site_config, config_prefix):
-    basedir = os.path.abspath(
+    basedir = os.path.abspath(os.path.join(
+        site_config.get(f'systems/0/prefix'),
         osext.expandvars(site_config.get(f'{config_prefix}/basedir'))
-    )
+    ))
     prefix  = osext.expandvars(site_config.get(f'{config_prefix}/prefix'))
     filename_patt = os.path.join(basedir, prefix)
     append = site_config.get(f'{config_prefix}/append')
-    return MultiFileHandler(filename_patt, mode='a+' if append else 'w+')
+    format = site_config.get(f'{config_prefix}/format')
+    format_perf = site_config.get(f'{config_prefix}/format_perfvars')
+    return MultiFileHandler(filename_patt, mode='a+' if append else 'w+',
+                            fmt=format, perffmt=format_perf)
 
 
 def _create_syslog_handler(site_config, config_prefix):
@@ -311,7 +434,8 @@ def _create_stream_handler(site_config, config_prefix):
 def _create_graylog_handler(site_config, config_prefix):
     try:
         import pygelf
-    except ImportError:
+    except ImportError as err:
+        getlogger().warning(f'could not import pygelf module: {err}')
         return None
 
     address = site_config.get(f'{config_prefix}/address')
@@ -370,7 +494,8 @@ def _create_httpjson_handler(site_config, config_prefix):
         return None
 
     extras = site_config.get(f'{config_prefix}/extras')
-    return HTTPJSONHandler(url, extras)
+    ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
+    return HTTPJSONHandler(url, extras, ignore_keys)
 
 
 class HTTPJSONHandler(logging.Handler):
@@ -385,20 +510,25 @@ class HTTPJSONHandler(logging.Handler):
         'stack_info', 'thread', 'threadName', 'exc_text'
     }
 
-    def __init__(self, url, extras=None):
+    def __init__(self, url, extras=None, ignore_keys=None):
         super().__init__()
         self._url = url
         self._extras = extras
+        self._ignore_keys = ignore_keys
 
     def _record_to_json(self, record):
+        def _can_send(key):
+            return not (
+                key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS or
+                (self._ignore_keys and key in self._ignore_keys)
+            )
+
         json_record = {
-            k: v for k, v in record.__dict__.items()
-            if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
+            k: v for k, v in record.__dict__.items() if _can_send(k)
         }
         if self._extras:
             json_record.update({
-                k: v for k, v in self._extras.items()
-                if not (k.startswith('_') or k in HTTPJSONHandler.LOG_ATTRS)
+                k: v for k, v in self._extras.items() if _can_send(k)
             })
 
         return _xfmt(json_record).encode('utf-8')
@@ -453,7 +583,9 @@ def _extract_handlers(site_config, handlers_group):
         level = site_config.get(f'{handler_prefix}/{i}/level')
         fmt = site_config.get(f'{handler_prefix}/{i}/format')
         datefmt = site_config.get(f'{handler_prefix}/{i}/datefmt')
-        hdlr.setFormatter(RFC3339Formatter(fmt=fmt, datefmt=datefmt))
+        perffmt = site_config.get(f'{handler_prefix}/{i}/format_perfvars')
+        hdlr.setFormatter(RFC3339Formatter(fmt=fmt,
+                                           datefmt=datefmt, perffmt=perffmt))
         hdlr.setLevel(_check_level(level))
         handlers.append(hdlr)
 
@@ -540,6 +672,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
                 'check_perf_unit': None,
+                'check_result': None,
                 'osuser':  osext.osuser(),
                 'osgroup': osext.osgroup(),
                 'version': osext.reframe_version(),
@@ -563,66 +696,52 @@ class LoggerAdapter(logging.LoggerAdapter):
     def _update_check_extras(self):
         '''Return a dictionary with all the check-specific information.'''
 
-        exclude_check_attrs = {'build_job', 'current_environ',
-                               'current_partition', 'current_system', 'job'}
         if self.check is None:
             return
 
-        for attr, val in util.attrs(self.check).items():
-            if not attr.startswith('_') and attr not in exclude_check_attrs:
-                self.extra[f'check_{attr}'] = val
+        check_type = type(self.check)
+        for attr, alt_name in check_type.loggable_attrs():
+            extra_name  = alt_name or attr
 
+            with suppress_deprecations():
+                # In case of AttributeError, i.e., the variable is undefined,
+                # we set the value to None
+                val = getattr(self.check, attr, None)
+
+            if attr in check_type.raw_params:
+                # Attribute is parameter, so format it
+                val = check_type.raw_params[attr].format(val)
+
+            self.extra[f'check_{extra_name}'] = val
+
+        # Add special extras
         self.extra['check_info'] = self.check.info()
+        self.extra['check_job_completion_time'] = _format_time_rfc3339(
+            time.localtime(self.extra['check_job_completion_time_unix']),
+            '%FT%T%:z'
+        )
 
-        # Treat special cases
-        if self.check.current_system:
-            self.extra['check_system'] = self.check.current_system.name
-
-        if self.check.current_partition:
-            cp = self.check.current_partition.fullname
-            self.extra['check_partition'] = self.check.current_partition.name
-
-            # When logging performance references, we need only those of the
-            # current system
-            self.extra['check_reference'] = jsonext.dumps(
-                self.check.reference.scope(cp)
-            )
-
-        if self.check.current_environ:
-            self.extra['check_environ'] = self.check.current_environ.name
-
-        if self.check.job:
-            # Create extras for job attributes
-            for attr, val in util.attrs(self.check.job).items():
-                if not attr.startswith('_'):
-                    self.extra[f'check_job_{attr}'] = val
-
-            # Treat aliases
-            self.extra['check_jobid'] = self.extra['check_job_jobid']
-            if self.check.job.completion_time:
-                # Here we preformat the `check_job_completion_time`, because
-                # the Graylog handler does not use a formatter
-                ct = self.check.job.completion_time
-                ct_formatted = _format_time_rfc3339(
-                    time.localtime(ct), '%FT%T%:z'
-                )
-                self.extra['check_job_completion_time_unix'] = ct
-                self.extra['check_job_completion_time'] = ct_formatted
-
-    def log_performance(self, level, tag, value, ref,
-                        low_thres, upper_thres, unit=None, *, msg=None):
-
-        # Update the performance-relevant extras and log the message
-        self.extra['check_perf_var'] = tag
-        self.extra['check_perf_value'] = value
-        self.extra['check_perf_ref'] = ref
-        self.extra['check_perf_lower_thres'] = low_thres
-        self.extra['check_perf_upper_thres'] = upper_thres
-        self.extra['check_perf_unit'] = unit
+    def log_performance(self, level, task, msg=None, multiline=False):
+        self.extra['check_partition'] = task.testcase.partition.name
+        self.extra['check_environ'] = task.testcase.environ.name
+        self.extra['check_result'] = 'pass' if task.succeeded else 'fail'
         if msg is None:
             msg = 'sent by ' + self.extra['osuser']
 
-        self.log(level, msg)
+        if multiline:
+            # Log one record for each performance variable
+            check = self.extra['__rfm_check__']
+            for var, info in check.perfvalues.items():
+                val, ref, lower, upper, unit = info
+                self.extra['check_perf_var'] = var.split(':')[-1]
+                self.extra['check_perf_value'] = val
+                self.extra['check_perf_ref'] = ref
+                self.extra['check_perf_lower_thres'] = lower
+                self.extra['check_perf_upper_thres'] = upper
+                self.extra['check_perf_unit'] = unit
+                self.log(level, msg)
+        else:
+            self.log(level, msg)
 
     def process(self, msg, kwargs):
         # Setup dynamic fields of the check
@@ -652,14 +771,14 @@ class LoggerAdapter(logging.LoggerAdapter):
 
             _WARN_ONCE.add(message)
 
-        message = f'{sys.argv[0]}: {message}'
+        message = f'WARNING: {message}'
         if self.colorize:
             message = color.colorize(message, color.YELLOW)
 
         super().warning(message, *args, **kwargs)
 
     def error(self, message, *args, **kwargs):
-        message = f'{sys.argv[0]}: {message}'
+        message = f'ERROR: {message}'
         if self.colorize:
             message = color.colorize(message, color.RED)
 
@@ -724,7 +843,7 @@ def configure_logging(site_config):
         _context_logger = null_logger
         return
 
-    _logger = _create_logger(site_config, 'handlers')
+    _logger = _create_logger(site_config, 'handlers$', 'handlers')
     _perf_logger = _create_logger(site_config, 'handlers_perflog')
     _context_logger = LoggerAdapter(_logger)
 
@@ -746,3 +865,31 @@ def getlogger():
 
 def getperflogger(check):
     return LoggerAdapter(_perf_logger, check)
+
+
+# Global framework profiler
+_profiler = TimeProfiler()
+
+
+def getprofiler():
+    return _profiler
+
+
+def time_function(fn):
+    '''Decorator for timing a function using the global profiler'''
+
+    def _fn(*args, **kwargs):
+        with _profiler.time_region(fn.__qualname__):
+            return fn(*args, **kwargs)
+
+    return _fn
+
+
+def time_function_noexit(fn):
+    '''Decorator for timing a function using the global profiler'''
+
+    def _fn(*args, **kwargs):
+        _profiler.enter_region(fn.__qualname__)
+        return fn(*args, **kwargs)
+
+    return _fn

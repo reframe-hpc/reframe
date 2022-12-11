@@ -1,25 +1,26 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+4fc5b12c
+  version:           4.0.0-dev.2+5ea6b7a6
   command:           './bin/reframe -c tutorials/advanced/parameterized/stream.py -l'
   launched by:       user@host
   working directory: '/home/user/Repositories/reframe'
-  settings file:     '/home/user/Repositories/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
   check search path: '/home/user/Repositories/reframe/tutorials/advanced/parameterized/stream.py'
   stage directory:   '/home/user/Repositories/reframe/stage'
   output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-lou71c2g.log'
 
 [List of matched checks]
-- StreamMultiSysTest %num_bytes=536870912
-- StreamMultiSysTest %num_bytes=268435456
-- StreamMultiSysTest %num_bytes=134217728
-- StreamMultiSysTest %num_bytes=67108864
-- StreamMultiSysTest %num_bytes=33554432
-- StreamMultiSysTest %num_bytes=16777216
-- StreamMultiSysTest %num_bytes=8388608
-- StreamMultiSysTest %num_bytes=4194304
-- StreamMultiSysTest %num_bytes=2097152
-- StreamMultiSysTest %num_bytes=1048576
-- StreamMultiSysTest %num_bytes=524288
+- StreamMultiSysTest %num_bytes=536870912 /cf10843f
+- StreamMultiSysTest %num_bytes=268435456 /97fb363f
+- StreamMultiSysTest %num_bytes=134217728 /7b4d01d3
+- StreamMultiSysTest %num_bytes=67108864 /530b0154
+- StreamMultiSysTest %num_bytes=33554432 /7199fc93
+- StreamMultiSysTest %num_bytes=16777216 /9d1b9ea8
+- StreamMultiSysTest %num_bytes=8388608 /3f29039f
+- StreamMultiSysTest %num_bytes=4194304 /e30054cd
+- StreamMultiSysTest %num_bytes=2097152 /45efaec5
+- StreamMultiSysTest %num_bytes=1048576 /92327981
+- StreamMultiSysTest %num_bytes=524288 /eb104cd0
 Found 11 check(s)
 
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-ka9llk6d.log'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-lou71c2g.log'

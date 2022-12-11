@@ -1,68 +1,69 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+605af31a
+  version:           4.0.0-dev.2
   command:           './bin/reframe -c tutorials/deps/osu_benchmarks.py -lC'
   launched by:       user@host
   working directory: '/home/user/Devel/reframe'
-  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/daint.py'
   check search path: '/home/user/Devel/reframe/tutorials/deps/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
+  log files:         '/tmp/rfm-fremrbwf.log'
 
 [List of matched checks]
-- OSUAllreduceTest %mpi_tasks=16 @daint:gpu+gnu
-    ^OSUBuildTest @daint:gpu+gnu
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=16 @daint:gpu+intel
-    ^OSUBuildTest @daint:gpu+intel
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=16 @daint:gpu+pgi
-    ^OSUBuildTest @daint:gpu+pgi
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=8 @daint:gpu+gnu
-    ^OSUBuildTest @daint:gpu+gnu
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=8 @daint:gpu+intel
-    ^OSUBuildTest @daint:gpu+intel
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=8 @daint:gpu+pgi
-    ^OSUBuildTest @daint:gpu+pgi
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=4 @daint:gpu+gnu
-    ^OSUBuildTest @daint:gpu+gnu
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=4 @daint:gpu+intel
-    ^OSUBuildTest @daint:gpu+intel
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=4 @daint:gpu+pgi
-    ^OSUBuildTest @daint:gpu+pgi
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=2 @daint:gpu+gnu
-    ^OSUBuildTest @daint:gpu+gnu
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=2 @daint:gpu+intel
-    ^OSUBuildTest @daint:gpu+intel
-      ^OSUDownloadTest @daint:login+builtin
-- OSUAllreduceTest %mpi_tasks=2 @daint:gpu+pgi
-    ^OSUBuildTest @daint:gpu+pgi
-      ^OSUDownloadTest @daint:login+builtin
-- OSUBandwidthTest @daint:gpu+gnu
-    ^OSUBuildTest @daint:gpu+gnu
-      ^OSUDownloadTest @daint:login+builtin
-- OSUBandwidthTest @daint:gpu+intel
-    ^OSUBuildTest @daint:gpu+intel
-      ^OSUDownloadTest @daint:login+builtin
-- OSUBandwidthTest @daint:gpu+pgi
-    ^OSUBuildTest @daint:gpu+pgi
-      ^OSUDownloadTest @daint:login+builtin
-- OSULatencyTest @daint:gpu+gnu
-    ^OSUBuildTest @daint:gpu+gnu
-      ^OSUDownloadTest @daint:login+builtin
-- OSULatencyTest @daint:gpu+intel
-    ^OSUBuildTest @daint:gpu+intel
-      ^OSUDownloadTest @daint:login+builtin
-- OSULatencyTest @daint:gpu+pgi
-    ^OSUBuildTest @daint:gpu+pgi
-      ^OSUDownloadTest @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=16 /7f033d39 @daint:gpu+gnu
+    ^OSUBuildTest /19b4fb56 @daint:gpu+gnu
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=16 /7f033d39 @daint:gpu+intel
+    ^OSUBuildTest /19b4fb56 @daint:gpu+intel
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=16 /7f033d39 @daint:gpu+nvidia
+    ^OSUBuildTest /19b4fb56 @daint:gpu+nvidia
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=8 /005fca19 @daint:gpu+gnu
+    ^OSUBuildTest /19b4fb56 @daint:gpu+gnu
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=8 /005fca19 @daint:gpu+intel
+    ^OSUBuildTest /19b4fb56 @daint:gpu+intel
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=8 /005fca19 @daint:gpu+nvidia
+    ^OSUBuildTest /19b4fb56 @daint:gpu+nvidia
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=4 /84b85d90 @daint:gpu+gnu
+    ^OSUBuildTest /19b4fb56 @daint:gpu+gnu
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=4 /84b85d90 @daint:gpu+intel
+    ^OSUBuildTest /19b4fb56 @daint:gpu+intel
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=4 /84b85d90 @daint:gpu+nvidia
+    ^OSUBuildTest /19b4fb56 @daint:gpu+nvidia
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=2 /9d550c4f @daint:gpu+gnu
+    ^OSUBuildTest /19b4fb56 @daint:gpu+gnu
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=2 /9d550c4f @daint:gpu+intel
+    ^OSUBuildTest /19b4fb56 @daint:gpu+intel
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUAllreduceTest %mpi_tasks=2 /9d550c4f @daint:gpu+nvidia
+    ^OSUBuildTest /19b4fb56 @daint:gpu+nvidia
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUBandwidthTest /764cdb0b @daint:gpu+gnu
+    ^OSUBuildTest /19b4fb56 @daint:gpu+gnu
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUBandwidthTest /764cdb0b @daint:gpu+intel
+    ^OSUBuildTest /19b4fb56 @daint:gpu+intel
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSUBandwidthTest /764cdb0b @daint:gpu+nvidia
+    ^OSUBuildTest /19b4fb56 @daint:gpu+nvidia
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSULatencyTest /14f35a43 @daint:gpu+gnu
+    ^OSUBuildTest /19b4fb56 @daint:gpu+gnu
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSULatencyTest /14f35a43 @daint:gpu+intel
+    ^OSUBuildTest /19b4fb56 @daint:gpu+intel
+      ^OSUDownloadTest /7de668df @daint:login+builtin
+- OSULatencyTest /14f35a43 @daint:gpu+nvidia
+    ^OSUBuildTest /19b4fb56 @daint:gpu+nvidia
+      ^OSUDownloadTest /7de668df @daint:login+builtin
 Concretized 22 test case(s)
 
-Log file(s) saved in '/tmp/rfm-l3eamaiy.log'
+Log file(s) saved in '/tmp/rfm-fremrbwf.log'

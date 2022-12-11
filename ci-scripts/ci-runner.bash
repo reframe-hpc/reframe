@@ -41,17 +41,10 @@ checked_exec()
 
 run_tutorial_checks()
 {
-    cmd="./bin/reframe -C tutorials/config/settings.py -J account=jenscscs \
+    export RFM_AUTODETECT_XTHOSTNAME=1
+    cmd="./bin/reframe -C tutorials/config/daint_ext.py -J account=jenscscs \
 --save-log-files --flex-alloc-nodes=2 -r -x HelloThreadedExtendedTest|BZip2.*Check $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
-    checked_exec $cmd
-}
-
-run_user_checks()
-{
-    cmd="./bin/reframe -C config/cscs.py --save-log-files \
--r --flex-alloc-nodes=2 -t production|benchmark $@"
-    echo "[INFO] Running user checks with \`$cmd'"
     checked_exec $cmd
 }
 
@@ -155,6 +148,11 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
             tutorialchecks_path="${tutorialchecks_path} -c ${check}"
         done
 
+        if [[ $(hostname) =~ daint ]]; then
+            echo "[INFO] Applying tutorial patch for daint"
+            patch -s -p0 < ci-scripts/tutorials.patch
+        fi
+
         echo "[INFO] Modified tutorial checks"
         echo ${tutorialchecks_path}
         for i in ${!invocations[@]}; do
@@ -165,6 +163,7 @@ else
     # Run unit tests with the scheduler backends
     tempdir=$(mktemp -d -p $SCRATCH)
     echo "[INFO] Using temporary directory: $tempdir"
+    export RFM_AUTODETECT_XTHOSTNAME=1
     if [[ $(hostname) =~ dom ]]; then
         PATH_save=$PATH
         export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
@@ -185,26 +184,6 @@ else
 
     if [ $CI_EXITCODE -eq 0 ]; then
         /bin/rm -rf $tempdir
-    fi
-
-    # Find modified or added user checks
-    userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
-                   grep -e '^cscs-checks/.*\.py') )
-    if [ ${#userchecks[@]} -ne 0 ]; then
-        userchecks_path=""
-        for check in ${userchecks[@]}; do
-            userchecks_path="${userchecks_path} -c ${check}"
-        done
-
-        echo "[INFO] Modified user checks"
-        echo ${userchecks_path}
-
-        #
-        # Running the user checks
-        #
-        for i in ${!invocations[@]}; do
-            run_user_checks ${userchecks_path} ${invocations[i]}
-        done
     fi
 fi
 exit $CI_EXITCODE

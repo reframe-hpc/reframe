@@ -1,56 +1,57 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+605af31a
+  version:           4.0.0-dev.2
   command:           './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -l'
   launched by:       user@host
   working directory: '/home/user/Devel/reframe'
-  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/daint.py'
   check search path: '/home/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
+  log files:         '/tmp/rfm-to7wa4gh.log'
 
 [List of matched checks]
-- osu_allreduce_test %mpi_tasks=16
-    ^build_osu_benchmarks ~daint:gpu+gnu
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+intel
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
-      ^fetch_osu_benchmarks ~daint
-- osu_allreduce_test %mpi_tasks=8
-    ^build_osu_benchmarks ~daint:gpu+gnu
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+intel
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
-      ^fetch_osu_benchmarks ~daint
-- osu_allreduce_test %mpi_tasks=4
-    ^build_osu_benchmarks ~daint:gpu+gnu
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+intel
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
-      ^fetch_osu_benchmarks ~daint
-- osu_allreduce_test %mpi_tasks=2
-    ^build_osu_benchmarks ~daint:gpu+gnu
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+intel
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
-      ^fetch_osu_benchmarks ~daint
-- osu_bandwidth_test
-    ^build_osu_benchmarks ~daint:gpu+gnu
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+intel
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
-      ^fetch_osu_benchmarks ~daint
-- osu_latency_test
-    ^build_osu_benchmarks ~daint:gpu+gnu
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+intel
-      ^fetch_osu_benchmarks ~daint
-    ^build_osu_benchmarks ~daint:gpu+pgi
-      ^fetch_osu_benchmarks ~daint
+- osu_allreduce_test %mpi_tasks=16 /1fe48834
+    ^build_osu_benchmarks ~daint:gpu+gnu /f3269d42
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+intel /4d450880
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+nvidia /e9b8d152
+      ^fetch_osu_benchmarks ~daint /79cd6023
+- osu_allreduce_test %mpi_tasks=8 /ae01c137
+    ^build_osu_benchmarks ~daint:gpu+gnu /f3269d42
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+intel /4d450880
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+nvidia /e9b8d152
+      ^fetch_osu_benchmarks ~daint /79cd6023
+- osu_allreduce_test %mpi_tasks=4 /2129dc34
+    ^build_osu_benchmarks ~daint:gpu+gnu /f3269d42
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+intel /4d450880
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+nvidia /e9b8d152
+      ^fetch_osu_benchmarks ~daint /79cd6023
+- osu_allreduce_test %mpi_tasks=2 /9f29c081
+    ^build_osu_benchmarks ~daint:gpu+gnu /f3269d42
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+intel /4d450880
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+nvidia /e9b8d152
+      ^fetch_osu_benchmarks ~daint /79cd6023
+- osu_bandwidth_test /026711a1
+    ^build_osu_benchmarks ~daint:gpu+gnu /f3269d42
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+intel /4d450880
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+nvidia /e9b8d152
+      ^fetch_osu_benchmarks ~daint /79cd6023
+- osu_latency_test /d2c978ad
+    ^build_osu_benchmarks ~daint:gpu+gnu /f3269d42
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+intel /4d450880
+      ^fetch_osu_benchmarks ~daint /79cd6023
+    ^build_osu_benchmarks ~daint:gpu+nvidia /e9b8d152
+      ^fetch_osu_benchmarks ~daint /79cd6023
 Found 6 check(s)
 
-Log file(s) saved in '/tmp/rfm-eopdze64.log'
+Log file(s) saved in '/tmp/rfm-to7wa4gh.log'

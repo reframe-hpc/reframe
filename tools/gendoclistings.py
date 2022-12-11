@@ -23,7 +23,7 @@ def remove_nocolor_opt(s):
 
 
 def remove_system_opt(s):
-    return s.replace(' --system=catalina', '')
+    return s.replace(' --system=tresa', '')
 
 
 def replace_home(s):
@@ -36,7 +36,7 @@ def replace_user(s):
 
 
 def replace_hostname(s):
-    host = socket.getfqdn()
+    host = socket.gethostname()
     return s.replace(host, 'host')
 
 
@@ -66,42 +66,53 @@ LISTINGS = {
         env={'RFM_COLORIZE': 'n'},
         xfail=True
     ),
-    'hello2_catalina': ListingInfo(
-        './bin/reframe -C tutorials/config/settings.py --system=catalina -c tutorials/basics/hello/hello2.py -r',   # noqa: E501
+    'hello2_tresa': ListingInfo(
+        './bin/reframe -C tutorials/config/tresa.py -c tutorials/basics/hello/hello2.py -r',   # noqa: E501
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},
         xfail=False
     ),
     'hellomp1': ListingInfo(
-        './bin/reframe --system=catalina -c tutorials/basics/hellomp/hellomp1.py -r',   # noqa: E501
+        './bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r',   # noqa: E501
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/tresa.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'hellomp2': ListingInfo(
-        './bin/reframe --system=catalina -c tutorials/basics/hellomp/hellomp2.py -r',   # noqa: E501
+        './bin/reframe -c tutorials/basics/hellomp/hellomp2.py -r',   # noqa: E501
         {'local', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/tresa.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=True
+    ),
+    'stream1': ListingInfo(
+        './bin/reframe -c tutorials/basics/stream/stream1.py -r --performance-report',  # noqa: E501
+        {'local', 'tutorial-basics'},
+        DEFAULT_FILTERS,
+        env={
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/tresa.py'),
+            'RFM_COLORIZE': 'n'
+        },
+        xfail=False
     ),
     'alltests_daint': ListingInfo(
         './bin/reframe -c tutorials/basics/ -R -n "HelloMultiLangTest|HelloThreadedExtended2Test|StreamWithRefTest" --performance-report -r',   # noqa: E501
         {'remote', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -111,8 +122,8 @@ LISTINGS = {
         {'remote', 'tutorial-basics'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -122,8 +133,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -133,8 +144,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -144,8 +155,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -155,8 +166,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -166,8 +177,8 @@ LISTINGS = {
         {'remote', 'tutorial-deps'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -184,8 +195,8 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py')
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py')
         },
         xfail=False
     ),
@@ -194,8 +205,8 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -205,8 +216,8 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -216,30 +227,30 @@ LISTINGS = {
         {'remote', 'tutorial-fixtures'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/daint.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'stream_params': ListingInfo(
-        './bin/reframe --system=catalina -c tutorials/advanced/parameterized/stream.py -l',  # noqa: E501
+        './bin/reframe -c tutorials/advanced/parameterized/stream.py -l',  # noqa: E501
         {'local', 'tutorial-advanced'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/tresa.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
     ),
     'maketest_mixin': ListingInfo(
-        './bin/reframe --system=catalina -c tutorials/advanced/makefiles/maketest_mixin.py -l',  # noqa: E501
+        './bin/reframe -c tutorials/advanced/makefiles/maketest_mixin.py -l',  # noqa: E501
         {'local', 'tutorial-advanced'},
         DEFAULT_FILTERS,
         env={
-            'RFM_CONFIG_FILE': os.path.join(os.getcwd(),
-                                            'tutorials/config/settings.py'),
+            'RFM_CONFIG_FILES': os.path.join(os.getcwd(),
+                                             'tutorials/config/tresa.py'),
             'RFM_COLORIZE': 'n'
         },
         xfail=False
@@ -264,7 +275,7 @@ LISTINGS = {
     ),
     'hello2_print_stdout': ListingInfo(
         'sed -ie "s/self\.stdout/sn.print(self.stdout)/g" tutorials/basics/hello/hello2.py && '  # noqa: E501
-        './bin/reframe --system=catalina -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -r && '    # noqa: E501
+        './bin/reframe -C tutorials/config/tresa.py -c tutorials/basics/hello/hello2.py -r && '    # noqa: E501
         'mv tutorials/basics/hello/hello2.pye tutorials/basics/hello/hello2.py',    # noqa: E501
         {'local', 'tutorial-tips-n-tricks'},
         DEFAULT_FILTERS,
@@ -272,7 +283,7 @@ LISTINGS = {
         xfail=False
     ),
     'hello2_list_verbose': ListingInfo(
-        './bin/reframe -C tutorials/config/settings.py -c tutorials/basics/hello/hello2.py -l -vv',  # noqa: E501
+        './bin/reframe -C tutorials/config/tresa.py -c tutorials/basics/hello/hello2.py -l -vv',  # noqa: E501
         {'local', 'tutorial-tips-n-tricks'},
         DEFAULT_FILTERS,
         env={'RFM_COLORIZE': 'n'},

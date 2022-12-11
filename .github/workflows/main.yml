@@ -7,11 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -33,12 +33,30 @@ jobs:
       with:
         fail_ci_if_error: true
 
+  unittest-py36:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ['3.6']
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        ./bootstrap.sh
+    - name: Generic Unittests
+      run: |
+        ./test_reframe.py
+
   unittest-macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: 3.9
     - name: Install dependencies
@@ -54,7 +72,7 @@ jobs:
       matrix:
         modules-version: [Lmod, Lmod77, Tmod32, Tmod4]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build Image for ${{ matrix.modules-version }}
       run: |
         docker build -f ci-scripts/dockerfiles/${{ matrix.modules-version }}.dockerfile -t reframe:${{ matrix.modules-version }} .
@@ -65,7 +83,7 @@ jobs:
   tutorialtest:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Build Image for Tutorial Tests
       run: |
         docker build -f ci-scripts/dockerfiles/tutorials.dockerfile -t reframe:tutorials .
@@ -76,7 +94,7 @@ jobs:
   unusedimports:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Lint Code Base
@@ -89,9 +107,9 @@ jobs:
   wheelvalidation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.8
       - name: Generate Wheel
@@ -109,9 +127,9 @@ jobs:
   docvalidation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.8
       - name: Install Doc Requirements

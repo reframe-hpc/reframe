@@ -52,7 +52,7 @@ As suggested by the warning message, passing :option:`-v` will give you the stac
 Debugging deferred expressions
 ==============================
 
-Although deferred expressions that are used in sanity and performance functions behave similarly to normal Python expressions, you need to understand their `implicit evaluation rules <deferrable_functions_reference.html#implicit-evaluation-of-sanity-functions>`__.
+Although deferred expressions that are used in sanity and performance functions behave similarly to normal Python expressions, you need to understand their `implicit evaluation rules <deferrable_functions_reference.html#implicit-evaluation-of-deferrable-functions>`__.
 One of the rules is that :func:`str` triggers the implicit evaluation, so trying to use the standard :func:`print` function with a deferred expression, you might get unexpected results if that expression is not yet to be evaluated.
 For this reason, ReFrame offers a sanity function counterpart of :func:`print`, which allows you to safely print deferred expressions.
 
@@ -151,10 +151,6 @@ Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
    :language: console
 
 You can see all the different phases ReFrame's frontend goes through when loading a test.
-The first "strange" thing to notice in this log is that ReFrame picked the generic system configuration.
-This happened because it couldn't find a system entry with a matching hostname pattern.
-However, it did not impact the test loading, because these tests are valid for any system, but it will affect the tests when running (see :doc:`tutorial_basics`) since the generic system does not define any C++ compiler.
-
 After loading the configuration, ReFrame will print out its relevant environment variables and will start examining the given files in order to find and load ReFrame tests.
 Before attempting to load a file, it will validate it and check if it looks like a ReFrame test.
 If it does, it will load that file by importing it.
@@ -344,6 +340,58 @@ If we tried to run :class:`T6` without restoring the session, we would have to r
    :language: console
 
 
+Implementing test workarounds efficiently
+-----------------------------------------
+
+.. versionadded:: 3.2
+
+Sometimes you may need to add a quick workaround in a test, because something in a system or an environment broken.
+The best way to implement this is through hooks, because you can easily disable any hook from the command-line and you don't need to update the test every time you want to check if the system is fixed and the workaround is not needed anymore.
+
+Let's use one example from the `previous tutorial <tutorial_basics.html>`__ and let's assume that there is something wrong with one of the environments and a special macro needs to be defined in order for the compilation to succeed.
+Instead of adding another flag in the :func:`set_compilation_flags` hook, it is better to add another hook containing just the workaround as shown below:
+
+.. code-block:: python
+   :emphasize-lines: 27-33
+
+   import reframe as rfm
+   import reframe.utility.sanity as sn
+
+
+   @rfm.simple_test
+   class HelloThreadedExtended2Test(rfm.RegressionTest):
+       valid_systems = ['*']
+       valid_prog_environs = ['*']
+       sourcepath = 'hello_threads.cpp'
+       build_system = 'SingleSource'
+       executable_opts = ['16']
+
+       @run_before('compile')
+       def set_compilation_flags(self):
+           self.build_system.cppflags = ['-DSYNC_MESSAGES']
+           self.build_system.cxxflags = ['-std=c++11', '-Wall']
+           environ = self.current_environ.name
+           if environ in {'clang', 'gnu'}:
+               self.build_system.cxxflags += ['-pthread']
+
+       @sanity_function
+       def assert_num_messages(self):
+           num_messages = sn.len(sn.findall(r'\[\s?\d+\] Hello, World\!',
+                                         self.stdout))
+           return sn.assert_eq(num_messages, 16)
+
+       @run_before('compile')
+       def fooenv_workaround(self):
+           ce = self.current_environ.name
+           if ce == 'foo':
+               self.build_system.cppflags += [
+                   '-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL'
+               ]
+
+This way the test will start passing again allowing us to catch any new issues while waiting for the original issue to be fixed.
+Then we can run the test anytime using ``--disable-hook=fooenv_workaround`` to check if the workaround is not needed anymore.
+
+
 .. _generate-ci-pipeline:
 
 Integrating into a CI pipeline
@@ -385,10 +433,12 @@ The following is an example of ``.gitlab-ci.yml`` file that does exactly that:
 It defines two stages.
 The first one, called ``generate``, will call ReFrame to generate the pipeline specification for the desired tests.
 All the usual `test selection options <manpage.html#test-filtering>`__ can be used to select specific tests.
-ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps
-for running each test individually as a Gitlab job. We then pass the generated CI pipeline file to second phase as
-an artifact and we are done! If ``image`` keyword is defined in ``.gitlab-ci.yml``, the emitted pipeline will use
-the same image as the one defined in the parent pipeline.
+ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps for running each test individually as a Gitlab job in a child pipeline.
+The generated ReFrame command that will run each individual test reuses the :option:`-C`, :option:`-R`, :option:`-v` and :option:`--mode` options passed to the initial invocation of ReFrame that was used to generate the pipeline.
+Users can define CI-specific execution modes in their configuration in order to pass arbitrary options to the ReFrame invocation in the child pipeline.
+
+Finally, we pass the generated CI pipeline file to second phase as an artifact and we are done!
+If ``image`` keyword is defined in ``.gitlab-ci.yml``, the emitted pipeline will use the same image as the one defined in the parent pipeline.
 Besides, each job in the generated pipeline will output a separate junit report which can be used to create GitLab badges.
 
 The following figure shows one part of the automatically generated pipeline for the test graph depicted `above <#fig-deps-complex>`__.

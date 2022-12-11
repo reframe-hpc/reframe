@@ -1,24 +1,25 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+c22440c1
+  version:           4.0.0-dev.2+5ea6b7a6
   command:           './bin/reframe -c tutorials/basics/hellomp/hellomp1.py -r'
   launched by:       user@host
-  working directory: '/path/to/reframe'
-  settings file:     '/path/to/reframe/tutorials/config/settings.py'
-  check search path: '/path/to/reframe/tutorials/basics/hellomp/hellomp1.py'
-  stage directory:   '/path/to/reframe/stage'
-  output directory:  '/path/to/reframe/output'
+  working directory: '/home/user/Repositories/reframe'
+  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
+  check search path: '/home/user/Repositories/reframe/tutorials/basics/hellomp/hellomp1.py'
+  stage directory:   '/home/user/Repositories/reframe/stage'
+  output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-v56bz2uo.log'
 
 [==========] Running 1 check(s)
-[==========] Started on Sat Jan 22 13:21:54 2022 
+[==========] Started on Sat Nov 12 19:00:48 2022 
 
 [----------] start processing checks
-[ RUN      ] HelloThreadedTest @catalina:default+gnu
-[ RUN      ] HelloThreadedTest @catalina:default+clang
-[       OK ] (1/2) HelloThreadedTest @catalina:default+gnu [compile: 0.963s run: 0.296s total: 1.418s]
-[       OK ] (2/2) HelloThreadedTest @catalina:default+clang [compile: 0.760s run: 0.434s total: 1.421s]
+[ RUN      ] HelloThreadedTest /a6fa300f @tresa:default+gnu
+[ RUN      ] HelloThreadedTest /a6fa300f @tresa:default+clang
+[       OK ] (1/2) HelloThreadedTest /a6fa300f @tresa:default+gnu
+[       OK ] (2/2) HelloThreadedTest /a6fa300f @tresa:default+clang
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 2/2 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 13:21:56 2022 
-Run report saved in '/home/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-chq08zds.log'
+[==========] Finished on Sat Nov 12 19:00:50 2022 
+Run report saved in '/home/user/.reframe/reports/run-report-322.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-v56bz2uo.log'

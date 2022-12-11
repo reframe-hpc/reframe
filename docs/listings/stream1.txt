@@ -1,37 +1,40 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.2+bf404ae1
+  version:           4.0.0-dev.2+5ea6b7a6
   command:           './bin/reframe -c tutorials/basics/stream/stream1.py -r --performance-report'
   launched by:       user@host
-  working directory: '/Users/user/Repositories/reframe'
-  settings file:     'tutorials/config/mysettings.py'
-  check search path: '/Users/user/Repositories/reframe/tutorials/basics/stream/stream1.py'
-  stage directory:   '/Users/user/Repositories/reframe/stage'
-  output directory:  '/Users/user/Repositories/reframe/output'
+  working directory: '/home/user/Repositories/reframe'
+  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
+  check search path: '/home/user/Repositories/reframe/tutorials/basics/stream/stream1.py'
+  stage directory:   '/home/user/Repositories/reframe/stage'
+  output directory:  '/home/user/Repositories/reframe/output'
+  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-v0ig7jt4.log'
 
 [==========] Running 1 check(s)
-[==========] Started on Wed Jan 19 17:13:35 2022 
+[==========] Started on Sat Nov 12 19:00:53 2022 
 
-[----------] started processing StreamTest (StreamTest)
-[ RUN      ] StreamTest on catalina:default using gnu
-[----------] finished processing StreamTest (StreamTest)
-
-[----------] waiting for spawned checks to finish
-[       OK ] (1/1) StreamTest @catalina:default+gnu [compile: 1.260s run: 2.844s total: 4.136s]
+[----------] start processing checks
+[ RUN      ] StreamTest /cdf4820d @tresa:default+gnu
+[       OK ] (1/1) StreamTest /cdf4820d @tresa:default+gnu
+P: Copy: 24031.8 MB/s (r:0, l:None, u:None)
+P: Scale: 16297.9 MB/s (r:0, l:None, u:None)
+P: Add: 17843.8 MB/s (r:0, l:None, u:None)
+P: Triad: 18278.3 MB/s (r:0, l:None, u:None)
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 1/1 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Wed Jan 19 17:13:39 2022 
-==============================================================================
+[==========] Finished on Sat Nov 12 19:00:56 2022 
+
+================================================================================
 PERFORMANCE REPORT
-------------------------------------------------------------------------------
-StreamTest
-- catalina:default
-   - gnu
-      * num_tasks: 1
-      * Copy: 23864.2 MB/s
-      * Scale: 16472.6 MB/s
-      * Add: 18265.5 MB/s
-      * Triad: 18632.3 MB/s
-------------------------------------------------------------------------------
-Run report saved in '/Users/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-o1wls55_.log'
+--------------------------------------------------------------------------------
+[StreamTest /cdf4820d @tresa:default:gnu]
+  num_tasks: 1
+  num_gpus_per_node: 0
+  performance:
+    - Copy: 24031.8 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Scale: 16297.9 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Add: 17843.8 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+    - Triad: 18278.3 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+--------------------------------------------------------------------------------
+Run report saved in '/home/user/.reframe/reports/run-report-324.json'
+Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-v0ig7jt4.log'

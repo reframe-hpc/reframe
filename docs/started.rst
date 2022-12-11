@@ -10,8 +10,7 @@ Requirements
 * The required Python packages are the following:
 
 .. literalinclude:: ../requirements.txt
-   :start-after: # rfmdocstart: required-packages
-   :end-before: # rfmdocend: required-packages
+   :end-before: #+
 
 
 .. note::
@@ -83,7 +82,7 @@ Any ReFrame version can be very easily installed directly from Github:
 .. code-block:: bash
 
    pushd /path/to/install/prefix
-   git clone -q --depth 1 --branch VERSION_TAG https://github.com/eth-cscs/reframe.git
+   git clone -q --depth 1 --branch VERSION_TAG https://github.com/reframe-hpc/reframe.git
    pushd reframe && ./bootstrap.sh && popd
    export PATH=$(pwd)/bin:$PATH
    popd

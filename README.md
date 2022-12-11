@@ -1,10 +1,14 @@
-[![ReFrame Logo](https://raw.githubusercontent.com/eth-cscs/reframe/master/docs/_static/img/reframe_logo-width400p.png)](https://github.com/eth-cscs/reframe)<br/>
-[![Build Status](https://github.com/eth-cscs/reframe/workflows/ReFrame%20CI/badge.svg)](https://github.com/eth-cscs/reframe/actions?query=workflow%3A%22ReFrame+CI%22)
+<div align="left">
+ <img src="docs/_static/img/reframe_logo-width400p.png#gh-light-mode-only" width="400px">
+ <img src="docs/_static/img/reframe-logo-dark-bg.png#gh-dark-mode-only" width="400px">
+</div>
+
+[![Build Status](https://github.com/reframe-hpc/reframe/workflows/ReFrame%20CI/badge.svg)](https://github.com/reframe-hpc/reframe/actions?query=workflow%3A%22ReFrame+CI%22)
 [![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
-[![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe)<br/>
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/eth-cscs/reframe?include_prereleases)
-![GitHub commits since latest release](https://img.shields.io/github/commits-since/eth-cscs/reframe/latest)
-![GitHub contributors](https://img.shields.io/github/contributors-anon/eth-cscs/reframe)<br/>
+[![codecov.io](https://codecov.io/gh/reframe-hpc/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/reframe-hpc/reframe)<br/>
+![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/reframe-hpc/reframe?include_prereleases)
+![GitHub commits since latest release](https://img.shields.io/github/commits-since/reframe-hpc/reframe/latest)
+![GitHub contributors](https://img.shields.io/github/contributors-anon/reframe-hpc/reframe)<br/>
 [![PyPI version](https://badge.fury.io/py/ReFrame-HPC.svg)](https://badge.fury.io/py/ReFrame-HPC)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/reframe-hpc)
 [![Downloads](https://pepy.tech/badge/reframe-hpc)](https://pepy.tech/project/reframe-hpc)
@@ -34,7 +38,7 @@ ReFrame is fairly easy to install.
 All you need is Python 3.6 or above and to run its bootstrap script:
 
 ```bash
-git clone https://github.com/eth-cscs/reframe.git
+git clone https://github.com/reframe-hpc/reframe.git
 cd reframe
 ./bootstrap.sh
 ./bin/reframe -V
@@ -71,11 +75,16 @@ python3 -m http.server
 The documentation is now up on [localhost:8000](http://localhost:8000), where you can navigate with your browser.
 
 
-## Examples of Regression Tests
+## Test library
 
-In the `cscs-checks/` folder, you can find realistic regression tests used for the CSCS systems that you can reuse and adapt to your system.
-Notice that these tests are published as examples and may not run as-is in your system.
-However, they can serve as a very good starting point for implementing your system tests in ReFrame.
+The framework comes with a library of tests that users can either run them from the command line directly or extend them and fine tune them for their systems. See [here](https://reframe-hpc.readthedocs.io/en/stable/hpctestlib.html) for more details.
+
+
+## Test examples
+
+You can find examples of real tests under the ReFrame HPC [community Github page](https://github.com/reframe-hpc).
+The most complete suite of tests currently publicly available is that of [CSCS](https://cscs.ch/), which you can also find [here](https://github.com/eth-cscs/cscs-reframe-tests).
+You can use those tests as a starting point for implementing your own tests.
 
 
 ## Contact
@@ -86,14 +95,7 @@ You can get in contact with the ReFrame community in the following ways:
 
 Please join the community's [Slack channel](https://reframe-slack.herokuapp.com) for keeping up with the latest news about ReFrame, posting questions and, generally getting in touch with other users and the developers.
 
-### Mailing list
-
-You may also [subscribe](mailto:reframe-subscribe@sympa.cscs.ch) to the [mailing list](mailto:reframe@sympa.cscs.ch).
-Only subscribers can send messages to the list.
-For unsubscribing, you may send an empty message [here](mailto:reframe-unsubscribe@sympa.cscs.ch).
-
-
 ## Contributing back
 
 ReFrame is an open-source project and we welcome and encourage contributions!
-Check out our Contribution Guide [here](https://github.com/eth-cscs/reframe/wiki/contributing-to-reframe).
+Check out our Contribution Guide [here](https://github.com/reframe-hpc/reframe/wiki/contributing-to-reframe).

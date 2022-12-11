@@ -7,6 +7,7 @@ import functools
 import glob
 import itertools
 import re
+import shlex
 import time
 from argparse import ArgumentParser
 from contextlib import suppress
@@ -19,7 +20,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
                                      JobError,
                                      JobSchedulerError)
-from reframe.utility import seconds_to_hms
+from reframe.utility import nodelist_abbrev, seconds_to_hms
 
 
 def slurm_state_completed(state):
@@ -72,6 +73,21 @@ class _SlurmJob(sched.Job):
         self._is_array = False
         self._is_cancelling = False
 
+        # The compacted nodelist as reported by Slurm. This must be updated in
+        # every poll as Slurm may be slow in reporting the exact nodelist
+        self._nodespec = None
+
+    @property
+    def nodelist(self):
+        # Redefine nodelist so as to generate it from the nodespec
+        if self._nodelist is None and self._nodespec is not None:
+            completed = osext.run_command(
+                f'scontrol show hostname {self._nodespec}', log=False
+            )
+            self._nodelist = completed.stdout.splitlines()
+
+        return self._nodelist
+
     @property
     def is_array(self):
         return self._is_array
@@ -116,22 +132,14 @@ class SlurmJobScheduler(sched.JobScheduler):
                                 'QOSJobLimit',
                                 'QOSResourceLimit',
                                 'QOSUsageThreshold']
-        ignore_reqnodenotavail = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/ignore_reqnodenotavail'
-        )
+        ignore_reqnodenotavail = self.get_option('ignore_reqnodenotavail')
         if not ignore_reqnodenotavail:
             self._cancel_reasons.append('ReqNodeNotAvail')
 
         self._update_state_count = 0
-        self._submit_timeout = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/job_submit_timeout'
-        )
-        self._use_nodes_opt = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/use_nodes_option'
-        )
-        self._resubmit_on_errors = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/resubmit_on_errors'
-        )
+        self._submit_timeout = self.get_option('job_submit_timeout')
+        self._use_nodes_opt = self.get_option('use_nodes_option')
+        self._resubmit_on_errors = self.get_option('resubmit_on_errors')
 
     def make_job(self, *args, **kwargs):
         return _SlurmJob(*args, **kwargs)
@@ -178,9 +186,9 @@ class SlurmJobScheduler(sched.JobScheduler):
                 self._format_option('%d:%d:%d' % (h, m, s), '--time={0}')
             )
 
-        if job.sched_exclusive_access:
+        if job.exclusive_access:
             preamble.append(
-                self._format_option(job.sched_exclusive_access, '--exclusive')
+                self._format_option(job.exclusive_access, '--exclusive')
             )
 
         if self._use_nodes_opt:
@@ -191,6 +199,14 @@ class SlurmJobScheduler(sched.JobScheduler):
             hint = None
         else:
             hint = 'multithread' if job.use_smt else 'nomultithread'
+
+        if job.pin_nodes:
+            preamble.append(
+                self._format_option(
+                    nodelist_abbrev(job.pin_nodes),
+                    '--nodelist={0}'
+                )
+            )
 
         for opt in job.sched_access:
             if not opt.strip().startswith(('-C', '--constraint')):
@@ -297,6 +313,11 @@ class SlurmJobScheduler(sched.JobScheduler):
         # create a mutable list out of the immutable SequenceView that
         # sched_access is
         options = job.sched_access + job.options + job.cli_options
+
+        # Properly split lexically all the arguments in the options list so as
+        # to treat correctly entries such as '--option foo'.
+        options = list(itertools.chain.from_iterable(shlex.split(opt)
+                                                     for opt in options))
         option_parser = ArgumentParser()
         option_parser.add_argument('--reservation')
         option_parser.add_argument('-p', '--partition')
@@ -366,13 +387,6 @@ class SlurmJobScheduler(sched.JobScheduler):
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
-    def _update_nodelist(self, job, nodespec):
-        if job.nodelist is not None:
-            return
-
-        if nodespec and nodespec != 'None assigned':
-            job._nodelist = [n.name for n in self._get_nodes_by_name(nodespec)]
-
     def _update_completion_time(self, job, timestamps):
         if job._completion_time is not None:
             return
@@ -396,7 +410,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not jobs:
             return
 
-        with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
+        with rt.temp_environment(env_vars={'SLURM_TIME_FORMAT': '%s'}):
             t_start = time.strftime(
                 '%F', time.localtime(min(job.submit_time for job in jobs))
             )
@@ -446,9 +460,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 )
 
             # Use ',' to join nodes to be consistent with Slurm syntax
-            self._update_nodelist(
-                job, ','.join(m.group('nodespec') for m in jobarr_info)
-            )
+            job._nodespec = ','.join(m.group('nodespec') for m in jobarr_info)
             self._update_completion_time(
                 job, (m.group('end') for m in jobarr_info)
             )
@@ -502,25 +514,25 @@ class SlurmJobScheduler(sched.JobScheduler):
                 if node_match:
                     node_names = node_match['node_names']
                     if node_names:
-                        # Retrieve the info of the unavailable nodes
-                        # and check if they are indeed down
+                        # Retrieve the info of the unavailable nodes and check
+                        # if they are indeed down. According to Slurm's docs
+                        # this should not be necessary, but we check anyways
+                        # to be on the safe side.
                         self.log(f'Checking if nodes {node_names!r} '
                                  f'are indeed unavailable')
                         nodes = self._get_nodes_by_name(node_names)
                         if not any(n.is_down() for n in nodes):
                             return
-                    else:
-                        # List of unavailable nodes is empty; assume job
-                        # is pending
-                        return
 
-            self.cancel(job)
-            reason_msg = ('job cancelled because it was blocked due to '
-                          'a perhaps non-recoverable reason: ' + reason)
-            if reason_details is not None:
-                reason_msg += ', ' + reason_details
+                        self.cancel(job)
+                        reason_msg = (
+                            'job cancelled because it was blocked due to '
+                            'a perhaps non-recoverable reason: ' + reason
+                        )
+                        if reason_details is not None:
+                            reason_msg += ', ' + reason_details
 
-            job._exception = JobBlockedError(reason_msg, job.jobid)
+                        job._exception = JobBlockedError(reason_msg, job.jobid)
 
     def wait(self, job):
         # Quickly return in case we have finished already

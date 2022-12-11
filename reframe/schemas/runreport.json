@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/reframe/schemas/runreport.json",
+    "$id": "https://raw.githubusercontent.com/reframe-hpc/reframe/master/reframe/schemas/runreport.json",
     "title": "Validation schema for ReFrame's run report",
     "defs": {
         "testcase_type": {
@@ -8,6 +8,8 @@
             "properties": {
                 "build_stderr": {"type": ["string", "null"]},
                 "build_stdout": {"type": ["string", "null"]},
+                "check_params": {"type": "object"},
+                "check_vars": {"type": "object"},
                 "dependencies_actual": {
                     "type": "array",
                     "items": {
@@ -40,6 +42,7 @@
                 "fail_reason": {"type": ["string", "null"]},
                 "fail_severe": {"type": "boolean"},
                 "filename": {"type": "string"},
+                "fixture": {"type": "boolean"},
                 "jobid": {"type": ["string", "null"]},
                 "job_stderr": {"type": ["string", "null"]},
                 "job_stdout": {"type": ["string", "null"]},
@@ -107,7 +110,10 @@
             "type": "object",
             "properties": {
                 "cmdline": {"type": "string"},
-                "config_file": {"type": ["string", "null"]},
+                "config_files": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
                 "data_version": {"type": "string"},
                 "hostname": {"type": "string"},
                 "num_cases": {"type": "number"},

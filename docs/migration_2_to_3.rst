@@ -184,6 +184,6 @@ Although not recommended, you can suppress any deprecation warning issued by ReF
 Other Changes
 -------------
 
-ReFrame 3.0-dev0 introduced a `change <https://github.com/eth-cscs/reframe/pull/1125>`__ in the way that a search path for checks was constructed in the command-line using the ``-c`` option.
+ReFrame 3.0-dev0 introduced a `change <https://github.com/reframe-hpc/reframe/pull/1125>`__ in the way that a search path for checks was constructed in the command-line using the ``-c`` option.
 ReFrame 3.0 reverts the behavior of the ``-c`` to its original one (i.e., ReFrame 2.x behavior), in which multiple paths can be specified by passing multiple times the ``-c`` option.
 Overriding completely the check search path can be achieved in ReFrame 3.0 through the :envvar:`RFM_CHECK_SEARCH_PATH` environment variable or the corresponding configuration option.

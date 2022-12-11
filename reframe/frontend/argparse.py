@@ -82,7 +82,7 @@ class _Namespace:
         if name not in self.__option_map:
             return ret
 
-        envvar, _, action, arg_type = self.__option_map[name]
+        envvar, _, action, arg_type, default = self.__option_map[name]
         if ret is None and envvar is not None:
             # Try the environment variable
             envvar, *delim = envvar.split(maxsplit=2)
@@ -107,6 +107,8 @@ class _Namespace:
                             f'cannot convert environment variable {envvar!r} '
                             f'to {arg_type.__name__!r}'
                         ) from err
+            else:
+                ret = default
 
         return ret
 
@@ -183,7 +185,8 @@ class _ArgumentHolder:
             kwargs.get('envvar', None),
             kwargs.get('configvar', None),
             kwargs.get('action', 'store'),
-            kwargs.get('type', str)
+            kwargs.get('type', str),
+            kwargs.get('default', None)
         )
         # Remove envvar and configvar keyword arguments and force dest
         # argument, even if we guessed it, in order to guard against changes

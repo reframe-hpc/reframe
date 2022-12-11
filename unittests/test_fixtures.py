@@ -193,19 +193,27 @@ def test_fixture_access_in_class_body():
 
 
 def test_fixture_early_access():
-    class Foo(rfm.RegressionTest):
-        pass
+    class FooA(rfm.RegressionTest):
+        x = parameter([1])
+
+    class FooB(rfm.RegressionTest):
+        foo = fixture(FooA)
+        y = parameter([2])
 
     class Bar(rfm.RegressionTest):
-        f = fixture(Foo)
+        f = fixture(FooB, variables={'z': 5})
+        w = fixture(FooB, action='join')
+
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
 
         @run_after('init')
-        def trigger_fixture_error(self):
-            print(self.f)
+        def early_access(self):
+            assert self.f.foo.x == 1
+            assert self.f.y == 2
+            assert self.w.y == 2
 
-    msg = "fixture 'f' has not yet been resolved"
-    with pytest.raises(AttributeError, match=msg):
-        Bar()
+    Bar(variant_num=0)
 
 
 def test_fixture_space_access():
@@ -275,6 +283,11 @@ def fixture_exec_ctx(make_exec_ctx_g):
 
 
 @pytest.fixture
+def testsys_exec_ctx(make_exec_ctx_g):
+    yield from make_exec_ctx_g(test_util.TEST_CONFIG_FILE, 'testsys')
+
+
+@pytest.fixture
 def ctx_sys(fixture_exec_ctx):
     yield rt.runtime().system
 
@@ -311,9 +324,26 @@ def param_fixture():
     yield _fixture_wrapper
 
 
+@pytest.fixture
+def simple_test():
+    def _make_test(vs, ve):
+        class _X(rfm.RegressionTest):
+            valid_systems = vs
+            valid_prog_environs = ve
+
+        return _X()
+
+    return _make_test
+
+
 def test_fixture_registry_all(ctx_sys, simple_fixture):
     '''Test with all valid partition and environments available.'''
 
+    class MyTest(rfm.RegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+
+    test = MyTest()
     reg = fixtures.FixtureRegistry()
 
     # Get all part and environs
@@ -324,8 +354,7 @@ def test_fixture_registry_all(ctx_sys, simple_fixture):
 
     def register(s, **kwargs):
         registered_fixt.update(
-            reg.add(simple_fixture(scope=s, **kwargs),
-                    0, 'base', all_part, set(all_env))
+            reg.add(simple_fixture(scope=s, **kwargs), 0, test)
         )
 
     register('test')
@@ -350,40 +379,37 @@ def test_fixture_registry_all(ctx_sys, simple_fixture):
     assert simple_fixture().cls in reg
 
 
-def test_fixture_registry_edge_cases(ctx_sys, simple_fixture):
+def test_fixture_registry_edge_cases(ctx_sys, simple_fixture, simple_test):
     '''Test edge cases.'''
 
     reg = fixtures.FixtureRegistry()
     registered_fixt = set()
 
-    def register(p, e, **kwargs):
+    def register(test, **kwargs):
         registered_fixt.update(
-            reg.add(simple_fixture(**kwargs),
-                    0, 'b', p, e)
+            reg.add(simple_fixture(**kwargs), 0, test)
         )
 
     # Invalid partitions - NO-OP
-    register(['wrong_partition'], ['e1', 'e2'])
+    register(simple_test(['wrong_partition'], ['e1', 'e2']))
     assert len(registered_fixt) == 0
 
     # Valid partition but wrong environment - NO-OP (except test scope)
-    partitions = [p.fullname for p in ctx_sys.partitions]
-    register([partitions[0]], ['wrong_environment'], scope='session')
+    register(simple_test(['sys1:p0'], ['wrong_environment']), scope='session')
     assert len(registered_fixt) == 0
-    register([partitions[0]], ['wrong_environment'], scope='partition')
+    register(simple_test(['sys1:p0'], [
+             'wrong_environment']), scope='partition')
     assert len(registered_fixt) == 0
-    register([partitions[0]], ['wrong_environment'], scope='environment')
+    register(
+        simple_test(['sys1:p0'], ['wrong_environment']), scope='environment'
+    )
     assert len(registered_fixt) == 0
-    register([partitions[0]], ['wrong_environment'], scope='test')
+    register(simple_test(['sys1:p0'], ['wrong_environment']), scope='test')
     assert len(registered_fixt) == 1
     registered_fixt.pop()
 
     # Environ 'e2' is not supported in 'sys1:p0', but is in 'sys1:p1'
-    register(['sys1:p0', 'sys1:p1'], ['e2'], scope='session')
-    assert 'e2' not in {env.name for p in ctx_sys.partitions
-                        if p.fullname == 'sys1:p0' for env in p.environs}
-    assert 'e2' in {env.name for p in ctx_sys.partitions
-                    if p.fullname == 'sys1:p1' for env in p.environs}
+    register(simple_test(['sys1:p0', 'sys1:p1'], ['e2']), scope='session')
     assert len(registered_fixt) == 1
 
     # 'sys1:p0' is skipped on this fixture because env 'e2' is not supported
@@ -392,14 +418,14 @@ def test_fixture_registry_edge_cases(ctx_sys, simple_fixture):
     assert last_fixture.environments == ['e2']
 
     # Similar behavior with the partition scope
-    register(['sys1:p0', 'sys1:p1'], ['e2'], scope='partition')
+    register(simple_test(['sys1:p0', 'sys1:p1'], ['e2']), scope='partition')
     assert len(registered_fixt) == 1
     last_fixture = reg[simple_fixture().cls][registered_fixt.pop()]
     assert last_fixture.partitions == ['sys1:p1']
     assert last_fixture.environments == ['e2']
 
     # And also similar behavior with the environment scope
-    register(['sys1:p0', 'sys1:p1'], ['e2'], scope='environment')
+    register(simple_test(['sys1:p0', 'sys1:p1'], ['e2']), scope='environment')
     assert len(registered_fixt) == 1
     last_fixture = reg[simple_fixture().cls][registered_fixt.pop()]
     assert last_fixture.partitions == ['sys1:p1']
@@ -407,26 +433,23 @@ def test_fixture_registry_edge_cases(ctx_sys, simple_fixture):
 
     # However, with the test scope partitions and environments get copied
     # without any filtering.
-    register(['sys1:p0', 'sys1:p1'], ['e2'], scope='test')
+    register(simple_test(['sys1:p0', 'sys1:p1'], ['e2']), scope='test')
     assert len(registered_fixt) == 1
     last_fixture = reg[simple_fixture().cls][registered_fixt.pop()]
     assert last_fixture.partitions == ['sys1:p0', 'sys1:p1']
     assert last_fixture.environments == ['e2']
 
 
-def test_fixture_registry_variables(ctx_part_env, simple_fixture):
+def test_fixture_registry_variables(ctx_sys, simple_fixture, simple_test):
     '''Test that the order of the variables does not matter.'''
 
     reg = fixtures.FixtureRegistry()
-
-    # Get one valid part+env combination
-    part, env = ctx_part_env()
     registered_fixt = set()
 
     def register(**kwargs):
         registered_fixt.update(
-            reg.add(simple_fixture(**kwargs),
-                    0, 'b', [part], [env])
+            reg.add(simple_fixture(**kwargs), 0,
+                    simple_test(['sys1:p0'], ['e0']))
         )
 
     register(variables={'a': 1, 'b': 2})
@@ -443,24 +466,22 @@ def test_fixture_registry_variables(ctx_part_env, simple_fixture):
     # Test also the format of the internal fixture tuple
     fixt_data = list(reg[simple_fixture().cls].values())[0]
     assert fixt_data.variant_num == 0
-    assert fixt_data.environments == [env]
-    assert fixt_data.partitions == [part]
+    assert fixt_data.environments == ['e0']
+    assert fixt_data.partitions == ['sys1:p0']
     assert all(v in fixt_data.variables for v in ('b', 'a'))
 
 
-def test_fixture_registry_variants(ctx_part_env, param_fixture):
+def test_fixture_registry_variants(ctx_sys, param_fixture, simple_test):
     '''Test different fixture variants are registered separately.'''
 
     reg = fixtures.FixtureRegistry()
-
-    # Get one valid part+env combination
-    part, env = ctx_part_env()
     registered_fixt = set()
 
     def register(scope='test', variant=0):
+        # We use a single valid part/env combination
         registered_fixt.update(
             reg.add(param_fixture(scope=scope), variant,
-                    'b', [part], [env])
+                    simple_test(['sys1:p0'], ['e0']))
         )
 
     register(scope='test', variant=0)
@@ -481,60 +502,22 @@ def test_fixture_registry_variants(ctx_part_env, param_fixture):
     assert len(registered_fixt) == 8
 
 
-def test_fixture_registry_base_arg(ctx_part_env, simple_fixture):
-    '''The base argument argument only has an effect with test scope.'''
-
-    reg = fixtures.FixtureRegistry()
-
-    # Get one valid part+env combination
-    part, env = ctx_part_env()
-    registered_fixt = set()
-
-    def register(scope, base):
-        registered_fixt.update(
-            reg.add(simple_fixture(scope=scope), 0,
-                    base, [part], [env])
-        )
-
-    # For a test scope, the base name is used for the fixture name mangling.
-    # So changing this base arg, leads to a new fixture being registered.
-    register(scope='test', base='b1')
-    assert len(registered_fixt) == 1
-    register(scope='test', base='b2')
-    assert len(registered_fixt) == 2
-
-    # The base argument is not used with any of the other scopes.
-    register(scope='environment', base='b1')
-    assert len(registered_fixt) == 3
-    register(scope='environment', base='b2')
-    assert len(registered_fixt) == 3
-    register(scope='partition', base='b1')
-    assert len(registered_fixt) == 4
-    register(scope='partition', base='b2')
-    assert len(registered_fixt) == 4
-    register(scope='session', base='b3')
-    assert len(registered_fixt) == 5
-    register(scope='session', base='b3')
-    assert len(registered_fixt) == 5
-
-
-def test_overlapping_registries(ctx_part_env, simple_fixture, param_fixture):
+def test_overlapping_registries(ctx_sys, simple_test,
+                                simple_fixture, param_fixture):
     '''Test instantiate_all(), update() and difference() registry methods.'''
-
-    # Get one valid part+env combination
-    part, env = ctx_part_env()
 
     # Build base registry with some fixtures
     reg = fixtures.FixtureRegistry()
-    reg.add(simple_fixture(), 0, 'b', [part], [env])
+    reg.add(simple_fixture(), 0, simple_test(['sys1:p0'], ['e0']))
     for i in param_fixture().variants:
-        reg.add(param_fixture(), i, 'b', [part], [env])
+        reg.add(param_fixture(), i, simple_test(['sys1:p0'], ['e0']))
 
     # Build overlapping registry
     other = fixtures.FixtureRegistry()
-    other.add(simple_fixture(variables={'v': 2}), 0, 'b', [part], [env])
+    other.add(simple_fixture(variables={'v': 2}), 0,
+              simple_test(['sys1:p0'], ['e0']))
     for i in param_fixture().variants:
-        other.add(param_fixture(), i, 'b', [part], [env])
+        other.add(param_fixture(), i, simple_test(['sys1:p0'], ['e0']))
 
     assert len(reg.instantiate_all()) == len(param_fixture().variants) + 1
     assert len(other.instantiate_all()) == len(param_fixture().variants) + 1
@@ -548,9 +531,11 @@ def test_overlapping_registries(ctx_part_env, simple_fixture, param_fixture):
     # correctly.
     assert len(inst) == 1
     assert inst[0].v == 2
-    assert inst[0].name == list(diff_reg[simple_fixture().cls].keys())[0]
-    assert inst[0].valid_systems == [part]
-    assert inst[0].valid_prog_environs == [env]
+    assert inst[0].unique_name == list(
+        diff_reg[simple_fixture().cls].keys()
+    )[0]
+    assert inst[0].valid_systems == ['sys1:p0']
+    assert inst[0].valid_prog_environs == ['e0']
 
     # Test the difference method in the opposite direction
     diff_reg = reg.difference(other)
@@ -573,26 +558,23 @@ def test_overlapping_registries(ctx_part_env, simple_fixture, param_fixture):
         reg.difference(Foo())
 
 
-def test_bad_fixture_inst(ctx_part_env):
+def test_bad_fixture_inst(ctx_sys, simple_test):
     '''Test that instantiate_all does not raise an exception.'''
-
-    # Get one valid part+env combination
-    part, env = ctx_part_env()
 
     class Foo(rfm.RegressionTest):
         def __init__(self):
             raise Exception('raise exception during instantiation')
 
     reg = fixtures.FixtureRegistry()
-    reg.add(fixtures.TestFixture(Foo), 0, 'b', [part], [env])
+    reg.add(fixtures.TestFixture(Foo), 0, simple_test(['sys1:p0'], ['e0']))
     reg.instantiate_all()
 
 
-def test_expand_part_env(fixture_exec_ctx, simple_fixture):
+def test_expand_part_env(testsys_exec_ctx, simple_fixture):
     '''Test expansion of partitions and environments.'''
 
     class MyTest(rfm.RegressionTest):
-        foo = simple_fixture(scope='test')
+        foo = simple_fixture(scope='environment')
 
     # The fixture registry is not injected when no variant_num is provided
     assert not hasattr(MyTest(), '_rfm_fixture_registry')
@@ -601,7 +583,7 @@ def test_expand_part_env(fixture_exec_ctx, simple_fixture):
     with pytest.raises(ReframeSyntaxError, match="'valid_systems'"):
         MyTest(variant_num=0)
 
-    MyTest.valid_systems = ['sys1']
+    MyTest.valid_systems = ['testsys']
     with pytest.raises(ReframeSyntaxError, match="'valid_prog_environs'"):
         MyTest(variant_num=0)
 
@@ -617,15 +599,42 @@ def test_expand_part_env(fixture_exec_ctx, simple_fixture):
             )[simple_fixture().cls].values()
         )[0]
 
+    def _assert_fixture_partitions(expected):
+        reg = MyTest(variant_num=0)._rfm_fixture_registry
+        partitions = []
+        for d in reg[simple_fixture().cls].values():
+            partitions += d.partitions
+
+        assert set(partitions) == set(expected)
+
+    def _assert_fixture_environs(expected):
+        reg = MyTest(variant_num=0)._rfm_fixture_registry
+        environs = []
+        for d in reg[simple_fixture().cls].values():
+            environs += d.environments
+
+        assert set(environs) == set(expected)
+
     MyTest.valid_prog_environs = ['*']
-    d = get_fixt_data(MyTest(variant_num=0))
-    assert all(env in d.environments for env in ('e0', 'e1', 'e2', 'e3'))
-    assert all(part in d.partitions for part in ('sys1:p0', 'sys1:p1'))
+    _assert_fixture_partitions(['testsys:login', 'testsys:gpu'])
+    _assert_fixture_environs(['builtin', 'PrgEnv-cray', 'PrgEnv-gnu'])
 
     # Repeat now using * for the valid_systems
     MyTest.valid_systems = ['*']
-    d = get_fixt_data(MyTest(variant_num=0))
-    assert all(part in d.partitions for part in ('sys1:p0', 'sys1:p1'))
+    _assert_fixture_partitions(['testsys:login', 'testsys:gpu'])
+
+    # Test the extended syntax of valid_systems and valid_prog_environs
+    MyTest.valid_systems = ['+cuda']
+    _assert_fixture_partitions(['testsys:gpu'])
+    _assert_fixture_environs(['builtin', 'PrgEnv-gnu'])
+
+    MyTest.valid_prog_environs = ['%bar=y']
+    _assert_fixture_environs(['PrgEnv-gnu'])
+
+    MyTest.valid_systems = ['testsys']
+    MyTest.valid_prog_environs = ['+cxx14']
+    _assert_fixture_partitions(['testsys:login'])
+    _assert_fixture_environs(['PrgEnv-cray', 'PrgEnv-gnu'])
 
 
 def test_fixture_injection(fixture_exec_ctx, simple_fixture, param_fixture):

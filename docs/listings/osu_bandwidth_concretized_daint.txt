@@ -1,23 +1,24 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+605af31a
+  version:           4.0.0-dev.2
   command:           './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -n osu_bandwidth_test -lC'
   launched by:       user@host
   working directory: '/home/user/Devel/reframe'
-  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/daint.py'
   check search path: '/home/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
+  log files:         '/tmp/rfm-m1w2t4eh.log'
 
 [List of matched checks]
-- osu_bandwidth_test @daint:gpu+gnu
-    ^build_osu_benchmarks ~daint:gpu+gnu @daint:gpu+gnu
-      ^fetch_osu_benchmarks ~daint @daint:gpu+gnu
-- osu_bandwidth_test @daint:gpu+intel
-    ^build_osu_benchmarks ~daint:gpu+intel @daint:gpu+intel
-      ^fetch_osu_benchmarks ~daint @daint:gpu+gnu
-- osu_bandwidth_test @daint:gpu+pgi
-    ^build_osu_benchmarks ~daint:gpu+pgi @daint:gpu+pgi
-      ^fetch_osu_benchmarks ~daint @daint:gpu+gnu
+- osu_bandwidth_test /026711a1 @daint:gpu+gnu
+    ^build_osu_benchmarks ~daint:gpu+gnu /f3269d42 @daint:gpu+gnu
+      ^fetch_osu_benchmarks ~daint /79cd6023 @daint:gpu+gnu
+- osu_bandwidth_test /026711a1 @daint:gpu+intel
+    ^build_osu_benchmarks ~daint:gpu+intel /4d450880 @daint:gpu+intel
+      ^fetch_osu_benchmarks ~daint /79cd6023 @daint:gpu+gnu
+- osu_bandwidth_test /026711a1 @daint:gpu+nvidia
+    ^build_osu_benchmarks ~daint:gpu+nvidia /e9b8d152 @daint:gpu+nvidia
+      ^fetch_osu_benchmarks ~daint /79cd6023 @daint:gpu+gnu
 Concretized 7 test case(s)
 
-Log file(s) saved in '/tmp/rfm-uza91jj1.log'
+Log file(s) saved in '/tmp/rfm-m1w2t4eh.log'

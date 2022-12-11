@@ -1,64 +1,83 @@
 [ReFrame Setup]
-  version:           3.10.0-dev.3+76e02667
+  version:           4.0.0-dev.2
   command:           './bin/reframe -c tutorials/fixtures/osu_benchmarks.py -r'
   launched by:       user@host
   working directory: '/home/user/Devel/reframe'
-  settings file:     '/home/user/Devel/reframe/tutorials/config/settings.py'
+  settings files:    '<builtin>', '/home/user/Devel/reframe/tutorials/config/daint.py'
   check search path: '/home/user/Devel/reframe/tutorials/fixtures/osu_benchmarks.py'
   stage directory:   '/home/user/Devel/reframe/stage'
   output directory:  '/home/user/Devel/reframe/output'
+  log files:         '/tmp/rfm-63lwmv4b.log'
 
 [==========] Running 10 check(s)
-[==========] Started on Sat Jan 22 23:08:13 2022 
+[==========] Started on Tue Nov 15 18:27:17 2022
 
 [----------] start processing checks
-[ RUN      ] fetch_osu_benchmarks ~daint @daint:gpu+gnu
-[       OK ] ( 1/22) fetch_osu_benchmarks ~daint @daint:gpu+gnu [compile: 0.016s run: 2.757s total: 2.807s]
-[ RUN      ] build_osu_benchmarks ~daint:gpu+gnu @daint:gpu+gnu
-[ RUN      ] build_osu_benchmarks ~daint:gpu+intel @daint:gpu+intel
-[ RUN      ] build_osu_benchmarks ~daint:gpu+pgi @daint:gpu+pgi
-[       OK ] ( 2/22) build_osu_benchmarks ~daint:gpu+gnu @daint:gpu+gnu [compile: 25.384s run: 2.389s total: 27.839s]
-[ RUN      ] osu_allreduce_test %mpi_tasks=16 @daint:gpu+gnu
-[ RUN      ] osu_allreduce_test %mpi_tasks=8 @daint:gpu+gnu
-[ RUN      ] osu_allreduce_test %mpi_tasks=4 @daint:gpu+gnu
-[ RUN      ] osu_allreduce_test %mpi_tasks=2 @daint:gpu+gnu
-[ RUN      ] osu_bandwidth_test @daint:gpu+gnu
-[ RUN      ] osu_latency_test @daint:gpu+gnu
-[       OK ] ( 3/22) build_osu_benchmarks ~daint:gpu+intel @daint:gpu+intel [compile: 47.774s run: 0.313s total: 48.758s]
-[       OK ] ( 4/22) build_osu_benchmarks ~daint:gpu+pgi @daint:gpu+pgi [compile: 47.127s run: 0.297s total: 48.765s]
-[ RUN      ] osu_allreduce_test %mpi_tasks=16 @daint:gpu+intel
-[ RUN      ] osu_allreduce_test %mpi_tasks=16 @daint:gpu+pgi
-[ RUN      ] osu_allreduce_test %mpi_tasks=8 @daint:gpu+intel
-[ RUN      ] osu_allreduce_test %mpi_tasks=8 @daint:gpu+pgi
-[ RUN      ] osu_allreduce_test %mpi_tasks=4 @daint:gpu+intel
-[ RUN      ] osu_allreduce_test %mpi_tasks=4 @daint:gpu+pgi
-[ RUN      ] osu_allreduce_test %mpi_tasks=2 @daint:gpu+intel
-[ RUN      ] osu_allreduce_test %mpi_tasks=2 @daint:gpu+pgi
-[ RUN      ] osu_bandwidth_test @daint:gpu+intel
-[ RUN      ] osu_bandwidth_test @daint:gpu+pgi
-[ RUN      ] osu_latency_test @daint:gpu+intel
-[ RUN      ] osu_latency_test @daint:gpu+pgi
-[       OK ] ( 5/22) osu_allreduce_test %mpi_tasks=16 @daint:gpu+gnu [compile: 0.022s run: 63.846s total: 64.319s]
-[       OK ] ( 6/22) osu_allreduce_test %mpi_tasks=4 @daint:gpu+gnu [compile: 0.024s run: 56.997s total: 64.302s]
-[       OK ] ( 7/22) osu_allreduce_test %mpi_tasks=2 @daint:gpu+gnu [compile: 0.024s run: 56.187s total: 66.616s]
-[       OK ] ( 8/22) osu_allreduce_test %mpi_tasks=8 @daint:gpu+gnu [compile: 0.026s run: 82.220s total: 86.255s]
-[       OK ] ( 9/22) osu_bandwidth_test @daint:gpu+gnu [compile: 0.023s run: 128.535s total: 142.154s]
-[       OK ] (10/22) osu_allreduce_test %mpi_tasks=4 @daint:gpu+pgi [compile: 0.023s run: 168.876s total: 185.476s]
-[       OK ] (11/22) osu_allreduce_test %mpi_tasks=2 @daint:gpu+intel [compile: 0.020s run: 165.312s total: 185.461s]
-[       OK ] (12/22) osu_allreduce_test %mpi_tasks=4 @daint:gpu+intel [compile: 0.019s run: 172.593s total: 186.044s]
-[       OK ] (13/22) osu_allreduce_test %mpi_tasks=2 @daint:gpu+pgi [compile: 0.019s run: 162.499s total: 185.942s]
-[       OK ] (14/22) osu_latency_test @daint:gpu+intel [compile: 0.020s run: 152.867s total: 185.853s]
-[       OK ] (15/22) osu_latency_test @daint:gpu+pgi [compile: 0.020s run: 149.662s total: 185.853s]
-[       OK ] (16/22) osu_allreduce_test %mpi_tasks=16 @daint:gpu+intel [compile: 0.020s run: 207.009s total: 207.831s]
-[       OK ] (17/22) osu_allreduce_test %mpi_tasks=16 @daint:gpu+pgi [compile: 0.019s run: 203.753s total: 207.829s]
-[       OK ] (18/22) osu_allreduce_test %mpi_tasks=8 @daint:gpu+pgi [compile: 0.019s run: 197.421s total: 207.783s]
-[       OK ] (19/22) osu_latency_test @daint:gpu+gnu [compile: 0.024s run: 218.130s total: 234.892s]
-[       OK ] (20/22) osu_bandwidth_test @daint:gpu+intel [compile: 0.020s run: 218.457s total: 244.995s]
-[       OK ] (21/22) osu_bandwidth_test @daint:gpu+pgi [compile: 0.020s run: 215.273s total: 244.992s]
-[       OK ] (22/22) osu_allreduce_test %mpi_tasks=8 @daint:gpu+intel [compile: 0.020s run: 267.367s total: 274.584s]
+[ RUN      ] fetch_osu_benchmarks ~daint /79cd6023 @daint:gpu+gnu
+[       OK ] ( 1/22) fetch_osu_benchmarks ~daint /79cd6023 @daint:gpu+gnu
+[ RUN      ] build_osu_benchmarks ~daint:gpu+gnu /f3269d42 @daint:gpu+gnu
+[ RUN      ] build_osu_benchmarks ~daint:gpu+intel /4d450880 @daint:gpu+intel
+[ RUN      ] build_osu_benchmarks ~daint:gpu+nvidia /e9b8d152 @daint:gpu+nvidia
+[       OK ] ( 2/22) build_osu_benchmarks ~daint:gpu+gnu /f3269d42 @daint:gpu+gnu
+[ RUN      ] osu_allreduce_test %mpi_tasks=16 /1fe48834 @daint:gpu+gnu
+[ RUN      ] osu_allreduce_test %mpi_tasks=8 /ae01c137 @daint:gpu+gnu
+[ RUN      ] osu_allreduce_test %mpi_tasks=4 /2129dc34 @daint:gpu+gnu
+[ RUN      ] osu_allreduce_test %mpi_tasks=2 /9f29c081 @daint:gpu+gnu
+[ RUN      ] osu_bandwidth_test /026711a1 @daint:gpu+gnu
+[ RUN      ] osu_latency_test /d2c978ad @daint:gpu+gnu
+[       OK ] ( 3/22) build_osu_benchmarks ~daint:gpu+intel /4d450880 @daint:gpu+intel
+[       OK ] ( 4/22) build_osu_benchmarks ~daint:gpu+nvidia /e9b8d152 @daint:gpu+nvidia
+[ RUN      ] osu_allreduce_test %mpi_tasks=16 /1fe48834 @daint:gpu+intel
+[ RUN      ] osu_allreduce_test %mpi_tasks=16 /1fe48834 @daint:gpu+nvidia
+[ RUN      ] osu_allreduce_test %mpi_tasks=8 /ae01c137 @daint:gpu+intel
+[ RUN      ] osu_allreduce_test %mpi_tasks=8 /ae01c137 @daint:gpu+nvidia
+[ RUN      ] osu_allreduce_test %mpi_tasks=4 /2129dc34 @daint:gpu+intel
+[ RUN      ] osu_allreduce_test %mpi_tasks=4 /2129dc34 @daint:gpu+nvidia
+[ RUN      ] osu_allreduce_test %mpi_tasks=2 /9f29c081 @daint:gpu+intel
+[ RUN      ] osu_allreduce_test %mpi_tasks=2 /9f29c081 @daint:gpu+nvidia
+[ RUN      ] osu_bandwidth_test /026711a1 @daint:gpu+intel
+[ RUN      ] osu_bandwidth_test /026711a1 @daint:gpu+nvidia
+[ RUN      ] osu_latency_test /d2c978ad @daint:gpu+intel
+[ RUN      ] osu_latency_test /d2c978ad @daint:gpu+nvidia
+[       OK ] ( 5/22) osu_allreduce_test %mpi_tasks=2 /9f29c081 @daint:gpu+gnu
+P: latency: 2.76 us (r:0, l:None, u:None)
+[       OK ] ( 6/22) osu_allreduce_test %mpi_tasks=2 /9f29c081 @daint:gpu+intel
+P: latency: 1.68 us (r:0, l:None, u:None)
+[       OK ] ( 7/22) osu_allreduce_test %mpi_tasks=4 /2129dc34 @daint:gpu+intel
+P: latency: 4.89 us (r:0, l:None, u:None)
+[       OK ] ( 8/22) osu_latency_test /d2c978ad @daint:gpu+intel
+P: latency: 1.54 us (r:0, l:None, u:None)
+[       OK ] ( 9/22) osu_latency_test /d2c978ad @daint:gpu+gnu
+P: latency: 1.17 us (r:0, l:None, u:None)
+[       OK ] (10/22) osu_allreduce_test %mpi_tasks=4 /2129dc34 @daint:gpu+gnu
+P: latency: 3.22 us (r:0, l:None, u:None)
+[       OK ] (11/22) osu_allreduce_test %mpi_tasks=16 /1fe48834 @daint:gpu+gnu
+P: latency: 13.84 us (r:0, l:None, u:None)
+[       OK ] (12/22) osu_allreduce_test %mpi_tasks=16 /1fe48834 @daint:gpu+nvidia
+P: latency: 30.77 us (r:0, l:None, u:None)
+[       OK ] (13/22) osu_allreduce_test %mpi_tasks=4 /2129dc34 @daint:gpu+nvidia
+P: latency: 5.74 us (r:0, l:None, u:None)
+[       OK ] (14/22) osu_allreduce_test %mpi_tasks=16 /1fe48834 @daint:gpu+intel
+P: latency: 14.77 us (r:0, l:None, u:None)
+[       OK ] (15/22) osu_allreduce_test %mpi_tasks=2 /9f29c081 @daint:gpu+nvidia
+P: latency: 4.5 us (r:0, l:None, u:None)
+[       OK ] (16/22) osu_allreduce_test %mpi_tasks=8 /ae01c137 @daint:gpu+nvidia
+P: latency: 33.93 us (r:0, l:None, u:None)
+[       OK ] (17/22) osu_allreduce_test %mpi_tasks=8 /ae01c137 @daint:gpu+intel
+P: latency: 20.9 us (r:0, l:None, u:None)
+[       OK ] (18/22) osu_latency_test /d2c978ad @daint:gpu+nvidia
+P: latency: 1.18 us (r:0, l:None, u:None)
+[       OK ] (19/22) osu_allreduce_test %mpi_tasks=8 /ae01c137 @daint:gpu+gnu
+P: latency: 10.14 us (r:0, l:None, u:None)
+[       OK ] (20/22) osu_bandwidth_test /026711a1 @daint:gpu+gnu
+P: bandwidth: 9785.43 MB/s (r:0, l:None, u:None)
+[       OK ] (21/22) osu_bandwidth_test /026711a1 @daint:gpu+intel
+P: bandwidth: 9841.26 MB/s (r:0, l:None, u:None)
+[       OK ] (22/22) osu_bandwidth_test /026711a1 @daint:gpu+nvidia
+P: bandwidth: 9824.01 MB/s (r:0, l:None, u:None)
 [----------] all spawned checks have finished
 
 [  PASSED  ] Ran 22/22 test case(s) from 10 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Sat Jan 22 23:13:40 2022 
-Run report saved in '/home/user/.reframe/reports/run-report.json'
-Log file(s) saved in '/tmp/rfm-6gbw7qzs.log'
+[==========] Finished on Tue Nov 15 18:30:34 2022
+Run report saved in '/home/user/.reframe/reports/run-report-4.json'
+Log file(s) saved in '/tmp/rfm-63lwmv4b.log'

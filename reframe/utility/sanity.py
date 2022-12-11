@@ -13,7 +13,6 @@ import re
 import sys
 
 import reframe.utility as util
-import reframe.core.warnings as warn
 from reframe.core.deferrable import (deferrable, _DeferredExpression,
                                      _DeferredPerformanceExpression)
 from reframe.core.exceptions import SanityError
@@ -62,16 +61,6 @@ def make_performance_function(func, unit, *args, **kwargs):
         )
     else:
         return _DeferredPerformanceExpression(func, unit, *args, **kwargs)
-
-
-# Create an alias decorator
-def sanity_function(func):
-    warn.user_deprecation_warning(
-        'using the @sn.sanity_function decorator from the sn module is '
-        'deprecated; please use the built-in decorator @deferrable instead.',
-        from_version='3.8.0'
-    )
-    return deferrable(func)
 
 
 # Deferrable versions of selected builtins
@@ -167,7 +156,7 @@ def print(obj, *, sep=' ', end='\n', file=None, flush=False):
         @sanity_function
         def my_sanity_fn(self):
             return sn.assert_eq(
-                sn.count(sn.print(sn.extract_all(...))), 10
+                sn.count(sn.print(sn.extractall(...))), 10
             )
 
     If ``file`` is None, :func:`print` will print its arguments to the

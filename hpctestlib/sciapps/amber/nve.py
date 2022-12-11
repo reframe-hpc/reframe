@@ -38,33 +38,6 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :required: Yes
     input_file = variable(str)
 
-    #: The name of the benchmark that this test encodes.
-    #:
-    #: This is set from the corresponding value in the :attr:`benchmark_info`
-    #: parameter pack during initialization.
-    #:
-    #: :type: :class:`str`
-    #: :required: Yes
-    benchmark = variable(str)
-
-    #: Energy value reference.
-    #:
-    #: This is set from the corresponding value in the :attr:`benchmark_info`
-    #: parameter pack during initialization.
-    #:
-    #: :type: `float`
-    #: :required: Yes
-    energy_ref = variable(float)
-
-    #: Energy value tolerance.
-    #:
-    #: This is set from the corresponding value in the :attr:`benchmark_info`
-    #: parameter pack during initialization.
-    #:
-    #: :type: `float`
-    #: :required: Yes
-    energy_tol = variable(float)
-
     #: Parameter pack encoding the benchmark information.
     #:
     #: The first element of the tuple refers to the benchmark name,
@@ -92,7 +65,7 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #
     # :type:`str`
     # :values: ``['mpi', 'cuda']``
-    variant = parameter(['mpi', 'cuda'])
+    variant = parameter(['mpi', 'cuda'], loggable=True)
 
     # Test tags
     #
@@ -107,10 +80,36 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     #: :required: Yes
     num_tasks = required
 
+    @loggable
+    @property
+    def bench_name(self):
+        '''The benchmark name.
+
+        :type: :class:`str`
+        '''
+
+        return self.__bench
+
+    @property
+    def energy_ref(self):
+        '''The energy reference value for this benchmark.
+
+        :type: :class:`str`
+        '''
+        return self.__nrg_ref
+
+    @property
+    def energy_tol(self):
+        '''The energy tolerance value for this benchmark.
+
+        :type: :class:`str`
+        '''
+        return self.__nrg_tol
+
     @run_after('init')
     def prepare_test(self):
-        self.benchmark, self.energy_ref, self.energy_tol = self.benchmark_info
-        self.descr = f'Amber NVE {self.benchmark} benchmark ({self.variant})'
+        self.__bench, self.__nrg_ref, self.__nrg_tol = self.benchmark_info
+        self.descr = f'Amber NVE {self.bench_name} benchmark ({self.variant})'
 
         params = {
             'mpi':  ('mdin.CPU', 'pmemd.MPI'),
@@ -124,9 +123,8 @@ class amber_nve_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
             ) from None
 
         self.prerun_cmds = [
-            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite'
-            f'/raw/main/amber_16_benchmark_suite/PME/{self.benchmark}.tar.bz2',
-            f'tar xf {self.benchmark}.tar.bz2'
+            f'curl -LJO https://github.com/victorusu/amber_benchmark_suite/raw/main/amber_16_benchmark_suite/PME/{self.bench_name}.tar.bz2',    # noqa: E501
+            f'tar xf {self.bench_name}.tar.bz2'
         ]
         self.executable_opts = ['-O',
                                 '-i', self.input_file,

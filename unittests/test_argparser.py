@@ -107,12 +107,20 @@ def extended_parser():
         '--git-timeout', envvar='RFM_GIT_TIMEOUT', action='store',
         configvar='general/git_timeout', type=float
     )
+
+    # Option that is only associated with an environment variable
+    parser.add_argument(
+        dest='env_option',
+        envvar='RFM_ENV_OPT',
+        action='store',
+        default='bar'
+    )
     foo_options.add_argument(
         '--timestamp', action='store',
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
     foo_options.add_argument(
-        '-C', '--config-file', action='store', envvar='RFM_CONFIG_FILE'
+        '-C', '--config-file', action='store', envvar='RFM_CONFIG_FILES'
     )
     foo_options.add_argument(
         '--check-path', action='append', envvar='RFM_CHECK_SEARCH_PATH :'
@@ -132,7 +140,7 @@ def extended_parser():
 
 
 def test_option_precedence(default_exec_ctx, extended_parser):
-    with rt.temp_environment(variables={
+    with rt.temp_environment(env_vars={
             'RFM_TIMESTAMP': '%F',
             'RFM_NON_DEFAULT_CRAYPE': 'yes',
             'RFM_MODULES_PRELOAD': 'a,b,c',
@@ -154,7 +162,7 @@ def test_option_precedence(default_exec_ctx, extended_parser):
 
 
 def test_option_with_config(default_exec_ctx, extended_parser, tmp_path):
-    with rt.temp_environment(variables={
+    with rt.temp_environment(env_vars={
             'RFM_TIMESTAMP': '%F',
             'RFM_NON_DEFAULT_CRAYPE': 'yes',
             'RFM_MODULES_PRELOAD': 'a,b,c',
@@ -179,7 +187,7 @@ def test_option_with_config(default_exec_ctx, extended_parser, tmp_path):
 
 
 def test_option_envvar_conversion_error(default_exec_ctx, extended_parser):
-    with rt.temp_environment(variables={
+    with rt.temp_environment(env_vars={
             'RFM_NON_DEFAULT_CRAYPE': 'foo',
             'RFM_GIT_TIMEOUT': 'non-float'
     }):
@@ -187,3 +195,14 @@ def test_option_envvar_conversion_error(default_exec_ctx, extended_parser):
         options = extended_parser.parse_args(['--nocolor'])
         errors = options.update_config(site_config)
         assert len(errors) == 2
+
+
+def test_envvar_option(default_exec_ctx, extended_parser):
+    with rt.temp_environment(env_vars={'RFM_ENV_OPT': 'BAR'}):
+        options = extended_parser.parse_args([])
+        assert options.env_option == 'BAR'
+
+
+def test_envvar_option_default_val(default_exec_ctx, extended_parser):
+    options = extended_parser.parse_args([])
+    assert options.env_option == 'bar'

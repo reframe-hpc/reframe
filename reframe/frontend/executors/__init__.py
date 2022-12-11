@@ -36,11 +36,11 @@ class TestCase:
 
     def __init__(self, check, partition, environ):
         self._check_orig = check
-        self._check = copy.deepcopy(check)
-        self._partition = copy.deepcopy(partition)
-        self._environ = copy.deepcopy(environ)
-        self._check._case = weakref.ref(self)
+        self._check = check
+        self._partition = partition
+        self._environ = environ
         self._deps = []
+        self._is_ready = False
 
         # Incoming dependencies
         self.in_degree = 0
@@ -72,6 +72,15 @@ class TestCase:
         e = self.environ.name if self.environ else None
         return f'({c!r}, {p!r}, {e!r})'
 
+    def prepare(self):
+        '''Prepare test case for sending down the test pipeline'''
+        if self._is_ready:
+            return
+
+        self._check = copy.deepcopy(self._check)
+        self._check._case = weakref.ref(self)
+        self._is_ready = True
+
     @property
     def check(self):
         return self._check
@@ -97,27 +106,28 @@ class TestCase:
         return TestCase(self._check_orig, self._partition, self._environ)
 
 
-def generate_testcases(checks,
-                       skip_system_check=False,
-                       skip_environ_check=False):
-    '''Generate concrete test cases from checks.'''
+@logging.time_function
+def generate_testcases(checks, prepare=False):
+    '''Generate concrete test cases from checks.
 
-    def supports_partition(c, p):
-        return skip_system_check or c.supports_system(p.fullname)
+    If `prepare` is true then each of the cases will also be prepared for
+    being sent to the test pipeline. Note that setting this to true may slow down
+    the test case generation.
 
-    def supports_environ(c, e):
-        return skip_environ_check or c.supports_environ(e.name)
+    '''
 
     rt = runtime.runtime()
     cases = []
     for c in checks:
-        for p in rt.system.partitions:
-            if not supports_partition(c, p):
-                continue
+        valid_comb = runtime.valid_sysenv_comb(c.valid_systems,
+                                               c.valid_prog_environs)
+        for part, environs in valid_comb.items():
+            for env in environs:
+                case = TestCase(c, part, env)
+                if prepare:
+                    case.prepare()
 
-            for e in p.environs:
-                if supports_environ(c, e):
-                    cases.append(TestCase(c, p, e))
+                cases.append(case)
 
     return cases
 
@@ -145,6 +155,12 @@ class RegressionTask:
         self._timestamps = {}
 
         self._aborted = False
+
+        # Performance logging
+        self._perflogger = logging.null_logger
+        self._perflog_compat = runtime.runtime().get_option(
+            'logging/0/perflog_compat'
+        )
 
     def duration(self, phase):
         # Treat pseudo-phases first
@@ -288,7 +304,9 @@ class RegressionTask:
             with logging.logging_context(self.check) as logger:
                 logger.debug(f'Entering stage: {self._current_stage}')
                 with update_timestamps():
-                    return fn(*args, **kwargs)
+                    # Pick the configuration of the current partition
+                    with runtime.temp_config(self.testcase.partition.fullname):
+                        return fn(*args, **kwargs)
         except SkipTestError as e:
             if not self.succeeded:
                 # Only skip a test if it hasn't finished yet;
@@ -302,21 +320,27 @@ class RegressionTask:
             self.fail()
             raise TaskExit from e
 
+    @logging.time_function
     def setup(self, *args, **kwargs):
+        self.testcase.prepare()
         self._safe_call(self.check.setup, *args, **kwargs)
         self._notify_listeners('on_task_setup')
 
+    @logging.time_function
     def compile(self):
         self._safe_call(self.check.compile)
         self._notify_listeners('on_task_compile')
 
+    @logging.time_function
     def compile_wait(self):
         self._safe_call(self.check.compile_wait)
 
+    @logging.time_function
     def run(self):
         self._safe_call(self.check.run)
         self._notify_listeners('on_task_run')
 
+    @logging.time_function
     def run_complete(self):
         done = self._safe_call(self.check.run_complete)
         if done:
@@ -325,6 +349,7 @@ class RegressionTask:
 
         return done
 
+    @logging.time_function
     def compile_complete(self):
         done = self._safe_call(self.check.compile_complete)
         if done:
@@ -332,16 +357,23 @@ class RegressionTask:
 
         return done
 
+    @logging.time_function
     def run_wait(self):
         self._safe_call(self.check.run_wait)
         self.zombie = False
 
+    @logging.time_function
     def sanity(self):
         self._safe_call(self.check.sanity)
 
+    @logging.time_function
     def performance(self):
+        if self.check.is_performance_check():
+            self._perflogger = logging.getperflogger(self.check)
+
         self._safe_call(self.check.performance)
 
+    @logging.time_function
     def finalize(self):
         try:
             jsonfile = os.path.join(self.check.stagedir, '.rfm_testcase.json')
@@ -354,7 +386,10 @@ class RegressionTask:
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
+        self._perflogger.log_performance(logging.INFO, self,
+                                         multiline=self._perflog_compat)
 
+    @logging.time_function
     def cleanup(self, *args, **kwargs):
         self._safe_call(self.check.cleanup, *args, **kwargs)
 
@@ -362,6 +397,8 @@ class RegressionTask:
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_failure')
+        self._perflogger.log_performance(logging.INFO, self,
+                                         multiline=self._perflog_compat)
 
     def skip(self, exc_info=None):
         self._skipped = True
@@ -392,9 +429,10 @@ class RegressionTask:
     def info(self):
         '''Return an info string about this task.'''
         name = self.check.display_name
+        hashcode = self.check.hashcode
         part = self.testcase.partition.fullname
         env  = self.testcase.environ.name
-        return f'{name} @{part}+{env}'
+        return f'{name} /{hashcode} @{part}+{env}'
 
 
 class TaskEventListener(abc.ABC):
@@ -467,6 +505,7 @@ class Runner:
     def stats(self):
         return self._stats
 
+    @logging.time_function
     def runall(self, testcases, restored_cases=None):
         num_checks = len({tc.check.unique_name for tc in testcases})
         self._printer.separator('short double line',
@@ -547,9 +586,7 @@ class ExecutionPolicy(abc.ABC):
 
     def __init__(self):
         # Options controlling the check execution
-        self.skip_system_check = False
         self.force_local = False
-        self.skip_environ_check = False
         self.skip_sanity_check = False
         self.skip_performance_check = False
         self.keep_stage_files = False
@@ -578,10 +615,6 @@ class ExecutionPolicy(abc.ABC):
     def runcase(self, case):
         '''Run a test case.'''
 
-        # Pick the right subconfig for the current partition
-        rt = runtime.runtime()
-        _, partition, _ = case
-        rt.site_config.select_subconfig(partition.fullname)
         if self.strict_check:
             case.check.strict_check = True
 

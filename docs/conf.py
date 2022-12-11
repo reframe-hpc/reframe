@@ -38,6 +38,16 @@ sys.path = [prefix, external] + sys.path
 import reframe                           # noqa: F401, F403
 import reframe.utility.osext as osext    # noqa: F401, F403
 
+# Sphinx erroneously uses `repr()` to display values and not the
+# human-readable `str()`. For this reason we define the following variable in
+# the `reframe` module so that objects can redirect to their `str()` method
+# from `repr()` if they are invoked in the context of Sphinx when building the
+# documentation. See discussion and the related workaround here:
+#
+# https://github.com/sphinx-doc/sphinx/issues/3857
+
+reframe.__build_docs__ = True
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -75,7 +85,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'ReFrame'
-copyright = '2016-2022, CSCS/ETH Zurich'
+copyright = '2016-2022, CSCS/ETH Zurich and other ReFrame Project Developers'
 author = 'ReFrame Project Developers'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -92,7 +102,7 @@ release = osext.reframe_version()
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -132,7 +142,7 @@ html_context = {
     'display_github': True,
     # Set the following variables to generate the resulting github URL for each page.
     # Format Template: https://{{ github_host|default("github.com") }}/{{ github_user }}/{{ github_repo }}/blob/{{ github_version }}{{ conf_py_path }}{{ pagename }}{{ suffix }}
-    'github_user': 'eth-cscs',
+    'github_user': 'reframe-hpc',
     'github_repo': 'reframe',
     # 'github_version': 'master/source/'
 

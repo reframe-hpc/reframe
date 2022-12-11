@@ -12,7 +12,7 @@ import reframe.core.exceptions as errors
 import reframe.core.runtime as runtime
 
 
-def _emit_gitlab_pipeline(testcases):
+def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
     config = runtime.runtime().site_config
 
     # Collect the necessary ReFrame invariants
@@ -34,10 +34,8 @@ def _emit_gitlab_pipeline(testcases):
                  else a for a in artifacts]
 
     def rfm_command(testcase):
-        if config.filename != '<builtin>':
-            config_opt = f'-C {config.filename}'
-        else:
-            config_opt = ''
+        # Ignore the first argument, it should be '<builtin>'
+        config_opt = ' '.join([f'-C {arg}' for arg in config.sources[1:]])
 
         report_file = f'{testcase.check.unique_name}-report.json'
         if testcase.level:
@@ -56,7 +54,8 @@ def _emit_gitlab_pipeline(testcases):
             f'--restore-session={restore_files}' if restore_files else '',
             f'--report-junit={testcase.check.unique_name}-report.xml',
             f'{"".join("-" + verbosity)}' if verbosity else '',
-            '-n', f"'^{testcase.check.unique_name}$'", '-r'
+            '-n', f"'^{testcase.check.unique_name}$'", '-r',
+            *child_pipeline_opts
         ])
 
     max_level = 0   # We need the maximum level to generate the stages section
@@ -93,9 +92,10 @@ def _emit_gitlab_pipeline(testcases):
     return json
 
 
-def emit_pipeline(fp, testcases, backend='gitlab'):
+def emit_pipeline(fp, testcases, child_pipeline_opts=None, backend='gitlab'):
     if backend != 'gitlab':
         raise errors.ReframeError(f'unknown CI backend {backend!r}')
 
-    yaml.dump(_emit_gitlab_pipeline(testcases), stream=fp,
+    child_pipeline_opts = child_pipeline_opts or []
+    yaml.dump(_emit_gitlab_pipeline(testcases, child_pipeline_opts), stream=fp,
               indent=2, sort_keys=False, width=sys.maxsize)

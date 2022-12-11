@@ -24,7 +24,8 @@ This can be expressed inside :class:`T1` using the :func:`depends_on` method:
        valid_systems = ['P0', 'P1']
        valid_prog_environs = ['E0', 'E1']
 
-       def __init__(self):
+       @run_after('init')
+       def setup_deps(self):
            self.depends_on('T0')
 
 Conceptually, this dependency can be viewed at the test level as follows:
@@ -58,8 +59,9 @@ You can achieve this as follows:
 
    @rfm.simple_test
    class T1(rfm.RegressionTest):
-       def __init__(self):
-           ...
+       ...
+       @run_after('init')
+       def setup_deps(self):
            self.depends_on('T0', how=udeps.fully)
 
 
@@ -154,8 +156,9 @@ The following code will create dependencies only if the source partition is ``P0
 
    @rfm.simple_test
    class T1(rfm.RegressionTest):
-       def __init__(self):
-           ...
+       ...
+       @run_after('init')
+       def setup_deps(self):
            self.depends_on('T0', how=myway)
 
 
@@ -197,8 +200,7 @@ As shown in the :doc:`tutorial_deps`, test dependencies would be of limited usag
 Let's reiterate over the :func:`set_executable` function of the :class:`OSULatencyTest` that we presented previously:
 
 .. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :start-after: # rfmdocstart: set_exec
-   :end-before: # rfmdocend: set_exec
+   :pyobject: OSULatencyTest.set_executable
 
 The ``@require_deps`` decorator does some magic -- we will unravel this shortly -- with the function arguments of the :func:`set_executable` function and binds them to the target test dependencies by their name.
 However, as discussed in this section, dependencies are defined at test case level, so the ``OSUBuildTest`` function argument is bound to a special function that allows you to retrieve an actual test case of the target dependency.

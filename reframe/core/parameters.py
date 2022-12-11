@@ -16,19 +16,124 @@ from reframe.core.exceptions import ReframeSyntaxError
 
 
 class TestParam:
-    '''Regression test paramter class.
+    '''Inserts a new test parameter.
 
-    Stores the attributes of a regression test parameter as defined directly
-    in the test definition. These attributes are the parameter's name,
-    values, and inheritance behaviour. This class should be thought of as a
-    temporary storage for these parameter attributes, before the full final
-    parameter space is built.
+    At the class level, these parameters are stored in a separate namespace
+    referred to as the *parameter space*. If a parameter with a matching name
+    is already present in the parameter space of a parent class, the existing
+    parameter values will be combined with those provided by this method
+    following the inheritance behavior set by the arguments ``inherit_params``
+    and ``filter_params``. Instead, if no parameter with a matching name
+    exists in any of the parent parameter spaces, a new regression test
+    parameter is created. A regression test can be parameterized as follows:
 
-    :meta private:
+    .. code:: python
+
+        class Foo(rfm.RegressionTest):
+            variant = parameter(['A', 'B'])
+
+            # print(variant)
+            # Error: a parameter may only be accessed from the class instance
+
+            @run_after('init')
+            def do_something(self):
+                if self.variant == 'A':
+                    do_this()
+                else:
+                    do_other()
+
+    One of the most powerful features of these built-in functions is that they
+    store their input information at the class level. However, a parameter may
+    only be accessed from the class instance and accessing it directly from
+    the class body is disallowed. With this approach, extending or
+    specializing an existing parameterized regression test becomes
+    straightforward, since the test attribute additions and modifications made
+    through built-in functions in the parent class are automatically inherited
+    by the child test. For instance, continuing with the example above, one
+    could override the :func:`do_something` hook in the :class:`Foo`
+    regression test as follows:
+
+    .. code:: python
+
+       class Bar(Foo):
+           @run_after('init')
+           def do_something(self):
+               if self.variant == 'A':
+                   override_this()
+               else:
+                   override_other()
+
+    Moreover, a derived class may extend, partially extend and/or modify the
+    parameter values provided in the base class as shown below.
+
+    .. code:: python
+
+       class ExtendVariant(Bar):
+           # Extend the full set of inherited variant parameter values
+           # to ['A', 'B', 'C']
+           variant = parameter(['C'], inherit_params=True)
+
+       class PartiallyExtendVariant(Bar):
+           # Extend a subset of the inherited variant parameter values
+           # to ['A', 'D']
+           variant = parameter(['D'], inherit_params=True,
+                               filter_params=lambda x: x[:1])
+
+       class ModifyVariant(Bar):
+           # Modify the variant parameter values to ['AA', 'BA']
+           variant = parameter(inherit_params=True,
+                              filter_params=lambda x: map(lambda y: y+'A', x))
+
+    A parameter with no values is referred to as an *abstract parameter* (i.e.
+    a parameter that is declared but not defined). Therefore, classes with at
+    least one abstract parameter are considered abstract classes.
+
+    .. code:: python
+
+       class AbstractA(Bar):
+           variant = parameter()
+
+       class AbstractB(Bar):
+           variant = parameter(inherit_params=True, filter_params=lambda x: [])
+
+    :param values: An iterable containing the parameter values.
+
+    :param inherit_params: If :obj:`True`, the parameter values defined in any
+        base class will be inherited. In this case, the parameter values
+        provided in the current class will extend the set of inherited
+        parameter values. If the parameter does not exist in any of the parent
+        parameter spaces, this option has no effect.
+
+    :param filter_params: Function to filter/modify the inherited parameter
+        values that may have been provided in any of the parent parameter
+        spaces. This function must accept a single iterable argument and
+        return an iterable. It will be called with the inherited parameter
+        values and it must return the filtered set of parameter values. This
+        function will only have an effect if used with
+        ``inherit_params=True``.
+
+    :param fmt: A formatting function that will be used to format the values
+        of this parameter in the test's
+        :attr:`~reframe.core.pipeline.RegressionTest.display_name`. This
+        function should take as argument the parameter value and return a
+        string representation of the value. If the returned value is not a
+        string, it will be converted using the :py:func:`str` function.
+
+    :param loggable: Mark this parameter as loggable. If :obj:`True`, this
+        parameter will become a log record attribute under the name
+        ``check_NAME``, where ``NAME`` is the name of the parameter.
+
+    :returns: A new test parameter.
+
+    .. versionadded:: 3.10.0
+       The ``fmt`` argument is added.
+
+    .. versionadded:: 3.11.0
+       The ``loggable`` argument is added.
     '''
 
-    def __init__(self, values=None,
-                 inherit_params=False, filter_params=None, fmt=None):
+    def __init__(self, values=None, inherit_params=False,
+                 filter_params=None, fmt=None, loggable=False):
         if values is None:
             values = []
 
@@ -64,6 +169,7 @@ class TestParam:
                             "accepting a single argument")
 
         self.__fmt_fn = fmt
+        self.__loggable = loggable
 
     @property
     def format(self):
@@ -74,6 +180,8 @@ class TestParam:
 
         The values from the other parameter will be filtered according to the
         filter function of this one and prepended to this parameter's values.
+
+        :meta private:
         '''
 
         try:
@@ -90,6 +198,9 @@ class TestParam:
 
     def is_abstract(self):
         return len(self.values) == 0
+
+    def is_loggable(self):
+        return self.__loggable
 
 
 class ParamSpace(namespaces.Namespace):

@@ -1,11 +1,15 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/reframe/schemas/config.json",
+    "$id": "https://raw.githubusercontent.com/reframe-hpc/reframe/master/reframe/schemas/config.json",
     "title": "Validation schema for ReFrame's configuration file",
     "defs": {
         "alphanum_string": {
             "type": "string",
-            "pattern": "([a-zA-Z0-9_]|-)+"
+            "pattern": "([a-zA-Z_][a-zA-Z0-9_]*)"
+        },
+        "alphanum_ext_string": {
+            "type": "string",
+            "pattern": "([a-zA-Z_]([a-zA-Z0-9_]|-)*)"
         },
         "system_ref": {
             "type": "array",
@@ -15,13 +19,7 @@
             "type": "array",
             "items": {
                 "type": "array",
-                "items": [
-                    {
-                        "type": "string",
-                        "pattern": "([a-zA-Z_][a-zA-Z0-9_]*)"
-                    },
-                    {"type": "string"}
-                ],
+                "items": [{"$ref": "#/defs/alphanum_ext_string"}],
                 "additionalProperties": false
             }
         },
@@ -57,6 +55,7 @@
                 },
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},
+                "format_perfvars": {"type": "string"},
                 "datefmt": {"type": "string"}
             },
             "required": ["type"]
@@ -103,6 +102,18 @@
                 }
             ]
         },
+        "sched_options": {
+            "type": "object",
+            "properties": {
+                "ignore_reqnodenotavail": {"type": "boolean"},
+                "job_submit_timeout": {"type": "number"},
+                "resubmit_on_errors": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "use_nodes_option": {"type": "boolean"}
+            }
+        },
         "stream_handler": {
             "allOf": [
                 {"$ref": "#/defs/handler_common"},
@@ -148,7 +159,11 @@
                 {
                     "properties": {
                         "url": {"type": "string"},
-                        "extras": {"type": "object"}
+                        "extras": {"type": "object"},
+                        "ignore_keys": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        }
                     },
                     "required": ["url"]
                 }
@@ -220,7 +235,7 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"$ref": "#/defs/alphanum_string"},
+                    "name": {"$ref": "#/defs/alphanum_ext_string"},
                     "descr": {"type": "string"},
                     "hostnames": {
                         "type": "array",
@@ -233,6 +248,7 @@
                                  "lmod", "nomod", "spack"]
                     },
                     "modules": {"$ref": "#/defs/modules_list"},
+                    "env_vars": {"$ref": "#/defs/envvar_list"},
                     "variables": {"$ref": "#/defs/envvar_list"},
                     "prefix": {"type": "string"},
                     "stagedir": {"type": "string"},
@@ -243,22 +259,17 @@
                         "items": {
                             "type": "object",
                             "properties": {
-                                "name": {"$ref": "#/defs/alphanum_string"},
+                                "name": {"$ref": "#/defs/alphanum_ext_string"},
                                 "descr": {"type": "string"},
                                 "scheduler": {
                                     "type": "string",
                                     "enum": [
-                                        "local", "lsf", "oar", "pbs",
+                                        "flux", "local", "lsf", "oar", "pbs",
                                         "sge", "slurm", "squeue", "torque"
                                     ]
                                 },
                                 "launcher": {
-                                    "type": "string",
-                                    "enum": [
-                                        "alps",  "ibrun", "local", "mpirun",
-                                        "mpiexec", "srun", "srunalloc", "ssh",
-                                        "upcrun", "upcxx-run", "lrun", "lrun-gpu"
-                                    ]
+                                    "type": "string"
                                 },
                                 "access": {
                                     "type": "array",
@@ -273,26 +284,25 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "type": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "Docker", "Sarus",
-                                                    "Shifter", "Singularity"
-                                                ]
-                                            },
+                                            "type": {"type": "string"},
                                             "modules": {
                                                 "$ref": "#/defs/modules_list"
                                             },
+                                            "env_vars": {
+                                                "$ref": "#/defs/envvar_list"
+                                            },
                                             "variables": {
                                                 "$ref": "#/defs/envvar_list"
-                                            }
+                                            },
+                                            "default": {"type": "boolean"}
                                         },
                                         "required": ["type"]
                                     }
                                 },
                                 "modules": {"$ref": "#/defs/modules_list"},
-                                "time_limit": {"type": ["string", "null"]},
+                                "env_vars": {"$ref": "#/defs/envvar_list"},
                                 "variables": {"$ref": "#/defs/envvar_list"},
+                                "time_limit": {"type": ["string", "null"]},
                                 "max_jobs": {"type": "number"},
                                 "prepare_cmds": {
                                     "type": "array",
@@ -300,7 +310,16 @@
                                  },
                                 "processor": {"$ref": "#/defs/processor_info"},
                                 "devices": {"$ref": "#/defs/devices"},
-                                "extras": {"type": "object"},
+                                "features": {
+                                    "type": "array",
+                                    "items": {"$ref": "#/defs/alphanum_string"}
+                                },
+                                "extras": {
+                                    "type": "object",
+                                    "propertyNames": {
+                                        "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+                                    }
+                                },
                                 "resources": {
                                     "type": "array",
                                     "items": {
@@ -332,8 +351,9 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"type": "string"},
+                    "name": {"$ref": "#/defs/alphanum_ext_string"},
                     "modules": {"$ref": "#/defs/modules_list"},
+                    "env_vars": {"$ref": "#/defs/envvar_list"},
                     "variables": {"$ref": "#/defs/envvar_list"},
                     "cc": {"type": "string"},
                     "cxx": {"type": "string"},
@@ -358,31 +378,17 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
-                    "extras": {"type": "object"},
-                    "target_systems": {"$ref": "#/defs/system_ref"}
-                },
-                "required": ["name"],
-                "additionalProperties": false
-            }
-        },
-        "schedulers": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "enum": ["local", "lsf", "oar", "pbs",
-                                 "sge", "slurm", "squeue", "torque"]
+                    "extras": {
+                        "type": "object",
+                        "propertyNames": {
+                            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+                        }
                     },
-                    "ignore_reqnodenotavail": {"type": "boolean"},
-                    "resubmit_on_errors": {
+                    "features": {
                         "type": "array",
-                        "items": {"type": "string"}
+                        "items": {"$ref": "#/defs/alphanum_string"}
                     },
-                    "job_submit_timeout": {"type": "number"},
-                    "target_systems": {"$ref": "#/defs/system_ref"},
-                    "use_nodes_option": {"type": "boolean"}
+                    "target_systems": {"$ref": "#/defs/system_ref"}
                 },
                 "required": ["name"],
                 "additionalProperties": false
@@ -420,7 +426,21 @@
                 "type": "object",
                 "properties": {
                     "level": {"$ref": "#/defs/loglevel"},
+                    "perflog_compat": {"type": "boolean"},
                     "handlers": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {"$ref": "#/defs/file_handler"},
+                                {"$ref": "#/defs/filelog_handler"},
+                                {"$ref": "#/defs/graylog_handler"},
+                                {"$ref": "#/defs/stream_handler"},
+                                {"$ref": "#/defs/syslog_handler"},
+                                {"$ref": "#/defs/httpjson_handler"}
+                            ]
+                        }
+                    },
+                    "handlers$": {
                         "type": "array",
                         "items": {
                             "anyOf": [
@@ -448,7 +468,6 @@
                     },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
-                "required": ["handlers", "handlers_perflog"],
                 "additionalProperties": false
             }
         },
@@ -480,10 +499,8 @@
                     "check_search_recursive": {"type": "boolean"},
                     "clean_stagedir": {"type": "boolean"},
                     "colorize": {"type": "boolean"},
-                    "compact_test_names": {"type": "boolean"},
+                    "compress_report": {"type": "boolean"},
                     "git_timeout": {"type": "number"},
-                    "ignore_check_conflicts": {"type": "boolean"},
-                    "trap_job_errors": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
                     "module_map_file": {"type": "string"},
                     "module_mappings": {
@@ -502,6 +519,7 @@
                     "save_log_files": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "timestamp_dirs": {"type": "string"},
+                    "trap_job_errors": {"type": "boolean"},
                     "unload_modules": {"$ref": "#/defs/modules_list"},
                     "use_login_shell": {"type": "boolean"},
                     "user_modules": {"$ref": "#/defs/modules_list"},
@@ -520,6 +538,7 @@
         "generate-ci/artifacts_expiry": "30 days",
         "generate-ci/target_systems": ["*"],
         "environments/modules": [],
+        "environments/env_vars": [],
         "environments/variables": [],
         "environments/cc": "cc",
         "environments/cxx": "CC",
@@ -530,17 +549,16 @@
         "environments/fflags": [],
         "environments/ldflags": [],
         "environments/extras": {},
+        "environments/features": [],
         "environments/target_systems": ["*"],
         "general/dump_pipeline_progress": false,
-        "general/pipeline_timeout": null,
+        "general/pipeline_timeout": 3,
         "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
         "general/check_search_recursive": false,
         "general/clean_stagedir": true,
         "general/colorize": true,
-        "general/compact_test_names": false,
+        "general/compress_report": false,
         "general/git_timeout": 5,
-        "general/ignore_check_conflicts": false,
-        "general/trap_job_errors": false,
         "general/keep_stage_files": false,
         "general/module_map_file": "",
         "general/module_mappings": [],
@@ -548,20 +566,25 @@
         "general/purge_environment": false,
         "general/remote_detect": false,
         "general/remote_workdir": ".",
-        "general/report_file": "${HOME}/.reframe/reports/run-report.json",
+        "general/report_file": "${HOME}/.reframe/reports/run-report-{sessionid}.json",
         "general/report_junit": null,
         "general/resolve_module_conflicts": true,
         "general/save_log_files": false,
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "",
+        "general/trap_job_errors": false,
         "general/unload_modules": [],
         "general/use_login_shell": false,
         "general/user_modules": [],
         "general/verbose": 0,
         "logging/level": "undefined",
+        "logging/perflog_compat": false,
         "logging/target_systems": ["*"],
+        "logging/handlers": [],
+        "logging/handlers_perflog": [],
         "logging/handlers*/*_level": "info",
         "logging/handlers*/*_format": "%(message)s",
+        "logging/handlers*/*_format_perfvars": "",
         "logging/handlers*/*_datefmt": "%FT%T",
         "logging/handlers*/file_append": false,
         "logging/handlers*/file_name": "",
@@ -570,20 +593,17 @@
         "logging/handlers*/filelog_basedir": "./perflogs",
         "logging/handlers*/graylog_extras": {},
         "logging/handlers*/httpjson_extras": {},
+        "logging/handlers*/httpjson_ignore_keys": [],
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",
         "modes/options": [],
         "modes/target_systems": ["*"],
-        "schedulers/ignore_reqnodenotavail": false,
-        "schedulers/resubmit_on_errors": [],
-        "schedulers/job_submit_timeout": 60,
-        "schedulers/target_systems": ["*"],
-        "schedulers/use_nodes_option": false,
         "systems/descr": "",
         "systems/max_local_jobs": 8,
         "systems/modules_system": "nomod",
         "systems/modules": [],
+        "systems/env_vars": [],
         "systems/variables": [],
         "systems/prefix": ".",
         "systems/outputdir": "",
@@ -592,17 +612,26 @@
         "systems/partitions/descr": "",
         "systems/partitions/access": [],
         "systems/partitions/environs": [],
+        "systems/partitions/container_runtime": null,
         "systems/partitions/container_platforms": [],
         "systems/partitions/container_platforms/*modules": [],
+        "systems/partitions/container_platforms/*env_vars": [],
         "systems/partitions/container_platforms/*variables": [],
+        "systems/partitions/features": [],
         "systems/partitions/resources": [],
         "systems/partitions/resources/options": [],
         "systems/partitions/modules": [],
+        "systems/partitions/env_vars": [],
         "systems/partitions/variables": [],
         "systems/partitions/max_jobs": 8,
         "systems/partitions/prepare_cmds": [],
         "systems/partitions/processor": {},
+        "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
-        "systems/partitions/extras": {}
+        "systems/partitions/extras": {},
+        "systems*/sched_options/ignore_reqnodenotavail": false,
+        "systems*/sched_options/job_submit_timeout": 60,
+        "systems*/sched_options/resubmit_on_errors": [],
+        "systems*/sched_options/use_nodes_option": false
     }
 }

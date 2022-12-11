@@ -16,7 +16,7 @@ class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     `ipcmagic <https://github.com/eth-cscs/ipcluster_magic>`__ is a Python
     package and collection of CLI scripts for controlling clusters for
     Jupyter. For more information, please have a look
-    `here <https://user.cscs.ch/tools/interactive/jupyterlab/#ipython>`__.
+    `here <https://user.cscs.ch/tools/interactive/jupyterlab/>`__.
 
     This test checks the ipcmagic performance.
     To do this, a single-layer neural network is trained against a noisy linear
@@ -27,7 +27,7 @@ class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     '''
 
     executable = 'ipython'
-    executable_opts = ['tf-hvd-sgd-ipc-tf2.py']
+    executable_opts = ['--colors=NoColor', 'tf-hvd-sgd-ipc-tf2.ipynb']
     num_tasks = 2
     num_tasks_per_node = 1
     descr = 'Distributed training with TensorFlow using ipyparallel'
@@ -59,7 +59,7 @@ class ipcmagic_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
         are different), that IPCMagic is configured and returns the correct
         end-of-program message (returns the slope parameter in the end).'''
 
-        nids = sn.extractall(r'Running on node: (?P<node>\S+)', self.stdout,
+        nids = sn.extractall(r"Out\[\d:1\]: '(?P<node>\S+)'", self.stdout,
                              'node', str)
         return sn.all([
             sn.assert_eq(sn.len(nids), 2),
