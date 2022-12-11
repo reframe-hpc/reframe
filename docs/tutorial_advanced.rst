@@ -390,7 +390,7 @@ Generally, ReFrame generates the job shell scripts using the following pattern:
 
 The ``job_scheduler_preamble`` contains the backend job scheduler directives that control the job allocation.
 The ``prepare_cmds`` are commands that can be emitted before the test environment commands.
-These can be specified with the :js:attr:`prepare_cmds <.systems[].partitions[].prepare_cmds>` partition configuration option.
+These can be specified with the :attr:`~config.systems.partitions.prepare_cmds` partition configuration option.
 The ``env_load_cmds`` are the necessary commands for setting up the environment of the test.
 These include any modules or environment variables set at the `system partition level <config_reference.html#system-partition-configuration>`__ or any `modules <regression_test_api.html#reframe.core.pipeline.RegressionTest.modules>`__ or `environment variables <regression_test_api.html#reframe.core.pipeline.RegressionTest.variables>`__ set at the test level.
 Then the commands specified in :attr:`~reframe.core.pipeline.RegressionTest.prerun_cmds` follow, while those specified in the :attr:`~reframe.core.pipeline.RegressionTest.postrun_cmds` come after the launch of the parallel job.
@@ -725,8 +725,8 @@ First, we need to enable the container platform support in ReFrame's configurati
    :end-before: # rfmdocend: containers
    :emphasize-lines: 9-18
 
-For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` `configuration parameter <config_reference.html#.systems[].partitions[].container_platforms>`__.
-In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
+For each partition, users can define a list of container platforms supported using the :attr:`~config.systems.partitions.container_platforms` configuration parameter.
+In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :attr:`~config.systems.partitions.container_platforms.modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
 Similarly, we add an entry for the `Singularity <https://sylabs.io>`__ platform.
 Optionally, users are allowed to set the ``default`` attribute to :obj:`True` in order to mark a specific container platform as the default of that partition (see below on how this information is being used).
 If no default container platform is specified explicitly, then always the first in the list will be considered as successful.

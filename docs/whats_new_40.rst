@@ -11,8 +11,8 @@ Framework's behavior with respect to performance logging has also changed, but c
 This page summarizes the key changes in ReFrame 4.0 and what users should pay attention to.
 
 
-New Features
-------------
+New Features and Enchancements
+------------------------------
 
 Chaining Configuration Files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -95,7 +95,7 @@ If you want to revert to the old behavior, where a single file was generated and
 New Backends
 ^^^^^^^^^^^^
 
-ReFrame 4.0 adds support for the `Apptainer <https://apptainer.org/>`__ container platform and the `Flux framework <http://flux-framework.org/>`__.
+eFrame 4.0 adds support for the `Apptainer <https://apptainer.org/>`__ container platform and the `Flux framework <http://flux-framework.org/>`__.
 
 
 Dropped Features and Deprecations

@@ -218,21 +218,21 @@ Here is what we need to type:
 .. literalinclude:: ../tutorials/config/tresa.py
 
 We define a system named ``tresa`` that has one partition named ``default``.
-This partition makes no use of any `workload manager <config_reference.html#.systems[].partitions[].scheduler>`__, but instead launches any jobs locally as OS processes.
-Two programming environments are relevant for that partition, namely ``gnu`` and ``clang``, which are defined in the section :js:attr:`environments` of the `configuration file <config_reference.html#.environments>`__.
+This partition makes no use of any `workload manager <config_reference.html#config.systems.partitions.scheduler>`__, but instead launches any jobs locally as OS processes.
+Two programming environments are relevant for that partition, namely ``gnu`` and ``clang``, which are defined in the section :data:`environments` of the configuration file.
 The ``gnu`` programming environment provides GCC 12, whereas the ``clang`` one provides the Clang compiler from the system.
 Notice, how you can define the actual commands for invoking the C, C++ and Fortran compilers in each programming environment.
 As soon as a programming environment defines the different compilers, ReFrame will automatically pick the right compiler based on the source file extension.
 In addition to C, C++ and Fortran programs, ReFrame will recognize the ``.cu`` extension as well and will try to invoke the ``nvcc`` compiler for CUDA programs.
-Note also that we set the :js:attr:`target_systems` for each environment definition.
+Note also that we set the :attr:`~config.environments.target_systems` for each environment definition.
 This restricts the definition of the environment being defined to the specified systems only.
 ReFrame will always pick the definition that is a closest match for the current system.
 Restricting the environment definitions is generally a good practice if you plan to define multiple systems in multiple configuration files, as ReFrame would otherwise complain that an environment is redefined.
 On the other hand, if you want to provide generic definitions of environments that are valid for multiple systems, you may skip that.
 This is what the builtin configuration of ReFrame does for its generic ``builtin`` environment.
 
-Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :js:attr:`hostnames` `configuration parameter <config_reference.html#.systems[].hostnames>`__) and it will not use any environment modules system (see the :js:attr:`modules_system` `configuration parameter <config_reference.html#.systems[].modules_system>`__).
-The :js:attr:`hostnames` attribute will help ReFrame to automatically pick the right configuration when running on it.
+Finally, the new system that we defined may be identified by the hostname ``tresa`` (see the :attr:`~config.systems.hostnames` systems configuration parameter) and it will not use any environment modules system (see the :attr:`~config.systems.modules_system` configuration parameter).
+The :attr:`~config.systems.hostnames` attribute will help ReFrame to automatically pick the right configuration when running on it.
 Notice, how the ``generic`` system matches any hostname, so that it acts as a fallback system.
 
 .. note::
@@ -567,7 +567,7 @@ Let's inspect the log file from our last test:
 .. literalinclude:: listings/perflogs.txt
    :language: console
 
-The format of this file is controlled by :js:attr:`handlers_perflog` logging configuration parameter and, by default, contains several information about the test.
+The format of this file is controlled by :attr:`~config.logging.handlers_perflog` logging configuration parameter and, by default, contains several information about the test.
 For each test, all of its performance variables are logged along with their unit, the obtained value, the reference and the lower and upper threshold.
 The default format is in CSV, so that it can be easily post-processed.
 For this reason, a header is also printed to help identify the different fields.
@@ -603,7 +603,7 @@ Let's create a new configuration file for Piz Daint:
 
 
 First of all, we need to define a new system and set the list of hostnames that will help ReFrame identify it.
-We also set the :js:attr:`modules_system <.systems[].modules_system>` `configuration parameter <config_reference.html#.systems[].modules_system>`__ to instruct ReFrame that this system makes use of the `environment modules <http://modules.sourceforge.net/>`__ for managing the user environment.
+We also set the :attr:`~config.systems.modules_system` configuration parameter to instruct ReFrame that this system makes use of the `environment modules <http://modules.sourceforge.net/>`__ for managing the user environment.
 Then we define the system partitions that we want to test.
 In this case, we define three partitions:
 
@@ -617,25 +617,25 @@ In this case, we define three partitions:
 The login nodes are pretty much similar to the ``tresa:default`` partition which corresponded to our laptop: tests will be launched and run locally.
 The other two partitions are handled by `Slurm <https://slurm.schedmd.com/>`__ and parallel jobs are launched using the |srun|_ command.
 Additionally, in order to access the different types of nodes represented by those partitions, users have to specify either ``-C mc`` or ``-C gpu`` options along with their account.
-This is what we do exactly with the :js:attr:`access` partition configuration option.
+This is what we do exactly with the :attr:`~config.systems.partitions.access` partition configuration option.
 
 .. note::
 
    System partitions in ReFrame do not necessarily correspond to real job scheduler partitions.
 
 Piz Daint's programming environment offers four compilers: Cray, GNU, Intel and NVIDIA.
-We want to test all of them, so we include them in the :js:attr:`environs` lists.
+We want to test all of them, so we include them in the :attr:`~config.systems.partitions.environs` lists.
 Notice that we do not include Clang in the list, since there is no such compiler on this particular system.
 On the other hand, we include a different version of the ``builtin`` environment, which corresponds to the default login environment without loading any modules.
 It is generally useful to define such an environment so as to use it for tests that are running simple utilities and don't need to compile anything.
 
-Before looking into the definition of the new environments for the four compilers, it is worth mentioning the :js:attr:`max_jobs` parameter.
+Before looking into the definition of the new environments for the four compilers, it is worth mentioning the :attr:`~config.systems.partitions.max_jobs` parameter.
 This parameter specifies the maximum number of ReFrame test jobs that can be simultaneously in flight.
 ReFrame will try to keep concurrency close to this limit (but not exceeding it).
 By default, this is set to ``8``, so you are advised to set it to a higher number if you want to increase the throughput of completed tests.
 
-The new environments are defined similarly to the ones we had for our local system, except that now we add also the :js:attr:`modules` parameter.
-The :js:attr:`modules` parameter is a list of environment modules that needs to be loaded, in order to make available this compiler.
+The new environments are defined similarly to the ones we had for our local system, except that now we add also the :attr:`~config.environments.modules` parameter.
+The :attr:`~config.environments.modules` parameter is a list of environment modules that needs to be loaded, in order to make available this compiler.
 
 -----------------
 Running the tests

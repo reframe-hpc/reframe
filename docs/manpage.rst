@@ -37,26 +37,13 @@ This is something that writers of regression tests should bear in mind.
    If it is a directory, ReFrame will search for test files inside this directory load all tests found in them.
    This option can be specified multiple times, in which case each ``PATH`` will be searched in order.
 
-   The check search path can also be set using the :envvar:`RFM_CHECK_SEARCH_PATH` environment variable or the :js:attr:`check_search_path` general configuration parameter.
-
-.. option:: --ignore-check-conflicts
-
-   Ignore tests with conflicting names when loading.
-
-   ReFrame requires test names to be unique.
-   Test names are used as components of the stage and output directory prefixes of tests, as well as for referencing target test dependencies.
-   This option should generally be avoided unless there is a specific reason.
-
-   This option can also be set using the :envvar:`RFM_IGNORE_CHECK_CONFLICTS` environment variable or the :js:attr:`ignore_check_conflicts` general configuration parameter.
-
-   .. deprecated:: 3.8.0
-      This option will be removed in a future version.
+   The check search path can also be set using the :envvar:`RFM_CHECK_SEARCH_PATH` environment variable or the :attr:`~config.general.check_search_path` general configuration parameter.
 
 .. option:: -R, --recursive
 
    Search for test files recursively in directories found in the check search path.
 
-   This option can also be set using the :envvar:`RFM_CHECK_SEARCH_RECURSIVE` environment variable or the :js:attr:`check_search_recursive` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_CHECK_SEARCH_RECURSIVE` environment variable or the :attr:`~config.general.check_search_recursive` general configuration parameter.
 
 
 --------------
@@ -276,7 +263,7 @@ Options controlling ReFrame output
    The generated report is a JSON file formatted in a human readable form.
    If this option is enabled, the generated JSON file will be a single stream of text without additional spaces or new lines.
 
-   This option can also be set using the :envvar:`RFM_COMPRESS_REPORT` environment variable or the :js:attr:`compress_report` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_COMPRESS_REPORT` environment variable or the :attr:`~config.general.compress_report` general configuration parameter.
 
    .. versionadded:: 3.12.0
 
@@ -286,7 +273,7 @@ Options controlling ReFrame output
    Normally, if the stage directory of a test exists, ReFrame will remove it and recreate it.
    This option disables this behavior.
 
-   This option can also be set using the :envvar:`RFM_CLEAN_STAGEDIR` environment variable or the :js:attr:`clean_stagedir` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_CLEAN_STAGEDIR` environment variable or the :attr:`~config.general.clean_stagedir` general configuration parameter.
 
    .. versionadded:: 3.1
 
@@ -294,7 +281,7 @@ Options controlling ReFrame output
 
    Keep test stage directories even for tests that finish successfully.
 
-   This option can also be set using the :envvar:`RFM_KEEP_STAGE_FILES` environment variable or the :js:attr:`keep_stage_files` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_KEEP_STAGE_FILES` environment variable or the :attr:`~config.general.keep_stage_files` general configuration parameter.
 
 .. option:: -o, --output=DIR
 
@@ -311,7 +298,7 @@ Options controlling ReFrame output
    - The standard output and standard error of the run phase, if not a compile-only test.
    - Any additional files specified by the :attr:`keep_files` regression test attribute.
 
-   This option can also be set using the :envvar:`RFM_OUTPUT_DIR` environment variable or the :js:attr:`outputdir` system configuration parameter.
+   This option can also be set using the :envvar:`RFM_OUTPUT_DIR` environment variable or the :attr:`~systems.outputdir` system configuration parameter.
 
 .. option:: --perflogdir=DIR
 
@@ -319,7 +306,7 @@ Options controlling ReFrame output
 
    This option is relevant only to the ``filelog`` `logging handler <config_reference.html#the-filelog-log-handler>`__.
 
-   This option can also be set using the :envvar:`RFM_PERFLOG_DIR` environment variable or the :js:attr:`basedir` logging handler configuration parameter.
+   This option can also be set using the :envvar:`RFM_PERFLOG_DIR` environment variable or the :attr:`~config.logging.handlers_perflog..filelog..basedir` logging handler configuration parameter.
 
 .. option:: --prefix=DIR
 
@@ -327,7 +314,7 @@ Options controlling ReFrame output
 
    The base stage and output directories (see below) will be specified relative to this prefix if not specified explicitly.
 
-   This option can also be set using the :envvar:`RFM_PREFIX` environment variable or the :js:attr:`prefix` system configuration parameter.
+   This option can also be set using the :envvar:`RFM_PREFIX` environment variable or the :attr:`~config.systems.prefix` system configuration parameter.
 
 .. option:: --report-file=FILE
 
@@ -335,7 +322,7 @@ Options controlling ReFrame output
 
    The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file.
 
-   This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :js:attr:`report_file` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :attr:`~config.general.report_file` general configuration parameter.
 
    .. versionadded:: 3.1
 
@@ -345,7 +332,7 @@ Options controlling ReFrame output
 
    The generated report adheres to the XSD schema `here <https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd>`__ where each retry is treated as an individual testsuite.
 
-   This option can also be set using the :envvar:`RFM_REPORT_JUNIT` environment variable or the :js:attr:`report_junit` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_REPORT_JUNIT` environment variable or the :attr:`~config.general.report_junit` general configuration parameter.
 
    .. versionadded:: 3.6.0
 
@@ -363,7 +350,7 @@ Options controlling ReFrame output
    where ``stage_prefix`` is set by this option.
    If a test finishes successfully, its stage directory will be removed.
 
-   This option can also be set using the :envvar:`RFM_STAGE_DIR` environment variable or the :js:attr:`stagedir` system configuration parameter.
+   This option can also be set using the :envvar:`RFM_STAGE_DIR` environment variable or the :attr:`~config.systems.stagedir` system configuration parameter.
 
 .. option:: --save-log-files
 
@@ -371,7 +358,7 @@ Options controlling ReFrame output
 
    Only log files generated by ``file`` `log handlers <config_reference.html#the-file-log-handler>`__ will be copied.
 
-   This option can also be set using the :envvar:`RFM_SAVE_LOG_FILES` environment variable or the :js:attr:`save_log_files` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_SAVE_LOG_FILES` environment variable or the :attr:`~config.general.save_log_files` general configuration parameter.
 
 .. option:: --timestamp [TIMEFMT]
 
@@ -380,7 +367,7 @@ Options controlling ReFrame output
    ``TIMEFMT`` can be any valid :manpage:`strftime(3)` time format.
    If not specified, ``TIMEFMT`` is set to ``%FT%T``.
 
-   This option can also be set using the :envvar:`RFM_TIMESTAMP_DIRS` environment variable or the :js:attr:`timestamp_dirs` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_TIMESTAMP_DIRS` environment variable or the :attr:`~config.general.timestamp_dirs` general configuration parameter.
 
 
 -------------------------------------
@@ -456,7 +443,7 @@ Options controlling ReFrame execution
      ReFrame's runtime monitors the progress of each test and will resume the pipeline execution of an asynchronously spawned test as soon as its build or run phase have finished.
      Note that the rest of the pipeline stages are still executed sequentially in this policy.
 
-     Concurrency can be controlled by setting the :js:attr:`max_jobs` system partition configuration parameter.
+     Concurrency can be controlled by setting the :attr:`~config.systems.partitions.max_jobs` system partition configuration parameter.
      As soon as the concurrency limit is reached, ReFrame will first poll the status of all its pending tests to check if any execution slots have been freed up.
      If there are tests that have finished their build or run phase, ReFrame will keep pushing tests for execution until the concurrency limit is reached again.
      If no execution slots are available, ReFrame will throttle job submission.
@@ -484,7 +471,7 @@ Options controlling ReFrame execution
 
    ReFrame execution mode to use.
 
-   An execution mode is simply a predefined invocation of ReFrame that is set with the :js:attr:`modes` configuration parameter.
+   An execution mode is simply a predefined invocation of ReFrame that is set with the :data:`modes` configuration parameter.
    If an option is specified both in an execution mode and in the command-line, then command-line takes precedence.
 
 .. option:: --repeat=N
@@ -638,12 +625,12 @@ Options controlling job submission
    If ``OPTION`` starts with ``-`` it will be passed verbatim to the backend job scheduler.
    If ``OPTION`` starts with ``#`` it will be emitted verbatim in the job script.
    Otherwise, ReFrame will pass ``--key value`` or ``-k value`` (if ``key`` is a single character) to the backend scheduler.
-   Any job options specified with this command-line option will be emitted after any job options specified in the :js:attr:`access` system partition configuration parameter.
+   Any job options specified with this command-line option will be emitted after any job options specified in the :attr:`~config.systems.partitions.access` system partition configuration parameter.
 
-   Especially for the Slurm backends, constraint options, such as ``-J constraint=value``, ``-J C=value``, ``-J --constraint=value`` or ``-J -C=value``, are going to be combined with any constraint options specified in the :js:attr:`access` system partition configuration parameter.
-   For example, if ``-C x`` is specified in the :js:attr:`access` and ``-J C=y`` is passed to the command-line, ReFrame will pass ``-C x&y`` as a constraint to the scheduler.
+   Especially for the Slurm backends, constraint options, such as ``-J constraint=value``, ``-J C=value``, ``-J --constraint=value`` or ``-J -C=value``, are going to be combined with any constraint options specified in the :attr:`~config.systems.partitions.access` system partition configuration parameter.
+   For example, if ``-C x`` is specified in the :attr:`~config.systems.partitions.access` and ``-J C=y`` is passed to the command-line, ReFrame will pass ``-C x&y`` as a constraint to the scheduler.
    Notice, however, that if constraint options are specified through multiple :option:`-J` options, only the last one will be considered.
-   If you wish to completely overwrite any constraint options passed in :js:attr:`access`, you should consider passing explicitly the Slurm directive with ``-J '#SBATCH --constraint=new'``.
+   If you wish to completely overwrite any constraint options passed in :attr:`~config.systems.partitions.access`, you should consider passing explicitly the Slurm directive with ``-J '#SBATCH --constraint=new'``.
 
    .. versionchanged:: 3.0
       This option has become more flexible.
@@ -657,7 +644,7 @@ Flexible node allocation
 
 ReFrame can automatically set the number of tasks of a test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a value less than or equal to zero.
 This scheme is conveniently called *flexible node allocation* and is valid only for the Slurm backend.
-When allocating nodes automatically, ReFrame will take into account all node limiting factors, such as partition :js:attr:`access` options, and any job submission control options described above.
+When allocating nodes automatically, ReFrame will take into account all node limiting factors, such as partition :attr:`~config.systems.partitions.access` options, and any job submission control options described above.
 Nodes from this pool are allocated according to different policies.
 If no node can be selected, the test will be marked as a failure with an appropriate message.
 
@@ -698,7 +685,7 @@ It does so by leveraging the selected system's environment modules system.
 
    This option may be specified multiple times, in which case multiple mappings will be applied.
 
-   This option can also be set using the :envvar:`RFM_MODULE_MAPPINGS` environment variable or the :js:attr:`module_mappings` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_MODULE_MAPPINGS` environment variable or the :attr:`~config.general.module_mappings` general configuration parameter.
 
    .. versionchanged:: 3.3
       If the mapping replaces a module collection, all new names must refer to module collections, too.
@@ -713,7 +700,7 @@ It does so by leveraging the selected system's environment modules system.
    This option may be specified multiple times, in which case all specified modules will be loaded in order.
    ReFrame will *not* perform any automatic conflict resolution.
 
-   This option can also be set using the :envvar:`RFM_USER_MODULES` environment variable or the :js:attr:`user_modules` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_USER_MODULES` environment variable or the :attr:`~config.general.user_modules` general configuration parameter.
 
 .. option:: --module-mappings=FILE
 
@@ -722,7 +709,7 @@ It does so by leveraging the selected system's environment modules system.
    Each line of the file contains a module mapping in the form described in the :option:`-M` option.
    This option may be combined with the :option:`-M` option, in which case module mappings specified will be applied additionally.
 
-   This option can also be set using the :envvar:`RFM_MODULE_MAP_FILE` environment variable or the :js:attr:`module_map_file` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_MODULE_MAP_FILE` environment variable or the :attr:`~config.general.module_map_file` general configuration parameter.
 
 .. option:: --module-path=PATH
 
@@ -752,7 +739,7 @@ It does so by leveraging the selected system's environment modules system.
 
      export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
 
-   This option can also be set using the :envvar:`RFM_NON_DEFAULT_CRAYPE` environment variable or the :js:attr:`non_default_craype` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_NON_DEFAULT_CRAYPE` environment variable or the :attr:`~config.general.non_default_craype` general configuration parameter.
 
 .. option:: --purge-env
 
@@ -760,7 +747,7 @@ It does so by leveraging the selected system's environment modules system.
 
    This will unload also sticky Lmod modules.
 
-   This option can also be set using the :envvar:`RFM_PURGE_ENVIRONMENT` environment variable or the :js:attr:`purge_environment` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_PURGE_ENVIRONMENT` environment variable or the :attr:`~config.general.purge_environment` general configuration parameter.
 
 .. option:: -u, --unload-module=NAME
 
@@ -768,7 +755,7 @@ It does so by leveraging the selected system's environment modules system.
 
    This option may be specified multiple times, in which case all specified modules will be unloaded in order.
 
-   This option can also be set using the :envvar:`RFM_UNLOAD_MODULES` environment variable or the :js:attr:`unload_modules` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_UNLOAD_MODULES` environment variable or the :attr:`~config.general.unload_modules` general configuration parameter.
 
 
 ---------------------
@@ -817,7 +804,7 @@ Miscellaneous options
 
    Disable output coloring.
 
-   This option can also be set using the :envvar:`RFM_COLORIZE` environment variable or the :js:attr:`colorize` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_COLORIZE` environment variable or the :attr:`~config.general.colorize` general configuration parameter.
 
 .. option:: --performance-report
 
@@ -875,7 +862,7 @@ Miscellaneous options
    It may also have the form ``SYSNAME:PARTNAME``, in which case the configuration of system ``SYSNAME`` will be loaded, but as if it had ``PARTNAME`` as its sole partition.
    Of course, ``PARTNAME`` must be a valid partition of system ``SYSNAME``.
    If this option is not specified, ReFrame will try to pick the correct configuration entry automatically.
-   It does so by trying to match the hostname of the current machine again the hostname patterns defined in the :js:attr:`hostnames` system configuration parameter.
+   It does so by trying to match the hostname of the current machine again the hostname patterns defined in the :attr:`~config.systems.hostnames` system configuration parameter.
    The system with the first match becomes the current system.
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
@@ -898,9 +885,9 @@ Miscellaneous options
    Every time this option is specified, the verbosity level will be increased by one.
    There are the following message levels in ReFrame listed in increasing verbosity order:
    ``critical``, ``error``, ``warning``, ``info``, ``verbose`` and ``debug``.
-   The base verbosity level of the output is defined by the :js:attr:`level` `stream logging handler <config_reference.html#common-logging-handler-properties>`__ configuration parameter.
+   The base verbosity level of the output is defined by the :attr:`~config.logging.handlers.level` stream logging handler configuration parameter.
 
-   This option can also be set using the :envvar:`RFM_VERBOSE` environment variable or the :js:attr:`verbose` general configuration parameter.
+   This option can also be set using the :envvar:`RFM_VERBOSE` environment variable or the :attr:`~config.general.verbose` general configuration parameter.
 
 
 .. _test_naming_scheme:
@@ -1040,7 +1027,8 @@ Boolean environment variables can have any value of ``true``, ``yes``, ``y`` (ca
   Values ``1`` and ``0`` are now valid for boolean environment variables.
 
 
-Here is an alphabetical list of the environment variables recognized by ReFrame:
+Here is an alphabetical list of the environment variables recognized by ReFrame.
+Whenever an environment variable is associated with a configuration option, its default value is omitted as it is the same.
 
 
 .. envvar:: RFM_AUTODETECT_FQDN
@@ -1115,7 +1103,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`-c`
-      Associated configuration parameter :js:attr:`check_search_path` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.check_search_path`
       ================================== ==================
 
 
@@ -1128,7 +1116,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`-R`
-      Associated configuration parameter :js:attr:`check_search_recursive` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.check_search_recursive`
       ================================== ==================
 
 
@@ -1143,7 +1131,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--dont-restage`
-      Associated configuration parameter :js:attr:`clean_stagedir` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.clean_stagedir`
       ================================== ==================
 
 
@@ -1156,7 +1144,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--nocolor`
-      Associated configuration parameter :js:attr:`colorize` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.colorize`
       ================================== ==================
 
 
@@ -1169,7 +1157,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--compress-report`
-      Associated configuration parameter :js:attr:`compress_report` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.compress_report`
       ================================== ==================
 
    .. versionadded:: 3.12.0
@@ -1231,7 +1219,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`git_timeout` general configuration parameter.
+      Associated configuration parameter :attr:`~config.general.git_timeout`
       ================================== ==================
 
 
@@ -1248,7 +1236,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`address` graylog log handler configuration parameter
+      Associated configuration parameter :attr:`~config.logging.handlers..graylog..address`
       ================================== ==================
 
 
@@ -1265,27 +1253,11 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`url` httpjson log handler configuration parameter
+      Associated configuration parameter :attr:`~config.logging.handlers..httpjson..url`
       ================================== ==================
 
 
 .. versionadded:: 3.6.1
-
-
-.. envvar:: RFM_IGNORE_CHECK_CONFLICTS
-
-   Ignore tests with conflicting names when loading.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     :option:`--ignore-check-conflicts`
-      Associated configuration parameter :js:attr:`ignore_check_conflicts` general configuration parameter
-      ================================== ==================
-
-   .. deprecated:: 3.8.0
-      This environment variable will be removed in a future version.
 
 
 .. envvar:: RFM_IGNORE_REQNODENOTAVAIL
@@ -1297,7 +1269,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`ignore_reqnodenotavail` scheduler configuration parameter
+      Associated configuration parameter :attr:`~config.systems.partitions.sched_options.ignore_reqnodenotavail`
       ================================== ==================
 
 
@@ -1310,7 +1282,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--keep-stage-files`
-      Associated configuration parameter :js:attr:`keep_stage_files` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.keep_stage_files`
       ================================== ==================
 
 
@@ -1323,7 +1295,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--module-mappings`
-      Associated configuration parameter :js:attr:`module_map_file` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.module_map_file`
       ================================== ==================
 
 
@@ -1336,7 +1308,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`-M`
-      Associated configuration parameter :js:attr:`module_mappings` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.module_mappings`
       ================================== ==================
 
 
@@ -1349,7 +1321,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--non-default-craype`
-      Associated configuration parameter :js:attr:`non_default_craype` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.non_default_craype`
       ================================== ==================
 
 
@@ -1362,7 +1334,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`-o`
-      Associated configuration parameter :js:attr:`outputdir` system configuration parameter
+      Associated configuration parameter :attr:`~config.systems.outputdir`
       ================================== ==================
 
 
@@ -1375,7 +1347,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--perflogdir`
-      Associated configuration parameter :js:attr:`basedir` logging handler configuration parameter
+      Associated configuration parameter :attr:`~config.logging.handlers..filelog..basedir`
       ================================== ==================
 
 
@@ -1388,7 +1360,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--prefix`
-      Associated configuration parameter :js:attr:`prefix` system configuration parameter
+      Associated configuration parameter :attr:`~config.systems.prefix`
       ================================== ==================
 
 
@@ -1401,7 +1373,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--purge-env`
-      Associated configuration parameter :js:attr:`purge_environment` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.purge_environment`
       ================================== ==================
 
 
@@ -1414,7 +1386,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`remote_detect` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.remote_detect`
       ================================== ==================
 
    .. versionadded:: 3.7.0
@@ -1429,7 +1401,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`remote_workdir` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.remote_workdir`
       ================================== ==================
 
    .. versionadded:: 3.7.0
@@ -1446,7 +1418,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--report-file`
-      Associated configuration parameter :js:attr:`report_file` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.report_file`
       ================================== ==================
 
 
@@ -1461,7 +1433,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--report-junit`
-      Associated configuration parameter :js:attr:`report_junit` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.report_junit`
       ================================== ==================
 
 
@@ -1476,7 +1448,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`resolve_module_conflicts` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.resolve_module_conflicts`
       ================================== ==================
 
 
@@ -1489,7 +1461,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`--save-log-files`
-      Associated configuration parameter :js:attr:`save_log_files` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.save_log_files`
       ================================== ==================
 
 
@@ -1502,7 +1474,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`-s`
-      Associated configuration parameter :js:attr:`stagedir` system configuration parameter
+      Associated configuration parameter :attr:`~config.systems.stagedir`
       ================================== ==================
 
 
@@ -1517,7 +1489,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`address` syslog log handler configuration parameter
+      Associated configuration parameter :attr:`~config.logging.handlers..syslog..address`
       ================================== ==================
 
 
@@ -1545,7 +1517,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     |--timestamp|_
-      Associated configuration parameter :js:attr:`timestamp_dirs` general configuration parameter.
+      Associated configuration parameter :attr:`~config.general.timestamp_dirs`
       ================================== ==================
 
 .. |--timestamp| replace:: :attr:`--timestamp`
@@ -1561,7 +1533,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       :align: left
 
       ================================== ==================
-      Associated configuration parameter :js:attr:`trap_job_errors` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.trap_job_errors`
       ================================== ==================
 
    .. versionadded:: 3.9.0
@@ -1576,7 +1548,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`-u`
-      Associated configuration parameter :js:attr:`unload_modules` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.unload_modules`
       ================================== ==================
 
 
@@ -1589,7 +1561,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :js:attr:`use_login_shell` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.use_login_shell`
       ================================== ==================
 
 
@@ -1602,7 +1574,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`-m`
-      Associated configuration parameter :js:attr:`user_modules` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.user_modules`
       ================================== ==================
 
 
@@ -1615,7 +1587,7 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
 
       ================================== ==================
       Associated command line option     :option:`-v`
-      Associated configuration parameter :js:attr:`verbose` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.verbose`
       ================================== ==================
 
 
