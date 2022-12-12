@@ -5,7 +5,7 @@
 
 import pytest
 
-import reframe.utility.typecheck as types
+import reframe.utility.typecheck as typ
 
 
 def assert_type_hierarchy(builtin_type, ctype):
@@ -19,189 +19,189 @@ def assert_type_hierarchy(builtin_type, ctype):
 
 
 def test_bool_type():
-    assert isinstance(True, types.Bool)
-    assert isinstance(False, types.Bool)
-    assert not isinstance('foo', types.Bool)
+    assert isinstance(True, typ.Bool)
+    assert isinstance(False, typ.Bool)
+    assert not isinstance('foo', typ.Bool)
 
     # Test invalid arguments
     with pytest.raises(TypeError):
-        types.Bool('foo')
+        typ.Bool('foo')
 
     with pytest.raises(TypeError):
-        types.Bool('True')
+        typ.Bool('True')
 
     with pytest.raises(TypeError):
-        types.Bool('False')
+        typ.Bool('False')
 
     # Test for boolean conversion
-    assert types.Bool('true') is True
-    assert types.Bool('yes') is True
-    assert types.Bool('false') is False
-    assert types.Bool('no') is False
+    assert typ.Bool('true') is True
+    assert typ.Bool('yes') is True
+    assert typ.Bool('false') is False
+    assert typ.Bool('no') is False
 
 
 def test_list_type():
     l = [1, 2]
     ll = [[1, 2], [3, 4]]
-    assert isinstance(l, types.List)
-    assert isinstance(l, types.List[int])
-    assert not isinstance(l, types.List[float])
+    assert isinstance(l, typ.List)
+    assert isinstance(l, typ.List[int])
+    assert not isinstance(l, typ.List[float])
 
-    assert isinstance(ll, types.List)
-    assert isinstance(ll, types.List[types.List[int]])
-    assert_type_hierarchy(list, types.List)
+    assert isinstance(ll, typ.List)
+    assert isinstance(ll, typ.List[typ.List[int]])
+    assert_type_hierarchy(list, typ.List)
 
     # Test invalid arguments
     with pytest.raises(TypeError):
-        types.List[3]
+        typ.List[3]
 
     with pytest.raises(TypeError):
-        types.List[int, float]
+        typ.List[int, float]
 
     # Test type conversions
-    assert types.List[int]('1,2') == [1, 2]
-    assert types.List[int]('1') == [1]
+    assert typ.List[int]('1,2') == [1, 2]
+    assert typ.List[int]('1') == [1]
 
     with pytest.raises(ValueError):
-        types.List[int]('foo')
+        typ.List[int]('foo')
 
     with pytest.raises(TypeError):
-        types.List[int](1)
+        typ.List[int](1)
 
 
 def test_set_type():
     s = {1, 2}
     ls = [{1, 2}, {3, 4}]
-    assert isinstance(s, types.Set)
-    assert isinstance(s, types.Set[int])
-    assert not isinstance(s, types.Set[float])
+    assert isinstance(s, typ.Set)
+    assert isinstance(s, typ.Set[int])
+    assert not isinstance(s, typ.Set[float])
 
-    assert isinstance(ls, types.List)
-    assert isinstance(ls, types.List[types.Set[int]])
-    assert_type_hierarchy(set, types.Set)
+    assert isinstance(ls, typ.List)
+    assert isinstance(ls, typ.List[typ.Set[int]])
+    assert_type_hierarchy(set, typ.Set)
 
     # Test invalid arguments
     with pytest.raises(TypeError):
-        types.Set[3]
+        typ.Set[3]
 
     with pytest.raises(TypeError):
-        types.Set[int, float]
+        typ.Set[int, float]
 
-    assert types.Set[int]('1,2') == {1, 2}
-    assert types.Set[int]('1') == {1}
+    assert typ.Set[int]('1,2') == {1, 2}
+    assert typ.Set[int]('1') == {1}
 
     with pytest.raises(ValueError):
-        types.Set[int]('foo')
+        typ.Set[int]('foo')
 
     with pytest.raises(TypeError):
-        types.Set[int](1)
+        typ.Set[int](1)
 
 
 def test_uniform_tuple_type():
     t = (1, 2)
     tl = ([1, 2], [3, 4])
     lt = [(1, 2), (3, 4)]
-    assert isinstance(t, types.Tuple)
-    assert isinstance(t, types.Tuple[int])
-    assert not isinstance(t, types.Tuple[float])
+    assert isinstance(t, typ.Tuple)
+    assert isinstance(t, typ.Tuple[int])
+    assert not isinstance(t, typ.Tuple[float])
 
-    assert isinstance(tl, types.Tuple)
-    assert isinstance(tl, types.Tuple[types.List[int]])
+    assert isinstance(tl, typ.Tuple)
+    assert isinstance(tl, typ.Tuple[typ.List[int]])
 
-    assert isinstance(lt, types.List)
-    assert isinstance(lt, types.List[types.Tuple[int]])
-    assert_type_hierarchy(tuple, types.Tuple)
+    assert isinstance(lt, typ.List)
+    assert isinstance(lt, typ.List[typ.Tuple[int]])
+    assert_type_hierarchy(tuple, typ.Tuple)
 
     # Test invalid arguments
     with pytest.raises(TypeError):
-        types.Set[3]
+        typ.Set[3]
 
-    assert types.Tuple[int]('1,2') == (1, 2)
-    assert types.Tuple[int]('1') == (1,)
+    assert typ.Tuple[int]('1,2') == (1, 2)
+    assert typ.Tuple[int]('1') == (1,)
 
     with pytest.raises(ValueError):
-        types.Tuple[int]('foo')
+        typ.Tuple[int]('foo')
 
     with pytest.raises(TypeError):
-        types.Tuple[int](1)
+        typ.Tuple[int](1)
 
 
 def test_non_uniform_tuple_type():
     t = (1, 2.3, '4', ['a', 'b'])
-    assert isinstance(t, types.Tuple)
-    assert isinstance(t, types.Tuple[int, float, str, types.List[str]])
-    assert not isinstance(t, types.Tuple[float, int, str])
-    assert not isinstance(t, types.Tuple[float, int, str, int])
+    assert isinstance(t, typ.Tuple)
+    assert isinstance(t, typ.Tuple[int, float, str, typ.List[str]])
+    assert not isinstance(t, typ.Tuple[float, int, str])
+    assert not isinstance(t, typ.Tuple[float, int, str, int])
 
     # Test invalid arguments
     with pytest.raises(TypeError):
-        types.Set[int, 3]
+        typ.Set[int, 3]
 
-    assert types.Tuple[int, str]('1,2') == (1, '2')
-
-    with pytest.raises(TypeError):
-        types.Tuple[int, str]('1')
+    assert typ.Tuple[int, str]('1,2') == (1, '2')
 
     with pytest.raises(TypeError):
-        types.Tuple[int, str](1)
+        typ.Tuple[int, str]('1')
+
+    with pytest.raises(TypeError):
+        typ.Tuple[int, str](1)
 
 
 def test_mapping_type():
     d = {'one': 1, 'two': 2}
     dl = {'one': [1, 2], 'two': [3, 4]}
     ld = [{'one': 1, 'two': 2}, {'three': 3}]
-    assert isinstance(d, types.Dict)
-    assert isinstance(d, types.Dict[str, int])
-    assert not isinstance(d, types.Dict[int, int])
+    assert isinstance(d, typ.Dict)
+    assert isinstance(d, typ.Dict[str, int])
+    assert not isinstance(d, typ.Dict[int, int])
 
-    assert isinstance(dl, types.Dict)
-    assert isinstance(dl, types.Dict[str, types.List[int]])
-    assert isinstance(ld, types.List[types.Dict[str, int]])
+    assert isinstance(dl, typ.Dict)
+    assert isinstance(dl, typ.Dict[str, typ.List[int]])
+    assert isinstance(ld, typ.List[typ.Dict[str, int]])
 
     # Test invalid arguments
     with pytest.raises(TypeError):
-        types.Dict[int]
+        typ.Dict[int]
 
     with pytest.raises(TypeError):
-        types.Dict[int, 3]
+        typ.Dict[int, 3]
 
     # Test conversions
-    assert types.Dict[str, int]('a:1,b:2') == {'a': 1, 'b': 2}
+    assert typ.Dict[str, int]('a:1,b:2') == {'a': 1, 'b': 2}
 
     with pytest.raises(TypeError):
-        types.Dict[str, int]('a:1,b')
+        typ.Dict[str, int]('a:1,b')
 
 
 def test_str_type():
     s = '123'
     ls = ['1', '23', '456']
-    assert isinstance(s, types.Str)
-    assert isinstance(s, types.Str[r'\d+'])
-    assert isinstance(ls, types.List[types.Str[r'\d+']])
-    assert not isinstance(s, types.Str[r'a.*'])
-    assert not isinstance(ls, types.List[types.Str[r'a.*']])
-    assert not isinstance('hello, world', types.Str[r'\S+'])
+    assert isinstance(s, typ.Str)
+    assert isinstance(s, typ.Str[r'\d+'])
+    assert isinstance(ls, typ.List[typ.Str[r'\d+']])
+    assert not isinstance(s, typ.Str[r'a.*'])
+    assert not isinstance(ls, typ.List[typ.Str[r'a.*']])
+    assert not isinstance('hello, world', typ.Str[r'\S+'])
 
     # Test invalid arguments
     with pytest.raises(TypeError):
-        types.Str[int]
+        typ.Str[int]
 
     # Test conversion
-    typ = types.Str[r'\d+']
-    assert typ('10') == '10'
+    str_type = typ.Str[r'\d+']
+    assert str_type('10') == '10'
 
     with pytest.raises(TypeError):
-        types.Str[r'\d+'](1)
+        typ.Str[r'\d+'](1)
 
 
 def test_type_names():
-    assert 'List' == types.List.__name__
-    assert 'List[int]' == types.List[int].__name__
+    assert 'List' == typ.List.__name__
+    assert 'List[int]' == typ.List[int].__name__
     assert ('Dict[str,List[int]]' ==
-            types.Dict[str, types.List[int]].__name__)
+            typ.Dict[str, typ.List[int]].__name__)
     assert ('Tuple[int,Set[float],str]' ==
-            types.Tuple[int, types.Set[float], str].__name__)
-    assert r"List[Str[r'\d+']]" == types.List[types.Str[r'\d+']].__name__
+            typ.Tuple[int, typ.Set[float], str].__name__)
+    assert r"List[Str[r'\d+']]" == typ.List[typ.Str[r'\d+']].__name__
 
 
 def test_custom_types():
@@ -216,14 +216,14 @@ def test_custom_types():
     d = {0: C(0), 1: C(1)}
     cd = {C(0): 0, C(1): 1}
     t = (0, C(0), '1')
-    assert isinstance(l, types.List[C])
-    assert isinstance(d, types.Dict[int, C])
-    assert isinstance(cd, types.Dict[C, int])
-    assert isinstance(t, types.Tuple[int, C, str])
+    assert isinstance(l, typ.List[C])
+    assert isinstance(d, typ.Dict[int, C])
+    assert isinstance(cd, typ.Dict[C, int])
+    assert isinstance(t, typ.Tuple[int, C, str])
 
 
 def test_custom_types_conversion():
-    class X(metaclass=types.ConvertibleType):
+    class X(metaclass=typ.ConvertibleType):
         def __init__(self, x):
             self.x = x
 
@@ -254,39 +254,69 @@ def test_custom_types_conversion():
 
 
 def test_composition_of_types():
-    t = types.Integer | types.Float
+    t = typ.Integer | typ.Float
     assert isinstance(1, t)
     assert isinstance(1.2, t)
     assert not isinstance([1], t)
 
-    t = ~types.Float
+    t = ~typ.Float
     assert isinstance(1, t)
     assert not isinstance(1.2, t)
     assert isinstance([1], t)
 
-    t = types.Integer | types.List[types.Integer | types.Float]
-    assert isinstance(1, t)
-    assert not isinstance(1.2, t)
-    assert isinstance([1], t)
-    assert isinstance([1.2], t)
-    assert not isinstance(None, t)
+    # Test the sequence types
+    type_pairs = [
+        (typ.List, list),
+        (typ.Set, set),
+        (typ.Tuple, tuple)
+    ]
+    for meta_seq_type, seq_type in type_pairs:
+        composite_types = [
+            typ.Integer | meta_seq_type[typ.Integer | typ.Float | typ.Bool],
+            typ.Integer | meta_seq_type[typ.Float | typ.Integer | typ.Bool],
+            typ.Integer | meta_seq_type[typ.Bool | typ.Integer | typ.Float],
+            meta_seq_type[typ.Integer | typ.Float | typ.Bool] | typ.Integer,
+            meta_seq_type[typ.Float | typ.Integer | typ.Bool] | typ.Integer,
+            meta_seq_type[typ.Bool | typ.Integer | typ.Float] | typ.Integer
+        ]
+        for t in composite_types:
+            assert isinstance(1, t)
+            assert not isinstance(1.2, t)
+            assert isinstance(True, t)
+            assert not isinstance(None, t)
+            assert isinstance(seq_type([1]), t)
+            assert isinstance(seq_type([1.2]), t)
+            assert isinstance(seq_type([False]), t)
 
-    # Check the other direction
-    t = types.List[types.Integer | types.Float] | types.Integer
-    assert isinstance(1, t)
-    assert not isinstance(1.2, t)
-    assert isinstance([1], t)
-    assert isinstance([1.2], t)
-    assert not isinstance(None, t)
+    # Test the Str type
+    composite_types = [typ.Str[r'\d+'] | typ.Integer,
+                       typ.Integer | typ.Str[r'\d+']]
+    for t in composite_types:
+        assert isinstance(1, t)
+        assert isinstance('1', t)
+        assert not isinstance([1], t)
+        assert not isinstance(['1'], t)
+
+    # Test the Dict type
+    composite_types = [
+        typ.Dict[typ.Str | typ.Integer, typ.Integer] | typ.Integer,
+        typ.Integer | typ.Dict[typ.Str | typ.Integer, typ.Integer],
+    ]
+    for t in composite_types:
+        assert isinstance({1: 1}, t)
+        assert isinstance({'1': 1}, t)
+        assert isinstance({1: [1]}, t)
+        assert isinstance({'1': 1.2}, t)
 
     # Test custom types
+
     class T:
         pass
 
-    MetaT = types.make_meta_type('MetaT', T)
+    MetaT = typ.make_meta_type('MetaT', T)
 
     t = T()
     assert isinstance(t, T)
     assert isinstance(t, MetaT)
-    assert isinstance(1, MetaT | types.Integer)
+    assert isinstance(1, MetaT | typ.Integer)
     assert isinstance(1, ~MetaT)

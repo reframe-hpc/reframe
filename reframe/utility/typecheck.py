@@ -93,8 +93,9 @@ of :class:`List[int]`.
 
 '''
 
-import abc
+import pdb
 import re
+import abc
 
 
 class ConvertibleType(abc.ABCMeta):
@@ -174,17 +175,24 @@ class _BuiltinType(ConvertibleType):
         cls.register(cls._type)
 
     def __instancecheck__(cls, inst):
+        if hasattr(cls, '_types'):
+            return (issubclass(type(inst), cls._types[0]) or
+                    issubclass(type(inst), cls._types[1]))
+
+        if hasattr(cls, '_xtype'):
+            return not issubclass(type(inst), cls._xtype)
+
         return issubclass(type(inst), cls)
 
     def __or__(cls, other):
-        new_type = _CompositeType(f'{cls.__name__}|{other.__name__}',
-                                  cls._bases, cls._namespace)
+        new_type = _BuiltinType(f'{cls.__name__}|{other.__name__}',
+                                cls._bases, cls._namespace)
         new_type._types = (cls, other)
         return new_type
 
     def __invert__(cls):
-        new_type = _InvertedType(f'~{cls.__name__}',
-                                 cls._bases, cls._namespace)
+        new_type = _BuiltinType(f'~{cls.__name__}',
+                                cls._bases, cls._namespace)
         new_type._xtype = cls
         return new_type
 
