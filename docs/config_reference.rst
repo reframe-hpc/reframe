@@ -57,13 +57,6 @@ It consists of the following properties:
    A list of `logging configuration objects <#logging-configuration>`__.
 
 
-.. py:attribute:: .schedulers
-
-   :required: No
-
-   A list of `scheduler configuration objects <#scheduler-configuration>`__.
-
-
 .. py:attribute:: .modes
 
    :required: No
@@ -75,6 +68,12 @@ It consists of the following properties:
    :required: No
 
    A list of `general configuration objects <#general-configuration>`__.
+
+
+.. warning::
+   .. versionchanged:: 4.0.0
+      The ``schedulers`` section is removed.
+      Scheduler options should be set per partition using the ``sched_options`` attribute.
 
 
 System Configuration
@@ -205,6 +204,18 @@ System Configuration
    This list must have at least one element.
 
 
+.. js:attribute:: .systems[].sched_options
+
+   :required: No
+   :default: ``{}``
+
+   Scheduler options for the local scheduler that is associated with the ReFrame's execution context.
+   To understand the difference between the different execution contexts, please refer to ":ref:`execution-contexts`"
+   For the available scheduler options, see the :obj:`sched_options` in the partition configuration below.
+
+   .. versionadded:: 4.0.0
+
+
 ------------------------------
 System Partition Configuration
 ------------------------------
@@ -292,6 +303,71 @@ System Partition Configuration
 
       Notice that defining :py:attr:`~reframe.core.pipeline.RegressionTest.extra_resources` does not make the test non-portable to other systems that have different schedulers;
       the :py:attr:`extra_resources` will be simply ignored in this case and the scheduler backend will interpret the different test fields in the appropriate way.
+
+
+.. js:attribute:: .systems[].partitions[].sched_options
+
+   :required: No
+   :default: ``{}``
+
+   Scheduler-specific options for this partition.
+   See below for the available options.
+
+   .. versionadded:: 4.0.0
+
+
+.. js:attribute:: .systems[].partitions[].sched_options.ignore_reqnodenotavail
+
+   :required: No
+   :default: ``false``
+
+   Ignore the ``ReqNodeNotAvail`` Slurm state.
+
+   If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail`` and a list of unavailable nodes is also specified, ReFrame will check the status of the nodes and, if all of them are indeed down, it will cancel the job.
+   Sometimes, however, when Slurm's backfill algorithm takes too long to compute, Slurm will set the pending reason to ``ReqNodeNotAvail`` and mark all system nodes as unavailable, causing ReFrame to kill the job.
+   In such cases, you may set this parameter to ``true`` to avoid this.
+
+   This option is relevant for the Slurm backends only.
+
+.. js:attribute:: .systems[].partitions[].sched_options.job_submit_timeout
+
+   :required: No
+   :default: ``60``
+
+   Timeout in seconds for the job submission command.
+
+   If timeout is reached, the test issuing that command will be marked as a failure.
+
+
+.. js:attribute:: .systems[].partitions[].sched_options.resubmit_on_errors
+
+   :required: No
+   :default: ``[]``
+
+   If any of the listed errors occur, try to resubmit the job after some seconds.
+
+   As an example, you could have ReFrame trying to resubmit a job in case that the maximum submission limit per user is reached by setting this field to ``["QOSMaxSubmitJobPerUserLimit"]``.
+   You can ignore multiple errors at the same time if you add more error strings in the list.
+
+   This option is relevant for the Slurm backends only.
+
+   .. versionadded:: 3.4.1
+
+   .. warning::
+      Job submission is a synchronous operation in ReFrame.
+      If this option is set, ReFrame's execution will block until the error conditions specified in this list are resolved.
+      No other test would be able to proceed.
+
+
+.. js:attribute:: .systems[].partitions[].sched_options.use_nodes_option
+
+   :required: No
+   :default: ``false``
+
+   Always emit the ``--nodes`` Slurm option in the preamble of the job script.
+   This option is relevant to Slurm backends only.
+
+   This option is relevant for the Slurm backends only.
 
 
 .. js:attribute:: .systems[].partitions[].launcher
@@ -782,6 +858,8 @@ They are associated with `system partitions <#system-partition-configuration>`__
    It first looks for definitions for the current partition, then for the containing system and, finally, for global definitions (the ``*`` pseudo-system).
 
 
+.. _logging-config-reference:
+
 Logging Configuration
 ---------------------
 
@@ -829,6 +907,14 @@ You may define different logger objects per system but *not* per partition.
 
    A list of logging handlers responsible for handling performance data from tests.
 
+
+.. js:attribute:: .logging[].perflog_compat
+
+   :required: No
+   :default: ``false``
+
+   Emit a separate log record for each performance variable.
+   Set this option to ``true`` if you want to keep compatibility with the performance logging prior to ReFrame 4.0.
 
 .. js:attribute:: .logging[].target_systems
 
@@ -889,6 +975,7 @@ All logging handlers share the following set of common attributes:
    :default: ``"%(message)s"``
 
    Log record format string.
+
    ReFrame accepts all log record attributes from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following:
 
    .. csv-table::
@@ -925,13 +1012,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_num_tasks_per_socket)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_tasks_per_socket` attribute.
       ``%(check_outputdir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.outputdir` attribute.
       ``%(check_partition)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_partition`.
-      ``%(check_perf_lower_thres)s``, The lower threshold of the logged performance variable.
-      ``%(check_perf_ref)s``, The reference value of the logged performance variable.
-      ``%(check_perf_unit)s``, The measurement unit of the logged performance variable.
-      ``%(check_perf_upper)s``, The upper thresholds of the logged performance variable.
-      ``%(check_perf_value)s``, The actual value of the logged performance variable.
-      ``%(check_perf_var)s``, The name of the logged performance variable.
-      ``%(check_perfvalues)s``, All the performance variables of the test combined along with their values, references and thresholds.
+      ``%(check_perfvalues)s``, All the performance variables of the test combined. These will be formatted according to ``format_perfvars``.
       ``%(check_postbuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postbuild_cmds` attribute.
       ``%(check_postrun_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postrun_cmds` attribute.
       ``%(check_prebuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute.
@@ -967,6 +1048,37 @@ All logging handlers share the following set of common attributes:
 .. versionchanged:: 3.11.0
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
 
+
+.. js:attribute:: .logging[].handlers[].format_perfvars
+.. js:attribute:: .logging[].handlers_perflog[].format_perfvars
+
+   Format specifier for logging the performance variables.
+
+   This defines how the ``%(check_perfvalues)s`` will be formatted.
+   Since a test may define multiple performance variables, the formatting specified in this field will be repeated for each performance variable sequentially in the *same* line.
+
+   .. important::
+      The last character of this format will be interpreted as the final delimiter of the formatted performance variables to the rest of the record.
+
+   The following log record attributes are defined additionally by this format specifier:
+
+   .. csv-table::
+      :header: "Log record attribute", "Description"
+
+      ``%(check_perf_lower_thres)s``, The lower threshold of the logged performance variable.
+      ``%(check_perf_ref)s``, The reference value of the logged performance variable.
+      ``%(check_perf_unit)s``, The measurement unit of the logged performance variable.
+      ``%(check_perf_upper)s``, The upper thresholds of the logged performance variable.
+      ``%(check_perf_value)s``, The actual value of the logged performance variable.
+      ``%(check_perf_var)s``, The name of the logged performance variable.
+
+
+   .. important::
+      ReFrame versions prior to 4.0 logged a separate line for each performance variable and the ``%(check_perf_*)s`` attributes could be used directly in the ``format``.
+      You can re-enable this behaviour by setting the ``perflog_compat`` logging configuration parameter.
+
+
+   .. versionadded:: 4.0.0
 
 .. js:attribute:: .logging[].handlers[].datefmt
 
@@ -1249,82 +1361,6 @@ An example configuration of this handler for performance logging is shown here:
 
 
 This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
-
-
-Scheduler Configuration
------------------------
-
-A scheduler configuration object contains configuration options specific to the scheduler's behavior.
-
-
-------------------------
-Common scheduler options
-------------------------
-
-
-.. js:attribute:: .schedulers[].name
-
-   :required: Yes
-
-   The name of the scheduler that these options refer to.
-   It can be any of the supported job scheduler `backends <#.systems[].partitions[].scheduler>`__.
-
-
-.. js:attribute:: .schedulers[].job_submit_timeout
-
-   :required: No
-   :default: 60
-
-   Timeout in seconds for the job submission command.
-   If timeout is reached, the regression test issuing that command will be marked as a failure.
-
-
-.. js:attribute:: .schedulers[].target_systems
-
-   :required: No
-   :default: ``["*"]``
-
-   A list of systems or system/partitions combinations that this scheduler configuration is valid for.
-   For a detailed description of this property, you may refer `here <#.environments[].target_systems>`__.
-
-.. js:attribute:: .schedulers[].use_nodes_option
-
-   :required: No
-   :default: ``false``
-
-   Always emit the ``--nodes`` Slurm option in the preamble of the job script.
-   This option is relevant to Slurm backends only.
-
-
-.. js:attribute:: .schedulers[].ignore_reqnodenotavail
-
-   :required: No
-   :default: ``false``
-
-   This option is relevant to the Slurm backends only.
-
-   If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail`` and a list of unavailable nodes is also specified, ReFrame will check the status of the nodes and, if all of them are indeed down, it will cancel the job.
-   Sometimes, however, when Slurm's backfill algorithm takes too long to compute, Slurm will set the pending reason to ``ReqNodeNotAvail`` and mark all system nodes as unavailable, causing ReFrame to kill the job.
-   In such cases, you may set this parameter to ``true`` to avoid this.
-
-
-.. js:attribute:: .schedulers[].resubmit_on_errors
-
-   :required: No
-   :default: ``[]``
-
-   This option is relevant to the Slurm backends only.
-
-   If any of the listed errors occur, ReFrame will try to resubmit the job after some seconds.
-   As an example, you could have ReFrame trying to resubmit a job in case that the maximum submission limit per user is reached by setting this field to ``["QOSMaxSubmitJobPerUserLimit"]``.
-   You can ignore multiple errors at the same time if you add more error strings in the list.
-
-   .. versionadded:: 3.4.1
-
-   .. warning::
-      Job submission is a synchronous operation in ReFrame.
-      If this option is set, ReFrame's execution will block until the error conditions specified in this list are resolved.
-      No other test would be able to proceed.
 
 
 Execution Mode Configuration

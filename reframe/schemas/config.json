@@ -55,6 +55,7 @@
                 },
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},
+                "format_perfvars": {"type": "string"},
                 "datefmt": {"type": "string"}
             },
             "required": ["type"]
@@ -100,6 +101,18 @@
                     "required": ["address"]
                 }
             ]
+        },
+        "sched_options": {
+            "type": "object",
+            "properties": {
+                "ignore_reqnodenotavail": {"type": "boolean"},
+                "job_submit_timeout": {"type": "number"},
+                "resubmit_on_errors": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "use_nodes_option": {"type": "boolean"}
+            }
         },
         "stream_handler": {
             "allOf": [
@@ -381,35 +394,13 @@
                 "additionalProperties": false
             }
         },
-        "schedulers": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "enum": ["flux", "local", "lsf", "oar", "pbs",
-                                 "sge", "slurm", "squeue", "torque"]
-                    },
-                    "ignore_reqnodenotavail": {"type": "boolean"},
-                    "resubmit_on_errors": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "job_submit_timeout": {"type": "number"},
-                    "target_systems": {"$ref": "#/defs/system_ref"},
-                    "use_nodes_option": {"type": "boolean"}
-                },
-                "required": ["name"],
-                "additionalProperties": false
-            }
-        },
         "logging": {
             "type": "array",
             "items": {
                 "type": "object",
                 "properties": {
                     "level": {"$ref": "#/defs/loglevel"},
+                    "perflog_compat": {"type": "boolean"},
                     "handlers": {
                         "type": "array",
                         "items": {
@@ -451,7 +442,6 @@
                     },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
-                "required": ["handlers$"],
                 "additionalProperties": false
             }
         },
@@ -485,7 +475,6 @@
                     "colorize": {"type": "boolean"},
                     "compress_report": {"type": "boolean"},
                     "git_timeout": {"type": "number"},
-                    "ignore_check_conflicts": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
                     "module_map_file": {"type": "string"},
                     "module_mappings": {
@@ -539,7 +528,6 @@
         "general/colorize": true,
         "general/compress_report": false,
         "general/git_timeout": 5,
-        "general/ignore_check_conflicts": false,
         "general/keep_stage_files": false,
         "general/module_map_file": "",
         "general/module_mappings": [],
@@ -559,11 +547,13 @@
         "general/user_modules": [],
         "general/verbose": 0,
         "logging/level": "undefined",
+        "logging/perflog_compat": false,
         "logging/target_systems": ["*"],
         "logging/handlers": [],
         "logging/handlers_perflog": [],
         "logging/handlers*/*_level": "info",
         "logging/handlers*/*_format": "%(message)s",
+        "logging/handlers*/*_format_perfvars": "",
         "logging/handlers*/*_datefmt": "%FT%T",
         "logging/handlers*/file_append": false,
         "logging/handlers*/file_name": "",
@@ -578,11 +568,6 @@
         "logging/handlers*/syslog_facility": "user",
         "modes/options": [],
         "modes/target_systems": ["*"],
-        "schedulers/ignore_reqnodenotavail": false,
-        "schedulers/resubmit_on_errors": [],
-        "schedulers/job_submit_timeout": 60,
-        "schedulers/target_systems": ["*"],
-        "schedulers/use_nodes_option": false,
         "systems/descr": "",
         "systems/max_local_jobs": 8,
         "systems/modules_system": "nomod",
@@ -612,6 +597,10 @@
         "systems/partitions/processor": {},
         "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
-        "systems/partitions/extras": {}
+        "systems/partitions/extras": {},
+        "systems*/sched_options/ignore_reqnodenotavail": false,
+        "systems*/sched_options/job_submit_timeout": 60,
+        "systems*/sched_options/resubmit_on_errors": [],
+        "systems*/sched_options/use_nodes_option": false
     }
 }

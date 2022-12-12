@@ -207,6 +207,14 @@ def test_select_subconfig_ignore_no_section_errors():
     site_config.select_subconfig(ignore_resolve_errors=True)
 
 
+def test_select_subconfig_empty_logging():
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config['logging'][0] = {}
+    with pytest.raises(ConfigError,
+                       match=rf"'logging/handlers\$' are not defined"):
+        site_config.select_subconfig()
+
+
 def test_select_subconfig(site_config):
     site_config.select_subconfig('testsys')
     assert len(site_config['systems']) == 1

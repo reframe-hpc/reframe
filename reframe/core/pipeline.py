@@ -1024,9 +1024,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._build_job = None
         self._compile_proc = None
 
-        # Performance logging
-        self._perf_logger = logging.null_logger
-
         # List of dependencies specified by the user
         self._userdeps = []
 
@@ -1615,9 +1612,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def _setup_run_job(self, **job_opts):
         self._job = self._create_job(f'rfm_job', self.local, **job_opts)
 
-    def _setup_perf_logging(self):
-        self._perf_logger = logging.getperflogger(self)
-
     def _setup_container_platform(self):
         try:
             self.container_platform.emit_prepare_commands(self.stagedir)
@@ -2078,6 +2072,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             if not success:
                 raise SanityError()
 
+    def is_performance_check(self):
+        '''Return :obj:`True` if the test is a performance test.'''
+        return self.perf_variables or hasattr(self, 'perf_patterns')
+
     @final
     def check_performance(self):
         '''The performance checking phase of the regression test pipeline.
@@ -2100,107 +2098,74 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         '''
 
+        if not self.is_performance_check():
+            return
+
+        perf_patterns = getattr(self, 'perf_patterns', None)
+
+        if perf_patterns is not None and self.perf_variables:
+            raise ReframeSyntaxError(
+                f"you cannot mix 'perf_patterns' and 'perf_variables' syntax"
+            )
+
+        # Convert `perf_patterns` to `perf_variables`
+        if perf_patterns:
+            for var, expr in self.perf_patterns.items():
+                # Retrieve the unit from the reference tuple
+                key = f'{self._current_partition.fullname}:{var}'
+                try:
+                    unit = self.reference[key][3]
+                    if unit is None:
+                        unit = ''
+                except KeyError:
+                    unit = ''
+
+                self.perf_variables[var] = sn.make_performance_function(expr,
+                                                                        unit)
+
+        # Evaluate the performance function and retrieve the metrics
         with osext.change_dir(self._stagedir):
-            if self.perf_variables or self._rfm_perf_fns:
-                if hasattr(self, 'perf_patterns'):
-                    raise ReframeSyntaxError(
-                        f"assigning a value to 'perf_patterns' conflicts ",
-                        f"with using the 'performance_function' decorator ",
-                        f"or setting a value to 'perf_variables'"
+            for tag, expr in self.perf_variables.items():
+                try:
+                    value = expr.evaluate()
+                    unit = expr.unit
+                except Exception as e:
+                    logging.getlogger().warning(
+                        f'skipping evaluation of performance variable '
+                        f'{tag!r}: {e}'
                     )
+                    continue
 
-                # Log the performance variables
-                self._setup_perf_logging()
-                for tag, expr in self.perf_variables.items():
-                    try:
-                        value = expr.evaluate()
-                        unit = expr.unit
-                    except Exception as e:
-                        logging.getlogger().warning(
-                            f'skipping evaluation of performance variable '
-                            f'{tag!r}: {e}'
-                        )
-                        continue
+                key = f'{self._current_partition.fullname}:{tag}'
+                try:
+                    ref = self.reference[key]
 
-                    key = f'{self._current_partition.fullname}:{tag}'
-                    try:
-                        ref = self.reference[key]
+                    # If units are also provided in the reference, raise
+                    # a warning if they match with the units provided by
+                    # the performance function.
+                    if len(ref) == 4:
+                        if ref[3] != unit:
+                            logging.getlogger().warning(
+                                f'reference unit ({key!r}) for the '
+                                f'performance variable {tag!r} '
+                                f'does not match the unit specified '
+                                f'in the performance function ({unit!r}): '
+                                f'{unit!r} will be used'
+                            )
 
-                        # If units are also provided in the reference, raise
-                        # a warning if they match with the units provided by
-                        # the performance function.
-                        if len(ref) == 4:
-                            if ref[3] != unit:
-                                logging.getlogger().warning(
-                                    f'reference unit ({key!r}) for the '
-                                    f'performance variable {tag!r} '
-                                    f'does not match the unit specified '
-                                    f'in the performance function ({unit!r}): '
-                                    f'{unit!r} will be used'
-                                )
-
-                            # Pop the unit from the ref tuple (redundant)
-                            ref = ref[:3]
-                    except KeyError:
-                        if self.require_reference:
-                            raise PerformanceError(
-                                f'no reference value found for '
-                                f'performance variable {tag!r} on '
-                                f'system {self._current_partition.fullname!r}'
-                            ) from None
-
-                        ref = (0, None, None)
-
-                    self._perfvalues[key] = (value, *ref, unit)
-                    self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                      *ref, unit)
-            elif not hasattr(self, 'perf_patterns'):
-                return
-            else:
-                self._setup_perf_logging()
-                # Check if default reference perf values are provided and
-                # store all the variables tested in the performance check
-                has_default = False
-                variables = set()
-                for key, ref in self.reference.items():
-                    keyparts = key.split(self.reference.scope_separator)
-                    system = keyparts[0]
-                    varname = keyparts[-1]
-                    unit = ref[3]
-                    variables.add((varname, unit))
-                    if system == '*':
-                        has_default = True
-                        break
-
-                if not has_default:
-                    if not variables:
-                        # If empty, it means that self.reference was empty, so
-                        # try to infer their name from perf_patterns
-                        variables = {(name, None)
-                                     for name in self.perf_patterns.keys()}
-
-                    for var in variables:
-                        name, unit = var
-                        ref_tuple = (0, None, None, unit)
-                        if not self.require_reference:
-                            self.reference.update({'*': {name: ref_tuple}})
-
-                # We first evaluate and log all performance values and then we
-                # check them against the reference. This way we always log them
-                # even if the don't meet the reference.
-                for tag, expr in self.perf_patterns.items():
-                    value = sn.evaluate(expr)
-                    key = f'{self._current_partition.fullname}:{tag}'
-                    if key not in self.reference:
+                        # Pop the unit from the ref tuple (redundant)
+                        ref = ref[:3]
+                except KeyError:
+                    if self.require_reference:
                         raise PerformanceError(
                             f'no reference value found for '
                             f'performance variable {tag!r} on '
                             f'system {self._current_partition.fullname!r}'
-                        )
+                        ) from None
 
-                    self._perfvalues[key] = (value, *self.reference[key])
-                    self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                      *self.reference[key])
+                    ref = (0, None, None)
+
+                self._perfvalues[key] = (value, *ref, unit)
 
             # Check the performance variables against their references.
             for key, values in self._perfvalues.items():
