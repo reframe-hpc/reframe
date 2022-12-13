@@ -93,9 +93,8 @@ of :class:`List[int]`.
 
 '''
 
-import pdb
-import re
 import abc
+import re
 
 
 class ConvertibleType(abc.ABCMeta):
