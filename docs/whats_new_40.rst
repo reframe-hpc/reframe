@@ -116,6 +116,8 @@ More specifically, the following deprecated features are dropped:
 - The :data:`DEPEND_EXACT`, :data:`DEPEND_BY_ENV` and :data:`DEPEND_FULLY` integer constants that were passed as the ``how`` argument of the :meth:`~reframe.core.pipeline.RegressionTest.depends_on` method are no more supported and a callable should be used instead.
   The ``subdeps`` argument is also dropped.
 - The low-level :func:`poll` and :func:`wait` :class:`RegressionTest` methods are dropped in favor of the :func:`~reframe.core.pipeline.RegressionTest.run_complete` and :func:`~reframe.core.pipeline.RegressionTest.run_wait`, respectively.
+- The ``schedulers`` configuration section is dropped in favor of the partition-specific :attr:`~config.systems.partitions.sched_options`.
+  Users should move any options set in the old section to the corresponding partition options.
 - The :option:`--ignore-check-conflicts` command line option and the corresponding :envvar:`RFM_IGNORE_CHECK_CONFLICTS` environment variable are dropped.
 - The :envvar:`RFM_GRAYLOG_SERVER` environment variable is dropped in favor of the :envvar:`RFM_GRAYLOG_ADDRESS`.
 
