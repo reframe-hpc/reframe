@@ -602,6 +602,8 @@ def main():
         envvar='RFM_PERF_INFO_LEVEL',
         configvar='general/perf_info_level',
         action='store',
+        type=typ.Str[r'critical|error|warning|info|verbose|'
+                     r'debug|debug2|undefined'],
         help='Log level at which immediate performance info will be printed'
     )
     argparser.add_argument(
