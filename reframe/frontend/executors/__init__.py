@@ -586,7 +586,6 @@ class ExecutionPolicy(abc.ABC):
 
     def __init__(self):
         # Options controlling the check execution
-        self.force_local = False
         self.skip_sanity_check = False
         self.skip_performance_check = False
         self.keep_stage_files = False
@@ -617,6 +616,3 @@ class ExecutionPolicy(abc.ABC):
 
         if self.strict_check:
             case.check.strict_check = True
-
-        if self.force_local:
-            case.check.local = True

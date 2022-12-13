@@ -396,10 +396,6 @@ def main():
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
     run_options.add_argument(
-        '--force-local', action='store_true',
-        help='Force local execution of checks'
-    )
-    run_options.add_argument(
         '-J', '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
         help='Pass option OPT to job scheduler'
@@ -1233,7 +1229,6 @@ def main():
             printer.error("unknown execution policy `%s': Exiting...")
             sys.exit(1)
 
-        exec_policy.force_local = options.force_local
         exec_policy.strict_check = options.strict
         exec_policy.skip_sanity_check = options.skip_sanity_check
         exec_policy.skip_performance_check = options.skip_performance_check
