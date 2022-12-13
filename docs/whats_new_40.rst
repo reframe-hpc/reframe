@@ -10,6 +10,8 @@ Framework's behavior with respect to performance logging has also changed, but c
 
 This page summarizes the key changes in ReFrame 4.0 and what users should pay attention to.
 
+For a complete list of changes, please refer to the `Release Notes <https://github.com/reframe-hpc/reframe/releases/tag/v4.0.0>`__.
+
 
 New Features and Enchancements
 ------------------------------
@@ -95,7 +97,7 @@ If you want to revert to the old behavior, where a single file was generated and
 New Backends
 ^^^^^^^^^^^^
 
-eFrame 4.0 adds support for the `Apptainer <https://apptainer.org/>`__ container platform and the `Flux framework <http://flux-framework.org/>`__.
+ReFrame 4.0 adds support for the `Apptainer <https://apptainer.org/>`__ container platform and the `Flux framework <http://flux-framework.org/>`__.
 
 
 Dropped Features and Deprecations
@@ -118,7 +120,7 @@ More specifically, the following deprecated features are dropped:
 - The low-level :func:`poll` and :func:`wait` :class:`RegressionTest` methods are dropped in favor of the :func:`~reframe.core.pipeline.RegressionTest.run_complete` and :func:`~reframe.core.pipeline.RegressionTest.run_wait`, respectively.
 - The ``schedulers`` configuration section is dropped in favor of the partition-specific :attr:`~config.systems.partitions.sched_options`.
   Users should move any options set in the old section to the corresponding partition options.
-- The :option:`--ignore-check-conflicts` command line option and the corresponding :envvar:`RFM_IGNORE_CHECK_CONFLICTS` environment variable are dropped.
+- The :obj:`--ignore-check-conflicts` command line option and the corresponding :envvar:`RFM_IGNORE_CHECK_CONFLICTS` environment variable are dropped.
 - The :envvar:`RFM_GRAYLOG_SERVER` environment variable is dropped in favor of the :envvar:`RFM_GRAYLOG_ADDRESS`.
 
 
