@@ -202,7 +202,6 @@ def test_fixture_early_access():
 
     class Bar(rfm.RegressionTest):
         f = fixture(FooB, variables={'z': 5})
-        w = fixture(FooB, action='join')
 
         valid_systems = ['*']
         valid_prog_environs = ['*']
@@ -211,7 +210,6 @@ def test_fixture_early_access():
         def early_access(self):
             assert self.f.foo.x == 1
             assert self.f.y == 2
-            assert self.w.y == 2
 
     Bar(variant_num=0)
 
