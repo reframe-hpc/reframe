@@ -151,11 +151,49 @@ class ConvertibleType(abc.ABCMeta):
 # Metaclasses that implement the isinstance logic for the different builtin
 # container types
 
+
+class _CompositeType(abc.ABCMeta):
+    def __instancecheck__(cls, inst):
+        assert hasattr(cls, '_types') and len(cls._types) == 2
+        return (issubclass(type(inst), cls._types[0]) or
+                issubclass(type(inst), cls._types[1]))
+
+
+class _InvertedType(abc.ABCMeta):
+    def __instancecheck__(cls, inst):
+        assert hasattr(cls, '_xtype')
+        return not issubclass(type(inst), cls._xtype)
+
+
 class _BuiltinType(ConvertibleType):
     def __init__(cls, name, bases, namespace):
         # Make sure that the class defines `_type`
+        cls._bases = bases
+        cls._namespace = namespace
         assert hasattr(cls, '_type')
         cls.register(cls._type)
+
+    def __instancecheck__(cls, inst):
+        if hasattr(cls, '_types'):
+            return (issubclass(type(inst), cls._types[0]) or
+                    issubclass(type(inst), cls._types[1]))
+
+        if hasattr(cls, '_xtype'):
+            return not issubclass(type(inst), cls._xtype)
+
+        return issubclass(type(inst), cls)
+
+    def __or__(cls, other):
+        new_type = _BuiltinType(f'{cls.__name__}|{other.__name__}',
+                                cls._bases, cls._namespace)
+        new_type._types = (cls, other)
+        return new_type
+
+    def __invert__(cls):
+        new_type = _BuiltinType(f'~{cls.__name__}',
+                                cls._bases, cls._namespace)
+        new_type._xtype = cls
+        return new_type
 
 
 class _SequenceType(_BuiltinType):
@@ -164,11 +202,9 @@ class _SequenceType(_BuiltinType):
     def __init__(cls, name, bases, namespace):
         super().__init__(name, bases, namespace)
         cls._elem_type = None
-        cls._bases = bases
-        cls._namespace = namespace
 
     def __instancecheck__(cls, inst):
-        if not issubclass(type(inst), cls):
+        if not super().__instancecheck__(inst):
             return False
 
         if cls._elem_type is None:
@@ -374,21 +410,17 @@ class Bool(metaclass=_BuiltinType):
         raise TypeError(f'cannot convert {s!r} to bool')
 
 
-class Dict(metaclass=_MappingType):
-    _type = dict
+def make_meta_type(name, cls, metacls=_BuiltinType):
+    namespace = metacls.__prepare__(name, ())
+    namespace['_type'] = cls
+    ret = metacls(name, (), namespace)
+    return ret
 
 
-class List(metaclass=_SequenceType):
-    _type = list
-
-
-class Set(metaclass=_SequenceType):
-    _type = set
-
-
-class Str(metaclass=_StrType):
-    _type = str
-
-
-class Tuple(metaclass=_TupleType):
-    _type = tuple
+Dict    = make_meta_type('Dict', dict, _MappingType)
+Float   = make_meta_type('Float', float)
+Integer = make_meta_type('Integer', int)
+List    = make_meta_type('List', list, _SequenceType)
+Set     = make_meta_type('Set', set, _SequenceType)
+Str     = make_meta_type('Str', str, _StrType)
+Tuple   = make_meta_type('Tuple', tuple, _TupleType)
