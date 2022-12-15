@@ -1366,6 +1366,19 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_PERF_INFO_LEVEL
+
+   Logging level at which the immediate performance information is logged.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     n/a
+      Associated configuration parameter :js:attr:`perf_info_level` general configuration parameter
+      ================================== ==================
+
+
 .. envvar:: RFM_PERFLOG_DIR
 
    Directory prefix for logging performance data.

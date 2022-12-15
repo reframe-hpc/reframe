@@ -375,6 +375,9 @@ class _StrType(_SequenceType):
         return ret
 
     def __rfm_cast_str__(cls, s):
+        if not isinstance(s, cls):
+            raise TypeError(f'cannot convert string {s!r} to {cls.__name__!r}')
+
         return s
 
 

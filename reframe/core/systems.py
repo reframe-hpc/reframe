@@ -314,7 +314,7 @@ class SystemPartition(jsonext.JSONSerializable):
 
         '''
         if self._scheduler is None:
-            self._scheduler = self._sched_type()
+            self._scheduler = self._sched_type(part_name=self.name)
 
         return self._scheduler
 

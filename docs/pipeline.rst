@@ -161,6 +161,8 @@ There are a number of things to notice in this diagram:
    The ``compile`` stage is now also executed asynchronously.
 
 
+.. _execution-contexts:
+
 --------------------------------------
 Where each pipeline stage is executed?
 --------------------------------------

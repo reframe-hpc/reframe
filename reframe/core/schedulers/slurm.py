@@ -132,22 +132,14 @@ class SlurmJobScheduler(sched.JobScheduler):
                                 'QOSJobLimit',
                                 'QOSResourceLimit',
                                 'QOSUsageThreshold']
-        ignore_reqnodenotavail = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/ignore_reqnodenotavail'
-        )
+        ignore_reqnodenotavail = self.get_option('ignore_reqnodenotavail')
         if not ignore_reqnodenotavail:
             self._cancel_reasons.append('ReqNodeNotAvail')
 
         self._update_state_count = 0
-        self._submit_timeout = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/job_submit_timeout'
-        )
-        self._use_nodes_opt = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/use_nodes_option'
-        )
-        self._resubmit_on_errors = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/resubmit_on_errors'
-        )
+        self._submit_timeout = self.get_option('job_submit_timeout')
+        self._use_nodes_opt = self.get_option('use_nodes_option')
+        self._resubmit_on_errors = self.get_option('resubmit_on_errors')
 
     def make_job(self, *args, **kwargs):
         return _SlurmJob(*args, **kwargs)
@@ -418,7 +410,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not jobs:
             return
 
-        with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
+        with rt.temp_environment(env_vars={'SLURM_TIME_FORMAT': '%s'}):
             t_start = time.strftime(
                 '%F', time.localtime(min(job.submit_time for job in jobs))
             )

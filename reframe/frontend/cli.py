@@ -283,13 +283,6 @@ def main():
         envvar='RFM_CHECK_SEARCH_PATH :', configvar='general/check_search_path'
     )
     locate_options.add_argument(
-        '--ignore-check-conflicts', action='store_true',
-        help=('Skip checks with conflicting names '
-              '(this option is deprecated and has no effect)'),
-        envvar='RFM_IGNORE_CHECK_CONFLICTS',
-        configvar='general/ignore_check_conflicts'
-    )
-    locate_options.add_argument(
         '-R', '--recursive', action='store_true',
         help='Search for checks in the search path recursively',
         envvar='RFM_CHECK_SEARCH_RECURSIVE',
@@ -593,7 +586,7 @@ def main():
     argparser.add_argument(
         dest='ignore_reqnodenotavail',
         envvar='RFM_IGNORE_REQNODENOTAVAIL',
-        configvar='schedulers/ignore_reqnodenotavail',
+        configvar='systems*/sched_options/ignore_reqnodenotavail',
         action='store_true',
         help='Ignore ReqNodeNotAvail Slurm error'
     )
@@ -603,6 +596,15 @@ def main():
         configvar='general/dump_pipeline_progress',
         action='store_true',
         help='Dump progress information for the async execution'
+    )
+    argparser.add_argument(
+        dest='perf_info_level',
+        envvar='RFM_PERF_INFO_LEVEL',
+        configvar='general/perf_info_level',
+        action='store',
+        type=typ.Str[r'critical|error|warning|info|verbose|'
+                     r'debug|debug2|undefined'],
+        help='Log level at which immediate performance info will be printed'
     )
     argparser.add_argument(
         dest='pipeline_timeout',
@@ -759,12 +761,6 @@ def main():
         printer.error(f'failed to initialize runtime: {e}')
         printer.info(logfiles_message())
         sys.exit(1)
-
-    if site_config.get('general/0/ignore_check_conflicts'):
-        logging.getlogger().warning(
-            "the 'ignore_check_conflicts' option is deprecated "
-            "and will be removed in the future"
-        )
 
     rt = runtime.runtime()
     try:

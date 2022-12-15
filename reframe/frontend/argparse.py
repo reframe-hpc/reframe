@@ -7,6 +7,8 @@ import argcomplete
 import argparse
 import os
 
+import reframe.utility.typecheck as typ
+
 #
 # Notes on the ArgumentParser design
 #
@@ -36,16 +38,6 @@ import os
 # configuration parameters. Additionally, we allow to define pseudo-arguments
 # that essentially associate environment variables with configuration
 # arguments, without having to define a corresponding command line option.
-
-
-def _convert_to_bool(s):
-    if s.lower() in ('true', 'yes', 'y', '1'):
-        return True
-
-    if s.lower() in ('false', 'no', 'n', '0'):
-        return False
-
-    raise ValueError
 
 
 class _Namespace:
@@ -94,15 +86,15 @@ class _Namespace:
                     ret = ret.split(delim)
                 elif action in ('store_true', 'store_false'):
                     try:
-                        ret = _convert_to_bool(ret)
-                    except ValueError:
+                        ret = typ.Bool(ret)
+                    except TypeError:
                         raise ValueError(
                             f'environment variable {envvar!r} not a boolean'
                         ) from None
                 elif action == 'store' and arg_type != str:
                     try:
                         ret = arg_type(ret)
-                    except ValueError as err:
+                    except TypeError as err:
                         raise ValueError(
                             f'cannot convert environment variable {envvar!r} '
                             f'to {arg_type.__name__!r}'

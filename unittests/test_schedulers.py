@@ -378,7 +378,7 @@ def test_prepare_without_smt(fake_job, slurm_only):
 
 def test_prepare_nodes_option(make_exec_ctx, make_job, slurm_only):
     make_exec_ctx(test_util.TEST_CONFIG_FILE, 'generic',
-                  {'schedulers/use_nodes_option': True})
+                  {'systems*/sched_options/use_nodes_option': True})
     job = make_job()
     job.num_tasks = 16
     job.num_tasks_per_node = 2
