@@ -82,7 +82,7 @@ def run_reframe(tmp_path, perflogdir, monkeypatch):
         argv += itertools.chain(*(['-c', c] for c in checkpath))
         argv += itertools.chain(*(['-p', e] for e in environs))
         if local:
-            argv += ['--force-local']
+            argv += ['-S', 'local=1']
 
         if action == 'run':
             argv += ['-r']
@@ -196,8 +196,8 @@ def test_check_restore_session_check_search_path(run_reframe, tmp_path):
 
 
 def test_check_success_force_local(run_reframe, tmp_path):
-    # We explicitly use a system here with a non-local scheduler and pass the
-    # `--force-local` option
+    # We explicitly use a system here with a non-local scheduler and we run
+    # with `-S local=1`
     returncode, stdout, _ = run_reframe(system='testsys:gpu', local=True)
     assert 'PASSED' in stdout
     assert 'FAILED' not in stdout
