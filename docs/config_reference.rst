@@ -1480,7 +1480,7 @@ General Configuration
    .. versionadded:: 3.10.0
 
 
-.. js:attribute:: .general[].perf_info_level
+.. py:attribute:: general.perf_info_level
 
    :required: No
    :default: ``"info"``
@@ -1490,12 +1490,12 @@ General Configuration
    As soon as a performance test is finished, ReFrame will log its performance on the standard output immediately.
    This option controls at which verbosity level this info will appear.
 
-   For a list of available log levels, refer to logging configuration's |log_level|_.
+   For a list of available log levels, refer to the :attr:`~config.logging.level` logger configuration parameter.
 
    .. versionadded:: 4.0.0
 
 
-.. js:attribute:: .general[].remote_detect
+.. py:attribute:: general.remote_detect
 
    :required: No
    :default: ``false``

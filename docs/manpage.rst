@@ -1337,7 +1337,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     n/a
-      Associated configuration parameter :js:attr:`perf_info_level` general configuration parameter
+      Associated configuration parameter :attr:`~config.general.perf_info_level`
       ================================== ==================
 
 
