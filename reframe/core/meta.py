@@ -433,7 +433,8 @@ class RegressionTestMeta(type):
         # the init phase
         varinfo = cls.get_variant_info(variant_num, recurse=True)
         for fname, finfo in varinfo['fixtures'].items():
-            if not isinstance(finfo, tuple):
+            fixt = cls.fixture_space[fname]
+            if fixt.action != 'join':
                 setattr(obj, fname, fixtures.FixtureProxy(finfo))
 
         obj.__init__(*args, **kwargs)

@@ -586,13 +586,11 @@ class ExecutionPolicy(abc.ABC):
 
     def __init__(self):
         # Options controlling the check execution
-        self.force_local = False
         self.skip_sanity_check = False
         self.skip_performance_check = False
         self.keep_stage_files = False
         self.only_environs = None
         self.printer = None
-        self.strict_check = False
 
         # Local scheduler for running forced local jobs
         self.local_scheduler = LocalJobScheduler()
@@ -614,9 +612,3 @@ class ExecutionPolicy(abc.ABC):
     @abc.abstractmethod
     def runcase(self, case):
         '''Run a test case.'''
-
-        if self.strict_check:
-            case.check.strict_check = True
-
-        if self.force_local:
-            case.check.local = True

@@ -180,8 +180,8 @@ The following table show in which context each pipeline stage executes:
    Pipeline Stage Execution Context
    ============== =================
    *Setup*        ReFrame
-   *Compile*      ReFrame if :attr:`~reframe.core.pipeline.RegressionTest.build_locally` or :attr:`~reframe.core.pipeline.RegressionTest.local` is :obj:`True` or if :option:`--force-local` is passed, partition otherwise.
-   *Run*          ReFrame if :attr:`~reframe.core.pipeline.RegressionTest.local` is :obj:`True` or if :option:`--force-local` is passed, partition otherwise.
+   *Compile*      ReFrame if :attr:`~reframe.core.pipeline.RegressionTest.build_locally` or :attr:`~reframe.core.pipeline.RegressionTest.local` is :obj:`True`, partition otherwise.
+   *Run*          ReFrame if :attr:`~reframe.core.pipeline.RegressionTest.local` is :obj:`True`, partition otherwise.
    *Sanity*       ReFrame
    *Performance*  ReFrame
    *Cleanup*      ReFrame

@@ -448,12 +448,6 @@ Options controlling ReFrame execution
      If there are tests that have finished their build or run phase, ReFrame will keep pushing tests for execution until the concurrency limit is reached again.
      If no execution slots are available, ReFrame will throttle job submission.
 
-.. option:: --force-local
-
-   Force local execution of tests.
-
-   Execute tests as if all partitions of the currently selected system had a ``local`` scheduler.
-
 .. option:: --max-retries=NUM
 
    The maximum number of times a failing test can be retried.
@@ -607,10 +601,6 @@ Options controlling ReFrame execution
 .. option:: --skip-sanity-check
 
    Skip sanity checking phase.
-
-.. option:: --strict
-
-   Enforce strict performance checking, even if a performance test is marked as not performance critical by having set its :attr:`strict_check` attribute to :class:`False`.
 
 
 ----------------------------------
@@ -1335,6 +1325,19 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
       Associated command line option     :option:`-o`
       Associated configuration parameter :attr:`~config.systems.outputdir`
+      ================================== ==================
+
+
+.. envvar:: RFM_PERF_INFO_LEVEL
+
+   Logging level at which the immediate performance information is logged.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     n/a
+      Associated configuration parameter :js:attr:`perf_info_level` general configuration parameter
       ================================== ==================
 
 

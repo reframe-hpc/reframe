@@ -396,10 +396,6 @@ def main():
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
     run_options.add_argument(
-        '--force-local', action='store_true',
-        help='Force local execution of checks'
-    )
-    run_options.add_argument(
         '-J', '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
         help='Pass option OPT to job scheduler'
@@ -446,10 +442,6 @@ def main():
     run_options.add_argument(
         '--skip-system-check', action='store_true',
         help='Skip system check'
-    )
-    run_options.add_argument(
-        '--strict', action='store_true',
-        help='Enforce strict performance checking'
     )
 
     # Environment options
@@ -596,6 +588,15 @@ def main():
         configvar='general/dump_pipeline_progress',
         action='store_true',
         help='Dump progress information for the async execution'
+    )
+    argparser.add_argument(
+        dest='perf_info_level',
+        envvar='RFM_PERF_INFO_LEVEL',
+        configvar='general/perf_info_level',
+        action='store',
+        type=typ.Str[r'critical|error|warning|info|verbose|'
+                     r'debug|debug2|undefined'],
+        help='Log level at which immediate performance info will be printed'
     )
     argparser.add_argument(
         dest='pipeline_timeout',
@@ -1233,8 +1234,6 @@ def main():
             printer.error("unknown execution policy `%s': Exiting...")
             sys.exit(1)
 
-        exec_policy.force_local = options.force_local
-        exec_policy.strict_check = options.strict
         exec_policy.skip_sanity_check = options.skip_sanity_check
         exec_policy.skip_performance_check = options.skip_performance_check
         exec_policy.keep_stage_files = site_config.get(

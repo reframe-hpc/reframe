@@ -177,7 +177,7 @@ The following configuration defines an execution mode named ``maintenance`` and 
            'options': [
                '--unload-module=reframe',
                '--exec-policy=async',
-               '--strict',
+               '-S strict_check=1',
                '--output=/path/to/$USER/regression/maintenance',
                '--perflogdir=/path/to/$USER/regression/maintenance/logs',
                '--stage=$SCRATCH/regression/maintenance/stage',

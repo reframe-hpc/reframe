@@ -360,8 +360,11 @@ def test_runall_maxfail(make_runner, make_cases, common_exec_ctx):
 
 def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
-    runner.policy.strict_check = True
-    runner.runall(make_cases())
+    cases = make_cases()
+    for c in cases:
+        c.check.strict_check = True
+
+    runner.runall(cases)
     stats = runner.stats
     assert 9 == stats.num_cases()
     assert_runall(runner)
@@ -410,8 +413,8 @@ def test_runall_skip_tests(make_runner, make_cases,
 # that the execution policies behave correctly with forced local tests
 def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
     runner = make_runner()
-    runner.policy.force_local = True
     test = HelloTest()
+    test.local = True
     test.valid_prog_environs = ['builtin']
 
     runner.runall(make_cases([test]))

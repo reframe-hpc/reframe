@@ -59,6 +59,10 @@ class _NoRuntime(ContainerPlatform):
         raise NotImplementedError
 
 
+# Meta-type to use for type checking in some variables
+Deferrable = typ.make_meta_type('Deferrable', _DeferredExpression)
+
+
 # Valid systems/environments mini-language
 _N = r'(\w[-.\w]*)'         # name
 _NW = rf'(\*|{_N})'         # name or wildcard
@@ -662,19 +666,27 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: obtained performance value in order to actually assess whether the test
     #: passes the performance check or not.
     #:
-    #: :type: A scoped dictionary with system names as scopes or :class:`None`
-    #: :default: ``{}``
+    #: :type: A scoped dictionary with system names as scopes, performance
+    #:   variables as keys and reference tuples as values.
+    #:   The elements of reference tuples cannot be deferrable expressions.
     #:
     #: .. note::
     #:     .. versionchanged:: 3.0
     #:        The measurement unit is required. The user should explicitly
     #:        specify :class:`None` if no unit is available.
-    reference = variable(typ.Tuple[object, object, object],
-                         typ.Dict[str, typ.Dict[
-                             str, typ.Tuple[object, object, object, object]]
-    ], field=fields.ScopedDictField, value={})
-    # FIXME: There is not way currently to express tuples of `float`s or
-    # `None`s, so we just use the very generic `object`
+    #:
+    #:     .. versionchanged:: 3.8.0
+    #:        The unit in the reference tuple is again optional, but it is
+    #:        recommended to use it for clarity.
+    #:
+    #:     .. versionchanged:: 4.0.0
+    #:        Deferrable expressions are not allowed in reference tuples.
+    reference = variable(
+        typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable],
+        typ.Dict[str, typ.Dict[str, typ.Tuple[~Deferrable, ~Deferrable,
+                                              ~Deferrable, ~Deferrable]]],
+        field=fields.ScopedDictField, value={}
+    )
 
     #: Require that a reference is defined for each system that this test is
     #: run on.
@@ -1146,11 +1158,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 name += f'{prefix}{p}={format_fn(v)}'
 
             for f, v in info['fixtures'].items():
-                if isinstance(v, tuple):
-                    # This is join fixture
+                fixt = cls.fixture_space[f]
+                if fixt.action == 'join':
                     continue
 
-                fixt = cls.fixture_space[f]
                 name += _format_params(fixt.cls, v, f'{prefix}{f}.')
 
                 # Append any variables set for the fixtures
