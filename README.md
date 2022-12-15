@@ -5,7 +5,7 @@
 
 [![Build Status](https://github.com/reframe-hpc/reframe/workflows/ReFrame%20CI/badge.svg)](https://github.com/reframe-hpc/reframe/actions?query=workflow%3A%22ReFrame+CI%22)
 [![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
-[![codecov.io](https://codecov.io/gh/reframe-hpc/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/reframe-hpc/reframe)<br/>
+[![codecov](https://codecov.io/gh/reframe-hpc/reframe/branch/master/graph/badge.svg)](https://codecov.io/gh/reframe-hpc/reframe)<br/>
 ![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/reframe-hpc/reframe?include_prereleases)
 ![GitHub commits since latest release](https://img.shields.io/github/commits-since/reframe-hpc/reframe/latest)
 ![GitHub contributors](https://img.shields.io/github/contributors-anon/reframe-hpc/reframe)<br/>

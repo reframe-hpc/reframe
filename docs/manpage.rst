@@ -461,12 +461,6 @@ Options controlling ReFrame execution
      If there are tests that have finished their build or run phase, ReFrame will keep pushing tests for execution until the concurrency limit is reached again.
      If no execution slots are available, ReFrame will throttle job submission.
 
-.. option:: --force-local
-
-   Force local execution of tests.
-
-   Execute tests as if all partitions of the currently selected system had a ``local`` scheduler.
-
 .. option:: --max-retries=NUM
 
    The maximum number of times a failing test can be retried.
@@ -1359,6 +1353,19 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`-o`
       Associated configuration parameter :js:attr:`outputdir` system configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_PERF_INFO_LEVEL
+
+   Logging level at which the immediate performance information is logged.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     n/a
+      Associated configuration parameter :js:attr:`perf_info_level` general configuration parameter
       ================================== ==================
 
 

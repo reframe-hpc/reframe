@@ -65,6 +65,10 @@ _log_level_values = {
 }
 
 
+def level_from_str(name):
+    return _log_level_values[name]
+
+
 def _check_level(level):
     if isinstance(level, numbers.Integral):
         ret = level

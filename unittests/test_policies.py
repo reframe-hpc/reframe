@@ -413,8 +413,8 @@ def test_runall_skip_tests(make_runner, make_cases,
 # that the execution policies behave correctly with forced local tests
 def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
     runner = make_runner()
-    runner.policy.force_local = True
     test = HelloTest()
+    test.local = True
     test.valid_prog_environs = ['builtin']
 
     runner.runall(make_cases([test]))

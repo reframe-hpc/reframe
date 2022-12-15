@@ -237,7 +237,7 @@ site_configuration = {
             'options': [
                 '-c unittests/resources/checks/hellocheck.py',
                 '-p builtin',
-                '--force-local'
+                '-S local=1'
             ]
         }
     ],

@@ -17,17 +17,19 @@ The syntax we use in the following to describe the different configuration objec
 .. |schemas/config.json| replace:: ``reframe/schemas/config.json``
 .. _schemas/config.json: https://github.com/reframe-hpc/reframe/blob/master/reframe/schemas/config.json
 .. |access| replace:: :attr:`access`
-.. _access: #.systems[].partitions[].access
+.. _access: #systems-.partitions-.access
 .. |basedir| replace:: :attr:`basedir`
-.. _basedir: #.logging[].handlers[].basedir
+.. _basedir: #logging-.handlers-.basedir
 .. |datefmt| replace:: :attr:`datefmt`
-.. _datefmt: #.logging[].handlers[].datefmt
+.. _datefmt: #logging-.handlers-.datefmt
 .. |environments| replace:: :attr:`environments`
-.. _environments: #.environments
+.. _environments: #environments
+.. |log_level| replace:: :attr:`level`
+.. _log_level: #logging-.level
 .. |handler_name| replace:: :attr:`name`
-.. _handler_name: #.logging[].handlers[].name
+.. _handler_name: #logging-.handlers-.name
 .. |resources| replace:: :attr:`resources`
-.. _resources: #.systems[].partitions[].resources
+.. _resources: #systems-.partitions-.resources
 
 
 Top-level Configuration
@@ -1478,6 +1480,21 @@ General Configuration
    :default: ``10``
 
    .. versionadded:: 3.10.0
+
+
+.. js:attribute:: .general[].perf_info_level
+
+   :required: No
+   :default: ``"info"``
+
+   The log level at which the immediate performance info will be printed.
+
+   As soon as a performance test is finished, ReFrame will log its performance on the standard output immediately.
+   This option controls at which verbosity level this info will appear.
+
+   For a list of available log levels, refer to logging configuration's |log_level|_.
+
+   .. versionadded:: 4.0.0
 
 
 .. js:attribute:: .general[].remote_detect
