@@ -360,8 +360,11 @@ def test_runall_maxfail(make_runner, make_cases, common_exec_ctx):
 
 def test_strict_performance_check(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
-    runner.policy.strict_check = True
-    runner.runall(make_cases())
+    cases = make_cases()
+    for c in cases:
+        c.check.strict_check = True
+
+    runner.runall(cases)
     stats = runner.stats
     assert 9 == stats.num_cases()
     assert_runall(runner)
