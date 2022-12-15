@@ -121,6 +121,8 @@ More specifically, the following deprecated features are dropped:
 - The ``schedulers`` configuration section is dropped in favor of the partition-specific :attr:`~config.systems.partitions.sched_options`.
   Users should move any options set in the old section to the corresponding partition options.
 - The :obj:`--ignore-check-conflicts` command line option and the corresponding :envvar:`RFM_IGNORE_CHECK_CONFLICTS` environment variable are dropped.
+- The :obj:`--force-local` and :obj:`--strict` command line options are removed.
+  Please use instead ``-S local=1`` and ``-S strict_check=1``, respectively.
 - The :envvar:`RFM_GRAYLOG_SERVER` environment variable is dropped in favor of the :envvar:`RFM_GRAYLOG_ADDRESS`.
 
 
