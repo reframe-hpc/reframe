@@ -598,6 +598,15 @@ def main():
         help='Dump progress information for the async execution'
     )
     argparser.add_argument(
+        dest='perf_info_level',
+        envvar='RFM_PERF_INFO_LEVEL',
+        configvar='general/perf_info_level',
+        action='store',
+        type=typ.Str[r'critical|error|warning|info|verbose|'
+                     r'debug|debug2|undefined'],
+        help='Log level at which immediate performance info will be printed'
+    )
+    argparser.add_argument(
         dest='pipeline_timeout',
         envvar='RFM_PIPELINE_TIMEOUT',
         configvar='general/pipeline_timeout',

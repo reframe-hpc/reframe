@@ -14,7 +14,7 @@ from reframe.core.exceptions import (FailureLimitError,
                                      SkipTestError,
                                      TaskDependencyError,
                                      TaskExit)
-from reframe.core.logging import getlogger
+from reframe.core.logging import getlogger, level_from_str
 from reframe.core.pipeline import (CompileOnlyRegressionTest,
                                    RunOnlyRegressionTest)
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
@@ -43,12 +43,14 @@ def _print_perf(task):
     '''Get performance info of the current task.'''
 
     perfvars = task.testcase.check.perfvalues
+    level = level_from_str(
+        rt.runtime().get_option('general/0/perf_info_level')
+    )
     for key, info in perfvars.items():
         name = key.split(':')[-1]
-        getlogger().info(
-            f'P: {name}: {info[0]} {info[4]} '
-            f'(r:{info[1]}, l:{info[2]}, u:{info[3]})'
-        )
+        getlogger().log(level,
+                        f'P: {name}: {info[0]} {info[4]} '
+                        f'(r:{info[1]}, l:{info[2]}, u:{info[3]})')
 
 
 class _PollController:
