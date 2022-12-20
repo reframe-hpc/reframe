@@ -22,7 +22,10 @@ from reframe.core.meta import RegressionTestMeta
 
 
 class JobMeta(RegressionTestMeta, abc.ABCMeta):
-    '''Job metaclass.'''
+    '''Job metaclass.
+
+    :meta private:
+    '''
 
 
 class JobSchedulerMeta(abc.ABCMeta):
@@ -354,34 +357,45 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
 
     @property
     def name(self):
+        '''The name of this job.'''
         return self._name
 
     @property
     def workdir(self):
+        '''The working directory for this job.'''
         return self._workdir
 
     @property
     def cli_options(self):
+        '''The scheduler options passed through the :option:`-J` command line
+        options.'''
         return self._cli_options
 
     @property
     def script_filename(self):
+        '''The filename of the generated job script.'''
         return self._script_filename
 
     @property
     def stdout(self):
+        '''The file where the standard output of the job is saved.'''
         return self._stdout
 
     @property
     def stderr(self):
+        '''The file where the standard error of the job is saved.'''
         return self._stderr
 
     @property
     def sched_flex_alloc_nodes(self):
+        '''The argument of the :option:`--flex-alloc-nodes` command line
+        option.'''
         return self._sched_flex_alloc_nodes
 
     @property
     def sched_access(self):
+        '''The partition's :attr:`~config.systems.partitions.access`
+        options.'''
         return self._sched_access
 
     @property
@@ -408,10 +422,16 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
 
     @property
     def scheduler(self):
+        '''The scheduler where this job is assigned to.'''
         return self._scheduler
 
     @property
     def exception(self):
+        '''The last exception that this job encountered.
+
+        The scheduler will raise this exception the next time the status of
+        this job is queried.
+        '''
         return self._exception
 
     @property

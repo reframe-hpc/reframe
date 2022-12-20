@@ -1902,6 +1902,33 @@ def test_set_var_default():
     assert x.bar == 100
 
 
+def test_hashcode():
+    # We always redefine _X0 here so that the test gets always the same base
+    # name (class name) and only the parameter values should change. We then
+    # use aliases to access the various definitions for our assertions.
+
+    class _X0(rfm.RunOnlyRegressionTest):
+        p = parameter([1])
+
+    class _X0(rfm.RunOnlyRegressionTest):
+        p = parameter([2])
+
+    _X1 = _X0
+
+    class _X0(rfm.RunOnlyRegressionTest):
+        p = parameter([1, 2])
+
+    _X2 = _X0
+
+    t0 = _X0(variant_num=0)
+    t1 = _X1(variant_num=0)
+    t2, t3 = (_X2(variant_num=i) for i in range(_X2.num_variants))
+
+    assert t0.hashcode != t1.hashcode
+    assert t2.hashcode == t0.hashcode
+    assert t3.hashcode == t1.hashcode
+
+
 def test_variables_deprecation():
     with pytest.warns(ReframeDeprecationWarning):
         class _X(rfm.RunOnlyRegressionTest):
