@@ -443,10 +443,6 @@ def main():
         '--skip-system-check', action='store_true',
         help='Skip system check'
     )
-    run_options.add_argument(
-        '--strict', action='store_true',
-        help='Enforce strict performance checking'
-    )
 
     # Environment options
     env_options.add_argument(
@@ -1238,7 +1234,6 @@ def main():
             printer.error("unknown execution policy `%s': Exiting...")
             sys.exit(1)
 
-        exec_policy.strict_check = options.strict
         exec_policy.skip_sanity_check = options.skip_sanity_check
         exec_policy.skip_performance_check = options.skip_performance_check
         exec_policy.keep_stage_files = site_config.get(

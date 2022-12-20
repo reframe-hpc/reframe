@@ -615,10 +615,6 @@ Options controlling ReFrame execution
 
    Skip sanity checking phase.
 
-.. option:: --strict
-
-   Enforce strict performance checking, even if a performance test is marked as not performance critical by having set its :attr:`strict_check` attribute to :class:`False`.
-
 
 ----------------------------------
 Options controlling job submission

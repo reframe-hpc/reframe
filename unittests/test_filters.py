@@ -83,7 +83,9 @@ def test_have_any_name_param_test(sample_param_cases):
                              sample_param_cases)
     assert 0 == count_checks(filters.have_any_name(['_X@12']),
                              sample_param_cases)
-    assert 2 == count_checks(filters.have_any_name(['/023313dc', '/efddbc6c']),
+
+    # The /0951c7ff selects two tests as they both have x=1
+    assert 3 == count_checks(filters.have_any_name(['/0951c7ff', '/37e9e1c6']),
                              sample_param_cases)
     assert 2 == count_checks(filters.have_any_name(['_X@0', '_X@1']),
                              sample_param_cases)
