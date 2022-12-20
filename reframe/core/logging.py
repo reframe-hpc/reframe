@@ -735,15 +735,16 @@ class LoggerAdapter(logging.LoggerAdapter):
         if multiline:
             # Log one record for each performance variable
             check = self.extra['__rfm_check__']
-            for var, info in check.perfvalues.items():
-                val, ref, lower, upper, unit = info
-                self.extra['check_perf_var'] = var.split(':')[-1]
-                self.extra['check_perf_value'] = val
-                self.extra['check_perf_ref'] = ref
-                self.extra['check_perf_lower_thres'] = lower
-                self.extra['check_perf_upper_thres'] = upper
-                self.extra['check_perf_unit'] = unit
-                self.log(level, msg)
+            if check:
+                for var, info in check.perfvalues.items():
+                    val, ref, lower, upper, unit = info
+                    self.extra['check_perf_var'] = var.split(':')[-1]
+                    self.extra['check_perf_value'] = val
+                    self.extra['check_perf_ref'] = ref
+                    self.extra['check_perf_lower_thres'] = lower
+                    self.extra['check_perf_upper_thres'] = upper
+                    self.extra['check_perf_unit'] = unit
+                    self.log(level, msg)
         else:
             self.log(level, msg)
 
