@@ -206,9 +206,9 @@ Environments and Systems
    :members:
    :show-inheritance:
 
--------------------------------------
-Job Schedulers and Parallel Launchers
--------------------------------------
+---------------------------
+Jobs and Parallel Launchers
+---------------------------
 
 .. automodule:: reframe.core.schedulers
    :members:
