@@ -23,7 +23,7 @@ There is no need anymore to keep a huge configuration file with all your system 
 ReFrame 4.0 allows you to split your configuration in multiple files.
 This allows you to create minimal configuration files that contain only the necessary parts.
 For example, if you want to define a general configuration parameter, you don't need to copy the builtin configuration file and add it, but you simply add it in a single ``general`` section.
-This can also be very useful if you maintain a ReFrame installation user by others, as you can update your settings (systems, environments and other options) without and any of your users' custom configuration will automatically inherit your settings if it is properly chained.
+This can also be very useful if you maintain a ReFrame installation used by others, as you can update your settings (systems, environments and other options) and any of your users' custom configuration will automatically inherit your settings if it is properly chained.
 To assist with system-wide installation the ``RFM_CONFIG_PATH`` environment variable is introduced that allows you to specify a path where ReFrame will look for configuration files to load.
 
 Now that systems and environments definitions can be distributed over multiple configuration files, it can become easy to accidentally redefine a system or environment without a notice.
@@ -68,10 +68,10 @@ Finally, the performance report printed at the end of the run using the :option:
 New Test Naming Scheme
 ^^^^^^^^^^^^^^^^^^^^^^
 
-ReFrame 4.0 introduces makes default the new test naming scheme introduced in 3.10.0 and drops support of the old naming scheme.
+ReFrame 4.0 makes default the new test naming scheme introduced in 3.10.0 and drops support of the old naming scheme.
 The new naming scheme does not affect normal tests, but it changes how parameterized tests and fixtures are named.
 Each test is now also associated with a unique hash code.
-For parameterized tests and fixtures this hash code is appended to the test's or fixture's base name when creating any test-specific directories and files, such as the test stage and output directories).
+For parameterized tests and fixtures this hash code is appended to the test's or fixture's base name when creating any test-specific directories and files, such as the test stage and output directories.
 The :option:`-n` option can match a test either by its display name (the default), or by its unique internal name or by its unique hash code.
 Check the documentation of the :option:`-n` for more information.
 For the details of the new naming scheme, please refer to the :ref:`test_naming_scheme` section.
