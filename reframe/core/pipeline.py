@@ -1194,7 +1194,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             return self._rfm_hashcode
 
         m = hashlib.sha256()
-        if self.is_fixture:
+        if self.is_fixture():
             m.update(self.unique_name.encode('utf-8'))
         else:
             basename, *params = self.display_name.split(' %')
