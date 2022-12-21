@@ -11,7 +11,7 @@ The full schema describing it can be found in |schemas/config.json|_ file.
 The final configuration for ReFrame is validated against this schema.
 
 The syntax we use to describe the different configuration objects follows the convention: ``OBJECT[.OBJECT]*.PROPERTY``.
-Even if a configuration object contains a list of other object, this is not reflected in the above syntax, as all objects in a certain list are homogeneous.
+Even if a configuration object contains a list of other objects, this is not reflected in the above syntax, as all objects in a certain list are homogeneous.
 For example, by ``systems.partitions.name`` we designate the ``name`` property of any partition object inside the ``partitions`` property of any system object inside the top level ``systems`` object.
 If we were to use indices, that would be rewritten as ``systems[i].partitions[j].name`` where ``i`` indexes the systems and ``j`` indexes the partitions of the i-th system.
 For cases, where the objects in a list are not homogeneous, e.g., the logging handlers, we surround the object type with ``..``.
@@ -25,7 +25,7 @@ Top-level Configuration
 -----------------------
 
 The top-level configuration object is essentially the full configuration of ReFrame.
-It consists of the following properties, which also call conventionally *configuration sections*:
+It consists of the following properties, which we also call conventionally *configuration sections*:
 
 .. py:data:: systems
 
@@ -671,7 +671,7 @@ ReFrame allows you to define custom scheduler resources for each partition that 
       ]
 
 
-   A regression test that wants to make use of that resource, it can set its :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` as follows:
+   A regression test that needs to make use of that resource, it can set its :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` as follows:
 
    .. code:: python
 
@@ -916,7 +916,7 @@ You may define different logger objects per system but *not* per partition.
    :default: ``["*"]``
 
    A list of systems or system/partitions combinations that this logging configuration is valid for.
-   For a detailed description of this property, you may refer `here <#environments.target_systems>`__.
+   For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
 
@@ -1393,7 +1393,7 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    :default: ``["*"]``
 
    A list of systems *only* that this execution mode is valid for.
-   For a detailed description of this property, you may refer `here <#environments.target_systems>`__.
+   For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
 General Configuration
@@ -1640,7 +1640,7 @@ General Configuration
    :default: ``["*"]``
 
    A list of systems or system/partitions combinations that these general options are valid for.
-   For a detailed description of this property, you may refer `here <#environments.target_systems>`__.
+   For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
 .. py:attribute:: general.timestamp_dirs

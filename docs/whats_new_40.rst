@@ -6,7 +6,7 @@ It also introduces a couple of new deprecations.
 
 ReFrame 4.0 maintains backward compatibility as much as possible.
 Existing 3.x configurations and 3.x tests are expected to run out-of-the-box, despite any warnings issued.
-Framework's behavior with respect to performance logging has also changed, but configuration options are offered so that users can switch to the old behavior.
+The framework's behavior with respect to performance logging has also changed, but configuration options are offered so that users can switch to the old behavior.
 
 This page summarizes the key changes in ReFrame 4.0 and what users should pay attention to.
 
@@ -27,8 +27,8 @@ This can also be very useful if you maintain a ReFrame installation used by othe
 To assist with system-wide installation the ``RFM_CONFIG_PATH`` environment variable is introduced that allows you to specify a path where ReFrame will look for configuration files to load.
 
 Now that systems and environments definitions can be distributed over multiple configuration files, it can become easy to accidentally redefine a system or environment without a notice.
-For this reason, ReFrame warns you if a system or an environment are redefined in the same scope.
-Since in the past all configuration files where extended copies of the builtin, you will get warnings that the ``generic`` system and the ``builtin`` environment are redefined, as ReFrame finds them in the builtin configuration, which is always loaded.
+For this reason, ReFrame warns you if a system or an environment is redefined in the same scope.
+Since in the past all configuration files where extended copies of the builtin configuration, you will get warnings that the ``generic`` system and the ``builtin`` environment are redefined, as ReFrame finds them in the builtin configuration, which is always loaded.
 You can safely ignore these warnings and use the definitions in your configuration file.
 If you want to eliminate them, though, you should remove the conflicting definitions from your configuration file.
 

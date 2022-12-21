@@ -725,7 +725,7 @@ First, we need to enable the container platform support in ReFrame's configurati
    :end-before: # rfmdocend: containers
    :emphasize-lines: 9-18
 
-For each partition, users can define a list of container platforms supported using the :attr:`~config.systems.partitions.container_platforms` configuration parameter.
+For each partition, users can define a list of all supported container platforms using the :attr:`~config.systems.partitions.container_platforms` configuration parameter.
 In this case, we define the `Sarus <https://github.com/eth-cscs/sarus>`__ platform for which we set the :attr:`~config.systems.partitions.container_platforms.modules` parameter in order to instruct ReFrame to load the ``sarus`` module, whenever it needs to run with this container platform.
 Similarly, we add an entry for the `Singularity <https://sylabs.io>`__ platform.
 Optionally, users are allowed to set the ``default`` attribute to :obj:`True` in order to mark a specific container platform as the default of that partition (see below on how this information is being used).
