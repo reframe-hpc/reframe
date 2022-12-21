@@ -8,64 +8,53 @@ This section provides a complete reference guide of the configuration options of
 
 ReFrame's configuration is in JSON syntax.
 The full schema describing it can be found in |schemas/config.json|_ file.
-Any configuration file given to ReFrame is validated against this schema.
+The final configuration for ReFrame is validated against this schema.
 
-The syntax we use in the following to describe the different configuration object attributes is a valid query string for the |jq|_ command-line processor.
+The syntax we use to describe the different configuration objects follows the convention: ``OBJECT[.OBJECT]*.PROPERTY``.
+Even if a configuration object contains a list of other objects, this is not reflected in the above syntax, as all objects in a certain list are homogeneous.
+For example, by ``systems.partitions.name`` we designate the ``name`` property of any partition object inside the ``partitions`` property of any system object inside the top level ``systems`` object.
+If we were to use indices, that would be rewritten as ``systems[i].partitions[j].name`` where ``i`` indexes the systems and ``j`` indexes the partitions of the i-th system.
+For cases, where the objects in a list are not homogeneous, e.g., the logging handlers, we surround the object type with ``..``.
+For example, the ``logging.handlers..filelog..name`` syntax designates the ``name`` attribute of the ``filelog`` logging handler.
 
-.. |jq| replace:: :attr:`jq(1)`
-.. _jq: https://stedolan.github.io/jq/manual/
 .. |schemas/config.json| replace:: ``reframe/schemas/config.json``
 .. _schemas/config.json: https://github.com/reframe-hpc/reframe/blob/master/reframe/schemas/config.json
-.. |access| replace:: :attr:`access`
-.. _access: #systems-.partitions-.access
-.. |basedir| replace:: :attr:`basedir`
-.. _basedir: #logging-.handlers-.basedir
-.. |datefmt| replace:: :attr:`datefmt`
-.. _datefmt: #logging-.handlers-.datefmt
-.. |environments| replace:: :attr:`environments`
-.. _environments: #environments
-.. |log_level| replace:: :attr:`level`
-.. _log_level: #logging-.level
-.. |handler_name| replace:: :attr:`name`
-.. _handler_name: #logging-.handlers-.name
-.. |resources| replace:: :attr:`resources`
-.. _resources: #systems-.partitions-.resources
 
 
 Top-level Configuration
 -----------------------
 
 The top-level configuration object is essentially the full configuration of ReFrame.
-It consists of the following properties:
+It consists of the following properties, which we also call conventionally *configuration sections*:
 
-.. py:attribute:: .systems
+.. py:data:: systems
 
    :required: Yes
 
    A list of `system configuration objects <#system-configuration>`__.
 
 
-.. py:attribute:: .environments
+.. py:data:: environments
 
    :required: Yes
 
    A list of `environment configuration objects <#environment-configuration>`__.
 
 
-.. py:attribute:: .logging
+.. py:data:: logging
 
    :required: Yes
 
    A list of `logging configuration objects <#logging-configuration>`__.
 
 
-.. py:attribute:: .modes
+.. py:data:: modes
 
    :required: No
 
    A list of `execution mode configuration objects <#execution-mode-configuration>`__.
 
-.. py:attribute:: .general
+.. py:data:: general
 
    :required: No
 
@@ -74,35 +63,38 @@ It consists of the following properties:
 
 .. warning::
    .. versionchanged:: 4.0.0
-      The ``schedulers`` section is removed.
-      Scheduler options should be set per partition using the ``sched_options`` attribute.
+      The :data:`schedulers` section is removed.
+      Scheduler options should be set per partition using the :attr:`~config.systems.partitions.sched_options` attribute.
+
 
 
 System Configuration
 --------------------
 
-.. js:attribute:: .systems[].name
+.. currentmodule:: config
+
+.. py:attribute:: systems.name
 
    :required: Yes
 
    The name of this system.
    Only alphanumeric characters, dashes (``-``) and underscores (``_``) are allowed.
 
-.. js:attribute:: .systems[].descr
+.. py:attribute:: systems.descr
 
    :required: No
    :default: ``""``
 
    The description of this system.
 
-.. js:attribute:: .systems[].hostnames
+.. py:attribute:: systems.hostnames
 
    :required: Yes
 
    A list of hostname regular expression patterns in Python `syntax <https://docs.python.org/3.8/library/re.html>`__, which will be used by the framework in order to automatically select a system configuration.
    For the auto-selection process, see `here <configure.html#picking-a-system-configuration>`__.
 
-.. js:attribute:: .systems[].max_local_jobs
+.. py:attribute:: systems.max_local_jobs
 
    The maximum number of forced local build or run jobs allowed.
 
@@ -114,7 +106,7 @@ System Configuration
    .. versionadded:: 3.10.0
 
 
-.. js:attribute:: .systems[].modules_system
+.. py:attribute:: systems.modules_system
 
    :required: No
    :default: ``"nomod"``
@@ -134,7 +126,7 @@ System Configuration
    .. versionadded:: 3.4
       The ``spack`` backend is added.
 
-.. js:attribute:: .systems[].modules
+.. py:attribute:: systems.modules
 
    :required: No
    :default: ``[]``
@@ -143,7 +135,7 @@ System Configuration
    These modules modify the ReFrame environment.
    This is useful in cases where a particular module is needed, for example, to submit jobs on a specific system.
 
-.. js:attribute:: .systems[].env_vars
+.. py:attribute:: systems.env_vars
 
    :required: No
    :default: ``[]``
@@ -157,13 +149,13 @@ System Configuration
 
    .. versionadded:: 4.0.0
 
-.. js:attribute:: .systems[].variables
+.. py:attribute:: systems.variables
 
    .. deprecated:: 4.0.0
-      Please use :js:attr:`env_vars` instead.
-      If specified in conjunction with :js:attr:`env_vars`, it will be ignored.
+      Please use :attr:`~config.systems.env_vars` instead.
+      If specified in conjunction with :attr:`~config.systems.env_vars`, it will be ignored.
 
-.. js:attribute:: .systems[].prefix
+.. py:attribute:: systems.prefix
 
    :required: No
    :default: ``"."``
@@ -171,7 +163,7 @@ System Configuration
    Directory prefix for a ReFrame run on this system.
    Any directories or files produced by ReFrame will use this prefix, if not specified otherwise.
 
-.. js:attribute:: .systems[].stagedir
+.. py:attribute:: systems.stagedir
 
    :required: No
    :default: ``"${RFM_PREFIX}/stage"``
@@ -180,7 +172,7 @@ System Configuration
    This is the directory prefix, where ReFrame will create the stage directories for each individual test case.
 
 
-.. js:attribute:: .systems[].outputdir
+.. py:attribute:: systems.outputdir
 
    :required: No
    :default: ``"${RFM_PREFIX}/output"``
@@ -189,16 +181,16 @@ System Configuration
    This is the directory prefix, where ReFrame will save information about the successful tests.
 
 
-.. js:attribute:: .systems[].resourcesdir
+.. py:attribute:: systems.resourcesdir
 
    :required: No
    :default: ``"."``
 
    Directory prefix where external test resources (e.g., large input files) are stored.
-   You may reference this prefix from within a regression test by accessing the :attr:`reframe.core.systems.System.resourcesdir` attribute of the current system.
+   You may reference this prefix from within a regression test by accessing the :attr:`~reframe.core.systems.System.resourcesdir` attribute of the current system.
 
 
-.. js:attribute:: .systems[].partitions
+.. py:attribute:: systems.partitions
 
    :required: Yes
 
@@ -206,14 +198,14 @@ System Configuration
    This list must have at least one element.
 
 
-.. js:attribute:: .systems[].sched_options
+.. py:attribute:: systems.sched_options
 
    :required: No
    :default: ``{}``
 
    Scheduler options for the local scheduler that is associated with the ReFrame's execution context.
    To understand the difference between the different execution contexts, please refer to ":ref:`execution-contexts`"
-   For the available scheduler options, see the :obj:`sched_options` in the partition configuration below.
+   For the available scheduler options, see the :attr:`~config.systems.partitions.sched_options` in the partition configuration below.
 
    .. versionadded:: 4.0.0
 
@@ -222,21 +214,21 @@ System Configuration
 System Partition Configuration
 ------------------------------
 
-.. js:attribute:: .systems[].partitions[].name
+.. py:attribute:: systems.partitions.name
 
    :required: Yes
 
    The name of this partition.
    Only alphanumeric characters, dashes (``-``) and underscores (``_``) are allowed.
 
-.. js:attribute:: .systems[].partitions[].descr
+.. py:attribute:: systems.partitions.descr
 
    :required: No
    :default: ``""``
 
    The description of this partition.
 
-.. js:attribute:: .systems[].partitions[].scheduler
+.. py:attribute:: systems.partitions.scheduler
 
    :required: Yes
 
@@ -269,7 +261,7 @@ System Partition Configuration
 
       The way that multiple node jobs are submitted using the SGE scheduler can be very site-specific.
       For this reason, the ``sge`` scheduler backend does not try to interpret any related arguments, e.g., ``num_tasks``, ``num_tasks_per_node`` etc.
-      Users must specify how these resources are to be requested by setting the :js:attr:`resources` partition configuration parameter and then request them from inside a test using the :py:attr:`~reframe.core.pipeline.RegressionTest.extra_resources` test attribute.
+      Users must specify how these resources are to be requested by setting the :attr:`~config.systems.partitions.resources` partition configuration parameter and then request them from inside a test using the :py:attr:`~reframe.core.pipeline.RegressionTest.extra_resources` test attribute.
       Here is an example configuration for a system partition named ``foo`` that defines different ways for submitting MPI-only, OpenMP-only and MPI+OpenMP jobs:
 
       .. code-block:: python
@@ -303,11 +295,11 @@ System Partition Configuration
              'mpismp': {'num_slots': self.num_tasks*self.num_cpus_per_task}
          }
 
-      Notice that defining :py:attr:`~reframe.core.pipeline.RegressionTest.extra_resources` does not make the test non-portable to other systems that have different schedulers;
-      the :py:attr:`extra_resources` will be simply ignored in this case and the scheduler backend will interpret the different test fields in the appropriate way.
+      Notice that defining :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` allows the test to be portable to other systems that have different schedulers;
+      the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` will be simply ignored in this case and the scheduler backend will interpret the different test fields in the appropriate way.
 
 
-.. js:attribute:: .systems[].partitions[].sched_options
+.. py:attribute:: systems.partitions.sched_options
 
    :required: No
    :default: ``{}``
@@ -318,7 +310,7 @@ System Partition Configuration
    .. versionadded:: 4.0.0
 
 
-.. js:attribute:: .systems[].partitions[].sched_options.ignore_reqnodenotavail
+.. py:attribute:: systems.partitions.sched_options.ignore_reqnodenotavail
 
    :required: No
    :default: ``false``
@@ -331,7 +323,7 @@ System Partition Configuration
 
    This option is relevant for the Slurm backends only.
 
-.. js:attribute:: .systems[].partitions[].sched_options.job_submit_timeout
+.. py:attribute:: systems.partitions.sched_options.job_submit_timeout
 
    :required: No
    :default: ``60``
@@ -341,7 +333,7 @@ System Partition Configuration
    If timeout is reached, the test issuing that command will be marked as a failure.
 
 
-.. js:attribute:: .systems[].partitions[].sched_options.resubmit_on_errors
+.. py:attribute:: systems.partitions.sched_options.resubmit_on_errors
 
    :required: No
    :default: ``[]``
@@ -361,7 +353,7 @@ System Partition Configuration
       No other test would be able to proceed.
 
 
-.. js:attribute:: .systems[].partitions[].sched_options.use_nodes_option
+.. py:attribute:: systems.partitions.sched_options.use_nodes_option
 
    :required: No
    :default: ``false``
@@ -372,7 +364,7 @@ System Partition Configuration
    This option is relevant for the Slurm backends only.
 
 
-.. js:attribute:: .systems[].partitions[].launcher
+.. py:attribute:: systems.partitions.launcher
 
    :required: Yes
 
@@ -392,7 +384,7 @@ System Partition Configuration
    - ``srunalloc``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command, but job allocation options will also be emitted.
      This can be useful when combined with the ``local`` job scheduler.
    - ``ssh``: Parallel programs will be launched using SSH.
-     This launcher uses the partition’s |access|_ property in order to determine the remote host and any additional options to be passed to the SSH client.
+     This launcher uses the partition's :attr:`~config.systems.partitions.access` property in order to determine the remote host and any additional options to be passed to the SSH client.
      The ssh command will be launched in "batch mode," meaning that password-less access to the remote host must be configured.
      Here is an example configuration for the ssh launcher:
 
@@ -417,7 +409,7 @@ System Partition Configuration
         You can follow a small tutorial `here <tutorial_advanced.html#adding-a-custom-launcher-to-a-partition>`__.
 
 
-.. js:attribute:: .systems[].partitions[].access
+.. py:attribute:: systems.partitions.access
 
    :required: No
    :default: ``[]``
@@ -425,16 +417,16 @@ System Partition Configuration
    A list of job scheduler options that will be passed to the generated job script for gaining access to that logical partition.
 
 
-.. js:attribute:: .systems[].partitions[].environs
+.. py:attribute:: systems.partitions.environs
 
    :required: No
    :default: ``[]``
 
   A list of environment names that ReFrame will use to run regression tests on this partition.
-  Each environment must be defined in the |environments|_ section of the configuration and the definition of the environment must be valid for this partition.
+  Each environment must be defined in the :data:`environments` section of the configuration and the definition of the environment must be valid for this partition.
 
 
-.. js:attribute:: .systems[].partitions[].container_platforms
+.. py:attribute:: systems.partitions.container_platforms
 
    :required: No
    :default: ``[]``
@@ -443,7 +435,7 @@ System Partition Configuration
    This will allow launching regression tests that use containers on this partition.
 
 
-.. js:attribute:: .systems[].partitions[].modules
+.. py:attribute:: systems.partitions.modules
 
    :required: No
    :default: ``[]``
@@ -451,7 +443,7 @@ System Partition Configuration
   A list of `environment module objects <#module-objects>`__ to be loaded before running a regression test on this partition.
 
 
-.. js:attribute:: .systems[].partitions[].time_limit
+.. py:attribute:: systems.partitions.time_limit
 
    :required: No
    :default: ``null``
@@ -460,7 +452,7 @@ System Partition Configuration
    When the value is ``null``, no time limit is applied.
 
 
-.. js:attribute:: .systems[].partitions[].env_vars
+.. py:attribute:: systems.partitions.env_vars
 
    :required: No
    :default: ``[]``
@@ -473,13 +465,13 @@ System Partition Configuration
 
    .. versionadded:: 4.0.0
 
-.. js:attribute:: .systems[].partitions[].variables
+.. py:attribute:: systems.partitions.variables
 
    .. deprecated:: 4.0.0
-      Please use :js:attr:`env_vars` instead.
-      If specified in conjunction with :js:attr:`env_vars`, it will be ignored.
+      Please use :attr:`~config.systems.partitions.env_vars` instead.
+      If specified in conjunction with :attr:`~config.systems.partitions.env_vars`, it will be ignored.
 
-.. js:attribute:: .systems[].partitions[].max_jobs
+.. py:attribute:: systems.partitions.max_jobs
 
    :required: No
    :default: ``8``
@@ -488,7 +480,7 @@ System Partition Configuration
    This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
 
 
-.. js:attribute:: .systems[].partitions[].prepare_cmds
+.. py:attribute:: systems.partitions.prepare_cmds
 
    :required: No
    :default: ``[]``
@@ -498,7 +490,7 @@ System Partition Configuration
    .. versionadded:: 3.5.0
 
 
-.. js:attribute:: .systems[].partitions[].resources
+.. py:attribute:: systems.partitions.resources
 
    :required: No
    :default: ``[]``
@@ -506,7 +498,7 @@ System Partition Configuration
    A list of job scheduler `resource specification <config_reference.html#custom-job-scheduler-resources>`__ objects.
 
 
-.. js:attribute:: .systems[].partitions[].processor
+.. py:attribute:: systems.partitions.processor
 
    :required: No
    :default: ``{}``
@@ -520,7 +512,7 @@ System Partition Configuration
       ReFrame is now able to detect the processor information automatically.
 
 
-.. js:attribute:: .systems[].partitions[].devices
+.. py:attribute:: systems.partitions.devices
 
    :required: No
    :default: ``[]``
@@ -530,7 +522,7 @@ System Partition Configuration
    .. versionadded:: 3.5.0
 
 
-.. js:attribute:: .systems[].partitions[].features
+.. py:attribute:: systems.partitions.features
 
    :required: No
    :default: ``[]``
@@ -542,7 +534,7 @@ System Partition Configuration
    .. versionadded:: 3.11.0
 
 
-.. js:attribute:: .systems[].partitions[].extras
+.. py:attribute:: systems.partitions.extras
 
    :required: No
    :default: ``{}``
@@ -561,7 +553,7 @@ Container Platform Configuration
 
 ReFrame can launch containerized applications, but you need to configure properly a system partition in order to do that by defining a container platform configuration.
 
-.. js:attribute:: .systems[].partitions[].container_platforms[].type
+.. py:attribute:: systems.partitions.container_platforms.type
 
    :required: Yes
 
@@ -575,17 +567,17 @@ ReFrame can launch containerized applications, but you need to configure properl
    - ``Singularity``: The `Singularity <https://sylabs.io/>`__ container runtime.
 
 
-.. js:attribute:: .systems[].partitions[].container_platforms[].default
+.. py:attribute:: systems.partitions.container_platforms.default
 
    :required: No
 
    If set to ``true``, this is the default container platform of this partition.
-   If not specified, the default container platform is assumed to be the first in the list of :js:attr:`container_platforms`.
+   If not specified, the default container platform is assumed to be the first in the list of :attr:`~config.systems.partitions.container_platforms`.
 
    .. versionadded:: 3.12.0
 
 
-.. js:attribute:: .systems[].partitions[].container_platforms[].modules
+.. py:attribute:: systems.partitions.container_platforms.modules
 
    :required: No
    :default: ``[]``
@@ -593,7 +585,7 @@ ReFrame can launch containerized applications, but you need to configure properl
    A list of `environment module objects <#module-objects>`__ to be loaded when running containerized tests using this container platform.
 
 
-.. js:attribute:: .systems[].partitions[].container_platforms[].env_vars
+.. py:attribute:: systems.partitions.container_platforms.env_vars
 
    :required: No
    :default: ``[]``
@@ -606,34 +598,34 @@ ReFrame can launch containerized applications, but you need to configure properl
 
    .. versionadded:: 4.0.0
 
-.. js:attribute:: .systems[].partitions[].container_platforms[].variables
+.. py:attribute:: systems.partitions.container_platforms.variables
 
    .. deprecated:: 4.0.0
-      Please use :js:attr:`env_vars` instead.
-      If specified in conjunction with :js:attr:`env_vars`, it will be ignored.
+      Please use :attr:`~systems.partitions.container_platforms.env_vars` instead.
+      If specified in conjunction with :attr:`~systems.partitions.container_platforms.env_vars`, it will be ignored.
 
 
 Custom Job Scheduler Resources
 ==============================
 
-ReFrame allows you to define custom scheduler resources for each partition that you can then transparently access through the :attr:`extra_resources` attribute of a regression test.
+ReFrame allows you to define custom scheduler resources for each partition that you can then transparently access through the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute of a regression test.
 
-.. js:attribute:: .systems[].partitions[].resources[].name
+.. py:attribute:: systems.partitions.resources.name
 
    :required: Yes
 
   The name of this resources.
-  This name will be used to request this resource in a regression test's :attr:`extra_resources`.
+  This name will be used to request this resource in a regression test's :attr:`~reframe.core.pipeline.RegressionTest.extra_resources`.
 
 
-.. js:attribute:: .systems[].partitions[].resources[].options
+.. py:attribute:: systems.partitions.resources.options
 
    :required: No
    :default: ``[]``
 
    A list of options to be passed to this partition’s job scheduler.
    The option strings can contain placeholders of the form ``{placeholder_name}``.
-   These placeholders may be replaced with concrete values by a regression test through the :attr:`extra_resources` attribute.
+   These placeholders may be replaced with concrete values by a regression test through the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute.
 
    For example, one could define a ``gpu`` resource for a multi-GPU system that uses Slurm as follows:
 
@@ -679,7 +671,7 @@ ReFrame allows you to define custom scheduler resources for each partition that 
       ]
 
 
-   A regression test that wants to make use of that resource, it can set its :attr:`extra_resources` as follows:
+   A regression test that needs to make use of that resource, it can set its :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` as follows:
 
    .. code:: python
 
@@ -694,7 +686,7 @@ ReFrame allows you to define custom scheduler resources for each partition that 
      }
 
  .. note::
-    For the ``pbs`` and ``torque`` backends, options accepted in the |access|_ and |resources|_ attributes may either refer to actual ``qsub`` options or may be just resources specifications to be passed to the ``-l`` option.
+    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` attributes may either refer to actual ``qsub`` options or may be just resources specifications to be passed to the ``-l`` option.
     The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
@@ -705,14 +697,14 @@ Environments defined in this section will be used for running regression tests.
 They are associated with `system partitions <#system-partition-configuration>`__.
 
 
-.. js:attribute:: .environments[].name
+.. py:attribute:: environments.name
 
    :required: Yes
 
    The name of this environment.
 
 
-.. js:attribute:: .environments[].modules
+.. py:attribute:: environments.modules
 
    :required: No
    :default: ``[]``
@@ -720,7 +712,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    A list of `environment module objects <#module-objects>`__ to be loaded when this environment is loaded.
 
 
-.. js:attribute:: .environments[].env_vars
+.. py:attribute:: environments.env_vars
 
    :required: No
    :default: ``[]``
@@ -733,14 +725,14 @@ They are associated with `system partitions <#system-partition-configuration>`__
 
    .. versionadded:: 4.0.0
 
-.. js:attribute:: .environments[].variables
+.. py:attribute:: environments.variables
 
    .. deprecated:: 4.0.0
-      Please use :js:attr:`env_vars` instead.
-      If specified in conjunction with :js:attr:`env_vars`, it will be ignored.
+      Please use :attr:`~environments.env_vars` instead.
+      If specified in conjunction with :attr:`~environments.env_vars`, it will be ignored.
 
 
-.. js:attribute:: .environments[].features
+.. py:attribute:: environments.features
 
    :required: No
    :default: ``[]``
@@ -752,19 +744,19 @@ They are associated with `system partitions <#system-partition-configuration>`__
    .. versionadded:: 3.11.0
 
 
-.. js:attribute:: .environments[].extras
+.. py:attribute:: environments.extras
 
    :required: No
    :default: ``{}``
 
    User defined attributes of the environment.
-   These are accessible through the :attr:`~reframe.core.environments.Environment.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
+   These are accessible through the :attr:`~reframe.coreenvironments.Environment.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
    The attributes of this object must be alphanumeric strings starting with a non-digit character and their values can be of any type.
 
    .. versionadded:: 3.9.1
 
 
-.. js:attribute:: .environments[].cc
+.. py:attribute:: environments.cc
 
    :required: No
    :default: ``"cc"``
@@ -772,7 +764,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    The C compiler to be used with this environment.
 
 
-.. js:attribute:: .environments[].cxx
+.. py:attribute:: environments.cxx
 
    :required: No
    :default: ``"CC"``
@@ -780,7 +772,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    The C++ compiler to be used with this environment.
 
 
-.. js:attribute:: .environments[].ftn
+.. py:attribute:: environments.ftn
 
    :required: No
    :default: ``"ftn"``
@@ -788,7 +780,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    The Fortran compiler to be used with this environment.
 
 
-.. js:attribute:: .environments[].cppflags
+.. py:attribute:: environments.cppflags
 
    :required: No
    :default: ``[]``
@@ -796,7 +788,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    A list of C preprocessor flags to be used with this environment by default.
 
 
-.. js:attribute:: .environments[].cflags
+.. py:attribute:: environments.cflags
 
    :required: No
    :default: ``[]``
@@ -804,7 +796,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    A list of C flags to be used with this environment by default.
 
 
-.. js:attribute:: .environments[].cxxflags
+.. py:attribute:: environments.cxxflags
 
    :required: No
    :default: ``[]``
@@ -812,7 +804,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    A list of C++ flags to be used with this environment by default.
 
 
-.. js:attribute:: .environments[].fflags
+.. py:attribute:: environments.fflags
 
    :required: No
    :default: ``[]``
@@ -820,7 +812,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    A list of Fortran flags to be used with this environment by default.
 
 
-.. js:attribute:: .environments[].ldflags
+.. py:attribute:: environments.ldflags
 
    :required: No
    :default: ``[]``
@@ -828,7 +820,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    A list of linker flags to be used with this environment by default.
 
 
-.. js:attribute:: .environments[].target_systems
+.. py:attribute:: environments.target_systems
 
    :required: No
    :default: ``["*"]``
@@ -869,7 +861,7 @@ Logging in ReFrame is handled by logger objects which further delegate message t
 You may define different logger objects per system but *not* per partition.
 
 
-.. js:attribute:: .logging[].level
+.. py:attribute:: logging.level
 
    :required: No
    :default: ``"undefined"``
@@ -884,7 +876,7 @@ You may define different logger objects per system but *not* per partition.
    - ``verbose``: More informational messages.
    - ``debug``: Debug messages.
    - ``debug2``: Further debug messages.
-   - ``undefined``: This is the lowest level; do not filter any message.
+   - ``undefined``: This is the lowest level; does not filter any message.
 
    If a message is logged by the framework, its severity level will be checked by the logger and if it is higher from the logger's level, it will be passed down to its handlers.
 
@@ -896,21 +888,21 @@ You may define different logger objects per system but *not* per partition.
       The default level is now ``undefined``.
 
 
-.. js:attribute:: .logging[].handlers
+.. py:attribute:: logging.handlers
 
    :required: Yes
 
    A list of logging handlers responsible for handling normal framework output.
 
 
-.. js:attribute:: .logging[].handlers_perflog
+.. py:attribute:: logging.handlers_perflog
 
    :required: Yes
 
    A list of logging handlers responsible for handling performance data from tests.
 
 
-.. js:attribute:: .logging[].perflog_compat
+.. py:attribute:: logging.perflog_compat
 
    :required: No
    :default: ``false``
@@ -918,13 +910,13 @@ You may define different logger objects per system but *not* per partition.
    Emit a separate log record for each performance variable.
    Set this option to ``true`` if you want to keep compatibility with the performance logging prior to ReFrame 4.0.
 
-.. js:attribute:: .logging[].target_systems
+.. py:attribute:: logging.target_systems
 
    :required: No
    :default: ``["*"]``
 
    A list of systems or system/partitions combinations that this logging configuration is valid for.
-   For a detailed description of this property, you may refer `here <#.environments[].target_systems>`__.
+   For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
 
@@ -935,9 +927,9 @@ Common logging handler properties
 All logging handlers share the following set of common attributes:
 
 
-.. js:attribute:: .logging[].handlers[].type
+.. py:attribute:: logging.handlers.type
 
-.. js:attribute:: .logging[].handlers_perflog[].type
+.. py:attribute:: logging.handlers_perflog.type
 
    :required: Yes
 
@@ -958,27 +950,26 @@ All logging handlers share the following set of common attributes:
      See `here <#the-httpjson-log-handler>`__ for more details.
 
 
-.. js:attribute:: .logging[].handlers[].level
+.. py:attribute:: logging.handlers.level
 
-.. js:attribute:: .logging[].handlers_perflog[].level
+.. py:attribute:: logging.handlers_perflog.level
 
    :required: No
    :default: ``"info"``
 
-   The `log level <#.logging[].level>`__ associated with this handler.
+   The `log level <#config.logging.level>`__ associated with this handler.
 
 
+.. py:attribute:: logging.handlers.format
 
-.. js:attribute:: .logging[].handlers[].format
-
-.. js:attribute:: .logging[].handlers_perflog[].format
+.. py:attribute:: logging.handlers_perflog.format
 
    :required: No
    :default: ``"%(message)s"``
 
    Log record format string.
 
-   ReFrame accepts all log record attributes from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following:
+   ReFrame accepts all log record attributes from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following attributes:
 
    .. csv-table::
       :header: "Log record attribute", "Description"
@@ -996,7 +987,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_hashcode)s``, The unique hash associated with this test.
       ``%(check_info)s``, Various information about this test; essentially the return value of the test's :func:`~reframe.core.pipeline.RegressionTest.info` function.
       ``%(check_job_completion_time)s``, Same as the ``(check_job_completion_time_unix)s`` but formatted according to ``datefmt``.
-      ``%(check_job_completion_time_unix)s``, The completion time of the associated run job (see :attr:`reframe.core.schedulers.Job.completion_time`).
+      ``%(check_job_completion_time_unix)s``, The completion time of the associated run job (see :attr:`~reframe.core.schedulers.Job.completion_time`).
       ``%(check_job_exitcode)s``, The exit code of the associated run job.
       ``%(check_job_nodelist)s``, The list of nodes that the associated run job has run on.
       ``%(check_jobid)s``, The ID of the associated run job.
@@ -1014,7 +1005,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_num_tasks_per_socket)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.num_tasks_per_socket` attribute.
       ``%(check_outputdir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.outputdir` attribute.
       ``%(check_partition)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_partition`.
-      ``%(check_perfvalues)s``, All the performance variables of the test combined. These will be formatted according to ``format_perfvars``.
+      ``%(check_perfvalues)s``, All the performance variables of the test combined. These will be formatted according to :attr:`~config.logging.handlers_perflog.format_perfvars`.
       ``%(check_postbuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postbuild_cmds` attribute.
       ``%(check_postrun_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.postrun_cmds` attribute.
       ``%(check_prebuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute.
@@ -1051,8 +1042,8 @@ All logging handlers share the following set of common attributes:
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
 
 
-.. js:attribute:: .logging[].handlers[].format_perfvars
-.. js:attribute:: .logging[].handlers_perflog[].format_perfvars
+.. py:attribute:: logging.handlers.format_perfvars
+.. py:attribute:: logging.handlers_perflog.format_perfvars
 
    Format specifier for logging the performance variables.
 
@@ -1077,14 +1068,14 @@ All logging handlers share the following set of common attributes:
 
    .. important::
       ReFrame versions prior to 4.0 logged a separate line for each performance variable and the ``%(check_perf_*)s`` attributes could be used directly in the ``format``.
-      You can re-enable this behaviour by setting the ``perflog_compat`` logging configuration parameter.
+      You can re-enable this behavior by setting the :attr:`config.logging.perflog_compat` logging configuration parameter.
 
 
    .. versionadded:: 4.0.0
 
-.. js:attribute:: .logging[].handlers[].datefmt
+.. py:attribute:: logging.handlers.datefmt
 
-.. object:: .logging[].handlers_perflog[].datefmt
+.. object:: logging.handlers_perflog.datefmt
 
    :required: No
    :default: ``"%FT%T"``
@@ -1102,9 +1093,9 @@ This log handler handles output to normal files.
 The additional properties for the ``file`` handler are the following:
 
 
-.. js:attribute:: .logging[].handlers[].name
+.. py:attribute:: logging.handlers..file..name
 
-.. object:: .logging[].handlers_perflog[].name
+.. py:attribute:: logging.handlers_perflog..file..name
 
    :required: No
 
@@ -1115,9 +1106,9 @@ The additional properties for the ``file`` handler are the following:
       The ``name`` parameter is no more required and the default log file resides in the system's temporary directory.
 
 
-.. js:attribute:: .logging[].handlers[].append
+.. py:attribute:: logging.handlers..file..append
 
-.. object:: .logging[].handlers_perflog[].append
+.. py:attribute:: logging.handlers_perflog..file..ppend
 
    :required: No
    :default: ``false``
@@ -1125,29 +1116,31 @@ The additional properties for the ``file`` handler are the following:
    Controls whether this handler should append to its file or not.
 
 
-.. js:attribute:: .logging[].handlers[].timestamp
+.. py:attribute:: logging.handlers..file..timestamp
 
-.. object:: .logging[].handlers_perflog[].timestamp
+.. py:attribute:: logging.handlers_perflog..file..timestamp
 
    :required: No
    :default: ``false``
 
    Append a timestamp to this handler's log file.
-   This property may also accept a date format as described in the |datefmt|_ property.
-   If the handler's |handler_name|_ property is set to ``filename.log`` and this property is set to ``true`` or to a specific timestamp format, the resulting log file will be ``filename_<timestamp>.log``.
+   This property may also accept a date format as described in the :attr:`~config.logging.handlers.datefmt` property.
+   If the handler's :attr:`~config.logging.handlers..file..name` property is set to ``filename.log`` and this property is set to ``true`` or to a specific timestamp format, the resulting log file will be ``filename_<timestamp>.log``.
 
+
+.. _filelog-handler:
 
 ---------------------------
 The ``filelog`` log handler
 ---------------------------
 
-This handler is meant primarily for performance logging and logs the performance of a regression test in one or more files.
+This handler is meant primarily for performance logging and logs the performance of a test in one or more files.
 The additional properties for the ``filelog`` handler are the following:
 
 
-.. js:attribute:: .logging[].handlers[].basedir
+.. py:attribute:: logging.handlers..filelog..basedir
 
-.. object:: .logging[].handlers_perflog[].basedir
+.. py:attribute:: logging.handlers_perflog..filelog..basedir
 
    :required: No
    :default: ``"./perflogs"``
@@ -1155,14 +1148,14 @@ The additional properties for the ``filelog`` handler are the following:
    The base directory of performance data log files.
 
 
-.. js:attribute:: .logging[].handlers[].prefix
+.. py:attribute:: logging.handlers..filelog..prefix
 
-.. object:: .logging[].handlers_perflog[].prefix
+.. py:attribute:: logging.handlers_perflog..filelog..prefix
 
    :required: Yes
 
-   This is a directory prefix (usually dynamic), appended to the |basedir|_, where the performance logs of a test will be stored.
-   This attribute accepts any of the check-specific `formatting placeholders <#.logging[].handlers_perflog[].format>`__.
+   This is a directory prefix (usually dynamic), appended to the :attr:`~config.logging.handlers..filelog..basedir`, where the performance logs of a test will be stored.
+   This attribute accepts any of the check-specific `formatting placeholders <#config.logging.handlers_perflog.format>`__.
    This allows to create dynamic paths based on the current system, partition and/or programming environment a test executes with.
    For example, a value of ``%(check_system)s/%(check_partition)s`` would generate the following structure of performance log files:
 
@@ -1180,15 +1173,21 @@ The additional properties for the ``filelog`` handler are the following:
         ...
 
 
-.. object:: .logging[].handlers[].append
+.. py:attribute:: logging.handlers..filelog..append
 
-.. object:: .logging[].handlers_perflog[].append
+.. py:attribute:: logging.handlers_perflog..filelog..append
 
    :required: No
    :default: ``true``
 
    Open each log file in append mode.
 
+
+.. versionchanged:: 4.0.0
+
+   The ``filelog`` handler is very cautious when generating a test log file: if a change is detected in the information that is being logged, the hanlder will not append to the same file, but it will instead create a new one, saving the old file using the ``.h<N>`` suffix, where ``N`` is an integer that is increased every time a new file is being created due to such changes.
+   Examples of changes in the logged information are when the log record format changes or a new performance metric is added, deleted or has its name changed.
+   This behavior guarantees that each log file is consistent and it will not break existing parsers.
 
 ---------------------------
 The ``graylog`` log handler
@@ -1197,18 +1196,18 @@ The ``graylog`` log handler
 This handler sends log records to a `Graylog <https://www.graylog.org/>`__ server.
 The additional properties for the ``graylog`` handler are the following:
 
-.. js:attribute:: .logging[].handlers[].address
+.. py:attribute:: logging.handlers..graylog..address
 
-.. object:: .logging[].handlers_perflog[].address
+.. py:attribute:: logging.handlers_perflog..graylog..address
 
    :required: Yes
 
    The address of the Graylog server defined as ``host:port``.
 
 
-.. js:attribute:: .logging[].handlers[].extras
+.. py:attribute:: logging.handlers..graylog..extras
 
-.. object:: .logging[].handlers_perflog[].extras
+.. py:attribute:: logging.handlers_perflog..graylog..extras
 
    :required: No
    :default: ``{}``
@@ -1238,7 +1237,7 @@ An example configuration of this handler for performance logging is shown here:
    }
 
 
-Although the ``format`` is defined for this handler, it is not only the log message that will be transmitted the Graylog server.
+Although the :attr:`~config.logging.handlers.format` attribute is defined for this handler, it is not only the log message that will be transmitted the Graylog server.
 This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
 
 
@@ -1250,9 +1249,9 @@ This handler sends log records to a file stream.
 The additional properties for the ``stream`` handler are the following:
 
 
-.. object:: .logging[].handlers[].name
+.. py:attribute:: logging.handlers..stream..name
 
-.. object:: .logging[].handlers_perflog[].name
+.. py:attribute:: logging.handlers_perflog..stream..name
 
    :required: No
    :default: ``"stdout"``
@@ -1272,9 +1271,9 @@ This handler sends log records to UNIX syslog.
 The additional properties for the ``syslog`` handler are the following:
 
 
-.. js:attribute:: .logging[].handlers[].socktype
+.. py:attribute:: logging.handlers..syslog..socktype
 
-.. object:: .logging[].handlers_perflog[].socktype
+.. py:attribute:: logging.handlers_perflog..syslog..socktype
 
    :required: No
    :default: ``"udp"``
@@ -1286,9 +1285,9 @@ The additional properties for the ``syslog`` handler are the following:
    - ``tcp``: A TCP stream socket.
 
 
-.. js:attribute:: .logging[].handlers[].facility
+.. py:attribute:: logging.handlers..syslog..facility
 
-.. object:: .logging[].handlers_perflog[].facility
+.. py:attribute:: logging.handlers_perflog..syslog..facility
 
    :required: No
    :default: ``"user"``
@@ -1297,9 +1296,9 @@ The additional properties for the ``syslog`` handler are the following:
    The list of supported facilities can be found `here <https://docs.python.org/3.8/library/logging.handlers.html#logging.handlers.SysLogHandler.encodePriority>`__.
 
 
-.. object:: .logging[].handlers[].address
+.. py:attribute:: logging.handlers..syslog..address
 
-.. object:: .logging[].handlers_perflog[].address
+.. py:attribute:: logging.handlers_perflog..syslog..address
 
    :required: Yes
 
@@ -1314,19 +1313,18 @@ The ``httpjson`` log handler
 This handler sends log records in JSON format to a server using HTTP POST requests.
 The additional properties for the ``httpjson`` handler are the following:
 
-.. js:attribute:: .logging[].handlers[].url
+.. py:attribute:: logging.handlers..httpjson..url
 
-.. object:: .logging[].handlers_perflog[].url
+.. py:attribute:: logging.handlers_perflog..httpjson..url
 
    :required: Yes
 
    The URL to be used in the HTTP(S) request server.
 
 
-.. js:attribute:: .logging[].handlers[].extras
-   :noindex:
+.. py:attribute:: logging.handlers..httpjson..extras
 
-.. object:: .logging[].handlers_perflog[].extras
+.. py:attribute:: logging.handlers_perflog..httpjson..extras
 
    :required: No
    :default: ``{}``
@@ -1334,9 +1332,9 @@ The additional properties for the ``httpjson`` handler are the following:
    A set of optional key/value pairs to be passed with each log record to the server.
    These may depend on the server configuration.
 
-.. js:attribute:: .logging[].handlers[].ignore_keys
+.. py:attribute:: logging.handlers..httpjson..ignore_keys
 
-.. object:: .logging[].handlers_perflog[].ignore_keys
+.. py:attribute:: logging.handlers_perflog..httpjson..ignore_keys
 
    :required: No
    :default: ``[]``
@@ -1369,11 +1367,11 @@ Execution Mode Configuration
 ----------------------------
 
 ReFrame allows you to define groups of command line options that are collectively called *execution modes*.
-An execution mode can then be selected from the command line with the ``-mode`` option.
+An execution mode can then be selected from the command line with the :option:`--mode` option.
 The options of an execution mode will be passed to ReFrame as if they were specified in the command line.
 
 
-.. js:attribute:: .modes[].name
+.. py:attribute:: modes.name
 
    :required: Yes
 
@@ -1381,7 +1379,7 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    This can be used with the :option:`--mode` command line option to invoke this mode.
 
 
-.. js:attribute:: .modes[].options
+.. py:attribute:: modes.options
 
    :required: No
    :default: ``[]``
@@ -1389,19 +1387,19 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    The command-line options associated with this execution mode.
 
 
-.. js:attribute:: .modes[].target_systems
+.. py:attribute:: modes.target_systems
 
    :required: No
    :default: ``["*"]``
 
    A list of systems *only* that this execution mode is valid for.
-   For a detailed description of this property, you may refer `here <#.environments[].target_systems>`__.
+   For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
 General Configuration
 ---------------------
 
-.. js:attribute:: .general[].check_search_path
+.. py:attribute:: general.check_search_path
 
    :required: No
    :default: ``["${RFM_INSTALL_PREFIX}/checks/"]``
@@ -1411,16 +1409,16 @@ General Configuration
    If specified from command line, the search path is constructed by specifying multiple times the command line option.
 
 
-.. js:attribute:: .general[].check_search_recursive
+.. py:attribute:: general.check_search_recursive
 
    :required: No
    :default: ``false``
 
-   Search directories in the `search path <#.general[].check_search_path>`__ recursively.
+   Search directories in the `search path <#general.check_search_path>`__ recursively.
 
 
 
-.. js:attribute:: .general[].clean_stagedir
+.. py:attribute:: general.clean_stagedir
 
    :required: No
    :default: ``true``
@@ -1430,7 +1428,7 @@ General Configuration
    .. versionadded:: 3.1
 
 
-.. js:attribute:: .general[].colorize
+.. py:attribute:: general.colorize
 
    :required: No
    :default: ``true``
@@ -1439,7 +1437,7 @@ General Configuration
    The command-line option sets the configuration option to ``false``.
 
 
-.. js:attribute:: .general[].compress_report
+.. py:attribute:: general.compress_report
 
    :required: No
    :default: ``false``
@@ -1450,7 +1448,7 @@ General Configuration
    .. versionadded:: 3.12.0
 
 
-.. js:attribute:: .general[].git_timeout
+.. py:attribute:: general.git_timeout
 
   :required: No
   :default: 5
@@ -1458,7 +1456,7 @@ General Configuration
   Timeout value in seconds used when checking if a git repository exists.
 
 
-.. js:attribute:: .general[].dump_pipeline_progress
+.. py:attribute:: general.dump_pipeline_progress
 
    Dump pipeline progress for the asynchronous execution policy in ``pipeline-progress.json``.
    This option is meant for debug purposes only.
@@ -1469,7 +1467,7 @@ General Configuration
    .. versionadded:: 3.10.0
 
 
-.. js:attribute:: .general[].pipeline_timeout
+.. py:attribute:: general.pipeline_timeout
 
    Timeout in seconds for advancing the pipeline in the asynchronous execution policy.
 
@@ -1482,7 +1480,7 @@ General Configuration
    .. versionadded:: 3.10.0
 
 
-.. js:attribute:: .general[].perf_info_level
+.. py:attribute:: general.perf_info_level
 
    :required: No
    :default: ``"info"``
@@ -1492,12 +1490,12 @@ General Configuration
    As soon as a performance test is finished, ReFrame will log its performance on the standard output immediately.
    This option controls at which verbosity level this info will appear.
 
-   For a list of available log levels, refer to logging configuration's |log_level|_.
+   For a list of available log levels, refer to the :attr:`~config.logging.level` logger configuration parameter.
 
    .. versionadded:: 4.0.0
 
 
-.. js:attribute:: .general[].remote_detect
+.. py:attribute:: general.remote_detect
 
    :required: No
    :default: ``false``
@@ -1509,7 +1507,7 @@ General Configuration
    .. versionadded:: 3.7.0
 
 
-.. js:attribute:: .general[].remote_workdir
+.. py:attribute:: general.remote_workdir
 
    :required: No
    :default: ``"."``
@@ -1519,7 +1517,7 @@ General Configuration
    .. versionadded:: 3.7.0
 
 
-.. js:attribute:: .general[].ignore_check_conflicts
+.. py:attribute:: general.ignore_check_conflicts
 
    :required: No
    :default: ``false``
@@ -1531,7 +1529,7 @@ General Configuration
 
 
 
-.. js:attribute:: .general[].trap_job_errors
+.. py:attribute:: general.trap_job_errors
 
    :required: No
    :default: ``false``
@@ -1541,7 +1539,7 @@ General Configuration
    .. versionadded:: 3.2
 
 
-.. js:attribute:: .general[].keep_stage_files
+.. py:attribute:: general.keep_stage_files
 
    :required: No
    :default: ``false``
@@ -1549,7 +1547,7 @@ General Configuration
    Keep stage files of tests even if they succeed.
 
 
-.. js:attribute:: .general[].module_map_file
+.. py:attribute:: general.module_map_file
 
    :required: No
    :default: ``""``
@@ -1557,7 +1555,7 @@ General Configuration
    File containing module mappings.
 
 
-.. js:attribute:: .general[].module_mappings
+.. py:attribute:: general.module_mappings
 
    :required: No
    :default: ``[]``
@@ -1567,7 +1565,7 @@ General Configuration
    If specified from command line, multiple module mappings are defined by passing the command line option multiple times.
 
 
-.. js:attribute:: .general[].non_default_craype
+.. py:attribute:: general.non_default_craype
 
    :required: No
    :default: ``false``
@@ -1577,7 +1575,7 @@ General Configuration
    See also :option:`--non-default-craype` for more details.
 
 
-.. js:attribute:: .general[].purge_environment
+.. py:attribute:: general.purge_environment
 
    :required: No
    :default: ``false``
@@ -1585,7 +1583,7 @@ General Configuration
    Purge any loaded environment modules before running any tests.
 
 
-.. js:attribute:: .general[].report_file
+.. py:attribute:: general.report_file
 
    :required: No
    :default: ``"${HOME}/.reframe/reports/run-report-{sessionid}.json"``
@@ -1599,7 +1597,7 @@ General Configuration
       Default value was reverted back to generate a new file per run.
 
 
-.. js:attribute:: .general[].report_junit
+.. py:attribute:: general.report_junit
 
    :required: No
    :default: ``null``
@@ -1610,7 +1608,7 @@ General Configuration
    .. versionadded:: 3.6.0
 
 
-.. js:attribute:: .general[].resolve_module_conflicts
+.. py:attribute:: general.resolve_module_conflicts
 
    :required: No
    :default: ``true``
@@ -1628,7 +1626,7 @@ General Configuration
    .. versionadded:: 3.6.0
 
 
-.. js:attribute:: .general[].save_log_files
+.. py:attribute:: general.save_log_files
 
    :required: No
    :default: ``false``
@@ -1636,16 +1634,16 @@ General Configuration
    Save any log files generated by ReFrame to its output directory
 
 
-.. js:attribute:: .general[].target_systems
+.. py:attribute:: general.target_systems
 
    :required: No
    :default: ``["*"]``
 
    A list of systems or system/partitions combinations that these general options are valid for.
-   For a detailed description of this property, you may refer `here <#.environments[].target_systems>`__.
+   For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
-.. js:attribute:: .general[].timestamp_dirs
+.. py:attribute:: general.timestamp_dirs
 
    :required: No
    :default: ``""``
@@ -1655,7 +1653,7 @@ General Configuration
    If specified from the command line without any argument, ``"%FT%T"`` will be used as a time format.
 
 
-.. js:attribute:: .general[].unload_modules
+.. py:attribute:: general.unload_modules
 
    :required: No
    :default: ``[]``
@@ -1665,7 +1663,7 @@ General Configuration
    If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
 
 
-.. js:attribute:: .general[].use_login_shell
+.. py:attribute:: general.use_login_shell
 
    :required: No
    :default: ``false``
@@ -1675,7 +1673,7 @@ General Configuration
    This option, if set to ``true``, may cause ReFrame to fail, if the shell changes permanently to a different directory during its start up.
 
 
-.. js:attribute:: .general[].user_modules
+.. py:attribute:: general.user_modules
 
    :required: No
    :default: ``[]``
@@ -1685,7 +1683,7 @@ General Configuration
    If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
 
 
-.. js:attribute:: .general[].verbose
+.. py:attribute:: general.verbose
 
    :required: No
    :default: 0
@@ -1704,14 +1702,20 @@ Module Objects
 A *module object* in ReFrame's configuration represents an environment module.
 It can either be a simple string or a JSON object with the following attributes:
 
-.. attribute:: .name
+.. attribute:: environments.modules.name
+.. attribute:: systems.modules.name
+.. attribute:: systems.partitions.modules.name
+.. attribute:: systems.partitions.container_platforms.modules.name
 
    :required: Yes
 
    The name of the module.
 
 
-.. attribute:: .collection
+.. attribute:: environments.modules.collection
+.. attribute:: systems.modules.collection
+.. attribute:: systems.partitions.modules.collection
+.. attribute:: systems.partitions.container_platforms.modules.collection
 
    :required: No
    :default: ``false``
@@ -1719,7 +1723,10 @@ It can either be a simple string or a JSON object with the following attributes:
    A boolean value indicating whether this module refers to a module collection.
    Module collections are treated differently from simple modules when loading.
 
-.. js:attribute:: .path
+.. attribute:: environments.modules.path
+.. attribute:: systems.modules.path
+.. attribute:: systems.partitions.modules.path
+.. attribute:: systems.partitions.container_platforms.modules.path
 
    :required: No
    :default: ``null``
@@ -1748,7 +1755,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
    Depending on the microarchitecture, this can either be a core or a hardware thread in processors that support simultaneous multithreading and this feature is enabled.
    Therefore, properties such as :attr:`num_cpus_per_core` may have a value greater than one.
 
-.. attribute:: .arch
+.. attribute:: systems.partitions.processor.arch
 
    :required: No
    :default: ``None``
@@ -1756,7 +1763,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
    The microarchitecture of the processor.
 
 
-.. attribute:: .num_cpus
+.. attribute:: systems.partitions.processor.num_cpus
 
    :required: No
    :default: ``None``
@@ -1764,7 +1771,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
    Number of logical CPUs.
 
 
-.. attribute:: .num_cpus_per_core
+.. attribute:: systems.partitions.processor.num_cpus_per_core
 
    :required: No
    :default: ``None``
@@ -1772,7 +1779,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
    Number of logical CPUs per core.
 
 
-.. attribute:: .num_cpus_per_socket
+.. attribute:: systems.partitions.processor.num_cpus_per_socket
 
    :required: No
    :default: ``None``
@@ -1780,7 +1787,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
    Number of logical CPUs per socket.
 
 
-.. attribute:: .num_sockets
+.. attribute:: systems.partitions.processor.num_sockets
 
    :required: No
    :default: ``None``
@@ -1788,7 +1795,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
    Number of sockets.
 
 
-.. attribute:: .topology
+.. attribute:: systems.partitions.processor.topology
 
    :required: No
    :default: ``None``
@@ -1843,7 +1850,7 @@ Device Info
 A *device info object* in ReFrame's configuration is used to hold information about a specific type of devices in a system partition and is made available to the tests through the :attr:`devices <reframe.core.systems.SystemPartition.processor>` attribute of the :attr:`current_partition <reframe.core.pipeline.RegressionTest.current_partition>`.
 
 
-.. attribute:: .type
+.. attribute:: systems.partitions.devices.type
 
    :required: No
    :default: ``None``
@@ -1851,7 +1858,7 @@ A *device info object* in ReFrame's configuration is used to hold information ab
    The type of the device, for example ``"gpu"``.
 
 
-.. attribute:: .arch
+.. attribute:: systems.partitions.devices.arch
    :noindex:
 
    :required: No
@@ -1860,7 +1867,7 @@ A *device info object* in ReFrame's configuration is used to hold information ab
    The microarchitecture of the device.
 
 
-.. attribute:: .num_devices
+.. attribute:: systems.partitions.devices.num_devices
 
    :required: No
    :default: ``None``

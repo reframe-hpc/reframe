@@ -348,4 +348,4 @@ Mapping of Test Attributes to Job Scheduler Backends
 If any of the attributes is set to :class:`None` it will not be emitted at all in the job script.
 In cases that the attribute is required, it will be set to ``1``.
 
-:sup:`1` The :obj:`--nodes` option may also be emitted if the :js:attr:`use_nodes_option <config_reference.html#schedulers-.use_nodes_option>` scheduler configuration parameter is set.
+:sup:`1` The :obj:`--nodes` option may also be emitted if the :attr:`~config.systems.partitions.sched_options.use_nodes_option` scheduler configuration parameter is set.

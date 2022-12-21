@@ -45,9 +45,9 @@ Webinars
    :maxdepth: 2
 
    started
+   whats_new_40
    tutorials
    configure
    topics
-   migration_2_to_3
    manuals
    hpctestlib

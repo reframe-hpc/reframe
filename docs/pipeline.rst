@@ -188,8 +188,8 @@ The following table show in which context each pipeline stage executes:
    ============== =================
 
 It should be noted that even if the partition execution context is local, it is treated differently from the ReFrame execution context.
-For example, a test executing in the ReFrame context will not respect the :js:attr:`max_jobs` partition configuration option, even if the partition is local.
-To control the concurrency of the ReFrame execution context, users should set the :js:attr:`.systems[].max_local_jobs` option instead.
+For example, a test executing in the ReFrame context will not respect the :attr:`~config.systems.partitions.max_jobs` partition configuration option, even if the partition is local.
+To control the concurrency of the ReFrame execution context, users should set the :attr:`~config.systems.max_local_jobs` option instead.
 
 
 .. versionchanged:: 3.10.0
