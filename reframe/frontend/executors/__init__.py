@@ -386,9 +386,8 @@ class RegressionTask:
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
-        if self.check.is_performance_check():
-            self._perflogger.log_performance(logging.INFO, self,
-                                             multiline=self._perflog_compat)
+        self._perflogger.log_performance(logging.INFO, self,
+                                         multiline=self._perflog_compat)
 
     @logging.time_function
     def cleanup(self, *args, **kwargs):
@@ -398,9 +397,8 @@ class RegressionTask:
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_failure')
-        if self.check.is_performance_check():
-            self._perflogger.log_performance(logging.INFO, self,
-                                             multiline=self._perflog_compat)
+        self._perflogger.log_performance(logging.INFO, self,
+                                         multiline=self._perflog_compat)
 
     def skip(self, exc_info=None):
         self._skipped = True
