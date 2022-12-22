@@ -726,6 +726,9 @@ class LoggerAdapter(logging.LoggerAdapter):
         )
 
     def log_performance(self, level, task, msg=None, multiline=False):
+        if self.extra['__rfm_check__'] is None:
+            return
+
         self.extra['check_partition'] = task.testcase.partition.name
         self.extra['check_environ'] = task.testcase.environ.name
         self.extra['check_result'] = 'pass' if task.succeeded else 'fail'
