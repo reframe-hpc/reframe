@@ -990,6 +990,24 @@ def perf_test():
 
 
 @pytest.fixture
+def failing_perf_test():
+    class _MyFailingTest(rfm.RunOnlyRegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        executable = 'echo perf0=100'
+
+        @sanity_function
+        def validate(self):
+            return False
+
+        @performance_function('unit0')
+        def perf0(self):
+            return sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float)
+
+    return _MyFailingTest()
+
+
+@pytest.fixture
 def simple_test():
     class _MySimpleTest(rfm.RunOnlyRegressionTest):
         valid_systems = ['*']
@@ -1192,7 +1210,8 @@ def test_perf_logging_no_perfvars(make_runner, make_exec_ctx, perf_test,
 
 
 def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
-                                simple_test, config_perflog, tmp_path):
+                                simple_test, failing_perf_test, config_perflog,
+                                tmp_path):
     make_exec_ctx(
         config_perflog(
             fmt=(
@@ -1207,7 +1226,7 @@ def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
     )
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
-    testcases = executors.generate_testcases([perf_test, simple_test])
+    testcases = executors.generate_testcases([perf_test, simple_test, failing_perf_test])
     runner.runall(testcases)
 
     logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
