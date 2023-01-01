@@ -1,6 +1,6 @@
 archspec==0.2.0
 argcomplete==2.0.0
-coverage==6.2
+coverage==7.0.1
 importlib_metadata==4.0.1; python_version < '3.8'
 jsonschema==3.2.0
 lxml==4.9.1
