@@ -3,7 +3,7 @@ argcomplete==2.0.0
 coverage==6.2
 importlib_metadata==4.0.1; python_version < '3.8'
 jsonschema==3.2.0
-lxml==4.9.1
+lxml==4.9.2
 pytest==7.0.1
 pytest-forked==1.4.0
 pytest-parallel==0.1.1
