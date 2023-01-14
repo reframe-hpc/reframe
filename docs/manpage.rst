@@ -96,6 +96,11 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
 
    .. versionadded:: 3.9.1
 
+   .. versionchanged:: 4.1.0
+
+      The ``MAINTAINER`` pattern is matched anywhere in the maintainer's name and not at its beginning.
+      If you want to match at the beginning of the name, you should prepend ``^``.
+
 .. option:: -n, --name=NAME
 
    Filter tests by name.
@@ -125,6 +130,11 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    .. versionchanged:: 4.0.0
 
       Support selecting tests by their hash code.
+
+   .. versionchanged:: 4.1.0
+
+      The ``NAME`` pattern is matched anywhere in the test name and not at its beginning.
+      If you want to match at the beginning of a test name, you should prepend ``^``.
 
 
 .. option:: -p, --prgenv=NAME
@@ -158,6 +168,11 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    This option may be specified multiple times, in which case tests with *any* of the specified tags will be excluded:
    ``-T TAG1 -T TAG2`` is therefore equivalent to ``-T 'TAG1|TAG2'``.
 
+   .. versionchanged:: 4.1.0
+
+      The ``TAG`` pattern is matched anywhere in the tag name and not at its beginning.
+      If you want to match at the beginning of a tag, you should prepend ``^``.
+
 .. option:: -t, --tag=TAG
 
    Filter tests by tag.
@@ -167,6 +182,11 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    To restrict the selection to tests defining only ``'foo'``, you should use ``-t 'foo$'``.
 
    This option may be specified multiple times, in which case only tests defining or matching *all* tags will be selected.
+
+   .. versionchanged:: 4.1.0
+
+      The ``TAG`` pattern is matched anywhere in the tag name and not at its beginning.
+      If you want to match at the beginning of a tag, you should prepend ``^``.
 
 .. option:: -x, --exclude=NAME
 
@@ -178,6 +198,10 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    This option may be specified multiple times, in which case tests with *any* of the specified names will be excluded:
    ``-x NAME1 -x NAME2`` is therefore equivalent to ``-x 'NAME1|NAME2'``.
 
+   .. versionchanged:: 4.1.0
+
+      The ``NAME`` pattern is matched anywhere in the test name and not at its beginning.
+      If you want to match at the beginning of a test name, you should prepend ``^``.
 
 ------------
 Test actions
