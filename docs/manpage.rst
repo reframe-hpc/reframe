@@ -765,9 +765,9 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_CONFIG_FILES` environment variable.
 
-   In order to determine its final configuration, ReFrame first loads the builtin configuration file unconditionally and then starts looking for configuration files in the :envvar:`RFM_CONFIG_PATH`.
-   For each directory in the :envvar:`RFM_CONFIG_PATH`, ReFrame looks for files named ``setting.py`` or ``setting.json`` and loads them.
-   If both a ``settings.py`` and a ``settings.json`` file are found, the Python configuration will be preferred.
+   In order to determine its final configuration, ReFrame first loads the builtin configuration file unconditionally and then starts looking for possible configuration file locations defined in the :envvar:`RFM_CONFIG_PATH` environment variable.
+   For each directory defined in the :envvar:`RFM_CONFIG_PATH`, ReFrame looks for a file named ``settings.py`` or ``setting.json`` inside it and loads it.
+   If both a ``settings.py`` and a ``settings.json`` files are found, the Python configuration will be preferred.
    ReFrame, finally, processes any configuration files specified in the command line or in the :envvar:`RFM_CONFIG_FILES` environment variable.
 
    .. versionchanged:: 4.0.0
