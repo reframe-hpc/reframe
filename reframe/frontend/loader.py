@@ -20,6 +20,27 @@ from reframe.core.exceptions import NameConflictError, is_severe, what
 from reframe.core.logging import getlogger, time_function
 
 
+class temp_sys_path:
+    def __init__(self, path):
+        self._path = path
+        self._pos = None
+
+    def __enter__(self):
+        self._pos = len(sys.path)
+        sys.path.append(self._path)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.path.pop(self._pos)
+
+
+class no_op:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
 class RegressionCheckValidator(ast.NodeVisitor):
     def __init__(self):
         self._has_import = False
@@ -178,13 +199,17 @@ class RegressionCheckLoader:
         return final_tests
 
     def load_from_file(self, filename, force=False):
+        filename = os.path.abspath(filename)
         if not self._validate_source(filename):
             return []
 
         try:
-            return self.load_from_module(
-                util.import_module_from_file(filename, force)
-            )
+            dirname = os.path.dirname(filename)
+            with osext.change_dir(dirname):
+                with temp_sys_path(dirname):
+                    return self.load_from_module(
+                        util.import_module_from_file(filename, force)
+                    )
         except Exception:
             exc_info = sys.exc_info()
             if not is_severe(*exc_info):

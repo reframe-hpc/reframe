@@ -392,6 +392,61 @@ This way the test will start passing again allowing us to catch any new issues w
 Then we can run the test anytime using ``--disable-hook=fooenv_workaround`` to check if the workaround is not needed anymore.
 
 
+Import user modules from a test file
+------------------------------------
+
+When building complex test suites or test libraries it is often the case that you would like to abstract away common functionality in a different Python module and import when needed.
+Suppose the following test directory structure:
+
+.. code-block:: console
+
+   tutorials/advanced/user_imports/
+   ├── commonutil
+   │   ├── __init__.py
+   └── tests
+       ├── test.py
+       └── testutil.py
+
+The ``commonutil`` module defines a :func:`greetings` function and the ``testutil`` module defines the :func:`greetings_from_test`.
+Suppose that the tests defined in ``test.py`` would like to use both of these modules.
+Prior to ReFrame 4.2, users would have to explicitly modify the :obj:`sys.path` in their test code before importing the desired modules as follows:
+
+.. code-block:: python
+
+   import os
+   import sys
+
+   prefix = os.path.dirname(__file__)
+   sys.path += [os.path.join(prefix, '..'), prefix]
+
+   import commonutil
+   from testutil import greetings_from_test
+
+This is a lot of boilerplate code for a relatively common operation.
+ReFrame 4.2 improves substantially this by introducing the following changes:
+
+1. The directory of the test file is temporarily added to the :obj:`sys.path` when ReFrame is loading the test file, so the ``testutil`` module can be directly imported without any additional preparation.
+2. While loading the test, ReFrame changes to the test's directory.
+3. ReFrame 4.2 provides two new utility functions for importing modules or symbols from modules: the :func:`~reframe.utility.import_module` and the :func:`~reframe.utility.import_from_module`
+
+The last two modifications allow users to load a module that is not in the same directory as the test file, like the ``commonutil`` module in this example.
+Let's rewrite the previous imports in ReFrame 4.2:
+
+.. code-block::
+
+   import reframe.utility as util
+   from testutil import greetings_from_test
+
+   commonutil = util.import_module('..commonutil')
+
+
+As soon as ``commonutil`` is imported with the utility function, it can be used as if it has been imported with an ``import`` statement.
+
+.. note::
+
+   Python will complain if you try to ``import ..commonutil`` as the test file is not part of a parent package.
+
+
 .. _generate-ci-pipeline:
 
 Integrating into a CI pipeline
