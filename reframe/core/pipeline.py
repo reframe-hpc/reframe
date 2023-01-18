@@ -624,6 +624,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :default: :class:`False`
     local = variable(typ.Bool, value=False, loggable=True)
 
+    #: Create the build and run scripts but don't run them.
+    #: The sanity and performance phases will also be skipped.
+    #:
+    #: :type: boolean
+    #: :default: :class:`False`
+    dry_run_mode = variable(typ.Bool, value=False, loggable=True)
+
     #: The set of reference values for this test.
     #:
     #: The reference values are specified as a scoped dictionary keyed on the
@@ -1620,9 +1627,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._build_job = self._create_job(f'rfm_build',
                                            self.local or self.build_locally,
                                            **job_opts)
+        self._build_job.dry_run_mode = self.dry_run_mode
 
     def _setup_run_job(self, **job_opts):
         self._job = self._create_job(f'rfm_job', self.local, **job_opts)
+        self._job.dry_run_mode = self.dry_run_mode
 
     def _setup_container_platform(self):
         try:
@@ -2022,12 +2031,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @final
     def sanity(self):
-        self.check_sanity()
+        if not self.dry_run_mode:
+            self.check_sanity()
 
     @final
     def performance(self):
         try:
-            self.check_performance()
+            if not self.dry_run_mode:
+                self.check_performance()
         except PerformanceError:
             if self.strict_check:
                 raise

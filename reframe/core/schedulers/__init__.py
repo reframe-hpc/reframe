@@ -313,6 +313,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #: .. versionadded:: 3.11.0
     pin_nodes = variable(typ.List[str], value=[])
 
+    dry_run_mode = variable(bool, value=False)
+
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,
                  name,
@@ -578,7 +580,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         return self.scheduler.submit(self)
 
     def wait(self):
-        if self.jobid is None:
+        if self.jobid is None and not self.dry_run_mode:
             raise JobNotStartedError('cannot wait an unstarted job')
 
         self.scheduler.wait(self)
@@ -591,7 +593,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         return self.scheduler.cancel(self)
 
     def finished(self):
-        if self.jobid is None:
+        if self.jobid is None and not self.dry_run_mode:
             raise JobNotStartedError('cannot poll an unstarted job')
 
         done = self.scheduler.finished(self)

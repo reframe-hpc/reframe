@@ -54,19 +54,26 @@ class SgeJobScheduler(PbsJobScheduler):
         return preamble
 
     def submit(self, job):
-        # `-o` and `-e` options are only recognized in command line by the PBS,
-        # SGE, and Slurm wrappers.
-        cmd = f'qsub -o {job.stdout} -e {job.stderr} {job.script_filename}'
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
-        jobid_match = re.search(r'^Your job (?P<jobid>\S+)', completed.stdout)
-        if not jobid_match:
-            raise JobSchedulerError('could not retrieve the job id '
-                                    'of the submitted job')
+        if not job.dry_run_mode:
+            # `-o` and `-e` options are only recognized in command line by the PBS,
+            # SGE, and Slurm wrappers.
+            cmd = f'qsub -o {job.stdout} -e {job.stderr} {job.script_filename}'
+            completed = _run_strict(cmd, timeout=self._submit_timeout)
+            jobid_match = re.search(r'^Your job (?P<jobid>\S+)', completed.stdout)
+            if not jobid_match:
+                raise JobSchedulerError('could not retrieve the job id '
+                                        'of the submitted job')
 
-        job._jobid = jobid_match.group('jobid')
+            job._jobid = jobid_match.group('jobid')
+
         job._submit_time = time.time()
 
     def poll(self, *jobs):
+        if jobs:
+            for job in jobs:
+                if job.dry_run_mode:
+                    job._state = 'COMPLETED'
+
         if jobs:
             # Filter out non-jobs
             jobs = [job for job in jobs if job is not None]

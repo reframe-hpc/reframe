@@ -76,21 +76,30 @@ class FluxJobScheduler(JobScheduler):
     def submit(self, job):
         '''Submit a job to the flux executor.'''
 
-        flux_future = self._fexecutor.submit(job.fluxjob)
-        job._jobid = str(flux_future.jobid())
+        if not job.dry_run_mode:
+            flux_future = self._fexecutor.submit(job.fluxjob)
+            job._jobid = str(flux_future.jobid())
+            job._flux_future = flux_future
+
         job._submit_time = time.time()
-        job._flux_future = flux_future
 
     def cancel(self, job):
         '''Cancel a running Flux job.'''
 
-        # Job future cannot cancel once running or completed
-        if not job._flux_future.cancel():
-            # This will raise JobException with event=cancel (on poll)
-            flux.job.cancel(flux.Flux(), job._flux_future.jobid())
+        if not job.dry_run_mode:
+            # Job future cannot cancel once running or completed
+            if not job._flux_future.cancel():
+                # This will raise JobException with event=cancel (on poll)
+                flux.job.cancel(flux.Flux(), job._flux_future.jobid())
 
     def poll(self, *jobs):
         '''Poll running Flux jobs for updated states.'''
+
+        if jobs:
+            for job in jobs:
+                if job.dry_run_mode:
+                    job._state = 'COMPLETED'
+                    job._completed = True
 
         if jobs:
             # filter out non-jobs

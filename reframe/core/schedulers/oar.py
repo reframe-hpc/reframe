@@ -98,26 +98,36 @@ class OarJobScheduler(PbsJobScheduler):
         return preamble
 
     def submit(self, job):
-        # OAR batch submission mode needs full path to the job script
-        job_script_fullpath = os.path.join(job.workdir, job.script_filename)
+        if not job.dry_run_mode:
+            # OAR batch submission mode needs full path to the job script
+            job_script_fullpath = os.path.join(job.workdir, job.script_filename)
 
-        # OAR needs -S to submit job in batch mode
-        cmd = f'oarsub -S {job_script_fullpath}'
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
-        jobid_match = re.search(r'.*OAR_JOB_ID=(?P<jobid>\S+)',
-                                completed.stdout)
-        if not jobid_match:
-            raise JobSchedulerError('could not retrieve the job id '
-                                    'of the submitted job')
+            # OAR needs -S to submit job in batch mode
+            cmd = f'oarsub -S {job_script_fullpath}'
+            completed = _run_strict(cmd, timeout=self._submit_timeout)
+            jobid_match = re.search(r'.*OAR_JOB_ID=(?P<jobid>\S+)',
+                                    completed.stdout)
+            if not jobid_match:
+                raise JobSchedulerError('could not retrieve the job id '
+                                        'of the submitted job')
 
-        job._jobid = jobid_match.group('jobid')
+            job._jobid = jobid_match.group('jobid')
+
         job._submit_time = time.time()
 
     def cancel(self, job):
-        _run_strict(f'oardel {job.jobid}', timeout=self._submit_timeout)
+        if not job.dry_run_mode:
+            _run_strict(f'oardel {job.jobid}', timeout=self._submit_timeout)
+
         job._cancelled = True
 
     def poll(self, *jobs):
+        if jobs:
+            for job in jobs:
+                if job.dry_run_mode:
+                    job._state = 'Terminated'
+                    job._completed = True
+
         if jobs:
             # Filter out non-jobs
             jobs = [job for job in jobs if job is not None]

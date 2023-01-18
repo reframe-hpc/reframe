@@ -75,17 +75,27 @@ class LsfJobScheduler(PbsJobScheduler):
         return list(filter(None, preamble))
 
     def submit(self, job):
-        with open(job.script_filename, 'r') as fp:
-            completed = _run_strict('bsub', stdin=fp)
-        jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
-                                completed.stdout)
-        if not jobid_match:
-            raise JobSchedulerError('could not retrieve the job id '
-                                    'of the submitted job')
-        job._jobid = jobid_match.group('jobid')
+        if not job.dry_run_mode:
+            with open(job.script_filename, 'r') as fp:
+                completed = _run_strict('bsub', stdin=fp)
+
+            jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
+                                    completed.stdout)
+            if not jobid_match:
+                raise JobSchedulerError('could not retrieve the job id '
+                                        'of the submitted job')
+
+            job._jobid = jobid_match.group('jobid')
+
         job._submit_time = time.time()
 
     def poll(self, *jobs):
+        if jobs:
+            for job in jobs:
+                if job.dry_run_mode:
+                    job._state = 'COMPLETED'
+                    job._completed = True
+
         if jobs:
             # filter out non-jobs
             jobs = [job for job in jobs if job is not None]

@@ -61,21 +61,22 @@ class LocalJobScheduler(sched.JobScheduler):
         # Run from the absolute path
         f_stdout = open(job.stdout, 'w+')
         f_stderr = open(job.stderr, 'w+')
+        if not job.dry_run_mode:
+            # The new process starts also a new session (session leader), so that
+            # we can later kill any other processes that this might spawn by just
+            # killing this one.
+            proc = osext.run_command_async(
+                os.path.abspath(job.script_filename),
+                stdout=f_stdout,
+                stderr=f_stderr,
+                start_new_session=True
+            )
 
-        # The new process starts also a new session (session leader), so that
-        # we can later kill any other processes that this might spawn by just
-        # killing this one.
-        proc = osext.run_command_async(
-            os.path.abspath(job.script_filename),
-            stdout=f_stdout,
-            stderr=f_stderr,
-            start_new_session=True
-        )
+            # Update job info
+            job._jobid = proc.pid
+            job._nodelist = [socket.gethostname()]
+            job._proc = proc
 
-        # Update job info
-        job._jobid = proc.pid
-        job._nodelist = [socket.gethostname()]
-        job._proc = proc
         job._f_stdout = f_stdout
         job._f_stderr = f_stderr
         job._submit_time = time.time()
@@ -149,7 +150,10 @@ class LocalJobScheduler(sched.JobScheduler):
 
     def poll(self, *jobs):
         for job in jobs:
-            self._poll_job(job)
+            if job and job.dry_run_mode:
+                job._state = 'SUCCESS'
+            else:
+                self._poll_job(job)
 
     def _poll_job(self, job):
         if job is None or job.jobid is None:
