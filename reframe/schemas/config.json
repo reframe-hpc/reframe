@@ -163,7 +163,9 @@
                         "ignore_keys": {
                             "type": "array",
                             "items": {"type": "string"}
-                        }
+                        },
+                        "json_formatter": {},
+                        "debug": {"type": "boolean"}
                     },
                     "required": ["url"]
                 }
@@ -565,6 +567,8 @@
         "logging/handlers*/graylog_extras": {},
         "logging/handlers*/httpjson_extras": {},
         "logging/handlers*/httpjson_ignore_keys": [],
+        "logging/handlers*/httpjson_json_formatter": null,
+        "logging/handlers*/httpjson_debug": false,
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",

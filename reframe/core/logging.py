@@ -469,6 +469,11 @@ def _create_graylog_handler(site_config, config_prefix):
 
 def _create_httpjson_handler(site_config, config_prefix):
     url = site_config.get(f'{config_prefix}/url')
+    extras = site_config.get(f'{config_prefix}/extras')
+    ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
+    json_formatter = site_config.get(f'{config_prefix}/json_formatter')
+    debug = site_config.get(f'{config_prefix}/debug')
+
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.scheme not in {'http', 'https'}:
         raise ConfigError(
@@ -480,9 +485,9 @@ def _create_httpjson_handler(site_config, config_prefix):
 
     try:
         if not parsed_url.port:
-            raise ConfigError('http json handler: no port given')
+            raise ConfigError('httpjson handler: no port given')
     except ValueError as e:
-        raise ConfigError('http json handler: invalid port') from e
+        raise ConfigError('httpjson handler: invalid port') from e
 
     # Check if the remote server is up and accepts connections; if not we will
     # skip the handler
@@ -495,11 +500,47 @@ def _create_httpjson_handler(site_config, config_prefix):
             f'httpjson: could not connect to server '
             f'{parsed_url.hostname}:{parsed_url.port}: {e}'
         )
-        return None
+        if not debug:
+            return None
 
-    extras = site_config.get(f'{config_prefix}/extras')
-    ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
-    return HTTPJSONHandler(url, extras, ignore_keys)
+    if debug:
+        getlogger().warning('httpjson: running in debug mode; '
+                            'no data will be sent to the server')
+
+    return HTTPJSONHandler(url, extras, ignore_keys, json_formatter, debug)
+
+
+def _record_to_json(record, extras, ignore_keys):
+    def _can_send(key):
+        return not key.startswith('_') and not key in ignore_keys
+
+    def _sanitize(s):
+        return re.sub(r'\W', '_', s)
+
+    json_record = {}
+    for k, v in record.__dict__.items():
+        if not _can_send(k):
+            continue
+
+        if k == 'check_perfvalues':
+            # Flatten the performance values
+            for var, info in v.items():
+                val, ref, lower, upper, unit = info
+                name = _sanitize(var.split(':')[-1])
+                json_record[f'check_perf_{name}_value'] = val
+                json_record[f'check_perf_{name}_ref'] = ref
+                json_record[f'check_perf_{name}_lower_thres'] = lower
+                json_record[f'check_perf_{name}_upper_thres'] = upper
+                json_record[f'check_perf_{name}_unit'] = unit
+        else:
+            json_record[k] = v
+
+    if extras:
+        json_record.update({
+            k: v for k, v in extras.items() if _can_send(k)
+        })
+
+    return _xfmt(json_record)
 
 
 class HTTPJSONHandler(logging.Handler):
@@ -514,35 +555,36 @@ class HTTPJSONHandler(logging.Handler):
         'stack_info', 'thread', 'threadName', 'exc_text'
     }
 
-    def __init__(self, url, extras=None, ignore_keys=None):
+    def __init__(self, url, extras=None, ignore_keys=None,
+                 json_formatter=None, debug=False):
         super().__init__()
         self._url = url
         self._extras = extras
-        self._ignore_keys = ignore_keys
+        self._ignore_keys = self.LOG_ATTRS
+        if ignore_keys:
+            self._ignore_keys |= set(ignore_keys)
 
-    def _record_to_json(self, record):
-        def _can_send(key):
-            return not (
-                key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS or
-                (self._ignore_keys and key in self._ignore_keys)
-            )
-
-        json_record = {
-            k: v for k, v in record.__dict__.items() if _can_send(k)
-        }
-        if self._extras:
-            json_record.update({
-                k: v for k, v in self._extras.items() if _can_send(k)
-            })
-
-        return _xfmt(json_record).encode('utf-8')
+        self._json_format = json_formatter or _record_to_json
+        self._debug = debug
 
     def emit(self, record):
-        json_record = self._record_to_json(record)
+        json_record = self._json_format(record,
+                                        self._extras,
+                                        self._ignore_keys)
+        if self._debug:
+            import time
+            ts = time.time_ns()
+            dump_file = f'httpjson_record_{ts}.json'
+            with open(dump_file, 'w') as fp:
+                fp.write(json_record)
+
+            return
+
         try:
             requests.post(
                 self._url, data=json_record,
-                headers={'Content-type': 'application/json'}
+                headers={'Content-type': 'application/json',
+                         'Accept-Charset': 'UTF-8'}
             )
         except requests.exceptions.RequestException as e:
             raise LoggingError('logging failed') from e
@@ -725,7 +767,16 @@ class LoggerAdapter(logging.LoggerAdapter):
             '%FT%T%:z'
         )
 
+    # FIXME: Temporary workaround until
+    # https://github.com/reframe-hpc/reframe/issues/2747 is fixed
     def log_performance(self, level, task, msg=None, multiline=False):
+        try:
+            self._log_performance(level, task, msg, multiline)
+        except BaseException:
+            import traceback
+            traceback.print_exc()
+
+    def _log_performance(self, level, task, msg=None, multiline=False):
         if self.extra['__rfm_check__'] is None:
             return
 
