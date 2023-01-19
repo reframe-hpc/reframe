@@ -624,8 +624,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :default: :class:`False`
     local = variable(typ.Bool, value=False, loggable=True)
 
-    #: Create the build and run scripts but don't run them.
+    #: .. versionadded:: 4.1.0
+    #:
+    #: Create the build and run scripts but don't submit them for scheduling.
     #: The sanity and performance phases will also be skipped.
+    #: Only the job script is expected to be copied to the output directory.
     #:
     #: :type: boolean
     #: :default: :class:`False`
