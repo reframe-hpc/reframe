@@ -405,15 +405,20 @@ class SlurmJobScheduler(sched.JobScheduler):
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
 
+        # Filter out non-jobs and mark as completed the jobs that are in
+        # dry-run mode
+        normal_jobs = []
         if jobs:
             for job in jobs:
-                if job.dry_run_mode:
+                if job is None:
+                    continue
+                elif job.dry_run_mode == True:
                     job._state = 'COMPLETED'
                     job._completed = True
+                else:
+                    normal_jobs.append(job)
 
-        if jobs:
-            # Filter out non-jobs
-            jobs = [job for job in jobs if job is not None]
+            jobs = normal_jobs
 
         if not jobs:
             return
@@ -578,15 +583,20 @@ class SqueueJobScheduler(SlurmJobScheduler):
     SQUEUE_DELAY = 2
 
     def poll(self, *jobs):
+        # Filter out non-jobs and mark as completed the jobs that are in
+        # dry-run mode
+        normal_jobs = []
         if jobs:
             for job in jobs:
-                if job.dry_run_mode:
+                if job is None:
+                    continue
+                elif job.dry_run_mode == True:
                     job._state = 'COMPLETED'
                     job._completed = True
+                else:
+                    normal_jobs.append(job)
 
-        if jobs:
-            # Filter out non-jobs
-            jobs = [job for job in jobs if job is not None]
+            jobs = normal_jobs
 
         if not jobs:
             return

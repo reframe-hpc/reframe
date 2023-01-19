@@ -90,15 +90,20 @@ class LsfJobScheduler(PbsJobScheduler):
         job._submit_time = time.time()
 
     def poll(self, *jobs):
+        # Filter out non-jobs and mark as completed the jobs that are in
+        # dry-run mode
+        normal_jobs = []
         if jobs:
             for job in jobs:
-                if job.dry_run_mode:
+                if job is None:
+                    continue
+                elif job.dry_run_mode == True:
                     job._state = 'COMPLETED'
                     job._completed = True
+                else:
+                    normal_jobs.append(job)
 
-        if jobs:
-            # filter out non-jobs
-            jobs = [job for job in jobs if job is not None]
+            jobs = normal_jobs
 
         if not jobs:
             return
