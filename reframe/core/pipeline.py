@@ -2216,11 +2216,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if job is None:
             return
 
-        stdout = os.path.join(self._stagedir, job.stdout)
-        stderr = os.path.join(self._stagedir, job.stderr)
+        if not job.dry_run_mode:
+            stdout = os.path.join(self._stagedir, job.stdout)
+            stderr = os.path.join(self._stagedir, job.stderr)
+            shutil.copy(stdout, dst)
+            shutil.copy(stderr, dst)
+        else:
+            self.logger.debug('Skipping stdout and stderr because test is in '
+                              'dry-run mode')
+
         script = os.path.join(self._stagedir, job.script_filename)
-        shutil.copy(stdout, dst)
-        shutil.copy(stderr, dst)
         shutil.copy(script, dst)
 
     def _copy_to_outputdir(self):

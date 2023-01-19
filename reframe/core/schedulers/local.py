@@ -58,10 +58,10 @@ class LocalJobScheduler(sched.JobScheduler):
         return _LocalJob(*args, **kwargs)
 
     def submit(self, job):
-        # Run from the absolute path
-        f_stdout = open(job.stdout, 'w+')
-        f_stderr = open(job.stderr, 'w+')
         if not job.dry_run_mode:
+            # Run from the absolute path
+            f_stdout = open(job.stdout, 'w+')
+            f_stderr = open(job.stderr, 'w+')
             # The new process starts also a new session (session leader), so that
             # we can later kill any other processes that this might spawn by just
             # killing this one.
@@ -76,9 +76,9 @@ class LocalJobScheduler(sched.JobScheduler):
             job._jobid = proc.pid
             job._nodelist = [socket.gethostname()]
             job._proc = proc
+            job._f_stdout = f_stdout
+            job._f_stderr = f_stderr
 
-        job._f_stdout = f_stdout
-        job._f_stderr = f_stderr
         job._submit_time = time.time()
         job._state = 'RUNNING'
 
@@ -101,9 +101,11 @@ class LocalJobScheduler(sched.JobScheduler):
             # group, so ignore this error
             self.log(f'pid {job.jobid} already dead or assigned elsewhere')
         finally:
-            # Close file handles
-            job.f_stdout.close()
-            job.f_stderr.close()
+            if not job.dry_run_mode:
+                # Close file handles
+                job.f_stdout.close()
+                job.f_stderr.close()
+
             job._state = 'FAILURE'
 
     def _term_all(self, job):
