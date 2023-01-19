@@ -22,7 +22,7 @@ def test_distribute_testcases(sys0_exec_ctx):
     ])
     testcases = executors.generate_testcases(loader.load_all())
     testcases = filter(
-        filters.have_any_name('Simple'), testcases
+        filters.have_any_name(['Simple']), testcases
     )
 
     testcases = list(testcases)

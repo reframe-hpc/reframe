@@ -30,7 +30,7 @@ def _have_name(patt):
             # Do an exact match on the hashcode
             return patt[1:] == case.check.hashcode
         else:
-            return regex.match(display_name)
+            return regex.search(display_name)
 
     return _fn
 
@@ -76,7 +76,7 @@ def have_any_name(names):
 
         display_name = case.check.display_name.replace(' ', '')
         if regex:
-            return regex.match(display_name)
+            return regex.search(display_name)
 
         return False
 
@@ -87,7 +87,7 @@ def have_tag(patt):
     regex = re_compile(patt)
 
     def _fn(case):
-        return any(regex.match(p) for p in case.check.tags)
+        return any(regex.search(p) for p in case.check.tags)
 
     return _fn
 
@@ -103,7 +103,7 @@ def have_maintainer(patt):
     regex = re_compile(patt)
 
     def _fn(case):
-        return any(regex.match(p) for p in case.check.maintainers)
+        return any(regex.search(p) for p in case.check.maintainers)
 
     return _fn
 
