@@ -39,6 +39,12 @@ class PrettyPrinter:
         self.info('[%s] %s' % (line, msg))
 
     def status(self, status, message='', just=None, level=logging.INFO):
+        if status in {'DOK', 'DRUN'}:
+            dry_run_mode = True
+            status = status[1:]
+        else:
+            dry_run_mode = False
+
         if just == 'center':
             status = status.center(self.status_width - 2)
         elif just == 'right':
@@ -48,7 +54,7 @@ class PrettyPrinter:
 
         status_stripped = status.strip()
         if self.colorize:
-            if status_stripped == 'SKIP':
+            if status_stripped == 'SKIP' or dry_run_mode:
                 status = color.colorize(status, color.YELLOW)
             elif status_stripped in ['FAIL', 'FAILED', 'ERROR']:
                 status = color.colorize(status, color.RED)

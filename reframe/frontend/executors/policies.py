@@ -98,9 +98,13 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def runcase(self, case):
         super().runcase(case)
-        check, partition, environ = case
+        check, partition, _ = case
         task = RegressionTask(case, self.task_listeners)
-        self.printer.status('RUN', task.info())
+        if check.dry_run_mode:
+            self.printer.status('DRUN', task.info())
+        else:
+            self.printer.status('RUN', task.info())
+
         self._task_index[case] = task
         self.stats.add_task(task)
         try:
@@ -205,7 +209,11 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_success(self, task):
         msg = f'{task.info()}'
-        self.printer.status('OK', msg, just='right')
+        if task.check.dry_run_mode:
+            self.printer.status('DOK', msg, just='right')
+        else:
+            self.printer.status('OK', msg, just='right')
+
         _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
@@ -431,7 +439,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
         elif self.deps_succeeded(task):
             try:
-                self.printer.status('RUN', task.info())
+                if task.check.dry_run_mode:
+                    self.printer.status('DRUN', task.info())
+                else:
+                    self.printer.status('RUN', task.info())
+
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
@@ -603,7 +615,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_success(self, task):
         msg = f'{task.info()}'
-        self.printer.status('OK', msg, just='right')
+        if task.check.dry_run_mode:
+            self.printer.status('DOK', msg, just='right')
+        else:
+            self.printer.status('OK', msg, just='right')
+
         _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
