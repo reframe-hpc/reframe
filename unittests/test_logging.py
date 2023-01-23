@@ -501,3 +501,46 @@ def test_logging_context_error(default_exec_ctx, logfile):
 
     assert _found_in_logfile('reframe', logfile)
     assert _found_in_logfile('error from context', logfile)
+
+
+@pytest.fixture(params=[
+    ('foo://server.com:12345/rfm', 'invalid url scheme'),
+    ('http://:12345/rfm', 'invalid hostname'),
+    ('http://server.com:foo/rfm', 'invalid port'),
+])
+def malformed_url(request):
+    return request.param
+
+
+def test_httpjson_handler_bad_url(make_exec_ctx, config_file, malformed_url):
+    url, error = malformed_url
+    make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers_perflog': [{
+                'type': 'httpjson',
+                'url': url,
+            }],
+        })
+    )
+
+    with pytest.raises(ConfigError, match=error):
+        rlog.configure_logging(rt.runtime().site_config)
+
+
+@pytest.fixture(params=['http', 'https'])
+def url_scheme(request):
+    return request.param
+
+
+def test_httpjson_handler_no_port(make_exec_ctx, config_file, url_scheme):
+    make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers_perflog': [{
+                'type': 'httpjson',
+                'url': f'{url_scheme}://foo.com/rfm',
+            }],
+        })
+    )
+    rlog.configure_logging(rt.runtime().site_config)

@@ -484,21 +484,27 @@ def _create_httpjson_handler(site_config, config_prefix):
         raise ConfigError('http json handler: invalid hostname')
 
     try:
-        if not parsed_url.port:
-            raise ConfigError('httpjson handler: no port given')
+        port = parsed_url.port
+        if port is None:
+            if parsed_url.scheme == 'http':
+                port = 80
+            elif parsed_url.scheme == 'https':
+                port = 443
+            else:
+                # This should not happen
+                assert 0, 'invalid url scheme found'
     except ValueError as e:
         raise ConfigError('httpjson handler: invalid port') from e
 
     # Check if the remote server is up and accepts connections; if not we will
     # skip the handler
     try:
-        with socket.create_connection((parsed_url.hostname, parsed_url.port),
-                                      timeout=1):
+        with socket.create_connection((parsed_url.hostname, port), timeout=1):
             pass
     except OSError as e:
         getlogger().warning(
             f'httpjson: could not connect to server '
-            f'{parsed_url.hostname}:{parsed_url.port}: {e}'
+            f'{parsed_url.hostname}:{port}: {e}'
         )
         if not debug:
             return None
