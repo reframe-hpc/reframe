@@ -21,6 +21,7 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
 from reframe.core.warnings import suppress_deprecations
+from reframe.utility import is_trivially_callable
 from reframe.utility.profile import TimeProfiler
 
 
@@ -571,12 +572,26 @@ class HTTPJSONHandler(logging.Handler):
             self._ignore_keys |= set(ignore_keys)
 
         self._json_format = json_formatter or _record_to_json
+        if not callable(self._json_format):
+            raise ConfigError("httpjson: 'json_formatter' is not a callable")
+
+        if not is_trivially_callable(self._json_format, non_def_args=3):
+            raise ConfigError(
+                "httpjson: 'json_formatter' has not the right signature: "
+                "it must be 'json_formatter(record, extras, ignore_keys)'"
+            )
+
         self._debug = debug
 
     def emit(self, record):
+        # Convert tags to a list to make them JSON friendly
+        record.check_tags = list(record.check_tags)
         json_record = self._json_format(record,
                                         self._extras,
                                         self._ignore_keys)
+        if json_record is None:
+            return
+
         if self._debug:
             import time
             ts = time.time_ns()
