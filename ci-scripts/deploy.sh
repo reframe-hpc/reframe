@@ -44,7 +44,7 @@ tmpdir=$(mktemp -d)
 echo "Deploying ReFrame version $version ..."
 echo "Working directory: $tmpdir ..."
 cd $tmpdir
-git clone https://${_gh_creds_prefix}github.com/reframe-hpc/reframe.git
+git clone --branch master https://${_gh_creds_prefix}github.com/reframe-hpc/reframe.git
 cd reframe
 ./bootstrap.sh
 found_version=$(./bin/reframe -V | sed -e 's/\(.*\)\+.*/\1/g')
