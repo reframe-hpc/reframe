@@ -594,7 +594,7 @@ class HTTPJSONHandler(logging.Handler):
 
         if self._debug:
             import time
-            ts = time.time_ns()
+            ts = int(time.time() * 1_000)
             dump_file = f'httpjson_record_{ts}.json'
             with open(dump_file, 'w') as fp:
                 fp.write(json_record)
