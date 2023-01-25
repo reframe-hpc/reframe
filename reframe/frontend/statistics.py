@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import inspect
+import os
 import shutil
 import traceback
 
@@ -229,6 +231,20 @@ class TestStats:
         return self._run_data
 
     def print_failure_report(self, printer, rerun_info=True):
+        def first_n_lines_of_file(filename, prefix, num_lines=10):
+            lines = [
+                f'--- {filename} (first {num_lines} lines) ---'
+            ]
+            with contextlib.suppress(OSError):
+                with open(os.path.join(prefix, filename)) as fp:
+                    for i, line in enumerate(fp):
+                        if i < num_lines:
+                            # Remove trailing '\n'
+                            lines.append(line[:-1])
+
+            lines += [f'--- {filename} ---']
+            return lines
+
         line_width = shutil.get_terminal_size()[0]
         printer.info(line_width * '=')
         printer.info('SUMMARY OF FAILURES')
@@ -264,7 +280,14 @@ class TestStats:
                              f" -p {r['environment']} --system "
                              f"{r['system']} -r'")
 
-            printer.info(f"  * Reason: {r['fail_reason']}")
+            mssg = r['fail_reason']
+            if mssg.startswith('sanity error'):
+                lines = [mssg]
+                lines += first_n_lines_of_file(r['job_stdout'], prefix = r['stagedir'])
+                lines += first_n_lines_of_file(r['job_stderr'], prefix = r['stagedir'])
+                mssg = '\n'.join(lines)
+
+            printer.info(f"  * Reason: {mssg}")
 
             tb = ''.join(traceback.format_exception(*r['fail_info'].values()))
             if r['fail_severe']:
