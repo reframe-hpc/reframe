@@ -243,7 +243,6 @@ class TestStats:
                             lines.append(line[:-1])
 
             lines += [f'--- {filename} ---']
-
             return lines
 
         line_width = shutil.get_terminal_size()[0]
