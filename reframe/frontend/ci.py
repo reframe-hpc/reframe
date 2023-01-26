@@ -68,7 +68,8 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
             'artifacts': {
                 'paths': [f'{tc.check.unique_name}-report.json']
             },
-            'needs': [t.check.unique_name for t in tc.deps]
+            'needs': [t.check.unique_name for t in tc.deps],
+            **tc.check.ci_options
         }
         max_level = max(max_level, tc.level)
 
