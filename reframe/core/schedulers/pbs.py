@@ -138,18 +138,16 @@ class PbsJobScheduler(sched.JobScheduler):
                                   'node filtering')
 
     def submit(self, job):
-        if not job.dry_run_mode:
-            # `-o` and `-e` options are only recognized in command line by the PBS
-            # Slurm wrappers.
-            cmd = f'qsub -o {job.stdout} -e {job.stderr} {job.script_filename}'
-            completed = _run_strict(cmd, timeout=self._submit_timeout)
-            jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
-            if not jobid_match:
-                raise JobSchedulerError('could not retrieve the job id '
-                                        'of the submitted job')
+        # `-o` and `-e` options are only recognized in command line by the PBS
+        # Slurm wrappers.
+        cmd = f'qsub -o {job.stdout} -e {job.stderr} {job.script_filename}'
+        completed = _run_strict(cmd, timeout=self._submit_timeout)
+        jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
+        if not jobid_match:
+            raise JobSchedulerError('could not retrieve the job id '
+                                    'of the submitted job')
 
-            job._jobid = jobid_match.group('jobid')
-
+        job._jobid = jobid_match.group('jobid')
         job._submit_time = time.time()
 
     def wait(self, job):
@@ -159,13 +157,11 @@ class PbsJobScheduler(sched.JobScheduler):
             time.sleep(next(intervals))
 
     def cancel(self, job):
-        if not job.dry_run_mode:
-            time_from_submit = time.time() - job.submit_time
-            if time_from_submit < PBS_CANCEL_DELAY:
-                time.sleep(PBS_CANCEL_DELAY - time_from_submit)
+        time_from_submit = time.time() - job.submit_time
+        if time_from_submit < PBS_CANCEL_DELAY:
+            time.sleep(PBS_CANCEL_DELAY - time_from_submit)
 
-            _run_strict(f'qdel {job.jobid}', timeout=self._submit_timeout)
-
+        _run_strict(f'qdel {job.jobid}', timeout=self._submit_timeout)
         job._cancelled = True
 
     def finished(self, job):
@@ -189,20 +185,9 @@ class PbsJobScheduler(sched.JobScheduler):
             stderr = os.path.join(job.workdir, job.stderr)
             return os.path.exists(stdout) and os.path.exists(stderr)
 
-        # Filter out non-jobs and mark as completed the jobs that are in
-        # dry-run mode
-        normal_jobs = []
         if jobs:
-            for job in jobs:
-                if job is None:
-                    continue
-                elif job.dry_run_mode == True:
-                    job._state = 'COMPLETED'
-                    job._completed = True
-                else:
-                    normal_jobs.append(job)
-
-            jobs = normal_jobs
+            # Filter out non-jobs
+            jobs = [job for job in jobs if job is not None]
 
         if not jobs:
             return

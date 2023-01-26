@@ -249,36 +249,34 @@ class SlurmJobScheduler(sched.JobScheduler):
         return list(filter(None, preamble))
 
     def submit(self, job):
-        if not job.dry_run_mode:
-            cmd = f'sbatch {job.script_filename}'
-            intervals = itertools.cycle([1, 2, 3])
-            while True:
-                try:
-                    completed = _run_strict(cmd, timeout=self._submit_timeout)
-                    break
-                except SpawnedProcessError as e:
-                    error_match = re.search(
-                        rf'({"|".join(self._resubmit_on_errors)})', e.stderr
-                    )
-                    if not self._resubmit_on_errors or not error_match:
-                        raise
-
-                    t = next(intervals)
-                    self.log(
-                        f'encountered a job submission error: '
-                        f'{error_match.group(1)}: will resubmit after {t}s'
-                    )
-                    time.sleep(t)
-
-            jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
-                                    completed.stdout)
-            if not jobid_match:
-                raise JobSchedulerError(
-                    'could not retrieve the job id of the submitted job'
+        cmd = f'sbatch {job.script_filename}'
+        intervals = itertools.cycle([1, 2, 3])
+        while True:
+            try:
+                completed = _run_strict(cmd, timeout=self._submit_timeout)
+                break
+            except SpawnedProcessError as e:
+                error_match = re.search(
+                    rf'({"|".join(self._resubmit_on_errors)})', e.stderr
                 )
+                if not self._resubmit_on_errors or not error_match:
+                    raise
 
-            job._jobid = jobid_match.group('jobid')
+                t = next(intervals)
+                self.log(
+                    f'encountered a job submission error: '
+                    f'{error_match.group(1)}: will resubmit after {t}s'
+                )
+                time.sleep(t)
 
+        jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
+                                completed.stdout)
+        if not jobid_match:
+            raise JobSchedulerError(
+                'could not retrieve the job id of the submitted job'
+            )
+
+        job._jobid = jobid_match.group('jobid')
         job._submit_time = time.time()
 
     def allnodes(self):
@@ -405,20 +403,9 @@ class SlurmJobScheduler(sched.JobScheduler):
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
 
-        # Filter out non-jobs and mark as completed the jobs that are in
-        # dry-run mode
-        normal_jobs = []
         if jobs:
-            for job in jobs:
-                if job is None:
-                    continue
-                elif job.dry_run_mode == True:
-                    job._state = 'COMPLETED'
-                    job._completed = True
-                else:
-                    normal_jobs.append(job)
-
-            jobs = normal_jobs
+            # Filter out non-jobs
+            jobs = [job for job in jobs if job is not None]
 
         if not jobs:
             return
@@ -564,9 +551,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             self._merge_files(job)
 
     def cancel(self, job):
-        if not job.dry_run_mode:
-            _run_strict(f'scancel {job.jobid}', timeout=self._submit_timeout)
-
+        _run_strict(f'scancel {job.jobid}', timeout=self._submit_timeout)
         job._is_cancelling = True
 
     def finished(self, job):
@@ -583,20 +568,9 @@ class SqueueJobScheduler(SlurmJobScheduler):
     SQUEUE_DELAY = 2
 
     def poll(self, *jobs):
-        # Filter out non-jobs and mark as completed the jobs that are in
-        # dry-run mode
-        normal_jobs = []
         if jobs:
-            for job in jobs:
-                if job is None:
-                    continue
-                elif job.dry_run_mode == True:
-                    job._state = 'COMPLETED'
-                    job._completed = True
-                else:
-                    normal_jobs.append(job)
-
-            jobs = normal_jobs
+            # Filter out non-jobs
+            jobs = [job for job in jobs if job is not None]
 
         if not jobs:
             return

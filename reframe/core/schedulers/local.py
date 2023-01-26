@@ -58,27 +58,26 @@ class LocalJobScheduler(sched.JobScheduler):
         return _LocalJob(*args, **kwargs)
 
     def submit(self, job):
-        if not job.dry_run_mode:
-            # Run from the absolute path
-            f_stdout = open(job.stdout, 'w+')
-            f_stderr = open(job.stderr, 'w+')
-            # The new process starts also a new session (session leader), so that
-            # we can later kill any other processes that this might spawn by just
-            # killing this one.
-            proc = osext.run_command_async(
-                os.path.abspath(job.script_filename),
-                stdout=f_stdout,
-                stderr=f_stderr,
-                start_new_session=True
-            )
+        # Run from the absolute path
+        f_stdout = open(job.stdout, 'w+')
+        f_stderr = open(job.stderr, 'w+')
 
-            # Update job info
-            job._jobid = proc.pid
-            job._nodelist = [socket.gethostname()]
-            job._proc = proc
-            job._f_stdout = f_stdout
-            job._f_stderr = f_stderr
+        # The new process starts also a new session (session leader), so that
+        # we can later kill any other processes that this might spawn by just
+        # killing this one.
+        proc = osext.run_command_async(
+            os.path.abspath(job.script_filename),
+            stdout=f_stdout,
+            stderr=f_stderr,
+            start_new_session=True
+        )
 
+        # Update job info
+        job._jobid = proc.pid
+        job._nodelist = [socket.gethostname()]
+        job._proc = proc
+        job._f_stdout = f_stdout
+        job._f_stderr = f_stderr
         job._submit_time = time.time()
         job._state = 'RUNNING'
 
@@ -101,11 +100,9 @@ class LocalJobScheduler(sched.JobScheduler):
             # group, so ignore this error
             self.log(f'pid {job.jobid} already dead or assigned elsewhere')
         finally:
-            if not job.dry_run_mode:
-                # Close file handles
-                job.f_stdout.close()
-                job.f_stderr.close()
-
+            # Close file handles
+            job.f_stdout.close()
+            job.f_stderr.close()
             job._state = 'FAILURE'
 
     def _term_all(self, job):
@@ -152,10 +149,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
     def poll(self, *jobs):
         for job in jobs:
-            if job and job.dry_run_mode:
-                job._state = 'SUCCESS'
-            else:
-                self._poll_job(job)
+            self._poll_job(job)
 
     def _poll_job(self, job):
         if job is None or job.jobid is None:
