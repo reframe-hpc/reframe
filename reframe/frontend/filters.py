@@ -110,13 +110,15 @@ def have_maintainer(patt):
 
 def have_gpu_only():
     def _fn(case):
-        return case.check.num_gpus_per_node > 0
+        # NOTE: This takes into account num_gpus_per_node being None
+        return case.check.num_gpus_per_node
 
     return _fn
 
 
 def have_cpu_only():
     def _fn(case):
-        return case.check.num_gpus_per_node == 0
+        # NOTE: This takes into account num_gpus_per_node being None
+        return not case.check.num_gpus_per_node
 
     return _fn
