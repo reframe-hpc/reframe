@@ -35,7 +35,6 @@ def sample_cases():
                   maintainers=['A', 'B', 'C', 'D']),
         make_case(_X, alt_name='check2',
                   tags={'x', 'y', 'z'},
-                  num_gpus_per_node=0,
                   maintainers=['X', 'Y', 'Z']),
         make_case(_X, alt_name='check3',
                   tags={'a', 'z'},
