@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import inspect
+import os
 import shutil
 import traceback
 
@@ -229,6 +230,27 @@ class TestStats:
         return self._run_data
 
     def print_failure_report(self, printer, rerun_info=True):
+        def _head_n(filename, prefix, num_lines=10):
+            # filename and prefix are `None` before setup
+            if filename is None or prefix is None:
+                return []
+
+            try:
+                with open(os.path.join(prefix, filename)) as fp:
+                    lines = [
+                        f'--- {filename} (first {num_lines} lines) ---'
+                    ]
+                    for i, line in enumerate(fp):
+                        if i < num_lines:
+                            # Remove trailing '\n'
+                            lines.append(line.rstrip())
+
+                lines += [f'--- {filename} ---']
+            except OSError as e:
+                lines = [f'--- {filename} ({e}) ---']
+
+            return lines
+
         line_width = shutil.get_terminal_size()[0]
         printer.info(line_width * '=')
         printer.info('SUMMARY OF FAILURES')
@@ -264,7 +286,14 @@ class TestStats:
                              f" -p {r['environment']} --system "
                              f"{r['system']} -r'")
 
-            printer.info(f"  * Reason: {r['fail_reason']}")
+            msg = r['fail_reason']
+            if isinstance(r['fail_info']['exc_value'], errors.SanityError):
+                lines = [msg]
+                lines += _head_n(r['job_stdout'], prefix = r['stagedir'])
+                lines += _head_n(r['job_stderr'], prefix = r['stagedir'])
+                msg = '\n'.join(lines)
+
+            printer.info(f"  * Reason: {msg}")
 
             tb = ''.join(traceback.format_exception(*r['fail_info'].values()))
             if r['fail_severe']:
