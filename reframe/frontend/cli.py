@@ -1055,7 +1055,7 @@ def main():
                 x for x in parsed_job_options
                 if (not x.startswith('-w') and not x.startswith('--nodelist'))
             ]
-            testcases_all = distribute_tests(testcases, node_map)
+            testcases_all = distribute_tests(testcases, node_map, options.dry_run)
             testcases = testcases_all
 
         @logging.time_function
