@@ -381,6 +381,11 @@ def main():
               'is in STATE (default: "idle"')
     )
     run_options.add_argument(
+        '--dry-run', action='store_true',
+        help=('Create build and job scripts without submitting to the '
+              'scheduler')
+    )
+    run_options.add_argument(
         '--exec-order', metavar='ORDER', action='store',
         choices=['name', 'random', 'rname', 'ruid', 'uid'],
         help='Impose an execution order for independent tests'
@@ -882,7 +887,8 @@ def main():
                                    check_search_recursive,
                                    external_vars,
                                    options.skip_system_check,
-                                   options.skip_prgenv_check)
+                                   options.skip_prgenv_check,
+                                   options.dry_run)
 
     def print_infoline(param, value):
         param = param + ':'

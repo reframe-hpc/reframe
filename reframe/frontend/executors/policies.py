@@ -100,8 +100,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         super().runcase(case)
         check, partition, _ = case
         task = RegressionTask(case, self.task_listeners)
-        if check.dry_run_mode:
-            self.printer.status('DRUN', task.info())
+        if check.is_dry_run():
+            self.printer.status('DRY', task.info())
         else:
             self.printer.status('RUN', task.info())
 
@@ -142,7 +142,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             self._pollctl.reset_snooze_time()
             while True:
-                sched.poll(task.check.job)
+                if not task.check.is_dry_run():
+                    sched.poll(task.check.job)
+
                 if task.run_complete():
                     break
 
@@ -209,11 +211,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_success(self, task):
         msg = f'{task.info()}'
-        if task.check.dry_run_mode:
-            self.printer.status('DOK', msg, just='right')
-        else:
-            self.printer.status('OK', msg, just='right')
-
+        self.printer.status('OK', msg, just='right')
         _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
@@ -373,7 +371,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for partname, sched in self._schedulers.items():
             jobs = []
             for t in self._partition_tasks[partname]:
-                if t.state == 'compiling':
+                if t.check.is_dry_run():
+                    continue
+                elif t.state == 'compiling':
                     jobs.append(t.check.build_job)
                 elif t.state == 'running':
                     jobs.append(t.check.job)
@@ -439,8 +439,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
         elif self.deps_succeeded(task):
             try:
-                if task.check.dry_run_mode:
-                    self.printer.status('DRUN', task.info())
+                if task.check.is_dry_run():
+                    self.printer.status('DRY', task.info())
                 else:
                     self.printer.status('RUN', task.info())
 
@@ -615,10 +615,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_success(self, task):
         msg = f'{task.info()}'
-        if task.check.dry_run_mode:
-            self.printer.status('DOK', msg, just='right')
-        else:
-            self.printer.status('OK', msg, just='right')
+        self.printer.status('OK', msg, just='right')
 
         _print_perf(task)
         timings = task.pipeline_timings(['setup',

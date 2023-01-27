@@ -49,7 +49,8 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 class RegressionCheckLoader:
     def __init__(self, load_path, recurse=False, external_vars=None,
-                 skip_system_check=False, skip_prgenv_check=False):
+                 skip_system_check=False, skip_prgenv_check=False,
+                 dry_run_mode=False):
         # Expand any environment variables and symlinks
         load_path = [os.path.realpath(osext.expandvars(p)) for p in load_path]
         self._load_path = osext.unique_abs_paths(load_path, recurse)
@@ -62,6 +63,7 @@ class RegressionCheckLoader:
         self._external_vars = external_vars or {}
         self._skip_system_check = bool(skip_system_check)
         self._skip_prgenv_check = bool(skip_prgenv_check)
+        self._dry_run_mode = dry_run_mode
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.
@@ -135,6 +137,7 @@ class RegressionCheckLoader:
 
         unset_vars = {}
         for test in test_registry:
+            test._rfm_dry_run_mode = self._dry_run_mode
             for name, val in self._external_vars.items():
                 if '.' in name:
                     testname, varname = name.split('.', maxsplit=1)

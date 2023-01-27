@@ -1508,6 +1508,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''Check if the test is a fixture.'''
         return getattr(self, '_rfm_is_fixture', False)
 
+    def is_dry_run(self):
+        '''Check if the test is a fixture.'''
+        return getattr(self, '_rfm_dry_run_mode', False)
+
     def _resolve_fixtures(self):
         '''Resolve the fixture dependencies and inject the fixture handle.
 
@@ -1810,7 +1814,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
-            self._build_job.submit()
+            if not self.is_dry_run():
+                self._build_job.submit()
 
     @final
     def compile_wait(self):
@@ -1832,6 +1837,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
+        if self.is_dry_run():
+            return
+
         self._build_job.wait()
 
         # We raise a BuildError when we an exit code and it is non zero
@@ -1951,9 +1959,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             except OSError as e:
                 raise PipelineError('failed to prepare run job') from e
 
-            self._job.submit()
+            if not self.is_dry_run():
+                self._job.submit()
 
-        self.logger.debug(f'Spawned run job (id={self.job.jobid})')
+        if not self.is_dry_run():
+            self.logger.debug(f'Spawned run job (id={self.job.jobid})')
 
         # Update num_tasks if test is flexible
         if self.job.sched_flex_alloc_nodes:
@@ -1978,7 +1988,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         :raises reframe.core.exceptions.ReframeError: In case of errors.
 
         '''
-        if not self._build_job:
+        if not self._build_job or self.is_dry_run():
             return True
 
         return self._build_job.finished()
@@ -2007,7 +2017,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
-        if not self._job:
+        if not self._job or self.is_dry_run():
             return True
 
         return self._job.finished()
@@ -2030,17 +2040,20 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
+        if self.is_dry_run():
+            return
+
         self._job.wait()
 
     @final
     def sanity(self):
-        if not self.dry_run_mode:
+        if not self.is_dry_run():
             self.check_sanity()
 
     @final
     def performance(self):
         try:
-            if not self.dry_run_mode:
+            if not self.is_dry_run():
                 self.check_performance()
         except PerformanceError:
             if self.strict_check:
@@ -2275,6 +2288,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
+        if self.is_dry_run():
+            return
+
         aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
             self.logger.debug(
