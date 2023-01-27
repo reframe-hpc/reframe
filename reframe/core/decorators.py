@@ -53,7 +53,7 @@ class TestRegistry:
         self._tests[test].append((args, kwargs))
 
     @time_function
-    def instantiate_all(self, reset_sysenv=0):
+    def instantiate_all(self, reset_sysenv=0, dry_run_mode=False):
         '''Instantiate all the registered tests.
 
         :param reset_sysenv: Reset valid_systems and valid_prog_environs after
@@ -98,6 +98,7 @@ class TestRegistry:
             tmp_registry = FixtureRegistry()
             while leaf_tests:
                 c = leaf_tests.pop()
+                c._rfm_dry_run_mode = dry_run_mode
                 reg = getattr(c, '_rfm_fixture_registry', None)
                 final_tests.append(c)
                 if reg:

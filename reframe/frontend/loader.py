@@ -174,7 +174,9 @@ class RegressionCheckLoader:
         self._set_defaults(registry)
         reset_sysenv = self._skip_prgenv_check << 1 | self._skip_system_check
         if registry:
-            candidate_tests = registry.instantiate_all(reset_sysenv)
+            candidate_tests = registry.instantiate_all(
+                reset_sysenv, self._dry_run_mode
+            )
         else:
             candidate_tests = []
 
