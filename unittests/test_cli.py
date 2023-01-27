@@ -321,6 +321,19 @@ def test_check_sanity_failure_dry_run_mode(run_reframe, tmp_path):
     )
 
 
+def test_check_sanity_failure_distribute_dry_run(run_reframe, tmp_path):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        more_options=['-n', 'SanityFailureCheck', '--dry-run', '--distribute']
+    )
+    assert 'PASSED' in stdout
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'DRY' in stdout
+    assert 'RUN' not in stdout
+    assert returncode == 0
+
+
 def test_dont_restage(run_reframe, tmp_path):
     run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
@@ -1065,6 +1078,19 @@ def test_fixture_resolution(run_reframe):
         checkpath=['unittests/resources/checks_unlisted/fixtures_complex.py'],
         action='run'
     )
+    assert returncode == 0
+
+
+def test_fixture_dry_run(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        system='sys1',
+        environs=[],
+        checkpath=['unittests/resources/checks_unlisted/fixtures_complex.py'],
+        action='run',
+        more_options=['--dry-run'],
+    )
+    assert 'RUN' not in stdout
+    assert 'DRY' in stdout
     assert returncode == 0
 
 
