@@ -301,21 +301,23 @@ def test_check_sanity_failure(run_reframe, tmp_path):
 def test_check_sanity_failure_dry_run_mode(run_reframe, tmp_path):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-n', 'SanityFailureCheck', '-S', 'dry_run_mode=1']
+        more_options=['-n', 'SanityFailureCheck', '--dry-run']
     )
     assert 'PASSED' in stdout
-
-    # This is a normal failure, it should not raise any exception
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
     assert os.path.exists(
-        tmp_path / 'output' / 'generic' / 'default' /
+        tmp_path / 'stage' / 'generic' / 'default' /
         'builtin' / 'SanityFailureCheck' / 'rfm_job.sh'
     )
     assert not os.path.exists(
-        tmp_path / 'output' / 'generic' / 'default' /
+        tmp_path / 'stage' / 'generic' / 'default' /
         'builtin' / 'SanityFailureCheck' / 'rfm_job.out'
+    )
+    assert not os.path.exists(
+        tmp_path / 'output' / 'generic' / 'default' /
+        'builtin' / 'SanityFailureCheck' / 'rfm_job.sh'
     )
 
 
@@ -384,22 +386,24 @@ def test_performance_check_failure(run_reframe, tmp_path, perflogdir):
 def test_performance_check_failure_dry_run_mode(run_reframe, tmp_path, perflogdir):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-n', 'PerformanceFailureCheck', '-S', 'dry_run_mode=1']
+        more_options=['-n', 'PerformanceFailureCheck', '--dry-run']
     )
     assert 'PASSED' in stdout
-
-    # This is a normal failure, it should not raise any exception
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
 
     assert os.path.exists(
-        tmp_path / 'output' / 'generic' / 'default' /
+        tmp_path / 'stage' / 'generic' / 'default' /
         'builtin' / 'PerformanceFailureCheck' / 'rfm_job.sh'
     )
     assert not os.path.exists(
-        tmp_path / 'output' / 'generic' / 'default' /
+        tmp_path / 'stage' / 'generic' / 'default' /
         'builtin' / 'PerformanceFailureCheck' / 'rfm_job.out'
+    )
+    assert not os.path.exists(
+        tmp_path / 'output' / 'generic' / 'default' /
+        'builtin' / 'PerformanceFailureCheck' / 'rfm_job.sh'
     )
 
 
