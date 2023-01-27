@@ -6,7 +6,7 @@
 import os
 import sys
 
-VERSION = '4.0.2'
+VERSION = '4.0.3'
 INSTALL_PREFIX = os.path.normpath(
     os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 )
