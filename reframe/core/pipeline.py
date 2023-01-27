@@ -624,16 +624,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :default: :class:`False`
     local = variable(typ.Bool, value=False, loggable=True)
 
-    #: .. versionadded:: 4.1.0
-    #:
-    #: Create the build and run scripts but don't submit them for scheduling.
-    #: The sanity and performance phases will also be skipped.
-    #: Only the job script is expected to be copied to the output directory.
-    #:
-    #: :type: boolean
-    #: :default: :class:`False`
-    dry_run_mode = variable(typ.Bool, value=False, loggable=True)
-
     #: The set of reference values for this test.
     #:
     #: The reference values are specified as a scoped dictionary keyed on the
@@ -1634,11 +1624,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._build_job = self._create_job(f'rfm_build',
                                            self.local or self.build_locally,
                                            **job_opts)
-        self._build_job.dry_run_mode = self.dry_run_mode
 
     def _setup_run_job(self, **job_opts):
         self._job = self._create_job(f'rfm_job', self.local, **job_opts)
-        self._job.dry_run_mode = self.dry_run_mode
 
     def _setup_container_platform(self):
         try:
@@ -2232,16 +2220,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if job is None:
             return
 
-        if not job.dry_run_mode:
-            stdout = os.path.join(self._stagedir, job.stdout)
-            stderr = os.path.join(self._stagedir, job.stderr)
-            shutil.copy(stdout, dst)
-            shutil.copy(stderr, dst)
-        else:
-            self.logger.debug('Skipping stdout and stderr because test is in '
-                              'dry-run mode')
-
+        stdout = os.path.join(self._stagedir, job.stdout)
+        stderr = os.path.join(self._stagedir, job.stderr)
         script = os.path.join(self._stagedir, job.script_filename)
+        shutil.copy(stdout, dst)
+        shutil.copy(stderr, dst)
         shutil.copy(script, dst)
 
     def _copy_to_outputdir(self):
