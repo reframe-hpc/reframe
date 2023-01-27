@@ -130,7 +130,7 @@ class osu_benchmark(rfm.RunOnlyRegressionTest):
         ('mpi.pt2pt.osu_latency', 'latency')
     ], fmt=lambda x: x[0], loggable=True)
 
-    @run_after('init')
+    @run_before('setup')
     def setup_per_benchmark(self):
         bench, bench_metric = self.benchmark_info
         if bench_metric == 'latency':

@@ -935,7 +935,7 @@ def main():
             elif len(optstr) == 1:
                 parsed_job_options.append(f'-{optstr} {valstr}')
             else:
-                parsed_job_options.append(f'--{optstr} {valstr}')
+                parsed_job_options.append(f'--{optstr}={valstr}')
 
         # Locate and load checks; `force=True` is not needed for normal
         # invocations from the command line and has practically no effect, but
