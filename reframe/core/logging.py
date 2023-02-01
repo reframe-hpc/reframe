@@ -962,3 +962,27 @@ def time_function_noexit(fn):
         return fn(*args, **kwargs)
 
     return _fn
+
+
+# The following is meant to be used only by the unit tests
+
+class logging_sandbox:
+    '''Define a region that you can safely change the logging config.
+
+    At entering the region, this context manager saves the logging
+    configuration and restores it at exit.
+
+    :meta private:
+    '''
+
+    def __enter__(self):
+        self._logger = _logger
+        self._perf_logger = _perf_logger
+        self._context_logger = _context_logger
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        global _logger, _perf_logger, _context_logger
+
+        _logger = self._logger
+        _perf_logger = self._perf_logger
+        _context_logger = self._context_logger
