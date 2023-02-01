@@ -513,7 +513,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
             else:
                 return 0
-
         except TaskExit:
             self._partition_tasks[partname].remove(task)
             self._current_tasks.remove(task)
@@ -530,9 +529,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.finalize()
             self._retired_tasks.append(task)
             self._current_tasks.remove(task)
+            return 1
         except TaskExit:
             self._current_tasks.remove(task)
-        finally:
             return 1
 
     def deps_failed(self, task):

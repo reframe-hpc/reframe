@@ -788,17 +788,8 @@ class LoggerAdapter(logging.LoggerAdapter):
             '%FT%T%:z'
         )
 
-    # FIXME: Temporary workaround until
-    # https://github.com/reframe-hpc/reframe/issues/2747 is fixed
     def log_performance(self, level, task, msg=None, multiline=False):
-        try:
-            self._log_performance(level, task, msg, multiline)
-        except BaseException:
-            import traceback
-            traceback.print_exc()
-
-    def _log_performance(self, level, task, msg=None, multiline=False):
-        if self.extra['__rfm_check__'] is None:
+        if self.check is None or not self.check.is_performance_check():
             return
 
         self.extra['check_partition'] = task.testcase.partition.name
@@ -809,8 +800,7 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         if multiline:
             # Log one record for each performance variable
-            check = self.extra['__rfm_check__']
-            for var, info in check.perfvalues.items():
+            for var, info in self.check.perfvalues.items():
                 val, ref, lower, upper, unit = info
                 self.extra['check_perf_var'] = var.split(':')[-1]
                 self.extra['check_perf_value'] = val

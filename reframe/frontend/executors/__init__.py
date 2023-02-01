@@ -368,9 +368,7 @@ class RegressionTask:
 
     @logging.time_function
     def performance(self):
-        if self.check.is_performance_check():
-            self._perflogger = logging.getperflogger(self.check)
-
+        self._perflogger = logging.getperflogger(self.check)
         self._safe_call(self.check.performance)
 
     @logging.time_function

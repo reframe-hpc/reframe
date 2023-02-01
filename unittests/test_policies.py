@@ -1008,6 +1008,29 @@ def failing_perf_test():
 
 
 @pytest.fixture
+def lazy_perf_test():
+    class _LazyPerfTest(rfm.RunOnlyRegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        executable = 'echo perf0=100'
+
+        @sanity_function
+        def validate(self):
+            return True
+
+        @run_before('performance')
+        def set_perf_vars(self):
+            self.perf_variables = {
+                'perf0': sn.make_performance_function(
+                    sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float),
+                    'unit0'
+                )
+            }
+
+    return _LazyPerfTest()
+
+
+@pytest.fixture
 def simple_test():
     class _MySimpleTest(rfm.RunOnlyRegressionTest):
         valid_systems = ['*']
@@ -1240,3 +1263,29 @@ def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
         lines = fp.readlines()
         assert ',perf0=100.0,unit0' in lines[1]
         assert ',perf1=50.0,unit1'  in lines[2]
+
+
+def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
+                           config_perflog, tmp_path):
+    make_exec_ctx(
+        config_perflog(
+            fmt=(
+                '%(check_job_completion_time)s,%(version)s,'
+                '%(check_display_name)s,%(check_system)s,'
+                '%(check_partition)s,%(check_environ)s,'
+                '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
+            ),
+            perffmt=(
+                '%(check_perf_value)s,%(check_perf_unit)s,'
+                '%(check_perf_ref)s,%(check_perf_lower)s,'
+                '%(check_perf_upper)s,'
+            )
+        )
+    )
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([lazy_perf_test])
+    runner.runall(testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_LazyPerfTest.log'
+    assert os.path.exists(logfile)
