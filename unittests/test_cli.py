@@ -834,7 +834,7 @@ def test_maxfail_negative(run_reframe):
 
 def test_repeat_option(run_reframe):
     returncode, stdout, stderr = run_reframe(
-        more_options=['--repeat', '2', '-n', 'HelloTest'],
+        more_options=['--repeat', '2', '-n', '^HelloTest'],
         checkpath=['unittests/resources/checks/hellocheck.py']
     )
     assert 'Traceback' not in stdout
@@ -877,7 +877,7 @@ def test_exec_order(run_reframe, exec_order):
     import reframe.utility.sanity as sn
 
     returncode, stdout, stderr = run_reframe(
-        more_options=['--repeat', '11', '-n', 'HelloTest',
+        more_options=['--repeat', '11', '-n', '^HelloTest',
                       f'--exec-order={exec_order}'],
         checkpath=['unittests/resources/checks/hellocheck.py'],
         action='list_detailed',
@@ -973,7 +973,7 @@ def test_fixture_registry_env_sys(run_reframe):
         system='sys1:p0',
         environs=['e3'],
         checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
-        more_options=['-n', 'HelloFixture'],
+        more_options=['-n', '^HelloFixture'],
         action='list_detailed'
     )
     assert returncode == 0
@@ -983,7 +983,7 @@ def test_fixture_registry_env_sys(run_reframe):
         system='sys1:p0',
         environs=['e1'],
         checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
-        more_options=['-n', 'HelloFixture'],
+        more_options=['-n', '^HelloFixture'],
         action='list_detailed'
     )
     assert returncode == 0
@@ -993,7 +993,7 @@ def test_fixture_registry_env_sys(run_reframe):
         system='sys1:p1',
         environs=['e1'],
         checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
-        more_options=['-n', 'HelloFixture'],
+        more_options=['-n', '^HelloFixture'],
         action='list_detailed'
     )
     assert returncode == 0
@@ -1003,7 +1003,7 @@ def test_fixture_registry_env_sys(run_reframe):
         system='sys1:p1',
         environs=['e2'],
         checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
-        more_options=['-n', 'HelloFixture'],
+        more_options=['-n', '^HelloFixture'],
         action='list_detailed'
     )
     assert returncode == 0
@@ -1027,7 +1027,7 @@ def test_dynamic_tests(run_reframe, tmp_path):
         environs=[],
         checkpath=['unittests/resources/checks_unlisted/distribute.py'],
         action='run',
-        more_options=['-n', 'Complex', '--distribute=idle']
+        more_options=['-n', '^Complex', '--distribute=idle']
     )
     assert returncode == 0
     assert 'Ran 10/10 test case(s)' in stdout

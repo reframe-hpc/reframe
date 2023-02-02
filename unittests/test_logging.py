@@ -251,12 +251,18 @@ def default_exec_ctx(make_exec_ctx_g, config_file):
     yield from make_exec_ctx_g(config_file())
 
 
-def test_valid_level(default_exec_ctx):
+@pytest.fixture
+def logging_sandbox():
+    with rlog.logging_sandbox():
+        yield
+
+
+def test_valid_level(default_exec_ctx, logging_sandbox):
     rlog.configure_logging(rt.runtime().site_config)
     assert rlog.INFO == rlog.getlogger().getEffectiveLevel()
 
 
-def test_handler_level(default_exec_ctx, logfile):
+def test_handler_level(default_exec_ctx, logfile, logging_sandbox):
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().info('foo')
     rlog.getlogger().warning('bar')
@@ -264,7 +270,7 @@ def test_handler_level(default_exec_ctx, logfile):
     assert _found_in_logfile('bar', logfile)
 
 
-def test_handler_append(default_exec_ctx, logfile):
+def test_handler_append(default_exec_ctx, logfile, logging_sandbox):
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().warning('foo')
     _close_handlers()
@@ -277,7 +283,8 @@ def test_handler_append(default_exec_ctx, logfile):
     assert _found_in_logfile('bar', logfile)
 
 
-def test_handler_noappend(make_exec_ctx, config_file, logfile):
+def test_handler_noappend(make_exec_ctx, config_file,
+                          logfile, logging_sandbox):
     make_exec_ctx(
         config_file({
             'level': 'info',
@@ -307,7 +314,8 @@ def test_handler_noappend(make_exec_ctx, config_file, logfile):
     assert _found_in_logfile('bar', logfile)
 
 
-def test_handler_bad_format(make_exec_ctx, config_file, logfile):
+def test_handler_bad_format(make_exec_ctx, config_file,
+                            logfile, logging_sandbox):
     make_exec_ctx(
         config_file({
             'level': 'info',
@@ -330,7 +338,7 @@ def test_handler_bad_format(make_exec_ctx, config_file, logfile):
     assert _found_in_logfile('<error formatting the log message:', logfile)
 
 
-def test_warn_once(default_exec_ctx, logfile):
+def test_warn_once(default_exec_ctx, logfile, logging_sandbox):
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().warning('foo', cache=True)
     rlog.getlogger().warning('foo', cache=True)
@@ -342,7 +350,7 @@ def test_warn_once(default_exec_ctx, logfile):
         assert len(re.findall('foo', fp.read())) == 1
 
 
-def test_date_format(default_exec_ctx, logfile):
+def test_date_format(default_exec_ctx, logfile, logging_sandbox):
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().warning('foo')
     assert _found_in_logfile(datetime.now().strftime('%F'), logfile)
@@ -353,7 +361,7 @@ def stream(request):
     return request.param
 
 
-def test_stream_handler(make_exec_ctx, config_file, stream):
+def test_stream_handler(make_exec_ctx, config_file, stream, logging_sandbox):
     make_exec_ctx(
         config_file({
             'level': 'info',
@@ -372,7 +380,8 @@ def test_stream_handler(make_exec_ctx, config_file, stream):
     assert handler.stream == stream
 
 
-def test_multiple_handlers(make_exec_ctx, config_file, logfile):
+def test_multiple_handlers(make_exec_ctx, config_file,
+                           logfile, logging_sandbox):
     make_exec_ctx(
         config_file({
             'level': 'info',
@@ -388,7 +397,8 @@ def test_multiple_handlers(make_exec_ctx, config_file, logfile):
     assert len(rlog.getlogger().logger.handlers) == 3
 
 
-def test_file_handler_timestamp(make_exec_ctx, config_file, logfile):
+def test_file_handler_timestamp(make_exec_ctx, config_file,
+                                logfile, logging_sandbox):
     make_exec_ctx(
         config_file({
             'level': 'info',
@@ -414,7 +424,7 @@ def test_file_handler_timestamp(make_exec_ctx, config_file, logfile):
     assert os.path.exists(filename)
 
 
-def test_syslog_handler(make_exec_ctx, config_file):
+def test_syslog_handler(make_exec_ctx, config_file, logging_sandbox):
     import platform
 
     if platform.system() == 'Linux':
@@ -435,7 +445,7 @@ def test_syslog_handler(make_exec_ctx, config_file):
     rlog.getlogger().info('foo')
 
 
-def test_syslog_handler_tcp_port_noint(make_exec_ctx, config_file):
+def test_syslog_handler_tcp_port_noint(make_exec_ctx, config_file, logging_sandbox):
     make_exec_ctx(
         config_file({
             'level': 'info',
@@ -450,7 +460,7 @@ def test_syslog_handler_tcp_port_noint(make_exec_ctx, config_file):
         rlog.configure_logging(rt.runtime().site_config)
 
 
-def test_global_noconfig():
+def test_global_noconfig(logging_sandbox):
     # This is to test the case when no configuration is set, but since the
     # order the unit tests are invoked is arbitrary, we emulate the
     # 'no-config' state by passing `None` to `configure_logging()`
@@ -459,12 +469,12 @@ def test_global_noconfig():
     assert rlog.getlogger() is rlog.null_logger
 
 
-def test_global_config(default_exec_ctx):
+def test_global_config(default_exec_ctx, logging_sandbox):
     rlog.configure_logging(rt.runtime().site_config)
     assert rlog.getlogger() is not rlog.null_logger
 
 
-def test_logging_context(default_exec_ctx, logfile):
+def test_logging_context(default_exec_ctx, logfile, logging_sandbox):
     rlog.configure_logging(rt.runtime().site_config)
     with rlog.logging_context() as logger:
         assert logger is rlog.getlogger()
@@ -475,7 +485,8 @@ def test_logging_context(default_exec_ctx, logfile):
     assert _found_in_logfile('error from context', logfile)
 
 
-def test_logging_context_check(default_exec_ctx, logfile, fake_check):
+def test_logging_context_check(default_exec_ctx, fake_check,
+                               logfile, logging_sandbox):
     rlog.configure_logging(rt.runtime().site_config)
     with rlog.logging_context(check=fake_check):
         rlog.getlogger().error('error from context')
@@ -489,7 +500,7 @@ def test_logging_context_check(default_exec_ctx, logfile, fake_check):
     )
 
 
-def test_logging_context_error(default_exec_ctx, logfile):
+def test_logging_context_error(default_exec_ctx, logfile, logging_sandbox):
     rlog.configure_logging(rt.runtime().site_config)
     try:
         with rlog.logging_context(level=rlog.ERROR):
@@ -501,3 +512,48 @@ def test_logging_context_error(default_exec_ctx, logfile):
 
     assert _found_in_logfile('reframe', logfile)
     assert _found_in_logfile('error from context', logfile)
+
+
+@pytest.fixture(params=[
+    ('foo://server.com:12345/rfm', 'invalid url scheme'),
+    ('http://:12345/rfm', 'invalid hostname'),
+    ('http://server.com:foo/rfm', 'invalid port'),
+])
+def malformed_url(request):
+    return request.param
+
+
+def test_httpjson_handler_bad_url(make_exec_ctx, config_file,
+                                  malformed_url, logging_sandbox):
+    url, error = malformed_url
+    make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers_perflog': [{
+                'type': 'httpjson',
+                'url': url,
+            }],
+        })
+    )
+
+    with pytest.raises(ConfigError, match=error):
+        rlog.configure_logging(rt.runtime().site_config)
+
+
+@pytest.fixture(params=['http', 'https'])
+def url_scheme(request):
+    return request.param
+
+
+def test_httpjson_handler_no_port(make_exec_ctx, config_file,
+                                  url_scheme, logging_sandbox):
+    ctx = make_exec_ctx(
+        config_file({
+            'level': 'info',
+            'handlers_perflog': [{
+                'type': 'httpjson',
+                'url': f'{url_scheme}://xyz/rfm',
+            }],
+        })
+    )
+    rlog.configure_logging(rt.runtime().site_config)

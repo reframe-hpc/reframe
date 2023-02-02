@@ -1362,6 +1362,43 @@ An example configuration of this handler for performance logging is shown here:
 
 This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
 
+.. py:attribute:: logging.handlers..httpjson..debug
+
+.. py:attribute:: logging.handlers_perflog..httpjson..debug
+
+   :required: No
+   :default: ``false``
+
+   If set, the ``httpjson`` handler will not attempt to send the data to the server, but it will instead dump the JSON record in the current directory.
+   The filename has the following form: ``httpjson_record_<timestamp>.json``.
+
+   .. versionadded:: 4.1
+
+
+.. py:attribute:: logging.handlers..httpjson..json_formatter
+
+.. py:attribute:: logging.handlers_perflog..httpjson..json_formatter
+
+   A callable for converting the log record into JSON.
+
+   The formatter's signature is the following:
+
+   .. py:function:: json_formatter(record: object, extras: Dict[str, str], ignore_keys: Set[str]) -> str
+
+      :arg record: The prepared log record.
+         The log record is a simple Python object with all the attributes listed in :attr:`~config.logging.handlers.format`, as well as all the default Python `log record <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ attributes.
+         In addition to those, there is also the special :attr:`__rfm_check__` attribute that contains a reference to the actual test for which the performance is being logged.
+      :arg extras: Any extra attributes specified in :attr:`~config.logging.handlers..httpjson..extras`.
+      :arg ignore_keys: The set of keys specified in :attr:`~config.logging.handlers..httpjson..ignore_keys`.
+         ReFrame always adds the default Python log record attributes in this set.
+      :returns: A string representation of the JSON record to be sent to the server or :obj:`None` if the record should not be sent to the server.
+
+   .. note::
+      This configuration parameter can only be used in a Python configuration file.
+
+   .. versionadded:: 4.1
+
+
 
 Execution Mode Configuration
 ----------------------------
