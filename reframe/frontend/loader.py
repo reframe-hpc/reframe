@@ -60,8 +60,12 @@ class RegressionCheckLoader:
 
         # Variables set in the command line
         self._external_vars = external_vars or {}
+        self._unset_vars = {}
         self._skip_system_check = bool(skip_system_check)
         self._skip_prgenv_check = bool(skip_prgenv_check)
+
+    def unset_vars(self, testname):
+        return self._unset_vars.get(testname, [])
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.
@@ -133,7 +137,7 @@ class RegressionCheckLoader:
         if test_registry is None:
             return
 
-        unset_vars = {}
+        self._unset_vars = {}
         for test in test_registry:
             for name, val in self._external_vars.items():
                 if '.' in name:
@@ -149,16 +153,8 @@ class RegressionCheckLoader:
                         val = fields.make_convertible(val)
 
                     if not test.setvar(varname, val):
-                        unset_vars.setdefault(test.__name__, [])
-                        unset_vars[test.__name__].append(varname)
-
-        # Warn for all unset variables
-        for testname, varlist in unset_vars.items():
-            varlist = ', '.join(f'{v!r}' for v in varlist)
-            getlogger().warning(
-                f'test {testname!r}: '
-                f'the following variables were not set: {varlist}'
-            )
+                        self._unset_vars.setdefault(test.__name__, [])
+                        self._unset_vars[test.__name__].append(varname)
 
     def load_from_module(self, module):
         '''Load user checks from module.
