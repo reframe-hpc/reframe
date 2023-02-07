@@ -177,17 +177,23 @@ class RegressionCheckLoader:
             if not self._validate_check(c):
                 continue
 
-            testfile = module.__file__
+            # Get the original filename in case of a different module name
+            testfile = (
+                module.__file__ if module.__name__ == c.__module__ else
+                inspect.getfile(c.__class__)
+            )
+
             try:
                 conflicted = self._loaded[c.unique_name]
             except KeyError:
                 self._loaded[c.unique_name] = testfile
                 final_tests.append(c)
             else:
-                raise NameConflictError(
-                    f'test {c.unique_name!r} from {testfile!r} '
-                    f'is already defined in {conflicted!r}'
-                )
+                if testfile != conflicted:
+                    raise NameConflictError(
+                        f'test {c.unique_name!r} from {testfile!r} '
+                        f'is already defined in {conflicted!r}'
+                    )
 
         getlogger().debug(f'  > Loaded {len(final_tests)} test(s)')
         return final_tests
