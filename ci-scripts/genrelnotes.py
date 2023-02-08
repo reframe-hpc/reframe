@@ -40,12 +40,14 @@ if __name__ == '__main__':
         sys.exit(1)
 
     titles = {
-        'feat': '## New features and enhancements',
+        'feat': '## New features',
+        'enhancement': '## Enhancements',
+        'doc': '## Enhancements',
         'bugfix': '## Bug fixes',
         'testlib': '## Test library'
     }
     sections = collections.OrderedDict()
-    for tag in ['feat', 'bugfix', 'testlib', 'ci', 'doc']:
+    for tag in ['feat', 'enhancement', 'doc', 'bugfix', 'testlib', 'ci']:
         title_line = titles.get(tag, '## Other')
         sections.setdefault(title_line, [])
         for pr, descr in extract_release_notes(completed.stdout, tag):
@@ -54,6 +56,9 @@ if __name__ == '__main__':
 
     print('# Release Notes')
     for sec_title, sec_lines in sections.items():
+        if not sec_lines:
+            continue
+
         print()
         print(sec_title)
         print()
