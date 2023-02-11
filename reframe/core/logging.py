@@ -591,6 +591,7 @@ def _extract_handlers(site_config, handlers_group):
         hdlr.setFormatter(RFC3339Formatter(fmt=fmt,
                                            datefmt=datefmt, perffmt=perffmt))
         hdlr.setLevel(_check_level(level))
+        hdlr._rfm_type = handler_type
         handlers.append(hdlr)
 
     return handlers
@@ -692,8 +693,7 @@ class LoggerAdapter(logging.LoggerAdapter):
     @property
     def std_stream_handlers(self):
         if self.logger:
-            return [h for h in self.logger.handlers
-                    if isinstance(h, logging.StreamHandler)]
+            return [h for h in self.logger.handlers if h._rfm_type == 'stream']
         else:
             return []
 
