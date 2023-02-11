@@ -74,7 +74,9 @@ def test_parsing(argparser, foo_options, bar_options):
         '--bar beer --foolist any'.split(), options
     )
     assert 'name' == options.foo
-    assert ['any'] == options.foolist
+
+    # 'append' options are extended
+    assert ['gag', 'any'] == options.foolist
     assert not options.foobar
     assert not options.unfoo
     assert 'beer' == options.bar

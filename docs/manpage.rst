@@ -489,8 +489,15 @@ Options controlling ReFrame execution
 
    ReFrame execution mode to use.
 
-   An execution mode is simply a predefined invocation of ReFrame that is set with the :data:`modes` configuration parameter.
-   If an option is specified both in an execution mode and in the command-line, then command-line takes precedence.
+   An execution mode is simply a predefined set of options that is set in the :attr:`~modes` :ref:`configuration parameter <exec-mode-config>`.
+   Additional options can be passed to the command line, in which case they will be combined with the options defined in the selected execution mode.
+   More specifically, any additional ReFrame options will be *appended* to the command line options of the selected mode.
+   As a result, if a normal option is specified both inside the execution mode and the in the command line, the command line option will take precedence.
+   On the other hand, if an option that is allowed to be specified multiple times, e.g., the :option:`-S` option, is passed both inside the execution mode and in the command line, their values will be combined.
+   For example, if the execution mode ``foo`` defines ``-S modules=foo``, the invocation ``-S mode=foo -S num_tasks=10`` is the equivalent of ``-S modules=foo -S num_tasks=10``.
+
+   .. versionchanged:: 4.1
+      Options that can be specified multiple times are now combined between execution modes and the command line.
 
 .. option:: --repeat=N
 
