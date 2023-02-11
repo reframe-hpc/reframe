@@ -5,7 +5,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import collections
 import re
 import sys
 import subprocess
