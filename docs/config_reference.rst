@@ -1400,6 +1400,8 @@ This handler transmits the whole log record, meaning that all the information wi
 
 
 
+.. _exec-mode-config:
+
 Execution Mode Configuration
 ----------------------------
 
