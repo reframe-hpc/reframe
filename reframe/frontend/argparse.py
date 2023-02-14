@@ -9,6 +9,7 @@ import os
 
 import reframe.utility.typecheck as typ
 
+
 #
 # Notes on the ArgumentParser design
 #
@@ -278,10 +279,20 @@ class ArgumentParser(_ArgumentHolder):
 
         # Update parser's defaults with groups' defaults
         self._update_defaults()
+
+        # Update the parsed options of those from the given namespace and/or
+        # the defaults
         for attr, val in options.__dict__.items():
             if val is None:
-                options.__dict__[attr] = self._resolve_attr(
-                    attr, [namespace, self._defaults]
-                )
+                resolved = self._resolve_attr(attr,
+                                              [namespace, self._defaults])
+                options.__dict__[attr] = resolved
+            elif self._option_map[attr][2] == 'append':
+                # 'append' options are combined with those from the given
+                # namespace, but *not* with the defaults (important)
+                resolved = self._resolve_attr(attr, [namespace])
+                if resolved is not None:
+                    v = options.__dict__[attr]
+                    options.__dict__[attr] = resolved + v
 
         return _Namespace(options, self._option_map)
