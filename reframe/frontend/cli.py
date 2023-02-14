@@ -53,26 +53,38 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
     printer.info('[List of matched checks]')
     unique_checks = set()
 
-    def dep_lines(u, *, prefix, depth=0, lines=None, printed=None):
+    def dep_lines(u, *, prefix, depth=0, lines=None, printed=None,
+                  fixt_vars=None):
         if lines is None:
             lines = []
 
         if printed is None:
             printed = set(unique_checks)
 
+        fixt_to_vars = {}
+        for fixt_name, fixt in u.check._rfm_fixture_space.items():
+            key = f'{fixt.cls.__name__}#{fixt.scope}'
+            fixt_to_vars.setdefault(key, [])
+            fixt_to_vars[key].append(fixt_name)
+
         adj = u.deps
         for v in adj:
+            key = f'{type(v.check).__name__}#{v.check._rfm_fixt_data.scope}'
             if concretized or (not concretized and
                                v.check.unique_name not in printed):
                 dep_lines(v, prefix=prefix + 2*' ', depth=depth+1,
-                          lines=lines, printed=printed)
+                          lines=lines, printed=printed,
+                          fixt_vars=fixt_to_vars[key])
 
             printed.add(v.check.unique_name)
             if not v.check.is_fixture():
                 unique_checks.add(v.check.unique_name)
 
         if depth:
-            name_info = f'{u.check.display_name} /{u.check.hashcode}'
+            fmt_fixt_vars = " '"
+            fmt_fixt_vars += " '".join(fixt_vars)
+
+            name_info = f'{u.check.display_name}{fmt_fixt_vars} /{u.check.hashcode}'
             tc_info = ''
             details = ''
             if concretized:
