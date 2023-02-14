@@ -4,15 +4,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
-import reframe.utility.sanity as sn
 
-from testlib.simple import simple_check
+from testlib.simple import simple_echo_check
 
 
 @rfm.simple_test
-class HelloFoo(simple_check):
-    executable_opts = ['Foo']
-
-    @sanity_function
-    def assert_output(self):
-        return sn.assert_found(r'Hello Foo', self.stdout)
+class HelloFoo(simple_echo_check):
+    message = 'Foo'

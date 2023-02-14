@@ -1047,7 +1047,7 @@ def test_dynamic_tests_filtering(run_reframe, tmp_path):
     assert 'FAILED' not in stdout
 
 
-def test_testlib_inherit_in_different_files(run_reframe, monkeypatch):
+def test_testlib_inherit_fixture_in_different_files(run_reframe, monkeypatch):
     monkeypatch.syspath_prepend('unittests/resources')
     returncode, stdout, _ = run_reframe(
         checkpath=[

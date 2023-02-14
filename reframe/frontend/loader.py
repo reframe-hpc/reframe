@@ -189,7 +189,7 @@ class RegressionCheckLoader:
                 self._loaded[c.unique_name] = testfile
                 final_tests.append(c)
             else:
-                if testfile != conflicted:
+                if not c.is_fixture():
                     raise NameConflictError(
                         f'test {c.unique_name!r} from {testfile!r} '
                         f'is already defined in {conflicted!r}'
