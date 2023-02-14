@@ -5,7 +5,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import collections
 import re
 import sys
 import subprocess
@@ -15,8 +14,8 @@ def usage():
     sys.stderr.write('Usage: %s PREV_RELEASE CURR_RELEASE\n' % sys.argv[0])
 
 
-def extract_release_notes(git_output, tag):
-    return re.findall(r'pull request (#\d+).*\s*\[%s\] (.*)' % tag, git_output)
+def extract_release_notes(git_output):
+    return re.findall(r'pull request (#\d+).*\s*\[(\S+)\] (.*)', git_output)
 
 
 if __name__ == '__main__':
@@ -39,21 +38,30 @@ if __name__ == '__main__':
         sys.stderr.write(e.stdout)
         sys.exit(1)
 
-    titles = {
-        'feat': '## New features and enhancements',
+    tag_mapping = {
+        'feat': '## New features',
+        'enhancement': '## Enhancements',
+        'doc': '## Enhancements',
         'bugfix': '## Bug fixes',
         'testlib': '## Test library'
     }
-    sections = collections.OrderedDict()
-    for tag in ['feat', 'bugfix', 'testlib', 'ci', 'doc']:
-        title_line = titles.get(tag, '## Other')
-        sections.setdefault(title_line, [])
-        for pr, descr in extract_release_notes(completed.stdout, tag):
-            descr_line = '- %s (%s)' % (descr, pr)
-            sections[title_line].append(descr_line)
+    sections = {
+        '## New features': [],
+        '## Enhancements': [],
+        '## Bug fixes': [],
+        '## Test library': [],
+        '## Other': []
+    }
+    for pr, tag, descr in extract_release_notes(completed.stdout):
+        title_line = tag_mapping.get(tag, '## Other')
+        descr_line = f'- {descr} ({pr})'
+        sections[title_line].append(descr_line)
 
     print('# Release Notes')
     for sec_title, sec_lines in sections.items():
+        if not sec_lines:
+            continue
+
         print()
         print(sec_title)
         print()
