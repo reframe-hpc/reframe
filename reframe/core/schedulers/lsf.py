@@ -41,7 +41,7 @@ class LsfJobScheduler(PbsJobScheduler):
             self._format_option(job.stderr, '-e {0}'),
         ]
 
-        if job.num_tasks_per_node is not None:
+        if job.num_tasks is not None and job.num_tasks_per_node is not None:
             num_nodes = job.num_tasks // job.num_tasks_per_node
             preamble.append(self._format_option(num_nodes, '-nnodes {0}'))
         else:
