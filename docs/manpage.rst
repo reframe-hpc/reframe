@@ -494,7 +494,7 @@ Options controlling ReFrame execution
    More specifically, any additional ReFrame options will be *appended* to the command line options of the selected mode.
    As a result, if a normal option is specified both inside the execution mode and the in the command line, the command line option will take precedence.
    On the other hand, if an option that is allowed to be specified multiple times, e.g., the :option:`-S` option, is passed both inside the execution mode and in the command line, their values will be combined.
-   For example, if the execution mode ``foo`` defines ``-S modules=foo``, the invocation ``-S mode=foo -S num_tasks=10`` is the equivalent of ``-S modules=foo -S num_tasks=10``.
+   For example, if the execution mode ``foo`` defines ``-S modules=foo``, the invocation ``--mode=foo -S num_tasks=10`` is the equivalent of ``-S modules=foo -S num_tasks=10``.
 
    .. versionchanged:: 4.1
       Options that can be specified multiple times are now combined between execution modes and the command line.
