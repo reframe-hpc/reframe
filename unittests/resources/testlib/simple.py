@@ -9,14 +9,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class simple_echo(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    descr = 'Simple Echo build fixture'
+class dummy_fixture(rfm.RunOnlyRegressionTest, pin_prefix=True):
     executable = 'echo'
-    executable_opts = ['Hello']
-
-    @sanity_function
-    def assert_success(self):
-        return sn.assert_found(r'Hello', self.stdout)
+    sanity_patterns = sn.assert_true(1)
 
 
 @rfm.simple_test
@@ -25,14 +20,13 @@ class simple_echo_check(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['builtin']
     executable = 'echo'
+    executable_opts = ['Hello']
     message = variable(str, value='World') 
-    hello_output = fixture(simple_echo, scope='environment')
+    dummy = fixture(dummy_fixture, scope='environment')
 
     @run_before('run')
-    def add_exec_prefix(self):
-        fixture_output = os.path.join(self.hello_output.stagedir,
-                                      str(self.hello_output.stdout))
-        self.executable_opts = [f'$(cat {fixture_output})', self.message]
+    def set_executable_opts(self):
+        self.executable_opts += [self.message]
 
     @sanity_function
     def assert_sanity(self):

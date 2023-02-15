@@ -178,10 +178,10 @@ class RegressionCheckLoader:
                 continue
 
             # Get the original filename in case of a different module name
-            testfile = (
-                module.__file__ if module.__name__ == c.__module__ else
-                inspect.getfile(c.__class__)
-            )
+            if module.__name__ == c.__module__:
+                testfile = module.__file__
+            else:
+                testfile = inspect.getfile(c.__class__)
 
             try:
                 conflicted = self._loaded[c.unique_name]
