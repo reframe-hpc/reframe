@@ -737,16 +737,22 @@ def main():
 
         # Update options from the selected execution mode
         if options.mode:
-            mode_args = site_config.get(f'modes/@{options.mode}/options')
+            mode = site_config.get(f'modes/@{options.mode}')
+            if mode is None:
+                printer.warning(f'invalid mode: {options.mode!r}; ignoring')
+            else:
+                mode_args = site_config.get(f'modes/@{options.mode}/options')
 
-            # We lexically split the mode options, because otherwise spaces
-            # will be treated as part of the option argument; see GH bug #1554
-            mode_args = list(itertools.chain.from_iterable(shlex.split(m)
-                                                           for m in mode_args))
-            # Parse the mode's options and reparse the command-line
-            options = argparser.parse_args(mode_args)
-            options = argparser.parse_args(namespace=options.cmd_options)
-            options.update_config(site_config)
+                # We lexically split the mode options, because otherwise spaces
+                # will be treated as part of the option argument;
+                # see GH bug #1554
+                mode_args = list(
+                    itertools.chain.from_iterable(shlex.split(m)
+                                                  for m in mode_args))
+                # Parse the mode's options and reparse the command-line
+                options = argparser.parse_args(mode_args)
+                options = argparser.parse_args(namespace=options.cmd_options)
+                options.update_config(site_config)
 
         logging.configure_logging(site_config)
     except (OSError, errors.ConfigError) as e:

@@ -478,6 +478,20 @@ def test_execution_modes(run_reframe):
     assert 'Ran 2/2 test case' in stdout
 
 
+def test_invalid_mode_warning(run_reframe):
+    mode = 'invalid'
+    returncode, stdout, stderr = run_reframe(
+        action='list',
+        checkpath=[],
+        environs=[],
+        local=False,
+        mode=mode
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert f'invalid mode: {mode!r}; ignoring' in stdout
+
+
 def test_timestamp_option(run_reframe):
     timefmt = time.strftime('xxx_%F')
     returncode, stdout, _ = run_reframe(
