@@ -220,6 +220,10 @@ An action must always be specified.
    .. versionadded:: 3.10.0
       Support for different types of listing is added.
 
+   .. versionchanged:: 4.0.5
+      The variable names to which fixtures are bound are also listed.
+      See :ref:`test_naming_scheme` for more information.
+
 .. option:: -l, --list[=T|C]
 
    List selected tests and their dependencies.
@@ -233,6 +237,10 @@ An action must always be specified.
 
    .. versionadded:: 3.10.0
       Support for different types of listing is added.
+
+   .. versionchanged:: 4.0.5
+      The variable names to which fixtures are bound are also listed.
+      See :ref:`test_naming_scheme` for more information.
 
 .. option:: --list-tags
 
@@ -510,7 +518,8 @@ Options controlling ReFrame execution
 
    ``TEST`` can have the form ``[TEST.][FIXT.]*``, in which case ``VAR`` will be set in fixture ``FIXT`` of ``TEST``.
    Note that this syntax is recursive on fixtures, so that a variable can be set in a fixture arbitrarily deep.
-   ``TEST`` prefix refers to the test class name, *not* the test name, but ``FIXT`` refers to the fixture name *inside* the referenced test.
+   ``TEST`` prefix refers to the test class name, *not* the test name and ``FIXT`` refers to the fixture *variable name* inside the referenced test, i.e., the test variable to which the fixture is bound.
+   The fixture variable name is referred to as ``'<varname>`` when listing tests with the :option:`-l` and :option:`-L` options.
 
    Multiple variables can be set at the same time by passing this option multiple times.
    This option *cannot* change arbitrary test attributes, but only test variables declared with the :attr:`~reframe.core.pipeline.RegressionMixin.variable` built-in.
@@ -951,23 +960,28 @@ Here is how this test is listed where the various components of the display name
 
 .. code-block:: console
 
-   - TestA %x=4 %l.foo=10 %t.p=2 /1c51609b
-       ^Myfixture %p=1 ~TestA_3 /f027ee75
-       ^MyFixture %p=2 ~TestA_3 /830323a4
-       ^X %foo=10 ~generic:default+builtin /7dae3cc5
-   - TestA %x=3 %l.foo=10 %t.p=2 /707b752c
-       ^MyFixture %p=1 ~TestA_2 /02368516
-       ^MyFixture %p=2 ~TestA_2 /854b99b5
-       ^X %foo=10 ~generic:default+builtin /7dae3cc5
-   - TestA %x=4 %l.foo=10 %t.p=1 /c65657d5
-       ^MyFixture %p=2 ~TestA_1 /f0383f7f
-       ^MyFixture %p=1 ~TestA_1 /d07f4281
-       ^X %foo=10 ~generic:default+builtin /7dae3cc5
-   - TestA %x=3 %l.foo=10 %t.p=1 /1b9f44df
-       ^MyFixture %p=2 ~TestA_0 /b894ab05
-       ^MyFixture %p=1 ~TestA_0 /ca376ca8
-       ^X %foo=10 ~generic:default+builtin /7dae3cc5
+   - TestA %x=4 %l.foo=10 %t.p=2 /8804be5d
+       ^MyFixture %p=1 ~TestA_3 't 'f /f027ee75
+       ^MyFixture %p=2 ~TestA_3 't 'f /830323a4
+       ^X %foo=10 ~generic:default+builtin 'l /7dae3cc5
+   - TestA %x=3 %l.foo=10 %t.p=2 /89f6f5d1
+       ^MyFixture %p=1 ~TestA_2 't 'f /02368516
+       ^MyFixture %p=2 ~TestA_2 't 'f /854b99b5
+       ^X %foo=10 ~generic:default+builtin 'l /7dae3cc5
+   - TestA %x=4 %l.foo=10 %t.p=1 /af9b2941
+       ^MyFixture %p=2 ~TestA_1 't 'f /f0383f7f
+       ^MyFixture %p=1 ~TestA_1 't 'f /d07f4281
+       ^X %foo=10 ~generic:default+builtin 'l /7dae3cc5
+   - TestA %x=3 %l.foo=10 %t.p=1 /a9e50aa3
+       ^MyFixture %p=2 ~TestA_0 't 'f /b894ab05
+       ^MyFixture %p=1 ~TestA_0 't 'f /ca376ca8
+       ^X %foo=10 ~generic:default+builtin 'l /7dae3cc5
    Found 4 check(s)
+
+Notice that the variable name to which every fixture is bound in its parent test is also listed as ``'<varname>``.
+This is useful for setting variables down the fixture hierarchy using the :option:`-S` option.
+
+
 
 Display names may not always be unique.
 Assume the following test:
