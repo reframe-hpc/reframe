@@ -1059,3 +1059,17 @@ def test_dynamic_tests_filtering(run_reframe, tmp_path):
     assert returncode == 0
     assert 'Ran 7/7 test case(s)' in stdout
     assert 'FAILED' not in stdout
+
+
+def test_testlib_inherit_fixture_in_different_files(run_reframe, monkeypatch):
+    monkeypatch.syspath_prepend('unittests/resources')
+    returncode, stdout, _ = run_reframe(
+        checkpath=[
+            'unittests/resources/checks_unlisted/testlib_inheritance_foo.py',
+            'unittests/resources/checks_unlisted/testlib_inheritance_bar.py'
+        ],
+        action='run',
+    )
+    assert returncode == 0
+    assert 'Ran 3/3 test case(s)' in stdout
+    assert 'FAILED' not in stdout
