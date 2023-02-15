@@ -431,7 +431,7 @@ You can set environment variables in a ReFrame test through the :attr:`~reframe.
 What makes a ReFrame test a performance test is the definition of at least one :ref:`performance function<deferrable-performance-functions>`.
 Similarly to a test's :func:`@sanity_function<reframe.core.builtins.sanity_function>`, a performance function is a member function decorated with the :func:`@performance_function<reframe.core.builtins.performance_function>` decorator that merely extracts or computes a performance metric from the test's output and associates it with a unit.
 By default, every performance function defined in the test is assigned to a *performance variable* with the function's name.
-A performance variable is a named quantity representing a performance metric that ReFrame will report on it, log it and can also check it against a reference value.
+A performance variable is a named quantity representing a performance metric that ReFrame will report on, log and can also check against a reference value.
 The performance variables of a test are stored in the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary.
 The keys are the names of the metrics, whereas the values are :ref:`performance functions <deferrable-performance-functions>`.
 The :func:`@performance_function<reframe.core.builtins.performance_function>` decorator apart from turning an ordinary method into a "performance function", it also creates an entry in the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary.
