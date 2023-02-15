@@ -58,7 +58,7 @@ Currently ReFrame provides three broad categories of deferrable functions:
    They include, but are not limited to, functions to iterate over regex matches in a file, extracting and converting values from regex matches, computing statistical information on series of data etc.
 
 
- .. _deferrable-performance-functions:
+.. _deferrable-performance-functions:
 
 
 --------------------------------
