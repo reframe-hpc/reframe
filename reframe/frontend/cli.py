@@ -739,7 +739,7 @@ def main():
         if options.mode:
             mode = site_config.get(f'modes/@{options.mode}')
             if mode is None:
-                printer.warning(f'invalid mode: {options.mode!r}; ignoring')
+                printer.warning(f'invalid mode: {options.mode!r}; ignoring...')
             else:
                 mode_args = site_config.get(f'modes/@{options.mode}/options')
 
