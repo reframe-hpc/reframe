@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -654,6 +654,7 @@ def _extract_handlers(site_config, handlers_group):
         hdlr.setFormatter(RFC3339Formatter(fmt=fmt,
                                            datefmt=datefmt, perffmt=perffmt))
         hdlr.setLevel(_check_level(level))
+        hdlr._rfm_type = handler_type
         handlers.append(hdlr)
 
     return handlers
@@ -755,8 +756,7 @@ class LoggerAdapter(logging.LoggerAdapter):
     @property
     def std_stream_handlers(self):
         if self.logger:
-            return [h for h in self.logger.handlers
-                    if isinstance(h, logging.StreamHandler)]
+            return [h for h in self.logger.handlers if h._rfm_type == 'stream']
         else:
             return []
 

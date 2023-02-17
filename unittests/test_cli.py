@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -476,6 +476,20 @@ def test_execution_modes(run_reframe):
     assert 'FAILED' not in stdout
     assert 'PASSED' in stdout
     assert 'Ran 2/2 test case' in stdout
+
+
+def test_invalid_mode_warning(run_reframe):
+    mode = 'invalid'
+    returncode, stdout, stderr = run_reframe(
+        action='list',
+        checkpath=[],
+        environs=[],
+        local=False,
+        mode=mode
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert f'invalid mode: {mode!r}; ignoring' in stdout
 
 
 def test_timestamp_option(run_reframe):
@@ -1044,4 +1058,18 @@ def test_dynamic_tests_filtering(run_reframe, tmp_path):
     )
     assert returncode == 0
     assert 'Ran 7/7 test case(s)' in stdout
+    assert 'FAILED' not in stdout
+
+
+def test_testlib_inherit_fixture_in_different_files(run_reframe, monkeypatch):
+    monkeypatch.syspath_prepend('unittests/resources')
+    returncode, stdout, _ = run_reframe(
+        checkpath=[
+            'unittests/resources/checks_unlisted/testlib_inheritance_foo.py',
+            'unittests/resources/checks_unlisted/testlib_inheritance_bar.py'
+        ],
+        action='run',
+    )
+    assert returncode == 0
+    assert 'Ran 3/3 test case(s)' in stdout
     assert 'FAILED' not in stdout

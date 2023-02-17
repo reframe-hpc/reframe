@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -62,6 +62,9 @@ site_configuration = {
                     'container_platforms': [{'type': 'Sarus'}],
                     'environs': ['PrgEnv-gnu', 'builtin'],
                     'max_jobs': 10,
+                    'sched_options': {
+                        'use_nodes_option': False
+                    },
                     'processor': {
                         'arch': 'skylake',
                         'num_cpus': 8,

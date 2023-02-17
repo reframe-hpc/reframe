@@ -429,12 +429,13 @@ For running the benchmark, we need to set the OpenMP number of threads and pin t
 You can set environment variables in a ReFrame test through the :attr:`~reframe.core.pipeline.RegressionTest.env_vars` dictionary.
 
 What makes a ReFrame test a performance test is the definition of at least one :ref:`performance function<deferrable-performance-functions>`.
-Similarly to a test's :func:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>`, a performance function is a member function decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator, which binds the decorated function to a given unit.
-These functions can be used by the regression test to extract, measure or compute a given quantity of interest; where in this context, the values returned by a performance function are referred to as performance variables.
-Alternatively, performance functions can also be thought as `tools` available to the regression test for extracting performance variables.
-By default, ReFrame will attempt to execute all the available performance functions during the test's ``performance`` stage, producing a single performance variable out of each of the available performance functions.
-These default-generated performance variables are defined in the regression test's attribute :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` during class instantiation, and their default name matches the name of their associated performance function.
-However, one could customize the default-generated performance variable's name by passing the ``perf-key`` argument to the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator of the associated performance function.
+Similarly to a test's :func:`@sanity_function<reframe.core.builtins.sanity_function>`, a performance function is a member function decorated with the :func:`@performance_function<reframe.core.builtins.performance_function>` decorator that merely extracts or computes a performance metric from the test's output and associates it with a unit.
+By default, every performance function defined in the test is assigned to a *performance variable* with the function's name.
+A performance variable is a named quantity representing a performance metric that ReFrame will report on, log and can also check against a reference value.
+The performance variables of a test are stored in the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary.
+The keys are the names of the metrics, whereas the values are :ref:`performance functions <deferrable-performance-functions>`.
+The :func:`@performance_function<reframe.core.builtins.performance_function>` decorator apart from turning an ordinary method into a "performance function", it also creates an entry in the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary.
+The optional ``perf_key`` argument can be used to assign a different name to the newly created performance variable.
 
 In this example, we extract four performance variables, namely the memory bandwidth values for each of the "Copy", "Scale", "Add" and "Triad" sub-benchmarks of STREAM, where each of the performance functions use the :func:`~reframe.utility.sanity.extractsingle` utility function.
 For each of the sub-benchmarks we extract the "Best Rate MB/s" column of the output (see below) and we convert that to a float.
@@ -468,9 +469,11 @@ This is especially useful if you run long suites of performance exploration test
 Setting explicitly the test's performance variables
 ---------------------------------------------------
 
-In the above STREAM example, all four performance functions were almost identical except for a small part of the regex pattern, which led to some code repetition.
-Even though the performance functions were rather simple and the code repetition was not much in that case, this is still not a good practice and it is certainly an approach that would not scale when using more complex performance functions.
-Hence, in this example, we show how to collapse all these four performance functions into a single function and how to reuse this single performance function to create multiple performance variables.
+Users are allowed to manipulate the test's :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary directly.
+This is useful to avoid code repetition or in cases that relying on decorated methods to populate the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` is impractical, e.g., creating multiple performance variables in a loop.
+
+You might have noticed that in our STREAM example above, all four performance functions are almost identical except for a small part of the regex pattern.
+In the following example, we define a single performance function, :func:`extract_bw`, that can extract any of the requested bandwidth metrics, and we populate the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` ourselves in a pre-performance hook:
 
 .. code-block:: console
 
@@ -480,28 +483,29 @@ Hence, in this example, we show how to collapse all these four performance funct
    :start-at: import reframe
    :emphasize-lines: 28-
 
-As shown in the highlighted lines, this example collapses the four performance functions from the previous example into the :func:`extract_bw` function, which is also decorated with the :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` decorator with the units set to ``'MB/s'``.
-However, the :func:`extract_bw` function now takes the optional argument ``kind`` which selects the STREAM benchmark to extract.
-By default, this argument is set to ``'Copy'`` because functions decorated with :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` are only allowed to have ``self`` as a non-default argument.
-Thus, from this performance function definition, ReFrame will default-generate a single performance variable during the test instantiation under the name ``extract_bw``, where this variable will report the performance results from the ``Copy`` benchmark.
-With no further action from our side, ReFrame would just report the performance of the test based on this default-generated performance variable, but that is not what we are after here.
-Therefore, we must modify these default performance variables so that this version of the STREAM test produces the same results as in the previous example.
-As mentioned before, the performance variables (also the default-generated ones) are stored in the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary, so all we need to do is to redefine this mapping with our desired performance variables as done in the pre-performance pipeline hook :func:`set_perf_variables`.
+As mentioned in the previous section the :func:`@performance_function <reframe.core.builtins.performance_function>` decorator performs two tasks:
 
-.. tip::
-   Performance functions may also be generated inline using the :func:`~reframe.utility.sanity.make_performance_function` utility as shown below.
+1. It converts a test method to *performance function*, i.e., a function that is suitable for extracting a performance metric.
+2. It updates the :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` dictionary with the newly created performance function.
 
-   .. code-block:: python
+In this example, we are only interested in the first functionality and that's why we redefine completely the test's :attr:`~reframe.core.pipeline.RegressionTest.perf_variables` using the :func:`extract_bw` performance function.
+If you are inheriting from a base test and you don't want to override completely its performance variables, you could call instead :py:func:`update` on :attr:`~reframe.core.pipeline.RegressionTest.perf_variables`.
 
-      @run_before('performance')
-      def set_perf_vars(self):
-          self.perf_variables = {
-              'Copy': sn.make_performance_function(
-                  sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
-                                   self.stdout, 1, float),
-                  'MB/s'
-               )
-          }
+Finally, you can convert any arbitrary function or :doc:`deferred expression <deferrable_functions_reference>` into a performance function by calling the :func:`~reframe.utility.sanity.make_performance_function` utility as shown below:
+
+.. code-block:: python
+
+   @run_before('performance')
+   def set_perf_vars(self):
+       self.perf_variables = {
+           'Copy': sn.make_performance_function(
+               sn.extractsingle(r'Copy:\s+(\S+)\s+.*',
+                                self.stdout, 1, float),
+               'MB/s'
+            )
+       }
+
+Note that in this case, the newly created performance function is not assigned to a test's performance variable and you will have to do this independently.
 
 -----------------------
 Adding reference values

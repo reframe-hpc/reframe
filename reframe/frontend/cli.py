@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -53,26 +53,38 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
     printer.info('[List of matched checks]')
     unique_checks = set()
 
-    def dep_lines(u, *, prefix, depth=0, lines=None, printed=None):
+    def dep_lines(u, *, prefix, depth=0, lines=None, printed=None,
+                  fixt_vars=None):
         if lines is None:
             lines = []
 
         if printed is None:
             printed = set(unique_checks)
 
+        fixt_to_vars = {}
+        for fixt_name, fixt in u.check._rfm_fixture_space.items():
+            key = f'{fixt.cls.__name__}#{fixt.scope}'
+            fixt_to_vars.setdefault(key, [])
+            fixt_to_vars[key].append(fixt_name)
+
         adj = u.deps
         for v in adj:
+            key = f'{type(v.check).__name__}#{v.check._rfm_fixt_data.scope}'
             if concretized or (not concretized and
                                v.check.unique_name not in printed):
                 dep_lines(v, prefix=prefix + 2*' ', depth=depth+1,
-                          lines=lines, printed=printed)
+                          lines=lines, printed=printed,
+                          fixt_vars=fixt_to_vars[key])
 
             printed.add(v.check.unique_name)
             if not v.check.is_fixture():
                 unique_checks.add(v.check.unique_name)
 
         if depth:
-            name_info = f'{u.check.display_name} /{u.check.hashcode}'
+            fmt_fixt_vars = " '"
+            fmt_fixt_vars += " '".join(fixt_vars)
+
+            name_info = f'{u.check.display_name}{fmt_fixt_vars} /{u.check.hashcode}'
             tc_info = ''
             details = ''
             if concretized:
@@ -725,16 +737,22 @@ def main():
 
         # Update options from the selected execution mode
         if options.mode:
-            mode_args = site_config.get(f'modes/@{options.mode}/options')
+            mode = site_config.get(f'modes/@{options.mode}')
+            if mode is None:
+                printer.warning(f'invalid mode: {options.mode!r}; ignoring...')
+            else:
+                mode_args = site_config.get(f'modes/@{options.mode}/options')
 
-            # We lexically split the mode options, because otherwise spaces
-            # will be treated as part of the option argument; see GH bug #1554
-            mode_args = list(itertools.chain.from_iterable(shlex.split(m)
-                                                           for m in mode_args))
-            # Parse the mode's options and reparse the command-line
-            options = argparser.parse_args(mode_args)
-            options = argparser.parse_args(namespace=options.cmd_options)
-            options.update_config(site_config)
+                # We lexically split the mode options, because otherwise spaces
+                # will be treated as part of the option argument;
+                # see GH bug #1554
+                mode_args = list(
+                    itertools.chain.from_iterable(shlex.split(m)
+                                                  for m in mode_args))
+                # Parse the mode's options and reparse the command-line
+                options = argparser.parse_args(mode_args)
+                options = argparser.parse_args(namespace=options.cmd_options)
+                options.update_config(site_config)
 
         logging.configure_logging(site_config)
     except (OSError, errors.ConfigError) as e:

@@ -3,4 +3,11 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import _foo  # noqa: F401
+import reframe as rfm
+
+from testlib.simple import simple_echo_check
+
+
+@rfm.simple_test
+class HelloFoo(simple_echo_check):
+    message = 'Foo'
