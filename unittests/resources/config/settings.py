@@ -62,6 +62,9 @@ site_configuration = {
                     'container_platforms': [{'type': 'Sarus'}],
                     'environs': ['PrgEnv-gnu', 'builtin'],
                     'max_jobs': 10,
+                    'sched_options': {
+                        'use_nodes_option': False
+                    },
                     'processor': {
                         'arch': 'skylake',
                         'num_cpus': 8,
