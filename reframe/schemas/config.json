@@ -601,9 +601,9 @@
         "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
         "systems/partitions/extras": {},
-        "systems*/sched_options/ignore_reqnodenotavail": false,
-        "systems*/sched_options/job_submit_timeout": 60,
-        "systems*/sched_options/resubmit_on_errors": [],
-        "systems*/sched_options/use_nodes_option": false
+        "{systems,systems/partitions}/sched_options/ignore_reqnodenotavail": false,
+        "{systems,systems/partitions}/sched_options/job_submit_timeout": 60,
+        "{systems,systems/partitions}/sched_options/resubmit_on_errors": [],
+        "{systems,systems/partitions}/sched_options/use_nodes_option": false
     }
 }

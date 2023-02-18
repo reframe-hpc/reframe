@@ -63,7 +63,7 @@ site_configuration = {
                     'environs': ['PrgEnv-gnu', 'builtin'],
                     'max_jobs': 10,
                     'sched_options': {
-                        'use_nodes_option': False
+                        'use_nodes_option': True
                     },
                     'processor': {
                         'arch': 'skylake',

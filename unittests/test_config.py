@@ -296,7 +296,7 @@ def test_select_subconfig(site_config):
             [['FOO_GPU', 'yes']])
     assert site_config.get('systems/0/partitions/0/max_jobs') == 10
     assert site_config.get('systems/0/partitions/0/sched_options') == {
-        'use_nodes_option': False
+        'use_nodes_option': True
     }
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
     assert site_config.get('environments/1/cxx') == 'CC'
