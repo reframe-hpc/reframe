@@ -387,6 +387,15 @@ def test_prepare_nodes_option(make_exec_ctx, make_job, slurm_only):
         assert re.search(r'--nodes=8', fp.read()) is not None
 
 
+def test_prepare_nodes_option_minimal(make_exec_ctx, make_job, slurm_only):
+    make_exec_ctx(test_util.TEST_CONFIG_FILE, 'testsys')
+    job = make_job(sched_opts={'part_name': 'gpu'})
+    job.num_tasks = 16
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        assert re.search(r'--nodes=16', fp.read()) is not None
+
+
 def test_submit(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job)
