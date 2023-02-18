@@ -17,6 +17,9 @@ site_configuration = {
             'resourcesdir': '.rfm_testing/resources',
             'modules': ['foo/1.0'],
             'env_vars': [['FOO_CMD', 'foobar']],
+            'sched_options': {
+                'job_submit_timeout': 10
+            },
             'partitions': [
                 {
                     'name': 'login',

@@ -102,6 +102,19 @@
                 }
             ]
         },
+        "sched_options": {
+            "type": "object",
+            "properties": {
+                "ignore_reqnodenotavail": {"type": "boolean"},
+                "job_submit_timeout": {"type": "number"},
+                "resubmit_on_errors": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "use_nodes_option": {"type": "boolean"}
+            },
+            "additionalProperties": false
+        },
         "stream_handler": {
             "allOf": [
                 {"$ref": "#/defs/handler_common"},
@@ -242,6 +255,7 @@
                     "stagedir": {"type": "string"},
                     "outputdir": {"type": "string"},
                     "resourcesdir": {"type": "string"},
+                    "sched_options": {"$ref": "#/defs/sched_options"},
                     "partitions": {
                         "type": "array",
                         "items": {
@@ -256,19 +270,7 @@
                                         "sge", "slurm", "squeue", "torque"
                                     ]
                                 },
-                                "sched_options": {
-                                    "type": "object",
-                                    "properties": {
-                                        "ignore_reqnodenotavail": {"type": "boolean"},
-                                        "job_submit_timeout": {"type": "number"},
-                                        "resubmit_on_errors": {
-                                            "type": "array",
-                                            "items": {"type": "string"}
-                                        },
-                                        "use_nodes_option": {"type": "boolean"}
-                                    },
-                                    "additionalProperties": false
-                                },
+                                "sched_options": {"$ref": "#/defs/sched_options"},
                                 "launcher": {
                                     "type": "string"
                                 },
