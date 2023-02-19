@@ -946,6 +946,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :default: :class:`True`
     build_locally = variable(typ.Bool, value=True, loggable=True)
 
+    # Special variables
+
+    #: Dry-run mode
+    _rfm_dry_run = variable(typ.Bool, value=False)
+
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
 
@@ -1500,7 +1505,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def is_dry_run(self):
         '''Check if the test is a fixture.'''
-        return getattr(self, '_rfm_dry_run_mode', False)
+        return self._rfm_dry_run
 
     def _resolve_fixtures(self):
         '''Resolve the fixture dependencies and inject the fixture handle.
@@ -1949,9 +1954,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
             if not self.is_dry_run():
                 self._job.submit()
-
-        if not self.is_dry_run():
-            self.logger.debug(f'Spawned run job (id={self.job.jobid})')
+                self.logger.debug(f'Spawned run job (id={self.job.jobid})')
 
         # Update num_tasks if test is flexible
         if self.job.sched_flex_alloc_nodes:
@@ -2035,14 +2038,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     @final
     def sanity(self):
-        if not self.is_dry_run():
-            self.check_sanity()
+        self.check_sanity()
 
     @final
     def performance(self):
         try:
-            if not self.is_dry_run():
-                self.check_performance()
+            self.check_performance()
         except PerformanceError:
             if self.strict_check:
                 raise
@@ -2093,6 +2094,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.sanity_patterns = sn.all(sanity_patterns)
         elif not hasattr(self, 'sanity_patterns'):
             raise SanityError('sanity_patterns not set')
+
+        if self.is_dry_run():
+            return
 
         with osext.change_dir(self._stagedir):
             success = sn.evaluate(self.sanity_patterns)
@@ -2149,6 +2153,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
                 self.perf_variables[var] = sn.make_performance_function(expr,
                                                                         unit)
+
+        if self.is_dry_run():
+            return
 
         # Evaluate the performance function and retrieve the metrics
         with osext.change_dir(self._stagedir):

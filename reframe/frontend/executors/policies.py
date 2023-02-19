@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -142,9 +142,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             self._pollctl.reset_snooze_time()
             while True:
-                if not task.check.is_dry_run():
-                    sched.poll(task.check.job)
-
+                sched.poll(task.check.job)
                 if task.run_complete():
                     break
 
@@ -371,9 +369,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for partname, sched in self._schedulers.items():
             jobs = []
             for t in self._partition_tasks[partname]:
-                if t.check.is_dry_run():
-                    continue
-                elif t.state == 'compiling':
+                if t.state == 'compiling':
                     jobs.append(t.check.build_job)
                 elif t.state == 'running':
                     jobs.append(t.check.job)
@@ -525,7 +521,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
             else:
                 return 0
-
         except TaskExit:
             self._partition_tasks[partname].remove(task)
             self._current_tasks.remove(task)
@@ -542,9 +537,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.finalize()
             self._retired_tasks.append(task)
             self._current_tasks.remove(task)
+            return 1
         except TaskExit:
             self._current_tasks.remove(task)
-        finally:
             return 1
 
     def deps_failed(self, task):
@@ -616,7 +611,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_success(self, task):
         msg = f'{task.info()}'
         self.printer.status('OK', msg, just='right')
-
         _print_perf(task)
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',

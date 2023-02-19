@@ -74,7 +74,7 @@ def make_valid_systems_hook(systems):
 
 
 @time_function
-def distribute_tests(testcases, node_map, dry_run_mode=False):
+def distribute_tests(testcases, node_map):
     '''Returns new testcases that will be parameterized to run in node of
     their partitions based on the nodemap
     '''
@@ -124,7 +124,7 @@ def distribute_tests(testcases, node_map, dry_run_mode=False):
             if vinfo == variant_info:
                 tmp_registry.add(nc, variant_num=i)
 
-    new_checks = tmp_registry.instantiate_all(dry_run_mode=dry_run_mode)
+    new_checks = tmp_registry.instantiate_all()
     return generate_testcases(new_checks)
 
 

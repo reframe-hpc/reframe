@@ -16,6 +16,7 @@ import traceback
 
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeSyntaxError, SkipTestError, what
+from reframe.core.fields import make_convertible
 from reframe.core.fixtures import FixtureRegistry
 from reframe.core.logging import getlogger, time_function
 from reframe.core.pipeline import RegressionTest
@@ -24,6 +25,34 @@ from reframe.utility.versioning import VersionValidator
 
 # NOTE: we should consider renaming this module in 4.0; it practically takes
 # care of the registration and instantiation of the tests.
+
+def _setvars(registry, variables):
+    unset_vars = {}
+    for test in registry:
+        for name, val in variables.items():
+            if '.' in name:
+                testname, varname = name.split('.', maxsplit=1)
+            else:
+                testname, varname = test.__name__, name
+
+            if testname == test.__name__:
+                # Treat special values
+                if val == '@none':
+                    val = None
+                else:
+                    val = make_convertible(val)
+
+                if not test.setvar(varname, val):
+                    unset_vars.setdefault(test.__name__, [])
+                    unset_vars[test.__name__].append(varname)
+
+    # Warn for all unset variables
+    for testname, varlist in unset_vars.items():
+        varlist = ', '.join(f'{v!r}' for v in varlist)
+        getlogger().warning(
+            f'test {testname!r}: '
+            f'the following variables were not set: {varlist}'
+        )
 
 
 class TestRegistry:
@@ -52,8 +81,11 @@ class TestRegistry:
         self._tests.setdefault(test, [])
         self._tests[test].append((args, kwargs))
 
+    def setvars(self, variables):
+        return _setvars(self, variables)
+
     @time_function
-    def instantiate_all(self, reset_sysenv=0, dry_run_mode=False):
+    def instantiate_all(self, reset_sysenv=0, external_vars=None):
         '''Instantiate all the registered tests.
 
         :param reset_sysenv: Reset valid_systems and valid_prog_environs after
@@ -98,7 +130,6 @@ class TestRegistry:
             tmp_registry = FixtureRegistry()
             while leaf_tests:
                 c = leaf_tests.pop()
-                c._rfm_dry_run_mode = dry_run_mode
                 reg = getattr(c, '_rfm_fixture_registry', None)
                 final_tests.append(c)
                 if reg:
@@ -106,6 +137,9 @@ class TestRegistry:
 
             # Instantiate the new fixtures and update the registry
             new_fixtures = tmp_registry.difference(fixture_registry)
+            if external_vars:
+                _setvars(new_fixtures.uninst_tests(), external_vars)
+
             leaf_tests = new_fixtures.instantiate_all()
             fixture_registry.update(new_fixtures)
 

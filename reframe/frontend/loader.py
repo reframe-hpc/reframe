@@ -14,7 +14,6 @@ import os
 import sys
 import traceback
 
-import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
@@ -49,8 +48,7 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 class RegressionCheckLoader:
     def __init__(self, load_path, recurse=False, external_vars=None,
-                 skip_system_check=False, skip_prgenv_check=False,
-                 dry_run_mode=False):
+                 skip_system_check=False, skip_prgenv_check=False):
         # Expand any environment variables and symlinks
         load_path = [os.path.realpath(osext.expandvars(p)) for p in load_path]
         self._load_path = osext.unique_abs_paths(load_path, recurse)
@@ -63,7 +61,6 @@ class RegressionCheckLoader:
         self._external_vars = external_vars or {}
         self._skip_system_check = bool(skip_system_check)
         self._skip_prgenv_check = bool(skip_prgenv_check)
-        self._dry_run_mode = dry_run_mode
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.
@@ -131,38 +128,6 @@ class RegressionCheckLoader:
     def recurse(self):
         return self._recurse
 
-    def _set_defaults(self, test_registry):
-        if test_registry is None:
-            return
-
-        unset_vars = {}
-        for test in test_registry:
-            test._rfm_dry_run_mode = self._dry_run_mode
-            for name, val in self._external_vars.items():
-                if '.' in name:
-                    testname, varname = name.split('.', maxsplit=1)
-                else:
-                    testname, varname = test.__name__, name
-
-                if testname == test.__name__:
-                    # Treat special values
-                    if val == '@none':
-                        val = None
-                    else:
-                        val = fields.make_convertible(val)
-
-                    if not test.setvar(varname, val):
-                        unset_vars.setdefault(test.__name__, [])
-                        unset_vars[test.__name__].append(varname)
-
-        # Warn for all unset variables
-        for testname, varlist in unset_vars.items():
-            varlist = ', '.join(f'{v!r}' for v in varlist)
-            getlogger().warning(
-                f'test {testname!r}: '
-                f'the following variables were not set: {varlist}'
-            )
-
     def load_from_module(self, module):
         '''Load user checks from module.
 
@@ -171,12 +136,13 @@ class RegressionCheckLoader:
         are validated before return.
         '''
         registry = getattr(module, '_rfm_test_registry', None)
-        self._set_defaults(registry)
+        if registry:
+            registry.setvars(self._external_vars)
+
         reset_sysenv = self._skip_prgenv_check << 1 | self._skip_system_check
         if registry:
-            candidate_tests = registry.instantiate_all(
-                reset_sysenv, self._dry_run_mode
-            )
+            candidate_tests = registry.instantiate_all(reset_sysenv,
+                                                       self._external_vars)
         else:
             candidate_tests = []
 

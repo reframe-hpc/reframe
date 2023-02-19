@@ -368,6 +368,10 @@ def main():
         '-r', '--run', action='store_true',
         help='Run the selected checks'
     )
+    action_options.add_argument(
+        '--dry-run', action='store_true',
+        help='Dry run the tests without submitting them for execution'
+    )
 
     # Run options
     run_options.add_argument(
@@ -379,11 +383,6 @@ def main():
         nargs='?', const='idle',
         help=('Distribute the selected single-node jobs on every node that'
               'is in STATE (default: "idle"')
-    )
-    run_options.add_argument(
-        '--dry-run', action='store_true',
-        help=('Create build and job scripts without submitting to the '
-              'scheduler')
     )
     run_options.add_argument(
         '--exec-order', metavar='ORDER', action='store',
@@ -883,12 +882,14 @@ def main():
         else:
             external_vars[lhs] = rhs
 
+    if options.dry_run:
+        external_vars['_rfm_dry_run'] = '1'
+
     loader = RegressionCheckLoader(check_search_path,
                                    check_search_recursive,
                                    external_vars,
                                    options.skip_system_check,
-                                   options.skip_prgenv_check,
-                                   options.dry_run)
+                                   options.skip_prgenv_check)
 
     def print_infoline(param, value):
         param = param + ':'
@@ -1055,7 +1056,7 @@ def main():
                 x for x in parsed_job_options
                 if (not x.startswith('-w') and not x.startswith('--nodelist'))
             ]
-            testcases_all = distribute_tests(testcases, node_map, options.dry_run)
+            testcases_all = distribute_tests(testcases, node_map)
             testcases = testcases_all
 
         @logging.time_function
@@ -1145,10 +1146,11 @@ def main():
             )
             sys.exit(0)
 
-        if not options.run:
+        if not options.run and not options.dry_run:
             printer.error("No action option specified. Available options:\n"
                           "  - `-l'/`-L' for listing\n"
                           "  - `-r' for running\n"
+                          "  - `--dry-run' for dry running\n"
                           "  - `--list-tags' for listing unique test tags\n"
                           "  - `--ci-generate' for generating a CI pipeline\n"
                           f"Try `{argparser.prog} -h' for more options.")
