@@ -589,6 +589,7 @@ class ExecutionPolicy(abc.ABC):
         self.skip_sanity_check = False
         self.skip_performance_check = False
         self.keep_stage_files = False
+        self.dry_run_mode = False
         self.only_environs = None
         self.printer = None
 

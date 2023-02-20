@@ -1247,6 +1247,7 @@ def main():
         exec_policy.keep_stage_files = site_config.get(
             'general/0/keep_stage_files'
         )
+        exec_policy.dry_run_mode = options.dry_run
         try:
             errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
             sched_flex_alloc_nodes = int(options.flex_alloc_nodes)

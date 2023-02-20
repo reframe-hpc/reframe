@@ -142,7 +142,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             self._pollctl.reset_snooze_time()
             while True:
-                sched.poll(task.check.job)
+                if not self.dry_run_mode:
+                    sched.poll(task.check.job)
+
                 if task.run_complete():
                     break
 
@@ -366,6 +368,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._dump_pipeline_progress('pipeline-progress.json')
 
     def _poll_tasks(self):
+        if self.dry_run_mode:
+            return
+
         for partname, sched in self._schedulers.items():
             jobs = []
             for t in self._partition_tasks[partname]:
