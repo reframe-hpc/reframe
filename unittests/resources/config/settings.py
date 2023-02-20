@@ -17,6 +17,9 @@ site_configuration = {
             'resourcesdir': '.rfm_testing/resources',
             'modules': ['foo/1.0'],
             'env_vars': [['FOO_CMD', 'foobar']],
+            'sched_options': {
+                'job_submit_timeout': 10
+            },
             'partitions': [
                 {
                     'name': 'login',
@@ -63,7 +66,7 @@ site_configuration = {
                     'environs': ['PrgEnv-gnu', 'builtin'],
                     'max_jobs': 10,
                     'sched_options': {
-                        'use_nodes_option': False
+                        'use_nodes_option': True
                     },
                     'processor': {
                         'arch': 'skylake',

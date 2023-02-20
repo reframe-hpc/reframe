@@ -72,9 +72,10 @@ def exec_ctx(make_exec_ctx, scheduler):
 
 @pytest.fixture
 def make_job(scheduler, launcher, tmp_path):
-    def _make_job(**jobargs):
+    def _make_job(sched_opts=None, **jobargs):
+        sched = scheduler(**sched_opts) if sched_opts else scheduler()
         return Job.create(
-            scheduler(), launcher(),
+            sched, launcher(),
             name='testjob',
             workdir=tmp_path,
             script_filename=str(tmp_path / 'job.sh'),
@@ -377,14 +378,22 @@ def test_prepare_without_smt(fake_job, slurm_only):
 
 
 def test_prepare_nodes_option(make_exec_ctx, make_job, slurm_only):
-    make_exec_ctx(test_util.TEST_CONFIG_FILE, 'generic',
-                  {'systems*/sched_options/use_nodes_option': True})
-    job = make_job()
+    make_exec_ctx(test_util.TEST_CONFIG_FILE, 'testsys')
+    job = make_job(sched_opts={'part_name': 'gpu'})
     job.num_tasks = 16
     job.num_tasks_per_node = 2
     prepare_job(job)
     with open(job.script_filename) as fp:
         assert re.search(r'--nodes=8', fp.read()) is not None
+
+
+def test_prepare_nodes_option_minimal(make_exec_ctx, make_job, slurm_only):
+    make_exec_ctx(test_util.TEST_CONFIG_FILE, 'testsys')
+    job = make_job(sched_opts={'part_name': 'gpu'})
+    job.num_tasks = 16
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        assert re.search(r'--nodes=16', fp.read()) is not None
 
 
 def test_submit(make_job, exec_ctx):
