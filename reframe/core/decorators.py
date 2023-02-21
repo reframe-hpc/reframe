@@ -46,13 +46,7 @@ def _setvars(registry, variables):
                     unset_vars.setdefault(test.__name__, [])
                     unset_vars[test.__name__].append(varname)
 
-    # Warn for all unset variables
-    for testname, varlist in unset_vars.items():
-        varlist = ', '.join(f'{v!r}' for v in varlist)
-        getlogger().warning(
-            f'test {testname!r}: '
-            f'the following variables were not set: {varlist}'
-        )
+    return unset_vars
 
 
 class TestRegistry:
