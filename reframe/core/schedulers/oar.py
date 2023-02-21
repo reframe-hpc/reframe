@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -79,8 +79,9 @@ class OarJobScheduler(PbsJobScheduler):
             tasks_opt += ',walltime=%d:%d:%d' % (h, m, s)
 
         # Get number of nodes in the reservation
+        num_tasks = job.num_tasks or 1
         num_tasks_per_node = job.num_tasks_per_node or 1
-        num_nodes = job.num_tasks // num_tasks_per_node
+        num_nodes = num_tasks // num_tasks_per_node
 
         # Emit main resource reservation option
         options = [tasks_opt.format(

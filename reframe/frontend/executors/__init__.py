@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -368,9 +368,7 @@ class RegressionTask:
 
     @logging.time_function
     def performance(self):
-        if self.check.is_performance_check():
-            self._perflogger = logging.getperflogger(self.check)
-
+        self._perflogger = logging.getperflogger(self.check)
         self._safe_call(self.check.performance)
 
     @logging.time_function

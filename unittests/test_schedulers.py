@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -92,6 +92,13 @@ def minimal_job(make_job):
 
 
 @pytest.fixture
+def no_tasks_job(make_job):
+    ret = make_job()
+    ret.num_tasks = None
+    return ret
+
+
+@pytest.fixture
 def fake_job(make_job):
     ret = make_job(sched_options=['--account=spam'])
     ret.time_limit = '5m'
@@ -157,6 +164,23 @@ def _expected_lsf_directives(job):
     ])
 
 
+def _expected_lsf_directives_minimal(job):
+    return set([
+        f'#BSUB -J testjob',
+        f'#BSUB -o {job.stdout}',
+        f'#BSUB -e {job.stderr}',
+        f'#BSUB -n {job.num_tasks}'
+    ])
+
+
+def _expected_lsf_directives_no_tasks(job):
+    return set([
+        f'#BSUB -J testjob',
+        f'#BSUB -o {job.stdout}',
+        f'#BSUB -e {job.stderr}'
+    ])
+
+
 def _expected_flux_directives(job):
     return set()
 
@@ -165,13 +189,8 @@ def _expected_flux_directives_minimal(job):
     return set()
 
 
-def _expected_lsf_directives_minimal(job):
-    return set([
-        f'#BSUB -J testjob',
-        f'#BSUB -o {job.stdout}',
-        f'#BSUB -e {job.stderr}',
-        f'#BSUB -n {job.num_tasks}'
-    ])
+def _expected_flux_directives_no_tasks(job):
+    return set()
 
 
 def _expected_sge_directives(job):
@@ -197,6 +216,9 @@ def _expected_sge_directives_minimal(job):
         f'#$ -e {job.stderr}',
         f'#$ -wd {job.workdir}'
     ])
+
+
+_expected_sge_directives_no_tasks = _expected_sge_directives_minimal
 
 
 def _expected_slurm_directives(job):
@@ -229,8 +251,17 @@ def _expected_slurm_directives_minimal(job):
     ])
 
 
+def _expected_slurm_directives_no_tasks(job):
+    return set([
+        '#SBATCH --job-name="testjob"',
+        '#SBATCH --output=%s' % job.stdout,
+        '#SBATCH --error=%s' % job.stderr,
+    ])
+
+
 _expected_squeue_directives = _expected_slurm_directives
 _expected_squeue_directives_minimal = _expected_slurm_directives_minimal
+_expected_squeue_directives_no_tasks = _expected_slurm_directives_no_tasks
 
 
 def _expected_pbs_directives(job):
@@ -256,6 +287,9 @@ def _expected_pbs_directives_minimal(job):
         f'#PBS -e {job.stderr}',
         f'#PBS -l select=1:mpiprocs=1:ncpus=1'
     ])
+
+
+_expected_pbs_directives_no_tasks = _expected_pbs_directives_minimal
 
 
 def _expected_torque_directives(job):
@@ -284,6 +318,9 @@ def _expected_torque_directives_minimal(job):
     ])
 
 
+_expected_torque_directives_no_tasks = _expected_torque_directives_minimal
+
+
 def _expected_oar_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_tasks_per_node = job.num_tasks_per_node
@@ -308,11 +345,18 @@ def _expected_oar_directives_minimal(job):
     ])
 
 
+_expected_oar_directives_no_tasks = _expected_oar_directives_minimal
+
+
 def _expected_local_directives(job):
     return set()
 
 
 def _expected_local_directives_minimal(job):
+    return set()
+
+
+def _expected_local_directives_no_tasks(job):
     return set()
 
 
@@ -345,6 +389,20 @@ def test_prepare_minimal(minimal_job):
     ]
     assert_job_script_sanity(minimal_job)
     assert expected_directives(minimal_job) == found_directives
+
+
+def test_prepare_no_tasks(no_tasks_job):
+    prepare_job(no_tasks_job)
+    with open(no_tasks_job.script_filename) as fp:
+        found_directives = set(re.findall(r'^\#\S+ .*', fp.read(),
+                                          re.MULTILINE))
+
+    sched_name = no_tasks_job.scheduler.registered_name
+    expected_directives = globals()[
+        f'_expected_{sched_name}_directives_no_tasks'
+    ]
+    assert_job_script_sanity(no_tasks_job)
+    assert expected_directives(no_tasks_job) == found_directives
 
 
 def test_prepare_no_exclusive(make_job, slurm_only):

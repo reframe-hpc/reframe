@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -22,7 +22,7 @@ def test_distribute_testcases(sys0_exec_ctx):
     ])
     testcases = executors.generate_testcases(loader.load_all())
     testcases = filter(
-        filters.have_any_name('Simple'), testcases
+        filters.have_any_name(['Simple']), testcases
     )
 
     testcases = list(testcases)

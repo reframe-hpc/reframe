@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -30,7 +30,7 @@ def _have_name(patt):
             # Do an exact match on the hashcode
             return patt[1:] == case.check.hashcode
         else:
-            return regex.match(display_name)
+            return regex.search(display_name)
 
     return _fn
 
@@ -76,7 +76,7 @@ def have_any_name(names):
 
         display_name = case.check.display_name.replace(' ', '')
         if regex:
-            return regex.match(display_name)
+            return regex.search(display_name)
 
         return False
 
@@ -87,7 +87,7 @@ def have_tag(patt):
     regex = re_compile(patt)
 
     def _fn(case):
-        return any(regex.match(p) for p in case.check.tags)
+        return any(regex.search(p) for p in case.check.tags)
 
     return _fn
 
@@ -103,20 +103,22 @@ def have_maintainer(patt):
     regex = re_compile(patt)
 
     def _fn(case):
-        return any(regex.match(p) for p in case.check.maintainers)
+        return any(regex.search(p) for p in case.check.maintainers)
 
     return _fn
 
 
 def have_gpu_only():
     def _fn(case):
-        return case.check.num_gpus_per_node > 0
+        # NOTE: This takes into account num_gpus_per_node being None
+        return case.check.num_gpus_per_node
 
     return _fn
 
 
 def have_cpu_only():
     def _fn(case):
-        return case.check.num_gpus_per_node == 0
+        # NOTE: This takes into account num_gpus_per_node being None
+        return not case.check.num_gpus_per_node
 
     return _fn

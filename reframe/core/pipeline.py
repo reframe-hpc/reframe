@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -523,16 +523,34 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: Number of tasks required by this test.
     #:
-    #: If the number of tasks is set to a number ``<=0``, ReFrame will try to
-    #: flexibly allocate the number of tasks, based on the command line option
-    #: |--flex-alloc-nodes|_. A negative number is used to indicate the minimum
-    #: number of tasks required for the test. In this case the minimum number
-    #: of tasks is the absolute value of the number, while Setting
-    #: :attr:`num_tasks` to ``0`` is equivalent to setting it to
+    #: If the number of tasks is set to zero or a negative value, ReFrame will
+    #: try to flexibly allocate the number of tasks based on the command line
+    #: option :option:`--flex-alloc-nodes`. A negative number is used to
+    #: indicate the minimum number of tasks required for the test. In this case
+    #: the minimum number of tasks is the absolute value of the number, while
+    #: Setting :attr:`num_tasks` to zero is equivalent to setting it to
     #: :attr:`-num_tasks_per_node
     #: <reframe.core.pipeline.RegressionTest.num_tasks_per_node>`.
     #:
-    #: :type: integral
+    #: Setting :attr:`num_tasks` to :obj:`None` has a scheduler-specific
+    #: interpretation, but in principle, passes the responsibility of producing
+    #: a correct job script to the user by setting the appropriate scheduler
+    #: options. More specifically, the different backends interpret the
+    #: :obj:`None` :attr:`num_tasks` as follows:
+    #:
+    #: - ``flux``: not applicable.
+    #: - ``local``: not applicable.
+    #: - ``lsf``: Neither the ``-nnodes`` nor the ``-n`` will be emitted.
+    #: - ``oar``: Resets it to ``1``.
+    #: - ``pbs``: Resets it to ``1``.
+    #: - ``sge``: not applicable.
+    #: - ``slurm``: Neither the ``--ntasks`` nor the ``--nodes`` option (if the
+    #:   :attr:`~config.systems.partitions.sched_options.use_nodes_option` is
+    #:   specified) will be emitted.
+    #: - ``squeue``: See ``slurm`` backend.
+    #: - ``torque``: See ``pbs`` backend.
+    #:
+    #: :type: integral or :obj:`None`
     #: :default: ``1``
     #:
     #: .. note::
@@ -542,10 +560,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 2.16
     #:        Negative :attr:`num_tasks` is allowed for specifying the minimum
     #:        number of required tasks by the test.
-    #:
-    #: .. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
-    #: .. _--flex-alloc-nodes: manpage.html#cmdoption-flex-alloc-nodes
-    num_tasks = variable(int, value=1, loggable=True)
+    #:     .. versionchanged:: 4.1
+    #:        Allow :attr:`num_tasks` to be :obj:`None`.
+    num_tasks = variable(int, type(None), value=1, loggable=True)
 
     #: Number of tasks per node required by this test.
     #:
@@ -989,9 +1006,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self.__deferred_rfm_init.evaluate()
 
         # Build the default performance dict
-        if not self.perf_variables:
-            for fn in self._rfm_perf_fns.values():
-                self.perf_variables[fn._rfm_perf_key] = fn(self)
+        for fn in self._rfm_perf_fns.values():
+            self.perf_variables[fn._rfm_perf_key] = fn(self)
 
     def __init__(self):
         pass

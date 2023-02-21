@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -21,6 +21,7 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ConfigError, LoggingError
 from reframe.core.warnings import suppress_deprecations
+from reframe.utility import is_trivially_callable
 from reframe.utility.profile import TimeProfiler
 
 
@@ -469,6 +470,11 @@ def _create_graylog_handler(site_config, config_prefix):
 
 def _create_httpjson_handler(site_config, config_prefix):
     url = site_config.get(f'{config_prefix}/url')
+    extras = site_config.get(f'{config_prefix}/extras')
+    ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
+    json_formatter = site_config.get(f'{config_prefix}/json_formatter')
+    debug = site_config.get(f'{config_prefix}/debug')
+
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.scheme not in {'http', 'https'}:
         raise ConfigError(
@@ -479,27 +485,69 @@ def _create_httpjson_handler(site_config, config_prefix):
         raise ConfigError('http json handler: invalid hostname')
 
     try:
-        if not parsed_url.port:
-            raise ConfigError('http json handler: no port given')
+        port = parsed_url.port
+        if port is None:
+            if parsed_url.scheme == 'http':
+                port = 80
+            elif parsed_url.scheme == 'https':
+                port = 443
+            else:
+                # This should not happen
+                assert 0, 'invalid url scheme found'
     except ValueError as e:
-        raise ConfigError('http json handler: invalid port') from e
+        raise ConfigError('httpjson handler: invalid port') from e
 
     # Check if the remote server is up and accepts connections; if not we will
     # skip the handler
     try:
-        with socket.create_connection((parsed_url.hostname, parsed_url.port),
-                                      timeout=1):
+        with socket.create_connection((parsed_url.hostname, port), timeout=1):
             pass
     except OSError as e:
         getlogger().warning(
             f'httpjson: could not connect to server '
-            f'{parsed_url.hostname}:{parsed_url.port}: {e}'
+            f'{parsed_url.hostname}:{port}: {e}'
         )
-        return None
+        if not debug:
+            return None
 
-    extras = site_config.get(f'{config_prefix}/extras')
-    ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
-    return HTTPJSONHandler(url, extras, ignore_keys)
+    if debug:
+        getlogger().warning('httpjson: running in debug mode; '
+                            'no data will be sent to the server')
+
+    return HTTPJSONHandler(url, extras, ignore_keys, json_formatter, debug)
+
+
+def _record_to_json(record, extras, ignore_keys):
+    def _can_send(key):
+        return not key.startswith('_') and not key in ignore_keys
+
+    def _sanitize(s):
+        return re.sub(r'\W', '_', s)
+
+    json_record = {}
+    for k, v in record.__dict__.items():
+        if not _can_send(k):
+            continue
+
+        if k == 'check_perfvalues':
+            # Flatten the performance values
+            for var, info in v.items():
+                val, ref, lower, upper, unit = info
+                name = _sanitize(var.split(':')[-1])
+                json_record[f'check_perf_{name}_value'] = val
+                json_record[f'check_perf_{name}_ref'] = ref
+                json_record[f'check_perf_{name}_lower_thres'] = lower
+                json_record[f'check_perf_{name}_upper_thres'] = upper
+                json_record[f'check_perf_{name}_unit'] = unit
+        else:
+            json_record[k] = v
+
+    if extras:
+        json_record.update({
+            k: v for k, v in extras.items() if _can_send(k)
+        })
+
+    return _xfmt(json_record)
 
 
 class HTTPJSONHandler(logging.Handler):
@@ -514,35 +562,50 @@ class HTTPJSONHandler(logging.Handler):
         'stack_info', 'thread', 'threadName', 'exc_text'
     }
 
-    def __init__(self, url, extras=None, ignore_keys=None):
+    def __init__(self, url, extras=None, ignore_keys=None,
+                 json_formatter=None, debug=False):
         super().__init__()
         self._url = url
         self._extras = extras
-        self._ignore_keys = ignore_keys
+        self._ignore_keys = self.LOG_ATTRS
+        if ignore_keys:
+            self._ignore_keys |= set(ignore_keys)
 
-    def _record_to_json(self, record):
-        def _can_send(key):
-            return not (
-                key.startswith('_') or key in HTTPJSONHandler.LOG_ATTRS or
-                (self._ignore_keys and key in self._ignore_keys)
+        self._json_format = json_formatter or _record_to_json
+        if not callable(self._json_format):
+            raise ConfigError("httpjson: 'json_formatter' is not a callable")
+
+        if not is_trivially_callable(self._json_format, non_def_args=3):
+            raise ConfigError(
+                "httpjson: 'json_formatter' has not the right signature: "
+                "it must be 'json_formatter(record, extras, ignore_keys)'"
             )
 
-        json_record = {
-            k: v for k, v in record.__dict__.items() if _can_send(k)
-        }
-        if self._extras:
-            json_record.update({
-                k: v for k, v in self._extras.items() if _can_send(k)
-            })
-
-        return _xfmt(json_record).encode('utf-8')
+        self._debug = debug
 
     def emit(self, record):
-        json_record = self._record_to_json(record)
+        # Convert tags to a list to make them JSON friendly
+        record.check_tags = list(record.check_tags)
+        json_record = self._json_format(record,
+                                        self._extras,
+                                        self._ignore_keys)
+        if json_record is None:
+            return
+
+        if self._debug:
+            import time
+            ts = int(time.time() * 1_000)
+            dump_file = f'httpjson_record_{ts}.json'
+            with open(dump_file, 'w') as fp:
+                fp.write(json_record)
+
+            return
+
         try:
             requests.post(
                 self._url, data=json_record,
-                headers={'Content-type': 'application/json'}
+                headers={'Content-type': 'application/json',
+                         'Accept-Charset': 'UTF-8'}
             )
         except requests.exceptions.RequestException as e:
             raise LoggingError('logging failed') from e
@@ -591,6 +654,7 @@ def _extract_handlers(site_config, handlers_group):
         hdlr.setFormatter(RFC3339Formatter(fmt=fmt,
                                            datefmt=datefmt, perffmt=perffmt))
         hdlr.setLevel(_check_level(level))
+        hdlr._rfm_type = handler_type
         handlers.append(hdlr)
 
     return handlers
@@ -692,8 +756,7 @@ class LoggerAdapter(logging.LoggerAdapter):
     @property
     def std_stream_handlers(self):
         if self.logger:
-            return [h for h in self.logger.handlers
-                    if isinstance(h, logging.StreamHandler)]
+            return [h for h in self.logger.handlers if h._rfm_type == 'stream']
         else:
             return []
 
@@ -726,7 +789,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         )
 
     def log_performance(self, level, task, msg=None, multiline=False):
-        if self.extra['__rfm_check__'] is None:
+        if self.check is None or not self.check.is_performance_check():
             return
 
         self.extra['check_partition'] = task.testcase.partition.name
@@ -737,8 +800,7 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         if multiline:
             # Log one record for each performance variable
-            check = self.extra['__rfm_check__']
-            for var, info in check.perfvalues.items():
+            for var, info in self.check.perfvalues.items():
                 val, ref, lower, upper, unit = info
                 self.extra['check_perf_var'] = var.split(':')[-1]
                 self.extra['check_perf_value'] = val
@@ -900,3 +962,27 @@ def time_function_noexit(fn):
         return fn(*args, **kwargs)
 
     return _fn
+
+
+# The following is meant to be used only by the unit tests
+
+class logging_sandbox:
+    '''Define a region that you can safely change the logging config.
+
+    At entering the region, this context manager saves the logging
+    configuration and restores it at exit.
+
+    :meta private:
+    '''
+
+    def __enter__(self):
+        self._logger = _logger
+        self._perf_logger = _perf_logger
+        self._context_logger = _context_logger
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        global _logger, _perf_logger, _context_logger
+
+        _logger = self._logger
+        _perf_logger = self._perf_logger
+        _context_logger = self._context_logger

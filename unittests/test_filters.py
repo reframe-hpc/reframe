@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -35,7 +35,6 @@ def sample_cases():
                   maintainers=['A', 'B', 'C', 'D']),
         make_case(_X, alt_name='check2',
                   tags={'x', 'y', 'z'},
-                  num_gpus_per_node=0,
                   maintainers=['X', 'Y', 'Z']),
         make_case(_X, alt_name='check3',
                   tags={'a', 'z'},

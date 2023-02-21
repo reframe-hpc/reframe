@@ -102,18 +102,6 @@
                 }
             ]
         },
-        "sched_options": {
-            "type": "object",
-            "properties": {
-                "ignore_reqnodenotavail": {"type": "boolean"},
-                "job_submit_timeout": {"type": "number"},
-                "resubmit_on_errors": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
-                "use_nodes_option": {"type": "boolean"}
-            }
-        },
         "stream_handler": {
             "allOf": [
                 {"$ref": "#/defs/handler_common"},
@@ -163,7 +151,9 @@
                         "ignore_keys": {
                             "type": "array",
                             "items": {"type": "string"}
-                        }
+                        },
+                        "json_formatter": {},
+                        "debug": {"type": "boolean"}
                     },
                     "required": ["url"]
                 }
@@ -267,6 +257,19 @@
                                         "flux", "local", "lsf", "oar", "pbs",
                                         "sge", "slurm", "squeue", "torque"
                                     ]
+                                },
+                                "sched_options": {
+                                    "type": "object",
+                                    "properties": {
+                                        "ignore_reqnodenotavail": {"type": "boolean"},
+                                        "job_submit_timeout": {"type": "number"},
+                                        "resubmit_on_errors": {
+                                            "type": "array",
+                                            "items": {"type": "string"}
+                                        },
+                                        "use_nodes_option": {"type": "boolean"}
+                                    },
+                                    "additionalProperties": false
                                 },
                                 "launcher": {
                                     "type": "string"
@@ -565,6 +568,8 @@
         "logging/handlers*/graylog_extras": {},
         "logging/handlers*/httpjson_extras": {},
         "logging/handlers*/httpjson_ignore_keys": [],
+        "logging/handlers*/httpjson_json_formatter": null,
+        "logging/handlers*/httpjson_debug": false,
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",

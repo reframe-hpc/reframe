@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -74,7 +74,9 @@ def test_parsing(argparser, foo_options, bar_options):
         '--bar beer --foolist any'.split(), options
     )
     assert 'name' == options.foo
-    assert ['any'] == options.foolist
+
+    # 'append' options are extended
+    assert ['gag', 'any'] == options.foolist
     assert not options.foobar
     assert not options.unfoo
     assert 'beer' == options.bar

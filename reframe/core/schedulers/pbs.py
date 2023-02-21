@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -78,9 +78,10 @@ class PbsJobScheduler(sched.JobScheduler):
         self._submit_timeout = self.get_option('job_submit_timeout')
 
     def _emit_lselect_option(self, job):
+        num_tasks = job.num_tasks or 1
         num_tasks_per_node = job.num_tasks_per_node or 1
         num_cpus_per_task = job.num_cpus_per_task or 1
-        num_nodes = job.num_tasks // num_tasks_per_node
+        num_nodes = num_tasks // num_tasks_per_node
         num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
         select_opt = self.TASKS_OPT.format(
             num_nodes=num_nodes,

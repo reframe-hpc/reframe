@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -59,8 +59,12 @@ class RegressionCheckLoader:
 
         # Variables set in the command line
         self._external_vars = external_vars or {}
+        self._unset_vars = {}
         self._skip_system_check = bool(skip_system_check)
         self._skip_prgenv_check = bool(skip_prgenv_check)
+
+    def unset_vars(self, testname):
+        return self._unset_vars.get(testname, [])
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.
@@ -137,7 +141,7 @@ class RegressionCheckLoader:
         '''
         registry = getattr(module, '_rfm_test_registry', None)
         if registry:
-            registry.setvars(self._external_vars)
+            self._unset_vars.update(registry.setvars(self._external_vars))
 
         reset_sysenv = self._skip_prgenv_check << 1 | self._skip_system_check
         if registry:
@@ -152,17 +156,23 @@ class RegressionCheckLoader:
             if not self._validate_check(c):
                 continue
 
-            testfile = module.__file__
+            # Get the original filename in case of a different module name
+            if module.__name__ == c.__module__:
+                testfile = module.__file__
+            else:
+                testfile = inspect.getfile(c.__class__)
+
             try:
                 conflicted = self._loaded[c.unique_name]
             except KeyError:
                 self._loaded[c.unique_name] = testfile
                 final_tests.append(c)
             else:
-                raise NameConflictError(
-                    f'test {c.unique_name!r} from {testfile!r} '
-                    f'is already defined in {conflicted!r}'
-                )
+                if not c.is_fixture():
+                    raise NameConflictError(
+                        f'test {c.unique_name!r} from {testfile!r} '
+                        f'is already defined in {conflicted!r}'
+                    )
 
         getlogger().debug(f'  > Loaded {len(final_tests)} test(s)')
         return final_tests
