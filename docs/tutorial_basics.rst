@@ -119,17 +119,6 @@ Let's inspect what files ReFrame produced for this test:
 ReFrame stores in the output directory of the test the build and run scripts it generated for building and running the code along with their standard output and error.
 All these files are prefixed with ``rfm_``.
 
-   .. tip::
-
-      .. versionadded:: 4.1.0
-
-        Until you get familiar with all the test attributes and options of ReFrame you can run a test in dry-run mode, with the :attr:`~reframe.core.pipeline.RegressionTest.dry_run_mode` attribute.
-        When this attribute is set to `True`, ReFrame will create the build and run script for the test but will not actually submit to the scheduler.
-        You can then find the created job script in the output directory of the test.
-
-        It is recommended to set this attribute directly in the cli with the :option:`--setvar` option instead of marking a test in the test file.
-        Just try adding `-Sdry_run_mode=1` to your command.
-
 ReFrame also generates a detailed JSON report for the whole regression testing session.
 By default, this is stored inside the ``${HOME}/.reframe/reports`` directory and a new report file is generated every time ReFrame is run, but you can control this through the :option:`--report-file` command-line option.
 

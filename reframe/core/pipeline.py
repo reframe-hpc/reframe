@@ -1520,7 +1520,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return getattr(self, '_rfm_is_fixture', False)
 
     def is_dry_run(self):
-        '''Check if the test is a fixture.'''
+        '''Check if the test runs in dry-run mode.
+
+        .. versionadded:: 4.1
+
+        '''
         return self._rfm_dry_run
 
     def _resolve_fixtures(self):

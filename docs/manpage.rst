@@ -232,6 +232,20 @@ An action must always be specified.
    .. versionadded:: 3.10.0
 
 
+.. option:: --dry-run
+
+   Dry run the selected tests.
+
+   The dry-run mode will try to execute as much of the test pipeline as possible.
+   More specifically, the tests will not be submitted and will not be run for real,
+   but their stage directory will be prepared and the corresponding job script will be emitted.
+   Similarly, the sanity and performance functions will not be evaluated but all the preparation will happen.
+   Tests run in dry-run mode will not fail unless there is a programming error in the test or if the test tries to use a resource that is not produced in dry run mode (e.g., access the standard output or a resource produced by a dependency outside any sanity or performance function).
+   In this case, users can call the :func:`~reframe.core.pipeline.RegressionTest.is_dry_run` method in their test and take a specific action if the test is run in dry-run mode.
+
+   .. versionadded:: 4.1
+
+
 .. option:: -L, --list-detailed[=T|C]
 
    List selected tests providing more details for each test.
