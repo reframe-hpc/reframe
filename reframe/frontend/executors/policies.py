@@ -98,9 +98,13 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def runcase(self, case):
         super().runcase(case)
-        check, partition, environ = case
+        check, partition, _ = case
         task = RegressionTask(case, self.task_listeners)
-        self.printer.status('RUN', task.info())
+        if check.is_dry_run():
+            self.printer.status('DRY', task.info())
+        else:
+            self.printer.status('RUN', task.info())
+
         self._task_index[case] = task
         self.stats.add_task(task)
         try:
@@ -138,7 +142,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             self._pollctl.reset_snooze_time()
             while True:
-                sched.poll(task.check.job)
+                if not self.dry_run_mode:
+                    sched.poll(task.check.job)
+
                 if task.run_complete():
                     break
 
@@ -362,6 +368,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._dump_pipeline_progress('pipeline-progress.json')
 
     def _poll_tasks(self):
+        if self.dry_run_mode:
+            return
+
         for partname, sched in self._schedulers.items():
             jobs = []
             for t in self._partition_tasks[partname]:
@@ -431,7 +440,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
         elif self.deps_succeeded(task):
             try:
-                self.printer.status('RUN', task.info())
+                if task.check.is_dry_run():
+                    self.printer.status('DRY', task.info())
+                else:
+                    self.printer.status('RUN', task.info())
+
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,

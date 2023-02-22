@@ -304,7 +304,6 @@ class FixtureRegistry:
                     'valid_systems': part,
                     **variables
                 }
-
                 try:
                     # Instantiate the fixture
                     inst = cls(variant_num=varnum, fixt_name=name,
@@ -321,6 +320,10 @@ class FixtureRegistry:
                     ret.append(inst)
 
         return ret
+
+    def uninst_tests(self):
+        '''Get the uninstantiated tests of this registry'''
+        return self._registry.keys()
 
     def _filter_valid_partitions(self, candidate_parts):
         return [p for p in candidate_parts if p in self._env_by_part]

@@ -380,6 +380,10 @@ def main():
         '-r', '--run', action='store_true',
         help='Run the selected checks'
     )
+    action_options.add_argument(
+        '--dry-run', action='store_true',
+        help='Dry run the tests without submitting them for execution'
+    )
 
     # Run options
     run_options.add_argument(
@@ -896,6 +900,9 @@ def main():
         else:
             external_vars[lhs] = rhs
 
+    if options.dry_run:
+        external_vars['_rfm_dry_run'] = '1'
+
     loader = RegressionCheckLoader(check_search_path,
                                    check_search_recursive,
                                    external_vars,
@@ -1166,10 +1173,11 @@ def main():
             )
             sys.exit(0)
 
-        if not options.run:
+        if not options.run and not options.dry_run:
             printer.error("No action option specified. Available options:\n"
                           "  - `-l'/`-L' for listing\n"
                           "  - `-r' for running\n"
+                          "  - `--dry-run' for dry running\n"
                           "  - `--list-tags' for listing unique test tags\n"
                           "  - `--ci-generate' for generating a CI pipeline\n"
                           f"Try `{argparser.prog} -h' for more options.")
@@ -1266,6 +1274,7 @@ def main():
         exec_policy.keep_stage_files = site_config.get(
             'general/0/keep_stage_files'
         )
+        exec_policy.dry_run_mode = options.dry_run
         try:
             errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
             sched_flex_alloc_nodes = int(options.flex_alloc_nodes)

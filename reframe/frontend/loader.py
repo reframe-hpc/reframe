@@ -14,7 +14,6 @@ import os
 import sys
 import traceback
 
-import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.exceptions import NameConflictError, is_severe, what
@@ -133,29 +132,6 @@ class RegressionCheckLoader:
     def recurse(self):
         return self._recurse
 
-    def _set_defaults(self, test_registry):
-        if test_registry is None:
-            return
-
-        self._unset_vars = {}
-        for test in test_registry:
-            for name, val in self._external_vars.items():
-                if '.' in name:
-                    testname, varname = name.split('.', maxsplit=1)
-                else:
-                    testname, varname = test.__name__, name
-
-                if testname == test.__name__:
-                    # Treat special values
-                    if val == '@none':
-                        val = None
-                    else:
-                        val = fields.make_convertible(val)
-
-                    if not test.setvar(varname, val):
-                        self._unset_vars.setdefault(test.__name__, [])
-                        self._unset_vars[test.__name__].append(varname)
-
     def load_from_module(self, module):
         '''Load user checks from module.
 
@@ -164,10 +140,13 @@ class RegressionCheckLoader:
         are validated before return.
         '''
         registry = getattr(module, '_rfm_test_registry', None)
-        self._set_defaults(registry)
+        if registry:
+            self._unset_vars.update(registry.setvars(self._external_vars))
+
         reset_sysenv = self._skip_prgenv_check << 1 | self._skip_system_check
         if registry:
-            candidate_tests = registry.instantiate_all(reset_sysenv)
+            candidate_tests = registry.instantiate_all(reset_sysenv,
+                                                       self._external_vars)
         else:
             candidate_tests = []
 
