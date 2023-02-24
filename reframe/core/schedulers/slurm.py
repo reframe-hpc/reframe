@@ -192,7 +192,8 @@ class SlurmJobScheduler(sched.JobScheduler):
             )
 
         if self._use_nodes_opt and job.num_tasks is not None:
-            num_nodes = job.num_tasks // job.num_tasks_per_node
+            num_tasks_per_node = job.num_tasks_per_node or 1
+            num_nodes = job.num_tasks // num_tasks_per_node
             preamble.append(self._format_option(num_nodes, '--nodes={0}'))
 
         if job.use_smt is None:

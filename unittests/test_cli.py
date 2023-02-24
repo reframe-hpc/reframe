@@ -631,6 +631,28 @@ def test_list_tags(run_reframe):
     assert returncode == 0
 
 
+def test_list_tests_with_deps(run_reframe):
+    returncode, stdout, _ = run_reframe(
+        system='sys0',
+        checkpath=['unittests/resources/checks_unlisted/deps_simple.py'],
+        action='list',
+        environs=[]
+    )
+    assert 'Found 9 check(s)' in stdout
+    assert returncode == 0
+
+
+def test_list_tests_with_fixtures(run_reframe):
+    returncode, stdout, _ = run_reframe(
+        system='sys0',
+        checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
+        action='list',
+        environs=[]
+    )
+    assert 'Found 3 check(s)' in stdout
+    assert returncode == 0
+
+
 def test_filtering_multiple_criteria_name(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],

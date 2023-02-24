@@ -45,7 +45,7 @@ class JobSchedulerMeta(abc.ABCMeta):
         obj = cls.__new__(cls, *args, **kwargs)
         if part_name:
             obj._config_prefix = (
-                f'systems/0/paritions/@{part_name}/sched_options'
+                f'systems/0/partitions/@{part_name}/sched_options'
             )
         else:
             obj._config_prefix = 'systems/0/sched_options'

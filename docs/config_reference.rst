@@ -359,7 +359,6 @@ System Partition Configuration
    :default: ``false``
 
    Always emit the ``--nodes`` Slurm option in the preamble of the job script.
-   This option is relevant to Slurm backends only.
 
    This option is relevant for the Slurm backends only.
 

@@ -69,20 +69,26 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
         adj = u.deps
         for v in adj:
-            key = f'{type(v.check).__name__}#{v.check._rfm_fixt_data.scope}'
+            if v.check.is_fixture():
+                fixture_scope = v.check._rfm_fixt_data.scope
+                key = f'{type(v.check).__name__}#{fixture_scope}'
+                fixture_vars = fixt_to_vars[key]
+            else:
+                fixture_vars = None
+                unique_checks.add(v.check.unique_name)
+
             if concretized or (not concretized and
                                v.check.unique_name not in printed):
                 dep_lines(v, prefix=prefix + 2*' ', depth=depth+1,
                           lines=lines, printed=printed,
-                          fixt_vars=fixt_to_vars[key])
-
-            printed.add(v.check.unique_name)
-            if not v.check.is_fixture():
-                unique_checks.add(v.check.unique_name)
+                          fixt_vars=fixture_vars)
 
         if depth:
-            fmt_fixt_vars = " '"
-            fmt_fixt_vars += " '".join(fixt_vars)
+            if fixt_vars:
+                fmt_fixt_vars = " '"
+                fmt_fixt_vars += " '".join(fixt_vars)
+            else:
+                fmt_fixt_vars = ''
 
             name_info = f'{u.check.display_name}{fmt_fixt_vars} /{u.check.hashcode}'
             tc_info = ''
