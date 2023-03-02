@@ -3,4 +3,4 @@ docutils==0.17.1 # https://github.com/sphinx-doc/sphinx/issues/9001
 jsonschema==3.2.0
 semver==2.13.0
 Sphinx==5.3.0
-sphinx-rtd-theme==1.1.1
+sphinx-rtd-theme==1.2.0
