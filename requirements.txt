@@ -15,6 +15,6 @@ requests==2.27.1; python_version == '3.6'
 requests==2.28.1; python_version >= '3.7'
 semver==2.13.0
 setuptools==59.6.0; python_version == '3.6'
-setuptools==67.1.0; python_version >= '3.7'
+setuptools==67.4.0; python_version >= '3.7'
 wcwidth==0.2.6
 #+pygelf%pygelf==0.4.0
