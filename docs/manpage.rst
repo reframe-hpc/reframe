@@ -1413,6 +1413,21 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 
+.. envvar:: RFM_PIPELINE_TIMEOUT
+
+   Timeout in seconds for advancing the pipeline in the asynchronous execution policy.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter `~config.general.purge_environment`
+      ================================== ==================
+
+   .. versionadded:: 3.10.0
+
+
 .. envvar:: RFM_PREFIX
 
    General directory prefix for ReFrame-generated directories.

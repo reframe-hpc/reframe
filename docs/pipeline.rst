@@ -197,6 +197,22 @@ To control the concurrency of the ReFrame execution context, users should set th
    Execution contexts were formalized.
 
 
+---------------------------------------------------------
+Raising the throughput of jobs in the asynchronous policy
+---------------------------------------------------------
+
+.. versionadded:: 3.10.0
+
+ReFrame's asynchronous execution policy will cycle through the tests and in every iteration it will try to advance as many as possible in a given time.
+This time is controlled by the :attr:`~config.general.pipeline_timeout` configuration option or the :envvar:`RFM_PIPELINE_TIMEOUT` environment variable.
+If this timeout value is exceeded and at least one test has progressed, ReFrame will stop processing new tests and it will try to further advance tests that have already started.
+The default value of the timeout is 10 seconds in order to give priority to tests that have already started and have a more interactive output.
+
+There are cases when some tests take too long to proceed (e.g., due to copying of large files) and as a result they are blocking more tests from starting their pipeline.
+This could lead to a sequential run of the tests and increase the time of the total run significantly.
+In these cases, you can try setting the timeout to a higher value, like 60 seconds.
+
+
 Timing the Test Pipeline
 ------------------------
 
