@@ -869,6 +869,12 @@ class Spack(BuildSystem):
     #: :default: ``[]``
     install_opts = variable(typ.List[str], value=[])
 
+    #: A list of Spack configurations in flattened YAML.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    config_opts = variable(typ.List[str], value=[])
+
     def __init__(self):
         # Set to True if the environment was auto-generated
         self._auto_env = False
@@ -880,6 +886,10 @@ class Spack(BuildSystem):
             install_tree = self.install_tree or 'opt/spack'
             ret.append(f'spack -e {self.environment} config add '
                        f'"config:install_tree:root:{install_tree}"')
+
+        if self.config_opts:
+            for opt in self.config_opts:
+                ret.append(f'spack -e {self.environment} config add "{opt}"')
 
         if self.specs:
             specs_str = ' '.join(self.specs)
