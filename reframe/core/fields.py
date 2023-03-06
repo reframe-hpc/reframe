@@ -65,9 +65,11 @@ class Field:
 class TypedField(Field):
     '''Stores a field of predefined type'''
 
-    def __init__(self, main_type, *other_types, attr_name=None):
+    def __init__(self, main_type, *other_types,
+                 attr_name=None, allow_implicit=False):
         super().__init__(attr_name)
         self._types = (main_type,) + other_types
+        self._allow_implicit = allow_implicit
         if not all(isinstance(t, type) for t in self._types):
             raise TypeError('{0} is not a sequence of types'.
                             format(self._types))
@@ -88,8 +90,9 @@ class TypedField(Field):
             self._check_type(value)
         except TypeError:
             raw_value = remove_convertible(value)
-            if raw_value is value:
-                # value was not convertible; reraise
+            if raw_value is value and not self._allow_implicit:
+                # value was not convertible and the field does not allow
+                # implicit conversions; re-raise
                 raise
 
             # Try to convert value to any of the supported types
@@ -135,35 +138,6 @@ class ConstantField(Field):
 
     def __set__(self, obj, value):
         raise ValueError('attempt to set a read-only variable')
-
-
-class TimerField(TypedField):
-    '''Stores a timer in the form of a :class:`datetime.timedelta` object'''
-
-    def __init__(self, *other_types, attr_name=None):
-        super().__init__(str, int, float, *other_types, attr_name=attr_name)
-
-    def __set__(self, obj, value):
-        value = remove_convertible(value)
-        self._check_type(value)
-        if isinstance(value, str):
-            time_match = re.match(r'^((?P<days>\d+)d)?'
-                                  r'((?P<hours>\d+)h)?'
-                                  r'((?P<minutes>\d+)m)?'
-                                  r'((?P<seconds>\d+)s)?$',
-                                  value)
-            if not time_match:
-                raise ValueError('invalid format for timer field')
-
-            value = datetime.timedelta(
-                **{k: int(v) for k, v in time_match.groupdict().items() if v}
-            ).total_seconds()
-        elif isinstance(value, float) or isinstance(value, int):
-            if value < 0:
-                raise ValueError('timer field value cannot be negative')
-
-        # Call Field's __set__() method, type checking is already performed
-        Field.__set__(self, obj, value)
 
 
 class ScopedDictField(TypedField):

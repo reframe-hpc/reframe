@@ -67,6 +67,7 @@ def test_typed_field():
     class FieldTester:
         field = fields.TypedField(ClassA)
         field_any = fields.TypedField(ClassA, str, type(None))
+        field_convertible = fields.TypedField(int, allow_implicit=True)
 
         def __init__(self, value):
             self.field = value
@@ -88,6 +89,9 @@ def test_typed_field():
     with pytest.raises(TypeError):
         tester.field_any = 3
 
+    tester.field_convertible = 1
+    tester.field_convertible = '1'
+
 
 def test_typed_field_convertible():
     class FieldTester:
@@ -103,53 +107,6 @@ def test_typed_field_convertible():
 
     with pytest.raises(TypeError):
         tester.fieldC = fields.make_convertible(None)
-
-
-def test_timer_field():
-    class FieldTester:
-        field = fields.TimerField()
-        field_maybe_none = fields.TimerField(type(None))
-
-    tester = FieldTester()
-    tester.field = '1d65h22m87s'
-    tester.field_maybe_none = None
-    assert isinstance(FieldTester.field, fields.TimerField)
-    secs = datetime.timedelta(days=1, hours=65,
-                              minutes=22, seconds=87).total_seconds()
-    assert tester.field == secs
-    tester.field = secs
-    assert tester.field == secs
-    tester.field = ''
-    assert tester.field == 0
-    with pytest.raises(ValueError):
-        tester.field = '1e'
-
-    with pytest.raises(ValueError):
-        tester.field = '-10m5s'
-
-    with pytest.raises(ValueError):
-        tester.field = '10m-5s'
-
-    with pytest.raises(ValueError):
-        tester.field = 'm10s'
-
-    with pytest.raises(ValueError):
-        tester.field = '10m10'
-
-    with pytest.raises(ValueError):
-        tester.field = '10m10m1s'
-
-    with pytest.raises(ValueError):
-        tester.field = '10m5s3m'
-
-    with pytest.raises(ValueError):
-        tester.field = '10ms'
-
-    with pytest.raises(ValueError):
-        tester.field = '10'
-
-    with pytest.raises(ValueError):
-        tester.field = -10
 
 
 def test_deprecated_field():
