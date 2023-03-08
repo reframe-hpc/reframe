@@ -873,6 +873,8 @@ class Spack(BuildSystem):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
+    #:
+    #: .. versionadded:: 4.2
     config_opts = variable(typ.List[str], value=[])
 
     def __init__(self):
@@ -889,7 +891,7 @@ class Spack(BuildSystem):
 
         config_opts += self.config_opts
         for opt in config_opts:
-       		ret.append(f'spack -e {self.environment} config add "{opt}"')
+            ret.append(f'spack -e {self.environment} config add "{opt}"')
 
         if self.specs:
             specs_str = ' '.join(self.specs)
