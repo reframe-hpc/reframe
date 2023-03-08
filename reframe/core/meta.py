@@ -8,6 +8,7 @@
 #
 
 import functools
+import inspect
 import types
 import collections
 
@@ -821,7 +822,7 @@ class RegressionTestMeta(type):
         return sorted(loggable_props + loggable_vars + loggable_params)
 
 
-def make_test(name, bases, body, methods=None, **kwargs):
+def make_test(name, bases, body, methods=None, module=None, **kwargs):
     '''Define a new test class programmatically.
 
     Using this method is completely equivalent to using the :keyword:`class`
@@ -890,13 +891,18 @@ def make_test(name, bases, body, methods=None, **kwargs):
     :param methods: A list of functions to be bound as methods to the class
         that is being created. The functions will be bound with their original
         name.
+    :param module: The module name of the new test class.
+        If :obj:`None`, the module of the caller will be used.
     :param kwargs: Any keyword arguments to be passed to the
         :class:`RegressionTestMeta` metaclass.
 
     .. versionadded:: 3.10.0
 
     .. versionchanged:: 3.11.0
-       Added the ``methods`` arguments.
+       Added the ``methods`` argument.
+
+    .. versionadded:: 4.2
+       Added the ``module`` argument.
 
     '''
     namespace = RegressionTestMeta.__prepare__(name, bases, **kwargs)
@@ -915,4 +921,11 @@ def make_test(name, bases, body, methods=None, **kwargs):
         namespace.reset(k)
 
     cls = RegressionTestMeta(name, bases, namespace, **kwargs)
+
+    if not module:
+        # Set the test's module to be that of our callers
+        caller = inspect.currentframe().f_back
+        module = caller.f_globals['__name__']
+
+    cls.__module__ = module
     return cls
