@@ -882,14 +882,14 @@ class Spack(BuildSystem):
     def emit_build_commands(self, environ):
         ret = self._create_env_cmds()
 
+        config_opts = []
         if self._auto_env:
             install_tree = self.install_tree or 'opt/spack'
-            ret.append(f'spack -e {self.environment} config add '
-                       f'"config:install_tree:root:{install_tree}"')
+            config_opts.append(f'config:install_tree:root:{install_tree}')
 
-        if self.config_opts:
-            for opt in self.config_opts:
-                ret.append(f'spack -e {self.environment} config add "{opt}"')
+        config_opts += self.config_opts
+        for opt in config_opts:
+       		ret.append(f'spack -e {self.environment} config add "{opt}"')
 
         if self.specs:
             specs_str = ' '.join(self.specs)
