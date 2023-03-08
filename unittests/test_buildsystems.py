@@ -302,6 +302,19 @@ def test_spack_no_env(environ, tmp_path):
     assert build_system.environment == 'rfm_spack_env'
 
 
+def test_spack_env_config(environ, tmp_path):
+    build_system = bs.Spack()
+    build_system.config_opts = ['section1:header1:value1', 'section2:header2:value2']
+    with osext.change_dir(tmp_path):
+        assert build_system.emit_build_commands(environ) == [
+            'spack env create -d rfm_spack_env',
+            'spack -e rfm_spack_env config add "config:install_tree:root:opt/spack"',
+            'spack -e rfm_spack_env config add "section1:header1:value1"',
+            'spack -e rfm_spack_env config add "section2:header2:value2"',
+            'spack -e rfm_spack_env install',
+        ]
+
+
 def test_easybuild(environ, tmp_path):
     build_system = bs.EasyBuild()
     build_system.easyconfigs = ['ec1.eb', 'ec2.eb']
