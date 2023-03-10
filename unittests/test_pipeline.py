@@ -1835,7 +1835,24 @@ def test_make_test_without_builtins(local_exec_ctx):
     )
 
     assert hello_cls.__name__ == 'HelloTest'
+    assert hello_cls.__module__ == 'unittests.test_pipeline'
     _run(hello_cls(), *local_exec_ctx)
+
+
+def test_make_test_with_module():
+    hello_cls = make_test(
+        'HelloTest', (rfm.RunOnlyRegressionTest,),
+        {
+            'valid_systems': ['*'],
+            'valid_prog_environs': ['*'],
+            'executable': 'echo',
+            'sanity_patterns': sn.assert_true(1)
+        },
+        module='foo'
+    )
+
+    assert hello_cls.__name__ == 'HelloTest'
+    assert hello_cls.__module__ == 'foo'
 
 
 def test_make_test_with_builtins(local_exec_ctx):
