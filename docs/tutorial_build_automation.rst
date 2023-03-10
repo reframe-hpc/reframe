@@ -108,6 +108,8 @@ By default, ReFrame will create a new Spack environment in the test's stage dire
 .. note::
    Optional spec attributes, such as ``target`` and ``os``, should be specified in :attr:`~reframe.core.buildsystems.Spack.specs` and not as install options in :attr:`~reframe.core.buildsystems.Spack.install_opts`.
 
+You can set Spack configuration options for the new environment with the :attr:`~reframe.core.buildsystems.Spack.config_opts` attribute. These options take precedence over Spack's ``spack.yaml`` defaults.
+
 Users may also specify an existing Spack environment by setting the :attr:`~reframe.core.buildsystems.Spack.environment` attribute.
 In this case, ReFrame treats the environment as a *test resource* so it expects to find it under the test's :attr:`~reframe.core.pipeline.RegressionTest.sourcesdir`, which defaults to ``'src'``.
 
