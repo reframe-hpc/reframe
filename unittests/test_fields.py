@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import datetime
 import pytest
 import semver
 import warnings

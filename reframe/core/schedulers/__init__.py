@@ -10,7 +10,6 @@
 import abc
 import time
 
-import reframe.core.fields as fields
 import reframe.core.runtime as runtime
 import reframe.core.shell as shell
 import reframe.utility.jsonext as jsonext

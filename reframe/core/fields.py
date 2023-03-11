@@ -7,9 +7,6 @@
 # Useful descriptors for advanced operations on fields
 #
 
-import datetime
-import re
-
 import reframe.utility.typecheck as types
 from reframe.core.warnings import user_deprecation_warning
 from reframe.utility import ScopedDict
