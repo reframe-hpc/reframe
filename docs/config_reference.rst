@@ -1511,6 +1511,7 @@ General Configuration
 
    ReFrame's asynchronous execution policy will try to advance as many tests as possible in their pipeline, but some tests may take too long to proceed (e.g., due to copying of large files) blocking the advancement of previously started tests.
    If this timeout value is exceeded and at least one test has progressed, ReFrame will stop processing new tests and it will try to further advance tests that have already started.
+   See :ref:`pipeline-timeout` for more guidance on how to set this.
 
    :required: No
    :default: ``10``

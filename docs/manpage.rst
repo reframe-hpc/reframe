@@ -1416,13 +1416,15 @@ Whenever an environment variable is associated with a configuration option, its 
 .. envvar:: RFM_PIPELINE_TIMEOUT
 
    Timeout in seconds for advancing the pipeline in the asynchronous execution policy.
+   See :ref:`pipeline-timeout` for more guidance on how to set this.
+
 
    .. table::
       :align: left
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter `~config.general.purge_environment`
+      Associated configuration parameter :attr:`~config.general.pipeline_timeout`
       ================================== ==================
 
    .. versionadded:: 3.10.0
