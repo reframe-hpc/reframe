@@ -40,6 +40,46 @@ def test_bool_type():
     assert typ.Bool('no') is False
 
 
+def test_duration_type():
+    assert typ.Duration(10) == 10
+    assert typ.Duration(10.5) == 10.5
+    assert typ.Duration('10') == 10
+    assert typ.Duration('10.5') == 10.5
+    assert typ.Duration('10s') == 10
+    assert typ.Duration('10m') == 600
+    assert typ.Duration('10m30s') == 630
+    assert typ.Duration('10h') == 36000
+    assert typ.Duration('1d') == 86400
+    assert typ.Duration('1d65h22m87s') == 321807
+
+    with pytest.raises(ValueError):
+        typ.Duration('1e')
+
+    with pytest.raises(ValueError):
+        typ.Duration('-10m5s')
+
+    with pytest.raises(ValueError):
+        typ.Duration('10m-5s')
+
+    with pytest.raises(ValueError):
+        typ.Duration('m10s')
+
+    with pytest.raises(ValueError):
+        typ.Duration('10m10')
+
+    with pytest.raises(ValueError):
+        typ.Duration('10m10m1s')
+
+    with pytest.raises(ValueError):
+        typ.Duration('10m5s3m')
+
+    with pytest.raises(ValueError):
+        typ.Duration('10ms')
+
+    with pytest.raises(ValueError):
+        typ.Duration(-10)
+
+
 def test_list_type():
     l = [1, 2]
     ll = [[1, 2], [3, 4]]
