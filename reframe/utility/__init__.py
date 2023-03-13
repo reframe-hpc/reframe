@@ -73,6 +73,16 @@ def _do_import_module_from_file(filename, module_name=None):
 def import_module_from_file(filename, force=False):
     '''Import module from file.
 
+    If the file location refers to a directory, the contained ``__init__.py``
+    will be loaded. If the filename resolves to a location that is within the
+    current working directory, a module name will be derived from the supplied
+    file name and Python's :func:`importlib.import_module` will be invoked to
+    actually load the module. If the file location refers to a path outside
+    the current working directory, then the module will be loaded directly
+    from the file, but it will be assigned a mangled name in
+    :obj:`sys.modules`, to avoid clashes with other modules loaded using the
+    standard import mechanism.
+
     :arg filename: The path to the filename of a Python module.
     :arg force: Force reload of module in case it is already loaded.
     :returns: The loaded Python module.
@@ -107,6 +117,54 @@ def import_module_from_file(filename, force=False):
         sys.modules.pop(module_name, None)
 
     return importlib.import_module(module_name)
+
+
+def import_module(module_name, force=False):
+    '''Import a module.
+
+    This will not invoke directly the Python import mechanism. It will first
+    derive a path from the module name and will then call
+    :func:`import_module_from_file`.
+
+    :arg module_name: The name of the module to load.
+    :arg force: Force reload of module in case it is already loaded.
+    :returns: The loaded Python module.
+
+    .. versionadded:: 4.2
+    '''
+
+    # Calculate the number of levels that we need to go up
+    for num_dots, c in enumerate(module_name):
+        if c != '.':
+            break
+
+    if num_dots:
+        prefix = './'
+        for i in range(num_dots-1):
+            prefix += '../'
+    else:
+        prefix = ''
+
+    path = prefix + module_name.lstrip('.').replace('.', '/')
+    if os.path.isdir(path):
+        path += '/__init__.py'
+    else:
+        path += '.py'
+
+    return import_module_from_file(path, force)
+
+
+def import_from_module(module_name, symbol):
+    '''Import a symbol from module.
+
+    :arg module_name: The name of the module from which to import the symbol.
+    :arg symbol: The symbol to import.
+    :returns: The value of the requested symbol.
+
+    .. versionadded:: 4.2
+    '''
+
+    return getattr(import_module(module_name), symbol)
 
 
 def allx(iterable):

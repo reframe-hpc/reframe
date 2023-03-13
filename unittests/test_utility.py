@@ -535,6 +535,36 @@ def test_import_from_file_load_namespace_package():
     assert 'unittests.resources' in sys.modules
 
 
+def test_import_module(tmp_path):
+    with osext.change_dir(tmp_path):
+        os.mkdir('foo')
+        with open('foo/__init__.py', 'w') as fp:
+            fp.write('FOO = 1\n')
+
+        with open('foo/bar.py', 'w') as fp:
+            fp.write('BAR = 2\n')
+
+        with open('foobar.py', 'w') as fp:
+            fp.write('FOOBAR = 3\n')
+
+        foo = util.import_module('foo')
+        bar = util.import_module('foo.bar')
+        foobar = util.import_module('.foobar')
+        assert foo.FOO == 1
+        assert bar.BAR == 2
+        assert foobar.FOOBAR == 3
+
+        # Test relative imports
+        with osext.change_dir('foo'):
+            foobar = util.import_module('..foobar')
+            assert foobar.FOOBAR == 3
+
+        # Test import symbol
+        assert util.import_from_module('foo', 'FOO') == 1
+        assert util.import_from_module('foo.bar', 'BAR') == 2
+        assert util.import_from_module('foobar', 'FOOBAR') == 3
+
+
 def test_ppretty_simple_types():
     assert util.ppretty(1) == repr(1)
     assert util.ppretty(1.2) == repr(1.2)
