@@ -233,6 +233,48 @@
     },
     "type": "object",
     "properties": {
+        "autodetect": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "method": {
+                                "type": "string",
+                                "enum": ["hostname", "fqdn", "xthostname"]
+                            }
+                        },
+                        "required": ["method"],
+                        "additionalProperties": false
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "method": {
+                                "type": "string",
+                                "enum": ["custom_file"]
+                            },
+                            "file": {"type": "string"}
+                        },
+                        "required": ["method", "file"],
+                        "additionalProperties": false
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "method": {
+                                "type": "string",
+                                "enum": ["custom_cmd"]
+                            },
+                            "cmd": {"type": "string"}
+                        },
+                        "required": ["method", "cmd"],
+                        "additionalProperties": false
+                    }
+                ]
+            }
+        },
         "systems": {
             "type": "array",
             "items": {
