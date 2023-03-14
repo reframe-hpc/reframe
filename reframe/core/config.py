@@ -17,6 +17,7 @@ import socket
 import reframe
 import reframe.core.settings as settings
 import reframe.utility as util
+import reframe.utility.osext as osext
 from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
@@ -60,24 +61,59 @@ def _normalize_syntax(conv):
     return _do_normalize
 
 
-def _hostname(use_fqdn, use_xthostname):
+def _hostname(methods, use_fqdn, use_xthostname):
     '''Return hostname'''
+    # We should remove this as soon as the variables `RFM_AUTODETECT_FQDN` and
+    # `RFM_AUTODETECT_XTHOSTNAME` are dropped.
+    legacy_var_methods = []
     if use_xthostname:
-        try:
-            xthostname_file = '/etc/xthostname'
-            getlogger().debug(f'Trying {xthostname_file!r}...')
-            with open(xthostname_file) as fp:
-                return fp.read()
-        except OSError as e:
-            '''Log the error and continue to the next method'''
-            getlogger().debug(f'Failed to read {xthostname_file!r}')
+        legacy_var_methods.append({'method': 'xthostname'})
 
     if use_fqdn:
-        getlogger().debug('Using FQDN...')
-        return socket.getfqdn()
+        legacy_var_methods.append({'method': 'fqdn'})
 
-    getlogger().debug('Using standard hostname...')
-    return socket.gethostname()
+    for m in legacy_var_methods + methods:
+        if m["method"] == "hostname":
+            getlogger().debug(
+                'Detecting system configuration with standard hostname'
+            )
+            return socket.gethostname()
+        elif m["method"] == "fqdn":
+            getlogger().debug('Detecting system configuration with FQDN')
+            return socket.getfqdn()
+        elif m["method"] == "xthostname":
+            xthostname_file = '/etc/xthostname'
+            getlogger().debug(
+                f'Detecting system configuration from {xthostname_file!r} '
+                f'file'
+            )
+            try:
+                with open(xthostname_file) as fp:
+                    return fp.read()
+            except OSError as e:
+                getlogger().debug(f'Failed to read {xthostname_file!r}')
+        elif m["method"] == "custom_file":
+            getlogger().debug(
+                f'Detecting system configuration from custom file: '
+                f'{m["file"]!r}'
+            )
+            try:
+                with open(m["file"]) as fp:
+                    return fp.read()
+            except OSError as e:
+                getlogger().debug(f'Failed to read {m["file"]!r}')
+        elif m["method"] == "custom_cmd":
+            getlogger().debug(
+                f'Detecting system configuration with custom command: '
+                f'{m["cmd"]!r}'
+            )
+            try:
+                completed = osext.run_command(m["cmd"])
+                return completed.stdout
+            except OSError as e:
+                getlogger().debug(
+                    f'Autodetect fail: {e}'
+                )
 
 
 class _SiteConfig:
@@ -206,10 +242,10 @@ class _SiteConfig:
                     self._site_config[sec], nc[sec]
                 )
             else:
-                if sec == 'systems':
+                if sec in {'systems', 'autodetect'}:
                     # Systems have to be inserted in the beginning of the list,
                     # since they are selected by the first matching entry in
-                    # `hostnames`.
+                    # `hostnames`. Same for autodetection methods.
                     self._site_config[sec] = nc[sec] + self._site_config[sec]
                 else:
                     self._site_config[sec] += nc[sec]
@@ -394,10 +430,8 @@ class _SiteConfig:
         self.update_config(config, filename)
 
     def _detect_system(self):
-        getlogger().debug(
-            f'Detecting system using method: {self._autodetect_meth!r}'
-        )
         hostname = _hostname(
+            self._site_config['autodetect'],
             self._autodetect_opts[self._autodetect_meth]['use_fqdn'],
             self._autodetect_opts[self._autodetect_meth]['use_xthostname'],
         )
@@ -509,8 +543,8 @@ class _SiteConfig:
         # Create local configuration for the current or the requested system
         local_config['systems'] = systems
         for name, section in site_config.items():
-            if name == 'systems':
-                # The systems sections has already been treated
+            if name == 'systems' or name == 'autodetect':
+                # The systems autodetect sections has already been treated
                 continue
 
             # Convert section to a scoped dict that will handle correctly and

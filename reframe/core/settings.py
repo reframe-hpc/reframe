@@ -8,6 +8,11 @@
 #
 
 site_configuration = {
+    "autodetect": [
+        {
+            "method": "hostname"
+        },
+    ],
     'systems': [
         {
             'name': 'generic',
