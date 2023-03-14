@@ -544,7 +544,8 @@ class _SiteConfig:
         local_config['systems'] = systems
         for name, section in site_config.items():
             if name == 'systems' or name == 'autodetect':
-                # The systems autodetect sections has already been treated
+                # The systems and autodetect sections have already been
+                # treated
                 continue
 
             # Convert section to a scoped dict that will handle correctly and
