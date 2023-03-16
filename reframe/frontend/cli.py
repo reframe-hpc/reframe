@@ -924,6 +924,7 @@ def main():
         'config_files': rt.site_config.sources,
         'data_version': runreport.DATA_VERSION,
         'hostname': socket.gethostname(),
+        'log_files': logging.log_files(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
@@ -950,7 +951,7 @@ def main():
     print_infoline('stage directory', repr(session_info['prefix_stage']))
     print_infoline('output directory', repr(session_info['prefix_output']))
     print_infoline('log files',
-                   ', '.join(repr(s) for s in logging.log_files()))
+                   ', '.join(repr(s) for s in session_info['log_files']))
     printer.info('')
     try:
         logging.getprofiler().enter_region('test processing')
