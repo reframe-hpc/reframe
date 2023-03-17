@@ -163,7 +163,7 @@ class gpu_burn_check(rfm.RunOnlyRegressionTest):
     valid_systems = ['+gpu']
     valid_prog_environs = ['+cuda', '+hip']
 
-    @run_after('init')
+    @run_before('run')
     def set_exec_opts(self):
         if self.use_dp:
             self.executable_opts += ['-d']

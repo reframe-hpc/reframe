@@ -116,6 +116,10 @@
                 },
                 "data_version": {"type": "string"},
                 "hostname": {"type": "string"},
+                "log_files": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
                 "num_cases": {"type": "number"},
                 "num_failures": {"type": "number"},
                 "num_aborted": {"type": "number"},

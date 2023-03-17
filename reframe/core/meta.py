@@ -830,7 +830,10 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
 
     .. code-block:: python
 
-       hello_cls = rfm.make_test(
+       from reframe.core.meta import make_test
+
+
+       hello_cls = make_test(
            'HelloTest', (rfm.RunOnlyRegressionTest,),
            {
                'valid_systems': ['*'],
@@ -860,6 +863,7 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
     .. code-block:: python
 
        import reframe.core.builtins as builtins
+       from reframe.core.meta import make_test
 
 
        def set_message(obj):
@@ -868,7 +872,7 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
        def validate(obj):
            return sn.assert_found(obj.message, obj.stdout)
 
-       hello_cls = rfm.make_test(
+       hello_cls = make_test(
            'HelloTest', (rfm.RunOnlyRegressionTest,),
            {
                'valid_systems': ['*'],
