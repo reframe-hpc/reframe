@@ -11,14 +11,17 @@ import sys
 import time
 import weakref
 
+import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.dependencies as dependencies
 import reframe.utility.jsonext as jsonext
+import reframe.utility.typecheck as typ
 from reframe.core.exceptions import (AbortTaskError,
                                      JobNotStartedError,
                                      FailureLimitError,
                                      ForceExitError,
+                                     RunSessionTimeout,
                                      SkipTestError,
                                      TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
@@ -26,7 +29,7 @@ from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
 ABORT_REASONS = (AssertionError, FailureLimitError,
-                 KeyboardInterrupt, ForceExitError)
+                 KeyboardInterrupt, ForceExitError, RunSessionTimeout)
 
 
 class TestCase:
@@ -132,16 +135,21 @@ def generate_testcases(checks, prepare=False):
     return cases
 
 
+def clone_testcases(cases):
+    new_cases = [tc.clone() for tc in cases]
+    return dependencies.toposort(dependencies.build_deps(new_cases)[0])
+
+
 class RegressionTask:
     '''A class representing a :class:`RegressionTest` through the regression
     pipeline.'''
 
-    def __init__(self, case, listeners=[]):
+    def __init__(self, case, listeners=None, timeout=None):
         self._case = case
         self._failed_stage = None
         self._current_stage = 'startup'
         self._exc_info = (None, None, None)
-        self._listeners = list(listeners)
+        self._listeners = listeners or []
         self._skipped = False
 
         # Reference count for dependent tests; safe to cleanup the test only
@@ -391,10 +399,10 @@ class RegressionTask:
     def cleanup(self, *args, **kwargs):
         self._safe_call(self.check.cleanup, *args, **kwargs)
 
-    def fail(self, exc_info=None):
+    def fail(self, exc_info=None, callback='on_task_failure'):
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
-        self._notify_listeners('on_task_failure')
+        self._notify_listeners(callback)
         self._perflogger.log_performance(logging.INFO, self,
                                          multiline=self._perflog_compat)
 
@@ -408,21 +416,19 @@ class RegressionTask:
         if self.failed or self._aborted:
             return
 
-        logging.getlogger().debug2('Aborting test case: {self.testcase!r}')
+        logging.getlogger().debug2(f'Aborting test case: {self.testcase!r}')
         exc = AbortTaskError()
         exc.__cause__ = cause
         self._aborted = True
         try:
-            # FIXME: we should perhaps extend the RegressionTest interface
-            # for supporting job cancelling
             if not self.zombie and self.check.job:
                 self.check.job.cancel()
         except JobNotStartedError:
-            self.fail((type(exc), exc, None))
+            self.fail((type(exc), exc, None), 'on_task_abort')
         except BaseException:
             self.fail()
         else:
-            self.fail((type(exc), exc, None))
+            self.fail((type(exc), exc, None), 'on_task_abort')
 
     def info(self):
         '''Return an info string about this task.'''
@@ -461,7 +467,11 @@ class TaskEventListener(abc.ABC):
 
     @abc.abstractmethod
     def on_task_failure(self, task):
-        '''Called when a regression test has failed.'''
+        '''Called when a RegressionTask has failed.'''
+
+    @abc.abstractmethod
+    def on_task_abort(self, task):
+        '''Called when a RegressionTask has failed.'''
 
     @abc.abstractmethod
     def on_task_success(self, task):
@@ -476,15 +486,25 @@ class Runner:
     '''Responsible for executing a set of regression tests based on an
     execution policy.'''
 
+    _timeout = fields.TypedField(typ.Duration, type(None), allow_implicit=True)
+
     def __init__(self, policy, printer=None, max_retries=0,
-                 max_failures=sys.maxsize):
+                 max_failures=sys.maxsize, reruns=0, timeout=None):
         self._policy = policy
         self._printer = printer or PrettyPrinter()
         self._max_retries = max_retries
+        self._num_reruns = reruns
+        self._timeout = timeout
+        self._t_init = timeout
+        self._global_stats = False
+        if self._num_reruns or self._timeout:
+            self._global_stats = True
+
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
         self._policy.max_failures = max_failures
+
         signal.signal(signal.SIGTERM, _handle_sigterm)
 
     @property
@@ -507,33 +527,60 @@ class Runner:
     def runall(self, testcases, restored_cases=None):
         num_checks = len({tc.check.unique_name for tc in testcases})
         self._printer.separator('short double line',
-                                'Running %d check(s)' % num_checks)
+                                f'Running {num_checks} check(s)')
         self._printer.timestamp('Started on', 'short double line')
         self._printer.info('')
         try:
+            self._t_init = time.time()
+            if self._timeout:
+                self._policy.set_expiry(self._t_init + self._timeout)
+
             self._runall(testcases)
             if self._max_retries:
                 restored_cases = restored_cases or []
                 self._retry_failed(testcases + restored_cases)
+
+            if self._timeout:
+                # Repeat the session until timeout expires
+                t_elapsed = time.time() - self._t_init
+                while self._timeout >= t_elapsed:
+                    rt = runtime.runtime()
+                    rt.next_run()
+                    self._runall(clone_testcases(testcases))
+                else:
+                    raise RunSessionTimeout('maximum session '
+                                            'duration exceeded')
+            else:
+                # Repeat the session if requested
+                for _ in range(self._num_reruns):
+                    rt = runtime.runtime()
+                    rt.next_run()
+                    self._runall(clone_testcases(testcases))
         finally:
             # Print the summary line
-            num_failures = len(self._stats.failed())
-            num_completed = len(self._stats.completed())
-            num_skipped = len(self._stats.skipped())
-            num_tasks = len(self._stats.tasks())
-            if num_failures > 0 or num_completed + num_skipped < num_tasks:
+            runid = None if self._global_stats else -1
+            num_aborted = len(self._stats.aborted(runid))
+            num_failures = len(self._stats.failed(runid))
+            num_completed = len(self._stats.completed(runid))
+            num_skipped = len(self._stats.skipped(runid))
+            num_tasks = self._stats.num_cases(runid)
+            if num_failures > 0:
                 status = 'FAILED'
+            elif num_aborted > 0:
+                status = 'ABORTED'
             else:
                 status = 'PASSED'
 
-            total_run = len(testcases)
-            total_completed = len(self._stats.completed(0))
-            total_skipped = len(self._stats.skipped(0))
+            runid = None if self._global_stats else 0
+            total_run = self._stats.num_cases(runid)
+            total_completed = len(self._stats.completed(runid))
+            total_skipped = len(self._stats.skipped(runid))
             self._printer.status(
                 status,
                 f'Ran {total_completed}/{total_run}'
                 f' test case(s) from {num_checks} check(s) '
-                f'({num_failures} failure(s), {total_skipped} skipped)',
+                f'({num_failures} failure(s), {total_skipped} skipped, '
+                f'{num_aborted} aborted)',
                 just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
@@ -601,6 +648,18 @@ class ExecutionPolicy(abc.ABC):
         # Task event listeners
         self.task_listeners = []
         self.stats = None
+
+        # Expiration time
+        self._t_expire = None
+
+    def set_expiry(self, t_point):
+        self._t_expire = t_point
+
+    def timeout_expired(self):
+        if self._t_expire is None:
+            return False
+
+        return time.time() >= self._t_expire
 
     def enter(self):
         self._num_failed_tasks = 0

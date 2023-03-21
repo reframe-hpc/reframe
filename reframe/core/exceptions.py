@@ -101,6 +101,10 @@ class FailureLimitError(ReframeError):
     '''Raised when the limit of test failures has been reached.'''
 
 
+class RunSessionTimeout(ReframeError):
+    '''Raised when the maximum duration for a test session expires.'''
+
+
 class AbortTaskError(ReframeError):
     '''Raised by the runtime inside a regression task to denote that it has
     been aborted due to an external reason (e.g., keyboard interrupt, fatal
@@ -353,6 +357,12 @@ def is_severe(exc_type, exc_value, tb):
 
     # User errors are treated as soft
     return not is_user_error(exc_type, exc_value, tb)
+
+
+def is_warning(exc_type, exc_value, tb):
+    '''Check whether this exception can be treated as warning'''
+
+    return isinstance(exc_value, (RunSessionTimeout, KeyboardInterrupt))
 
 
 def what(exc_type, exc_value, tb):
