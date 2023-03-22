@@ -18,7 +18,7 @@ from reframe.core.warnings import suppress_deprecations
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
 
-DATA_VERSION = '3.0'
+DATA_VERSION = '3.1'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
 
 
