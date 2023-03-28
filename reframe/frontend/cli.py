@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import functools
 import inspect
 import itertools
 import json
@@ -1369,6 +1370,23 @@ def main():
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
                 )
+            else:
+                # Add a symlink to the latest report
+                with osext.change_dir(basedir):
+                    link_name = 'latest.json'
+                    create_symlink = functools.partial(
+                        os.symlink, os.path.basename(report_file), link_name
+                    )
+                    if not os.path.exists(link_name):
+                        create_symlink()
+                    else:
+                        if os.path.islink(link_name):
+                            os.remove(link_name)
+                            create_symlink()
+                        else:
+                            printer.warning('could not create a symlink '
+                                            'to the latest report file; '
+                                            'path exists and is not a symlink')
 
             # Generate the junit xml report for this session
             junit_report_file = rt.get_option('general/0/report_junit')
