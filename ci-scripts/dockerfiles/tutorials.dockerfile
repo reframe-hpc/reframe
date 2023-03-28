@@ -3,7 +3,7 @@
 #
 
 
-FROM reframehpc/rfm-ci-base:lmod
+FROM ghcr.io/reframe-hpc/rfm-ci-base:lmod
 
 ENV _SPACK_VER=0.16
 ENV _EB_VER=4.4.1
