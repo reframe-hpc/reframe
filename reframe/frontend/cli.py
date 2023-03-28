@@ -515,8 +515,10 @@ def main():
         envvar='RFM_CONFIG_FILES :'
     )
     misc_options.add_argument(
-        '--detect-host-topology', action='store', nargs='?', const='-',
-        help='Detect the local host topology and exit'
+        '--detect-host-topology', metavar='FILE', action='store',
+        nargs='?', const='-',
+        help=('Detect the local host topology and exit, '
+              'optionally saving it in FILE')
     )
     misc_options.add_argument(
         '--failure-stats', action='store_true', help='Print failure statistics'
