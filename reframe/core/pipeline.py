@@ -963,7 +963,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :default: :class:`True`
     build_locally = variable(typ.Bool, value=True, loggable=True)
 
-    #: .. versionadded:: ??
+    #: .. versionadded:: 4.2
     #:
     #: Options for CI pipeline passed in JSON format
     #:
@@ -974,8 +974,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: `dict`
     #: :default: ``{}``
-    ci_options = variable(typ.Dict[str, object],
-                          value={}, loggable=True)
+    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object],
+                          value={}, loggable=False)
 
     # Special variables
 
