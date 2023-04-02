@@ -459,6 +459,20 @@ Options controlling ReFrame execution
    .. versionadded:: 3.11.0
 
 
+.. option:: --duration=TIMEOUT
+
+   Run the test session repeatedly until the specified timeout expires.
+
+   ``TIMEOUT`` can be specified in one of the following forms:
+
+   - ``<int>`` or ``<float>``: number of seconds
+   - ``<days>d<hours>h<minutes>m<seconds>s``: a string denoting days, hours, minutes and/or seconds.
+
+   At the end, failures from every run will be reported and, similarly, the failure statistics printed by the :option:`--failure-stats` option will include all runs.
+
+   .. versionadded:: 4.2
+
+
 .. option:: --exec-order=ORDER
 
    Impose an execution order for the independent tests.
@@ -530,6 +544,24 @@ Options controlling ReFrame execution
       Repeating tests with dependencies is not supported, but you can repeat tests that use fixtures.
 
    .. versionadded:: 3.12.0
+
+
+.. option:: --reruns=N
+
+   Rerun the whole test session ``N`` times.
+
+   In total, the selected tests will run ``N+1`` times as the first time does not count as a rerun.
+
+   At the end, failures from every run will be reported and, similarly, the failure statistics printed by the :option:`--failure-stats` option will include all runs.
+
+   Although similar to :option:`--repeat`, this option behaves differently.
+   This option repeats the *whole* test session multiple times.
+   All the tests of the session will finish before a new run is started.
+   The :option:`--repeat` option on the other hand generates clones of the selected tests and schedules them for running in a single session.
+   As a result, all the test clones will run (by default) concurrently.
+
+   .. versionadded:: 4.2
+
 
 .. option:: --restore-session [REPORT1[,REPORT2,...]]
 

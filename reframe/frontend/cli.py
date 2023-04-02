@@ -402,7 +402,7 @@ def main():
               'is in STATE (default: "idle"')
     )
     run_options.add_argument(
-        '--duration', action='store', metavar='TIME',
+        '--duration', action='store', metavar='TIMEOUT',
         help='Run the test session repeatedly for the specified duration'
     )
     run_options.add_argument(
