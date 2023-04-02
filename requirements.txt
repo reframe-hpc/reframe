@@ -1,5 +1,5 @@
 archspec==0.2.0
-argcomplete==2.0.0
+argcomplete==3.0.5
 coverage==6.2; python_version < '3.7'
 coverage==7.2.1; python_version >= '3.7'
 importlib_metadata==4.0.1; python_version < '3.8'
