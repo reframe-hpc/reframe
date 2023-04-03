@@ -974,8 +974,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: `dict`
     #: :default: ``{}``
-    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object],
-                          value={}, loggable=False)
+    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object], value={})
 
     # Special variables
 
