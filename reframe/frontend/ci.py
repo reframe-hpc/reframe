@@ -7,8 +7,8 @@ import os
 import sys
 import yaml
 
-import reframe.core.exceptions as errors
 import reframe.core.runtime as runtime
+from reframe.core.exceptions import ReframeError
 
 
 def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
@@ -46,6 +46,19 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
             *child_pipeline_opts
         ])
 
+    def _valid_ci_extras(extras):
+        '''Validate Gitlab CI pipeline extras'''
+
+        for kwd in ('stage', 'script', 'needs'):
+            if kwd in extras:
+                errmsg = f"invalid keyword found: {kwd!r}"
+                if kwd == 'script':
+                    errmsg += " (use 'before_script' or 'after_script')"
+
+                raise ReframeError(f"could not validate 'ci_extras': {errmsg}")
+
+        return extras
+
     max_level = 0   # We need the maximum level to generate the stages section
     json = {
         'cache': {
@@ -62,14 +75,19 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
         json['image'] = image_name
 
     for tc in testcases:
+        ci_extras = _valid_ci_extras(tc.check.ci_extras.get('gitlab', {}))
+        extra_artifacts = ci_extras.pop('artifacts', {})
+        extra_artifact_paths = extra_artifacts.pop('paths', [])
         json[f'{tc.check.unique_name}'] = {
             'stage': f'rfm-stage-{tc.level}',
             'script': [rfm_command(tc)],
             'artifacts': {
-                'paths': [f'{tc.check.unique_name}-report.json']
+                'paths': [f'{tc.check.unique_name}-report.json',
+                          *extra_artifact_paths],
+                **extra_artifacts
             },
             'needs': [t.check.unique_name for t in tc.deps],
-            **tc.check.ci_extras.get('gitlab', {})
+            **ci_extras
         }
         max_level = max(max_level, tc.level)
 
@@ -79,7 +97,7 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
 
 def emit_pipeline(fp, testcases, child_pipeline_opts=None, backend='gitlab'):
     if backend != 'gitlab':
-        raise errors.ReframeError(f'unknown CI backend {backend!r}')
+        raise ReframeError(f'unknown CI backend {backend!r}')
 
     child_pipeline_opts = child_pipeline_opts or []
     yaml.dump(_emit_gitlab_pipeline(testcases, child_pipeline_opts), stream=fp,
