@@ -3,7 +3,7 @@
 #
 
 
-FROM reframehpc/rfm-ci-base:lmod
+FROM ghcr.io/reframe-hpc/rfm-ci-base:lmod
 
 # ReFrame user
 RUN useradd -ms /bin/bash rfmuser

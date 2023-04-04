@@ -225,6 +225,7 @@ def test_report_file_with_sessionid(run_reframe, tmp_path, run_action):
     )
     assert returncode == 0
     assert os.path.exists(tmp_path / 'rfm-report-0.json')
+    assert os.readlink(tmp_path / 'latest.json') == 'rfm-report-0.json'
 
 
 def test_report_ends_with_newline(run_reframe, tmp_path, run_action):
@@ -237,6 +238,8 @@ def test_report_ends_with_newline(run_reframe, tmp_path, run_action):
     assert returncode == 0
     with open(tmp_path / 'rfm-report.json') as fp:
         assert fp.read()[-1] == '\n'
+
+    assert os.readlink(tmp_path / 'latest.json') == 'rfm-report.json'
 
 
 def test_check_submit_success(run_reframe, remote_exec_ctx, run_action):

@@ -207,7 +207,10 @@ System Configuration
    To understand the difference between the different execution contexts, please refer to ":ref:`execution-contexts`"
    For the available scheduler options, see the :attr:`~config.systems.partitions.sched_options` in the partition configuration below.
 
-   .. versionadded:: 4.0.0
+   .. versionadded:: 4.1
+
+   .. warning::
+      This option is broken in 4.0.
 
 
 ------------------------------
@@ -307,8 +310,10 @@ System Partition Configuration
    Scheduler-specific options for this partition.
    See below for the available options.
 
-   .. versionadded:: 4.0.0
+   .. versionadded:: 4.1
 
+   .. warning::
+      This option is broken in 4.0.
 
 .. py:attribute:: systems.partitions.sched_options.ignore_reqnodenotavail
 
@@ -1511,6 +1516,7 @@ General Configuration
 
    ReFrame's asynchronous execution policy will try to advance as many tests as possible in their pipeline, but some tests may take too long to proceed (e.g., due to copying of large files) blocking the advancement of previously started tests.
    If this timeout value is exceeded and at least one test has progressed, ReFrame will stop processing new tests and it will try to further advance tests that have already started.
+   See :ref:`pipeline-timeout` for more guidance on how to set this.
 
    :required: No
    :default: ``10``

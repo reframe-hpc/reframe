@@ -10,7 +10,6 @@
 import abc
 import time
 
-import reframe.core.fields as fields
 import reframe.core.runtime as runtime
 import reframe.core.shell as shell
 import reframe.utility.jsonext as jsonext
@@ -261,7 +260,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    time_limit = variable(type(None), field=fields.TimerField, value=None)
+    time_limit = variable(type(None), typ.Duration,
+                          value=None, allow_implicit=True)
 
     #: Maximum pending time for this job.
     #:
@@ -273,8 +273,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    max_pending_time = variable(type(None),
-                                field=fields.TimerField, value=None)
+    max_pending_time = variable(type(None), typ.Duration,
+                                value=None, allow_implicit=True)
 
     #: Arbitrary options to be passed to the backend job scheduler.
     #:

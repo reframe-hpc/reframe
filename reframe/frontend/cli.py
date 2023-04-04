@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import functools
 import inspect
 import itertools
 import json
@@ -515,8 +516,10 @@ def main():
         envvar='RFM_CONFIG_FILES :'
     )
     misc_options.add_argument(
-        '--detect-host-topology', action='store', nargs='?', const='-',
-        help='Detect the local host topology and exit'
+        '--detect-host-topology', metavar='FILE', action='store',
+        nargs='?', const='-',
+        help=('Detect the local host topology and exit, '
+              'optionally saving it in FILE')
     )
     misc_options.add_argument(
         '--failure-stats', action='store_true', help='Print failure statistics'
@@ -924,6 +927,7 @@ def main():
         'config_files': rt.site_config.sources,
         'data_version': runreport.DATA_VERSION,
         'hostname': socket.gethostname(),
+        'log_files': logging.log_files(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
@@ -950,7 +954,7 @@ def main():
     print_infoline('stage directory', repr(session_info['prefix_stage']))
     print_infoline('output directory', repr(session_info['prefix_output']))
     print_infoline('log files',
-                   ', '.join(repr(s) for s in logging.log_files()))
+                   ', '.join(repr(s) for s in session_info['log_files']))
     printer.info('')
     try:
         logging.getprofiler().enter_region('test processing')
@@ -1368,6 +1372,23 @@ def main():
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
                 )
+            else:
+                # Add a symlink to the latest report
+                with osext.change_dir(basedir):
+                    link_name = 'latest.json'
+                    create_symlink = functools.partial(
+                        os.symlink, os.path.basename(report_file), link_name
+                    )
+                    if not os.path.exists(link_name):
+                        create_symlink()
+                    else:
+                        if os.path.islink(link_name):
+                            os.remove(link_name)
+                            create_symlink()
+                        else:
+                            printer.warning('could not create a symlink '
+                                            'to the latest report file; '
+                                            'path exists and is not a symlink')
 
             # Generate the junit xml report for this session
             junit_report_file = rt.get_option('general/0/report_junit')

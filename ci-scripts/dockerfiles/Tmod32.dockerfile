@@ -2,7 +2,7 @@
 # Execute this from the top-level ReFrame source directory
 #
 
-FROM reframehpc/rfm-ci-base:tmod32
+FROM ghcr.io/reframe-hpc/rfm-ci-base:tmod32
 
 # ReFrame user
 RUN useradd -ms /bin/bash rfmuser
