@@ -75,8 +75,7 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
         json['image'] = image_name
 
     for tc in testcases:
-        test_ci_extras = tc.check.ci_extras or {}
-        ci_extras = _valid_ci_extras(test_ci_extras.get('gitlab', {}))
+        ci_extras = _valid_ci_extras(tc.check.ci_extras.get('gitlab', {}))
         extra_artifacts = ci_extras.pop('artifacts', {})
         extra_artifact_paths = extra_artifacts.pop('paths', [])
         json[f'{tc.check.unique_name}'] = {
