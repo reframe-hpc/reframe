@@ -965,16 +965,27 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     #: .. versionadded:: 4.2
     #:
-    #: Options for CI pipeline passed in JSON format
+    #: Extra options to be passed to the child CI pipeline generated for this
+    #: test using the :option:`--ci-generate` option.
     #:
-    #: Example: If we want a pipeline to run only when files in
-    #: backend or src/main.c have changed, we add:
+    #: This variable is a dictionary whose keys refer the CI generate backend
+    #: and the values can be in any CI backend-specific format.
     #:
-    #: ci_options = {"only": {"changes": ["backend/*", "src/main.c"]}
+    #: Currently, the only key supported is ``'gitlab'`` and the values is a
+    #: Gitlab configuration in JSON format. For example, if we want a pipeline
+    #: to run only when files in ``backend`` or ``src/main.c`` have changed,
+    #: this variable should be set as follows:
     #:
-    #: :type: `dict`
-    #: :default: ``{}``
-    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object], value={})
+    #: .. code-block:: python
+    #:
+    #:    ci_extras = {
+    #:        'only': {'changes': ['backend/*', 'src/main.c']}
+    #:    }
+    #:
+    #: :type: :class:`dict` or :class:`NoneType`
+    #: :default: :obj:`None`
+    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object], type(None),
+                         value=None)
 
     # Special variables
 
