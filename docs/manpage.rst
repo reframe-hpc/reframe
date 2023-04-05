@@ -367,10 +367,14 @@ Options controlling ReFrame output
    The file where ReFrame will store its report.
 
    The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file.
+   If the report is generated in the default location (see the :attr:`~config.general.report_file` configuration option), a symlink to the latest report named ``latest.json`` will also be created.
 
    This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :attr:`~config.general.report_file` general configuration parameter.
 
    .. versionadded:: 3.1
+
+   .. versionadded:: 4.2
+      Symlink to the latest report is now created.
 
 .. option:: --report-junit=FILE
 

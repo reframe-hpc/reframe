@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import functools
 import inspect
 import itertools
 import json
@@ -1379,36 +1378,18 @@ def main():
                     json_report['restored_cases'].append(report.case(*c))
 
             report_file = runreport.next_report_filename(report_file)
+            default_loc = os.path.dirname(
+                osext.expandvars(rt.get_default('general/report_file'))
+            )
             try:
-                with open(report_file, 'w') as fp:
-                    if rt.get_option('general/0/compress_report'):
-                        jsonext.dump(json_report, fp)
-                    else:
-                        jsonext.dump(json_report, fp, indent=2)
-                        fp.write('\n')
-
-                printer.info(f'Run report saved in {report_file!r}')
+                runreport.write_report(json_report, report_file,
+                                       rt.get_option(
+                                           'general/0/compress_report'),
+                                       os.path.dirname(report_file) == default_loc)
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
                 )
-            else:
-                # Add a symlink to the latest report
-                with osext.change_dir(basedir):
-                    link_name = 'latest.json'
-                    create_symlink = functools.partial(
-                        os.symlink, os.path.basename(report_file), link_name
-                    )
-                    if not os.path.exists(link_name):
-                        create_symlink()
-                    else:
-                        if os.path.islink(link_name):
-                            os.remove(link_name)
-                            create_symlink()
-                        else:
-                            printer.warning('could not create a symlink '
-                                            'to the latest report file; '
-                                            'path exists and is not a symlink')
 
             # Generate the junit xml report for this session
             junit_report_file = rt.get_option('general/0/report_junit')
