@@ -471,7 +471,7 @@ class TaskEventListener(abc.ABC):
 
     @abc.abstractmethod
     def on_task_abort(self, task):
-        '''Called when a RegressionTask has failed.'''
+        '''Called when a RegressionTask has aborted.'''
 
     @abc.abstractmethod
     def on_task_success(self, task):
