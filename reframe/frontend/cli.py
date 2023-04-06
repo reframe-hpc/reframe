@@ -31,7 +31,6 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
-
 from reframe.frontend.testgenerators import (distribute_tests,
                                              getallnodes, repeat_tests)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -404,6 +403,10 @@ def main():
               'is in STATE (default: "idle"')
     )
     run_options.add_argument(
+        '--duration', action='store', metavar='TIMEOUT',
+        help='Run the test session repeatedly for the specified duration'
+    )
+    run_options.add_argument(
         '--exec-order', metavar='ORDER', action='store',
         choices=['name', 'random', 'rname', 'ruid', 'uid'],
         help='Impose an execution order for independent tests'
@@ -438,6 +441,10 @@ def main():
     run_options.add_argument(
         '--repeat', action='store', metavar='N',
         help='Repeat selected tests N times'
+    )
+    run_options.add_argument(
+        '--reruns', action='store', metavar='N', default=0,
+        help='Rerun the whole test session N times', type=int
     )
     run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
@@ -1300,11 +1307,21 @@ def main():
         if options.maxfail < 0:
             raise errors.CommandLineError(
                 f'--maxfail should be a non-negative integer: '
-                f'{options.maxfail!r}'
+                f'{options.maxfail}'
+            )
+
+        if options.reruns and options.duration:
+            raise errors.CommandLineError(
+                f"'--reruns' option cannot be combined with '--duration'"
+            )
+
+        if options.reruns < 0:
+            raise errors.CommandLineError(
+                f"'--reruns' should be a non-negative integer: {options.reruns}"
             )
 
         runner = Runner(exec_policy, printer, options.max_retries,
-                        options.maxfail)
+                        options.maxfail, options.reruns, options.duration)
         try:
             time_start = time.time()
             session_info['time_start'] = time.strftime(
@@ -1319,7 +1336,7 @@ def main():
             session_info['time_elapsed'] = time_end - time_start
 
             # Print a retry report if we did any retries
-            if runner.stats.failed(run=0):
+            if options.max_retries and runner.stats.failed(run=0):
                 printer.info(runner.stats.retry_report())
 
             # Print a failure report if we had failures in the last run
@@ -1327,10 +1344,13 @@ def main():
             if runner.stats.failed():
                 success = False
                 runner.stats.print_failure_report(
-                    printer, not options.distribute
+                    printer, not options.distribute,
+                    options.duration or options.reruns
                 )
                 if options.failure_stats:
-                    runner.stats.print_failure_stats(printer)
+                    runner.stats.print_failure_stats(
+                        printer, options.duration or options.reruns
+                    )
 
             if options.performance_report:
                 printer.info(runner.stats.performance_report())
@@ -1412,7 +1432,12 @@ def main():
     except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
-        printer.error(f'run session stopped: {errors.what(*exc_info)}')
+        message = f'run session stopped: {errors.what(*exc_info)}'
+        if errors.is_warning(*exc_info):
+            printer.warning(message)
+        else:
+            printer.error(message)
+
         if errors.is_exit_request(*exc_info):
             # Print stack traces for exit requests only when TOO verbose
             printer.debug2(tb)

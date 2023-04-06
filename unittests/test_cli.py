@@ -891,7 +891,7 @@ def test_maxfail_option(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert ('Ran 2/2 test case(s) from 2 check(s) '
-            '(0 failure(s), 0 skipped)') in stdout
+            '(0 failure(s), 0 skipped, 0 aborted)') in stdout
     assert returncode == 0
 
 
@@ -928,7 +928,7 @@ def test_repeat_option(run_reframe, run_action):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert ('Ran 2/2 test case(s) from 2 check(s) '
-            '(0 failure(s), 0 skipped)') in stdout
+            '(0 failure(s), 0 skipped, 0 aborted)') in stdout
     assert returncode == 0
 
 
@@ -950,6 +950,30 @@ def test_repeat_negative(run_reframe):
         checkpath=['unittests/resources/checks/hellocheck.py']
     )
     errmsg = "argument to '--repeat' option must be a non-negative integer"
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert errmsg in stdout
+    assert returncode == 1
+
+
+def test_reruns_negative(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--reruns', '-1'],
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    errmsg = "'--reruns' should be a non-negative integer"
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert errmsg in stdout
+    assert returncode == 1
+
+
+def test_reruns_with_duration(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['--reruns=-1', '--duration=5s'],
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    errmsg = "'--reruns' option cannot be combined with '--duration'"
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert errmsg in stdout
