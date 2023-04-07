@@ -1345,6 +1345,15 @@ The additional properties for the ``httpjson`` handler are the following:
 
    These keys will be excluded from the log record that will be sent to the server.
 
+.. py:attribute:: logging.handlers..httpjson..extra_headers
+
+.. py:attribute:: logging.handlers_perflog..httpjson..extra_headers
+
+   :required: No
+   :default: ``{}``
+
+   A set of optional key/value pairs to be sent as HTTP message headers(e.g. API keys).
+   These may depend on the server configuration.
 
 The ``httpjson`` handler sends log messages in JSON format using an HTTP POST request to the specified URL.
 
@@ -1361,6 +1370,7 @@ An example configuration of this handler for performance logging is shown here:
            'data-version': '1.0'
        },
        'ignore_keys': ['check_perfvalues']
+       'extra_headers': {'Authorization': 'Token YOUR_API_TOKEN'}
    }
 
 
