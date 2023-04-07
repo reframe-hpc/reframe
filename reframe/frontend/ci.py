@@ -5,6 +5,7 @@
 
 import os
 import sys
+import copy
 import yaml
 
 import reframe.core.exceptions as errors
@@ -20,6 +21,17 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
     checkpath = config.get('general/0/check_search_path')
     recurse = config.get('general/0/check_search_recursive')
     verbosity = 'v' * config.get('general/0/verbose')
+
+    # Collect the generate CI options
+    before_script = config.get('generate-ci/0/before_script')
+    after_script = config.get('generate-ci/0/after_script')
+    artifacts = config.get('generate-ci/0/artifacts')
+    artifacts_expiry = config.get('generate-ci/0/artifacts_expiry')
+
+    # Need to append prefix to artifacts
+    artifacts = [os.path.join(prefix, a)
+                 if a in ['perflogs', 'stage', 'output']
+                 else a for a in artifacts]
 
     def rfm_command(testcase):
         # Ignore the first argument, it should be '<builtin>'
@@ -64,9 +76,13 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
     for tc in testcases:
         json[f'{tc.check.unique_name}'] = {
             'stage': f'rfm-stage-{tc.level}',
+            'before_script': copy.deepcopy(before_script),
             'script': [rfm_command(tc)],
+            'after_script': copy.deepcopy(after_script),
             'artifacts': {
-                'paths': [f'{tc.check.unique_name}-report.json']
+                'paths': [f'{tc.check.unique_name}-report.json',
+                          f'{tc.check.unique_name}-report.xml'] + artifacts,
+                'expire_in': artifacts_expiry,
             },
             'needs': [t.check.unique_name for t in tc.deps]
         }
