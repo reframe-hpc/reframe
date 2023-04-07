@@ -1065,7 +1065,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_perf_lower_thres)s``, The lower threshold of the logged performance variable.
       ``%(check_perf_ref)s``, The reference value of the logged performance variable.
       ``%(check_perf_unit)s``, The measurement unit of the logged performance variable.
-      ``%(check_perf_upper)s``, The upper thresholds of the logged performance variable.
+      ``%(check_perf_upper_thres)s``, The upper threshold of the logged performance variable.
       ``%(check_perf_value)s``, The actual value of the logged performance variable.
       ``%(check_perf_var)s``, The name of the logged performance variable.
 
