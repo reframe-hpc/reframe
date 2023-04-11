@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import contextlib
+import functools
 import io
 import itertools
 import json
@@ -14,10 +15,16 @@ import sys
 import time
 
 import reframe.core.environments as env
-import reframe.frontend.runreport as runreport
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
+import reframe.frontend.runreport as runreport
+import reframe.utility.osext as osext
 import unittests.utility as test_util
+from reframe import INSTALL_PREFIX
+
+
+# Absolute path relative to the installation path
+norm_path = functools.partial(os.path.join, INSTALL_PREFIX)
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
@@ -29,7 +36,7 @@ def run_command_inline(argv, funct, *args, **kwargs):
 
     captured_stdout = io.StringIO()
     captured_stderr = io.StringIO()
-    print(*sys.argv)
+    print(f'pushd {os.getcwd()}; ', *sys.argv, '; popd')
     with contextlib.redirect_stdout(captured_stdout):
         with contextlib.redirect_stderr(captured_stderr):
             try:
@@ -48,38 +55,36 @@ def run_command_inline(argv, funct, *args, **kwargs):
 
 
 @pytest.fixture
-def perflogdir(tmp_path):
-    dirname = tmp_path / '.rfm-perflogs'
-    yield dirname
-
-
-@pytest.fixture
-def run_reframe(tmp_path, perflogdir, monkeypatch):
+def run_reframe(tmp_path, monkeypatch):
     def _run_reframe(system='generic:default',
-                     checkpath=['unittests/resources/checks/hellocheck.py'],
-                     environs=['builtin'],
+                     checkpath=None,
+                     environs=None,
                      local=True,
                      action='run',
                      more_options=None,
                      mode=None,
-                     config_file='unittests/resources/config/settings.py',
-                     perflogdir=str(perflogdir)):
+                     config_file=None,
+                     perflogdir=None):
         import reframe.frontend.cli as cli
 
-        # We always pass the --report-file option, because we don't want to
-        # pollute the user's home directory
-        argv = ['./bin/reframe', '--prefix', str(tmp_path), '--nocolor',
-                f'--report-file={tmp_path / "report.json"}']
+        argv = [norm_path('bin/reframe'), '--nocolor']
         if mode:
             argv += ['--mode', mode]
 
         if system:
             argv += ['--system', system]
 
-        if config_file:
-            argv += ['-C', config_file]
+        if config_file is None:
+            config_file = norm_path('unittests/resources/config/settings.py')
 
-        argv += itertools.chain(*(['-c', c] for c in checkpath))
+        if checkpath is None:
+            checkpath = ['unittests/resources/checks/hellocheck.py']
+
+        if environs is None:
+            environs = ['builtin']
+
+        argv += ['-C', config_file]
+        argv += itertools.chain(*(['-c', norm_path(c)] for c in checkpath))
         argv += itertools.chain(*(['-p', e] for e in environs))
         if local:
             argv += ['-S', 'local=1']
@@ -110,7 +115,8 @@ def run_reframe(tmp_path, perflogdir, monkeypatch):
         return run_command_inline(argv, cli.main)
 
     monkeypatch.setenv('HOME', str(tmp_path))
-    return _run_reframe
+    with osext.change_dir(tmp_path):
+        yield _run_reframe
 
 
 @pytest.fixture
@@ -148,7 +154,8 @@ def test_check_success(run_reframe, tmp_path, run_action):
 
     logfile = logging.log_files()[0]
     assert os.path.exists(tmp_path / 'output' / logfile)
-    assert os.path.exists(tmp_path / 'report.json')
+    assert os.path.exists(tmp_path / '.reframe' /
+                          'reports' / 'run-report-0.json')
 
 
 def test_check_restore_session_failed(run_reframe, tmp_path):
@@ -157,11 +164,9 @@ def test_check_restore_session_failed(run_reframe, tmp_path):
     )
     returncode, stdout, _ = run_reframe(
         checkpath=[],
-        more_options=[
-            f'--restore-session={tmp_path}/report.json', '--failed'
-        ]
+        more_options=['--restore-session', '--failed']
     )
-    report = runreport.load_report(f'{tmp_path}/report.json')
+    report = runreport.load_report(f'{tmp_path}/.reframe/reports/latest.json')
     assert set(report.slice('name', when=('fail_phase', 'sanity'))) == {'T2'}
     assert set(report.slice('name',
                             when=('fail_phase', 'startup'))) == {'T7', 'T9'}
@@ -179,11 +184,9 @@ def test_check_restore_session_succeeded_test(run_reframe, tmp_path):
     )
     returncode, stdout, _ = run_reframe(
         checkpath=[],
-        more_options=[
-            f'--restore-session={tmp_path}/report.json', '-n', 'T1'
-        ]
+        more_options=['--restore-session', '-n', 'T1']
     )
-    report = runreport.load_report(f'{tmp_path}/report.json')
+    report = runreport.load_report(f'{tmp_path}/.reframe/reports/latest.json')
     assert report['runs'][-1]['num_cases'] == 1
     assert report['runs'][-1]['testcases'][0]['name'] == 'T1'
 
@@ -196,10 +199,8 @@ def test_check_restore_session_check_search_path(run_reframe, tmp_path):
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py']
     )
     returncode, stdout, _ = run_reframe(
-        checkpath=[f'{tmp_path}/foo'],
-        more_options=[
-            f'--restore-session={tmp_path}/report.json', '-n', 'T1', '-R'
-        ],
+        checkpath=[f'foo/'],
+        more_options=['--restore-session', '-n', 'T1', '-R'],
         action='list'
     )
     assert returncode == 0
@@ -218,28 +219,33 @@ def test_check_success_force_local(run_reframe, tmp_path, run_action):
 
 def test_report_file_with_sessionid(run_reframe, tmp_path, run_action):
     returncode, *_ = run_reframe(
-        more_options=[
-            f'--report-file={tmp_path / "rfm-report-{sessionid}.json"}'
-        ],
+        more_options=['--report-file=report-{sessionid}.json'],
         action=run_action
     )
     assert returncode == 0
-    assert os.path.exists(tmp_path / 'rfm-report-0.json')
-    assert os.readlink(tmp_path / 'latest.json') == 'rfm-report-0.json'
+    assert os.path.exists(tmp_path / 'report-0.json')
+
+    # Assert no symlink is created when the `--report-file` is passed
+    assert not os.path.exists(tmp_path / 'latest.json')
+    assert not os.path.exists(tmp_path / '.reframe' /
+                              'reports' / 'latest.json')
 
 
 def test_report_ends_with_newline(run_reframe, tmp_path, run_action):
-    returncode, stdout, _ = run_reframe(
-        more_options=[
-            f'--report-file={tmp_path / "rfm-report.json"}'
-        ],
-        action=run_action
-    )
+    returncode, stdout, _ = run_reframe(action=run_action)
     assert returncode == 0
-    with open(tmp_path / 'rfm-report.json') as fp:
+    with open(tmp_path / '.reframe' / 'reports' / 'run-report-0.json') as fp:
         assert fp.read()[-1] == '\n'
 
-    assert os.readlink(tmp_path / 'latest.json') == 'rfm-report.json'
+
+def test_report_file_symlink_latest(run_reframe, tmp_path, run_action):
+    returncode, stdout, _ = run_reframe(action=run_action)
+    assert returncode == 0
+    assert os.path.exists(tmp_path / '.reframe' /
+                          'reports' / 'run-report-0.json')
+
+    symlink = tmp_path / '.reframe' / 'reports' / 'latest.json'
+    assert os.readlink(symlink) == 'run-report-0.json'
 
 
 def test_check_submit_success(run_reframe, remote_exec_ctx, run_action):
@@ -373,8 +379,7 @@ def test_checkpath_symlink(run_reframe, tmp_path):
     assert num_checks_in_checkdir == num_checks_default
 
 
-def test_performance_check_failure(run_reframe, tmp_path,
-                                   perflogdir, run_action):
+def test_performance_check_failure(run_reframe, tmp_path, run_action):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         more_options=['-n', 'PerformanceFailureCheck'],
@@ -395,7 +400,7 @@ def test_performance_check_failure(run_reframe, tmp_path,
         'builtin' / 'PerformanceFailureCheck'
     )
     if run_action == 'run':
-        assert os.path.exists(perflogdir / 'generic' /
+        assert os.path.exists(tmp_path / 'perflogs' / 'generic' /
                               'default' / 'PerformanceFailureCheck.log')
 
 
@@ -511,17 +516,13 @@ def test_same_output_stage_dir(run_reframe, tmp_path):
 
 def test_execution_modes(run_reframe, run_action):
     returncode, stdout, stderr = run_reframe(
-        checkpath=[],
-        environs=[],
-        local=False,
-        mode='unittest',
-        action=run_action
+        mode='unittest', action=run_action
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert 'FAILED' not in stdout
     assert 'PASSED' in stdout
-    assert 'Ran 2/2 test case' in stdout
+    assert 'Ran 1/1 test case' in stdout
 
 
 def test_invalid_mode_warning(run_reframe):
@@ -776,7 +777,7 @@ def test_quiesce_with_check(run_reframe):
 
 
 def test_load_user_modules(run_reframe, user_exec_ctx):
-    with rt.module_use('unittests/modules'):
+    with rt.module_use(norm_path('unittests/modules')):
         returncode, stdout, stderr = run_reframe(
             more_options=['-m testmod_foo'],
             action='list'
@@ -798,7 +799,7 @@ def test_unload_module(run_reframe, user_exec_ctx):
     if not test_util.has_sane_modules_system():
         pytest.skip('no modules system found')
 
-    with rt.module_use('unittests/modules'):
+    with rt.module_use(norm_path('unittests/modules')):
         ms.load_module('testmod_foo')
         returncode, stdout, stderr = run_reframe(
             more_options=['-u testmod_foo'],
@@ -817,7 +818,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx, run_action):
     if not test_util.has_sane_modules_system():
         pytest.skip('no modules system found')
 
-    module_path = 'unittests/modules'
+    module_path = norm_path('unittests/modules')
     ms.searchpath_add(module_path)
     returncode, stdout, stderr = run_reframe(
         more_options=[f'--module-path=-{module_path}', '--module=testmod_foo'],
@@ -834,7 +835,7 @@ def test_use_module_path(run_reframe, user_exec_ctx, run_action):
     if not test_util.has_sane_modules_system():
         pytest.skip('no modules system found')
 
-    module_path = 'unittests/modules'
+    module_path = norm_path('unittests/modules')
     returncode, stdout, stderr = run_reframe(
         more_options=[f'--module-path=+{module_path}', '--module=testmod_foo'],
         config_file=test_util.USER_CONFIG_FILE, action=run_action,
@@ -850,7 +851,7 @@ def test_overwrite_module_path(run_reframe, user_exec_ctx, run_action):
     if not test_util.has_sane_modules_system():
         pytest.skip('no modules system found')
 
-    module_path = 'unittests/modules'
+    module_path = norm_path('unittests/modules')
     with contextlib.suppress(KeyError):
         module_path += f':{os.environ["MODULEPATH"]}'
 
