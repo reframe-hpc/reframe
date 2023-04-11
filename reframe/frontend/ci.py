@@ -42,7 +42,7 @@ def _emit_gitlab_pipeline(testcases, child_pipeline_opts):
             f'--restore-session={restore_files}' if restore_files else '',
             f'--report-junit={testcase.check.unique_name}-report.xml',
             f'{"".join("-" + verbosity)}' if verbosity else '',
-            '-n', f"'^{testcase.check.unique_name}$'", '-r',
+            '-n', f'/{testcase.check.hashcode}', '-r',
             *child_pipeline_opts
         ])
 

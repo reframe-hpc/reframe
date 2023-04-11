@@ -1131,8 +1131,8 @@ def test_perf_logging(make_runner, make_exec_ctx, perf_test,
             ),
             perffmt=(
                 '%(check_perf_value)s,%(check_perf_unit)s,'
-                '%(check_perf_ref)s,%(check_perf_lower)s,'
-                '%(check_perf_upper)s,'
+                '%(check_perf_ref)s,%(check_perf_lower_thres)s,'
+                '%(check_perf_upper_thres)s,'
             )
         )
     )
@@ -1309,8 +1309,8 @@ def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
             ),
             perffmt=(
                 '%(check_perf_value)s,%(check_perf_unit)s,'
-                '%(check_perf_ref)s,%(check_perf_lower)s,'
-                '%(check_perf_upper)s,'
+                '%(check_perf_ref)s,%(check_perf_lower_thres)s,'
+                '%(check_perf_upper_thres)s,'
             )
         )
     )
