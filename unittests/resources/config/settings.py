@@ -241,7 +241,7 @@ site_configuration = {
         {
             'name': 'unittest',
             'options': [
-                '-c unittests/resources/checks/hellocheck.py',
+                '-n ^HelloTest$',
                 '-p builtin',
                 '-S local=1'
             ]

@@ -11,6 +11,7 @@ import time
 import reframe.core.runtime as rt
 import reframe.utility as util
 from reframe.core.exceptions import (FailureLimitError,
+                                     RunSessionTimeout,
                                      SkipTestError,
                                      TaskDependencyError,
                                      TaskExit)
@@ -129,7 +130,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                        task.testcase.environ,
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                        sched_options=self.sched_options)
-
             task.compile()
             task.compile_wait()
             task.run()
@@ -186,6 +186,10 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         msg = str(task.exc_info[1])
         self.printer.status('SKIP', msg, just='right')
 
+    def on_task_abort(self, task):
+        msg = f'{task.info()}'
+        self.printer.status('ABORT', msg, just='right')
+
     def on_task_failure(self, task):
         self._num_failed_tasks += 1
         msg = f'{task.info()}'
@@ -209,6 +213,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 f'maximum number of failures ({self.max_failures}) reached'
             )
 
+        if self.timeout_expired():
+            raise RunSessionTimeout('maximum session duration exceeded')
+
     def on_task_success(self, task):
         msg = f'{task.info()}'
         self.printer.status('OK', msg, just='right')
@@ -228,6 +235,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._task_index[c].ref_count -= 1
 
         _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+        if self.timeout_expired():
+            raise RunSessionTimeout('maximum session duration exceeded')
 
     def exit(self):
         # Clean up all remaining tasks
@@ -338,7 +347,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     1 if t.state in ('running', 'compiling') else 0
                     for t in self._current_tasks
                 )
-
                 timeout = rt.runtime().get_option(
                     'general/0/pipeline_timeout'
                 )
@@ -358,10 +366,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                         'retired', 'completed', num_retired_actual
                     )
 
+                if self.timeout_expired():
+                    raise RunSessionTimeout(
+                        'maximum session duration exceeded'
+                    )
+
                 if num_running:
                     self._pollctl.snooze()
             except ABORT_REASONS as e:
-                self._failall(e)
+                self._abortall(e)
                 raise
 
         if self._pipeline_statistics:
@@ -562,8 +575,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         return any(self._task_index[c].skipped
                    for c in task.testcase.deps if c in self._task_index)
 
-    def _failall(self, cause):
+    def _abortall(self, cause):
         '''Mark all tests as failures'''
+
         getlogger().debug2(f'Aborting all tasks due to {type(cause).__name__}')
         for task in self._current_tasks:
             with contextlib.suppress(FailureLimitError):
@@ -589,6 +603,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_skip(self, task):
         msg = str(task.exc_info[1])
         self.printer.status('SKIP', msg, just='right')
+
+    def on_task_abort(self, task):
+        msg = f'{task.info()}'
+        self.printer.status('ABORT', msg, just='right')
 
     def on_task_failure(self, task):
         self._num_failed_tasks += 1

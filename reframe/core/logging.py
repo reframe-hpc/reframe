@@ -280,8 +280,8 @@ class CheckFieldFormatter(logging.Formatter):
                 'check_perf_value': val,
                 'check_perf_unit': unit,
                 'check_perf_ref': ref,
-                'check_perf_lower': lower,
-                'check_perf_upper': upper
+                'check_perf_lower_thres': lower,
+                'check_perf_upper_thres': upper
             }
             try:
                 chunks.append(self.__fmtperf % record)

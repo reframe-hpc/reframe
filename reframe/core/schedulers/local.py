@@ -98,7 +98,7 @@ class LocalJobScheduler(sched.JobScheduler):
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
             # group, so ignore this error
-            self.log(f'pid {job.jobid} already dead or assigned elsewhere')
+            self.log(f'pid {job.jobid} already dead')
         finally:
             # Close file handles
             job.f_stdout.close()
@@ -107,8 +107,15 @@ class LocalJobScheduler(sched.JobScheduler):
 
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
-        os.killpg(job.jobid, signal.SIGTERM)
-        job._signal = signal.SIGTERM
+        try:
+            os.killpg(job.jobid, signal.SIGTERM)
+            job._signal = signal.SIGTERM
+        except (ProcessLookupError, PermissionError):
+            # Job has finished already, close file handles
+            self.log(f'pid {job.jobid} already dead')
+            job.f_stdout.close()
+            job.f_stderr.close()
+            job._state = 'FAILURE'
 
     def cancel(self, job):
         '''Cancel job.

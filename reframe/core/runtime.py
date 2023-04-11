@@ -170,9 +170,22 @@ class RuntimeContext:
         :returns: The value of the option.
 
         .. versionchanged:: 3.11.0
-          Add ``default`` named argument.
+           Add ``default`` named argument.
         '''
         return self._site_config.get(option, default=default)
+
+    def get_default(self, option):
+        '''Get the default value for the option as defined in the configuration
+        schema.
+
+        :arg option: The option whose default value is requested
+        :returns: The default value of the requested option
+        :raises KeyError: if option does not have a default value
+
+        .. versionadded:: 4.2
+        '''
+
+        return self._site_config.schema['defaults'][option]
 
 
 # Global resources for the current host

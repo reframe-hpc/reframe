@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import inspect
+import itertools
 import os
 import shutil
 import traceback
@@ -37,10 +38,13 @@ class TestStats:
         self._alltasks[current_run].append(task)
 
     def tasks(self, run=-1):
-        try:
-            return self._alltasks[run]
-        except IndexError:
-            raise errors.StatisticsError(f'no such run: {run}') from None
+        if run is None:
+            yield from itertools.chain(*self._alltasks)
+        else:
+            try:
+                yield from self._alltasks[run]
+            except IndexError:
+                raise errors.StatisticsError(f'no such run: {run}') from None
 
     def failed(self, run=-1):
         return [t for t in self.tasks(run) if t.failed]
@@ -55,7 +59,11 @@ class TestStats:
         return [t for t in self.tasks(run) if t.completed]
 
     def num_cases(self, run=-1):
-        return len(self.tasks(run))
+        return sum(1 for _ in self.tasks(run))
+
+    @property
+    def num_runs(self):
+        return len(self._alltasks)
 
     def retry_report(self):
         # Return an empty report if no retries were done.
@@ -229,7 +237,8 @@ class TestStats:
 
         return self._run_data
 
-    def print_failure_report(self, printer, rerun_info=True):
+    def print_failure_report(self, printer, rerun_info=True,
+                             global_stats=False):
         def _head_n(filename, prefix, num_lines=10):
             # filename and prefix are `None` before setup
             if filename is None or prefix is None:
@@ -251,73 +260,83 @@ class TestStats:
 
             return lines
 
-        line_width = shutil.get_terminal_size()[0]
-        printer.info(line_width * '=')
-        printer.info('SUMMARY OF FAILURES')
-        run_report = self.json()[-1]
-        last_run = run_report['runid']
-        for r in run_report['testcases']:
-            if r['result'] in {'success', 'aborted', 'skipped'}:
-                continue
-
-            retry_info = (
-                f'(for the last of {last_run} retries)' if last_run > 0 else ''
-            )
+        def _print_failure_info(rec, runid, total_runs):
             printer.info(line_width * '-')
-            printer.info(f"FAILURE INFO for {r['unique_name']} {retry_info}")
-            printer.info(f"  * Expanded name: {r['display_name']}")
-            printer.info(f"  * Description: {r['description']}")
-            printer.info(f"  * System partition: {r['system']}")
-            printer.info(f"  * Environment: {r['environment']}")
-            printer.info(f"  * Stage directory: {r['stagedir']}")
+            printer.info(f"FAILURE INFO for {rec['display_name']} "
+                         f"(run: {runid}/{total_runs})")
+            printer.info(f"  * Description: {rec['description']}")
+            printer.info(f"  * System partition: {rec['system']}")
+            printer.info(f"  * Environment: {rec['environment']}")
+            printer.info(f"  * Stage directory: {rec['stagedir']}")
             printer.info(
-                f"  * Node list: {util.nodelist_abbrev(r['nodelist'])}"
+                f"  * Node list: {util.nodelist_abbrev(rec['nodelist'])}"
             )
-            job_type = 'local' if r['scheduler'] == 'local' else 'batch job'
-            printer.info(f"  * Job type: {job_type} (id={r['jobid']})")
+            job_type = 'local' if rec['scheduler'] == 'local' else 'batch job'
+            printer.info(f"  * Job type: {job_type} (id={rec['jobid']})")
             printer.info(f"  * Dependencies (conceptual): "
-                         f"{r['dependencies_conceptual']}")
+                         f"{rec['dependencies_conceptual']}")
             printer.info(f"  * Dependencies (actual): "
-                         f"{r['dependencies_actual']}")
-            printer.info(f"  * Maintainers: {r['maintainers']}")
-            printer.info(f"  * Failing phase: {r['fail_phase']}")
-            if rerun_info and not r['fixture']:
-                printer.info(f"  * Rerun with '-n /{r['hash']}"
-                             f" -p {r['environment']} --system "
-                             f"{r['system']} -r'")
+                         f"{rec['dependencies_actual']}")
+            printer.info(f"  * Maintainers: {rec['maintainers']}")
+            printer.info(f"  * Failing phase: {rec['fail_phase']}")
+            if rerun_info and not rec['fixture']:
+                printer.info(f"  * Rerun with '-n /{rec['hash']}"
+                             f" -p {rec['environment']} --system "
+                             f"{rec['system']} -r'")
 
-            msg = r['fail_reason']
-            if isinstance(r['fail_info']['exc_value'], errors.SanityError):
+            msg = rec['fail_reason']
+            if isinstance(rec['fail_info']['exc_value'], errors.SanityError):
                 lines = [msg]
-                lines += _head_n(r['job_stdout'], prefix = r['stagedir'])
-                lines += _head_n(r['job_stderr'], prefix = r['stagedir'])
+                lines += _head_n(rec['job_stdout'], prefix=rec['stagedir'])
+                lines += _head_n(rec['job_stderr'], prefix=rec['stagedir'])
                 msg = '\n'.join(lines)
 
             printer.info(f"  * Reason: {msg}")
 
-            tb = ''.join(traceback.format_exception(*r['fail_info'].values()))
-            if r['fail_severe']:
+            tb = ''.join(traceback.format_exception(
+                *rec['fail_info'].values()))
+            if rec['fail_severe']:
                 printer.info(tb)
             else:
                 printer.verbose(tb)
 
+        line_width = shutil.get_terminal_size()[0]
+        printer.info(line_width * '=')
+        printer.info('SUMMARY OF FAILURES')
+
+        run_report = self.json()
+        for run_no, run_info in enumerate(run_report, start=1):
+            if not global_stats and run_no != len(run_report):
+                continue
+
+            for r in run_info['testcases']:
+                if r['result'] in {'success', 'aborted', 'skipped'}:
+                    continue
+
+                _print_failure_info(r, run_no, len(run_report))
+
         printer.info(line_width * '-')
 
-    def print_failure_stats(self, printer):
+    def print_failure_stats(self, printer, global_stats=False):
+        if global_stats:
+            runid = None
+        else:
+            runid = rt.runtime().current_run
+
         failures = {}
-        current_run = rt.runtime().current_run
-        for tf in (t for t in self.tasks(current_run) if t.failed):
-            check = tf.check
-            partition = check.current_partition
-            partfullname = partition.fullname if partition else 'None'
-            environ_name = (check.current_environ.name
-                            if check.current_environ else 'None')
-            f = (f'[{check.display_name} (uid: {check.unique_name}), '
-                 f'{environ_name}, {partfullname}]')
+        for tf in (t for t in self.tasks(runid) if t.failed):
+            check, partition, environ = tf.testcase
+            info = f'[{check.display_name}]'
+            if partition:
+                info += f' @{partition.fullname}'
+
+            if environ:
+                info += f'+{environ.name}'
+
             if tf.failed_stage not in failures:
                 failures[tf.failed_stage] = []
 
-            failures[tf.failed_stage].append(f)
+            failures[tf.failed_stage].append(info)
 
         line_width = shutil.get_terminal_size()[0]
         stats_start = line_width * '='
@@ -327,7 +346,7 @@ class TestStats:
         row_format = "{:<13} {:<5} {}"
         stats_hline = row_format.format(13*'-', 5*'-', 60*'-')
         stats_header = row_format.format('Phase', '#', 'Failing test cases')
-        num_tests = len(self.tasks(current_run))
+        num_tests = self.num_cases(runid)
         num_failures = 0
         for fl in failures.values():
             num_failures += len(fl)

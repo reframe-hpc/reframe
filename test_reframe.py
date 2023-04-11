@@ -39,7 +39,12 @@ if __name__ == '__main__':
         '--rfm-help', action='help', help='Print this help message and exit.'
     )
     options, rem_args = parser.parse_known_args()
-    test_util.USER_CONFIG_FILE = options.rfm_user_config
+
+    user_config = options.rfm_user_config
+    if user_config is not None:
+        user_config = os.path.abspath(user_config)
+
+    test_util.USER_CONFIG_FILE = user_config
     test_util.USER_SYSTEM = options.rfm_user_system
     test_util.init_runtime()
 

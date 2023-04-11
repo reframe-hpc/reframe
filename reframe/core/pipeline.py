@@ -962,6 +962,29 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :default: :class:`True`
     build_locally = variable(typ.Bool, value=True, loggable=True)
 
+    #: .. versionadded:: 4.2
+    #:
+    #: Extra options to be passed to the child CI pipeline generated for this
+    #: test using the :option:`--ci-generate` option.
+    #:
+    #: This variable is a dictionary whose keys refer the CI generate backend
+    #: and the values can be in any CI backend-specific format.
+    #:
+    #: Currently, the only key supported is ``'gitlab'`` and the values is a
+    #: Gitlab configuration in JSON format. For example, if we want a pipeline
+    #: to run only when files in ``backend`` or ``src/main.c`` have changed,
+    #: this variable should be set as follows:
+    #:
+    #: .. code-block:: python
+    #:
+    #:    ci_extras = {
+    #:        'only': {'changes': ['backend/*', 'src/main.c']}
+    #:    }
+    #:
+    #: :type: :class:`dict`
+    #: :default: ``{}``
+    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object], value={})
+
     # Special variables
 
     #: Dry-run mode
