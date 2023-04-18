@@ -789,7 +789,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         )
 
     def log_performance(self, level, task, msg=None, multiline=False):
-        if self.check is None or not self.check.is_performance_check():
+        if self.check is None:
             return
 
         self.extra['check_partition'] = task.testcase.partition.name
