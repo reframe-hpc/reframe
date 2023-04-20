@@ -1326,6 +1326,19 @@ The additional properties for the ``httpjson`` handler are the following:
    The URL to be used in the HTTP(S) request server.
 
 
+.. py:attribute:: logging.handlers..httpjson..extra_headers
+
+.. py:attribute:: logging.handlers_perflog..httpjson..extra_headers
+
+   :required: No
+   :default: ``{}``
+
+   A set of optional key/value pairs to be sent as HTTP message headers (e.g. API keys).
+   These may depend on the server configuration.
+
+   .. versionadded:: 4.2
+
+
 .. py:attribute:: logging.handlers..httpjson..extras
 
 .. py:attribute:: logging.handlers_perflog..httpjson..extras
@@ -1356,6 +1369,7 @@ An example configuration of this handler for performance logging is shown here:
        'type': 'httpjson',
        'url': 'http://httpjson-server:12345/rfm',
        'level': 'info',
+       'extra_headers': {'Authorization': 'Token YOUR_API_TOKEN'},
        'extras': {
            'facility': 'reframe',
            'data-version': '1.0'
