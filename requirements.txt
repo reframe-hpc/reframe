@@ -1,5 +1,5 @@
 archspec==0.2.0
-argcomplete==3.0.5
+argcomplete==3.0.8
 importlib_metadata==4.0.1; python_version < '3.8'
 jsonschema==3.2.0
 lxml==4.9.2
