@@ -2,5 +2,5 @@ archspec==0.2.0
 docutils==0.17.1 # https://github.com/sphinx-doc/sphinx/issues/9001
 jsonschema==3.2.0
 semver==3.0.0
-Sphinx==5.3.0
+Sphinx==7.0.0
 sphinx-rtd-theme==1.2.0
