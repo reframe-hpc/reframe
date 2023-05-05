@@ -495,7 +495,7 @@ def test_hostname_autodetection(site_config):
     # order to trigger the auto-detection
     for use_xthostname in (True, False):
         for use_fqdn in (True, False):
-            site_config.set_autodetect_meth('hostname',
-                                            use_fqdn=use_fqdn,
-                                            use_xthostname=use_xthostname)
+            site_config.set_autodetect_methods(['py::socket.gethostname',
+                                                'py::socket.getfqdn',
+                                                'cat /etc/xthostname'])
             site_config.select_subconfig()

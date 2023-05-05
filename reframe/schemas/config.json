@@ -234,47 +234,9 @@
     },
     "type": "object",
     "properties": {
-        "autodetect": {
+        "autodetect_methods": {
             "type": "array",
-            "items": {
-                "anyOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "method": {
-                                "type": "string",
-                                "enum": ["hostname", "fqdn", "xthostname"]
-                            }
-                        },
-                        "required": ["method"],
-                        "additionalProperties": false
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "method": {
-                                "type": "string",
-                                "enum": ["custom_file"]
-                            },
-                            "file": {"type": "string"}
-                        },
-                        "required": ["method", "file"],
-                        "additionalProperties": false
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "method": {
-                                "type": "string",
-                                "enum": ["custom_cmd"]
-                            },
-                            "cmd": {"type": "string"}
-                        },
-                        "required": ["method", "cmd"],
-                        "additionalProperties": false
-                    }
-                ]
-            }
+            "items": {"type": "string"}
         },
         "systems": {
             "type": "array",
@@ -555,6 +517,7 @@
     "required": ["systems", "environments", "logging"],
     "additionalProperties": false,
     "defaults": {
+        "autodetect_methods": ["py::socket.gethostname"],
         "environments/modules": [],
         "environments/env_vars": [],
         "environments/variables": [],
