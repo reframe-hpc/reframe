@@ -67,8 +67,8 @@ site_configuration = {
                     ),
                     'format_perfvars': (
                         '%(check_perf_value)s,%(check_perf_unit)s,'
-                        '%(check_perf_ref)s,%(check_perf_lower)s,'
-                        '%(check_perf_upper)s,'
+                        '%(check_perf_ref)s,%(check_perf_lower_thres)s,'
+                        '%(check_perf_upper_thres)s,'
                     ),
                     'append': True
                 }

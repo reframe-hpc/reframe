@@ -625,9 +625,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: :class:`None`
-    max_pending_time = variable(
-        type(None), field=fields.TimerField, value=None, loggable=True
-    )
+    max_pending_time = variable(type(None), typ.Duration, value=None,
+                                loggable=True, allow_implicit=True)
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
@@ -860,8 +859,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    .. versionchanged:: 3.5.1
     #:       The default value is now :class:`None` and it can be set globally
     #:       per partition via the configuration.
-    time_limit = variable(type(None), field=fields.TimerField,
-                          value=None, loggable=True)
+    time_limit = variable(type(None), typ.Duration, value=None,
+                          loggable=True, allow_implicit=True)
 
     #: .. versionadded:: 3.5.1
     #:
@@ -871,8 +870,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: :class:`None`
-    build_time_limit = variable(type(None), field=fields.TimerField,
-                                value=None, loggable=True)
+    build_time_limit = variable(type(None), typ.Duration, value=None,
+                                loggable=True, allow_implicit=True)
 
     #: .. versionadded:: 2.8
     #:
@@ -962,6 +961,29 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: boolean
     #: :default: :class:`True`
     build_locally = variable(typ.Bool, value=True, loggable=True)
+
+    #: .. versionadded:: 4.2
+    #:
+    #: Extra options to be passed to the child CI pipeline generated for this
+    #: test using the :option:`--ci-generate` option.
+    #:
+    #: This variable is a dictionary whose keys refer the CI generate backend
+    #: and the values can be in any CI backend-specific format.
+    #:
+    #: Currently, the only key supported is ``'gitlab'`` and the values is a
+    #: Gitlab configuration in JSON format. For example, if we want a pipeline
+    #: to run only when files in ``backend`` or ``src/main.c`` have changed,
+    #: this variable should be set as follows:
+    #:
+    #: .. code-block:: python
+    #:
+    #:    ci_extras = {
+    #:        'only': {'changes': ['backend/*', 'src/main.c']}
+    #:    }
+    #:
+    #: :type: :class:`dict`
+    #: :default: ``{}``
+    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object], value={})
 
     # Special variables
 

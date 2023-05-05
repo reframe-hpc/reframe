@@ -280,8 +280,8 @@ class CheckFieldFormatter(logging.Formatter):
                 'check_perf_value': val,
                 'check_perf_unit': unit,
                 'check_perf_ref': ref,
-                'check_perf_lower': lower,
-                'check_perf_upper': upper
+                'check_perf_lower_thres': lower,
+                'check_perf_upper_thres': upper
             }
             try:
                 chunks.append(self.__fmtperf % record)
@@ -473,6 +473,7 @@ def _create_httpjson_handler(site_config, config_prefix):
     extras = site_config.get(f'{config_prefix}/extras')
     ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
     json_formatter = site_config.get(f'{config_prefix}/json_formatter')
+    extra_headers = site_config.get(f'{config_prefix}/extra_headers')
     debug = site_config.get(f'{config_prefix}/debug')
 
     parsed_url = urllib.parse.urlparse(url)
@@ -514,7 +515,8 @@ def _create_httpjson_handler(site_config, config_prefix):
         getlogger().warning('httpjson: running in debug mode; '
                             'no data will be sent to the server')
 
-    return HTTPJSONHandler(url, extras, ignore_keys, json_formatter, debug)
+    return HTTPJSONHandler(url, extras, ignore_keys, json_formatter,
+                           extra_headers, debug)
 
 
 def _record_to_json(record, extras, ignore_keys):
@@ -563,7 +565,8 @@ class HTTPJSONHandler(logging.Handler):
     }
 
     def __init__(self, url, extras=None, ignore_keys=None,
-                 json_formatter=None, debug=False):
+                 json_formatter=None, extra_headers=None,
+                 debug=False):
         super().__init__()
         self._url = url
         self._extras = extras
@@ -580,6 +583,11 @@ class HTTPJSONHandler(logging.Handler):
                 "httpjson: 'json_formatter' has not the right signature: "
                 "it must be 'json_formatter(record, extras, ignore_keys)'"
             )
+
+        self._headers = {'Content-type': 'application/json',
+                         'Accept-Charset': 'UTF-8'}
+        if extra_headers:
+            self._headers.update(extra_headers)
 
         self._debug = debug
 
@@ -604,8 +612,7 @@ class HTTPJSONHandler(logging.Handler):
         try:
             requests.post(
                 self._url, data=json_record,
-                headers={'Content-type': 'application/json',
-                         'Accept-Charset': 'UTF-8'}
+                headers=self._headers
             )
         except requests.exceptions.RequestException as e:
             raise LoggingError('logging failed') from e

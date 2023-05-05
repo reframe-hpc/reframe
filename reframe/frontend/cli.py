@@ -30,7 +30,6 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
-
 from reframe.frontend.testgenerators import (distribute_tests,
                                              getallnodes, repeat_tests)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -403,6 +402,10 @@ def main():
               'is in STATE (default: "idle"')
     )
     run_options.add_argument(
+        '--duration', action='store', metavar='TIMEOUT',
+        help='Run the test session repeatedly for the specified duration'
+    )
+    run_options.add_argument(
         '--exec-order', metavar='ORDER', action='store',
         choices=['name', 'random', 'rname', 'ruid', 'uid'],
         help='Impose an execution order for independent tests'
@@ -437,6 +440,10 @@ def main():
     run_options.add_argument(
         '--repeat', action='store', metavar='N',
         help='Repeat selected tests N times'
+    )
+    run_options.add_argument(
+        '--reruns', action='store', metavar='N', default=0,
+        help='Rerun the whole test session N times', type=int
     )
     run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
@@ -515,8 +522,10 @@ def main():
         envvar='RFM_CONFIG_FILES :'
     )
     misc_options.add_argument(
-        '--detect-host-topology', action='store', nargs='?', const='-',
-        help='Detect the local host topology and exit'
+        '--detect-host-topology', metavar='FILE', action='store',
+        nargs='?', const='-',
+        help=('Detect the local host topology and exit, '
+              'optionally saving it in FILE')
     )
     misc_options.add_argument(
         '--failure-stats', action='store_true', help='Print failure statistics'
@@ -924,6 +933,7 @@ def main():
         'config_files': rt.site_config.sources,
         'data_version': runreport.DATA_VERSION,
         'hostname': socket.gethostname(),
+        'log_files': logging.log_files(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
@@ -950,7 +960,7 @@ def main():
     print_infoline('stage directory', repr(session_info['prefix_stage']))
     print_infoline('output directory', repr(session_info['prefix_output']))
     print_infoline('log files',
-                   ', '.join(repr(s) for s in logging.log_files()))
+                   ', '.join(repr(s) for s in session_info['log_files']))
     printer.info('')
     try:
         logging.getprofiler().enter_region('test processing')
@@ -1296,11 +1306,21 @@ def main():
         if options.maxfail < 0:
             raise errors.CommandLineError(
                 f'--maxfail should be a non-negative integer: '
-                f'{options.maxfail!r}'
+                f'{options.maxfail}'
+            )
+
+        if options.reruns and options.duration:
+            raise errors.CommandLineError(
+                f"'--reruns' option cannot be combined with '--duration'"
+            )
+
+        if options.reruns < 0:
+            raise errors.CommandLineError(
+                f"'--reruns' should be a non-negative integer: {options.reruns}"
             )
 
         runner = Runner(exec_policy, printer, options.max_retries,
-                        options.maxfail)
+                        options.maxfail, options.reruns, options.duration)
         try:
             time_start = time.time()
             session_info['time_start'] = time.strftime(
@@ -1315,7 +1335,7 @@ def main():
             session_info['time_elapsed'] = time_end - time_start
 
             # Print a retry report if we did any retries
-            if runner.stats.failed(run=0):
+            if options.max_retries and runner.stats.failed(run=0):
                 printer.info(runner.stats.retry_report())
 
             # Print a failure report if we had failures in the last run
@@ -1323,10 +1343,13 @@ def main():
             if runner.stats.failed():
                 success = False
                 runner.stats.print_failure_report(
-                    printer, not options.distribute
+                    printer, not options.distribute,
+                    options.duration or options.reruns
                 )
                 if options.failure_stats:
-                    runner.stats.print_failure_stats(printer)
+                    runner.stats.print_failure_stats(
+                        printer, options.duration or options.reruns
+                    )
 
             if options.performance_report:
                 printer.info(runner.stats.performance_report())
@@ -1355,15 +1378,14 @@ def main():
                     json_report['restored_cases'].append(report.case(*c))
 
             report_file = runreport.next_report_filename(report_file)
+            default_loc = os.path.dirname(
+                osext.expandvars(rt.get_default('general/report_file'))
+            )
             try:
-                with open(report_file, 'w') as fp:
-                    if rt.get_option('general/0/compress_report'):
-                        jsonext.dump(json_report, fp)
-                    else:
-                        jsonext.dump(json_report, fp, indent=2)
-                        fp.write('\n')
-
-                printer.info(f'Run report saved in {report_file!r}')
+                runreport.write_report(json_report, report_file,
+                                       rt.get_option(
+                                           'general/0/compress_report'),
+                                       os.path.dirname(report_file) == default_loc)
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
@@ -1391,7 +1413,12 @@ def main():
     except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
-        printer.error(f'run session stopped: {errors.what(*exc_info)}')
+        message = f'run session stopped: {errors.what(*exc_info)}'
+        if errors.is_warning(*exc_info):
+            printer.warning(message)
+        else:
+            printer.error(message)
+
         if errors.is_exit_request(*exc_info):
             # Print stack traces for exit requests only when TOO verbose
             printer.debug2(tb)

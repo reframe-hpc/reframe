@@ -207,7 +207,10 @@ System Configuration
    To understand the difference between the different execution contexts, please refer to ":ref:`execution-contexts`"
    For the available scheduler options, see the :attr:`~config.systems.partitions.sched_options` in the partition configuration below.
 
-   .. versionadded:: 4.0.0
+   .. versionadded:: 4.1
+
+   .. warning::
+      This option is broken in 4.0.
 
 
 ------------------------------
@@ -307,8 +310,10 @@ System Partition Configuration
    Scheduler-specific options for this partition.
    See below for the available options.
 
-   .. versionadded:: 4.0.0
+   .. versionadded:: 4.1
 
+   .. warning::
+      This option is broken in 4.0.
 
 .. py:attribute:: systems.partitions.sched_options.ignore_reqnodenotavail
 
@@ -1060,7 +1065,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_perf_lower_thres)s``, The lower threshold of the logged performance variable.
       ``%(check_perf_ref)s``, The reference value of the logged performance variable.
       ``%(check_perf_unit)s``, The measurement unit of the logged performance variable.
-      ``%(check_perf_upper)s``, The upper thresholds of the logged performance variable.
+      ``%(check_perf_upper_thres)s``, The upper threshold of the logged performance variable.
       ``%(check_perf_value)s``, The actual value of the logged performance variable.
       ``%(check_perf_var)s``, The name of the logged performance variable.
 
@@ -1321,6 +1326,19 @@ The additional properties for the ``httpjson`` handler are the following:
    The URL to be used in the HTTP(S) request server.
 
 
+.. py:attribute:: logging.handlers..httpjson..extra_headers
+
+.. py:attribute:: logging.handlers_perflog..httpjson..extra_headers
+
+   :required: No
+   :default: ``{}``
+
+   A set of optional key/value pairs to be sent as HTTP message headers (e.g. API keys).
+   These may depend on the server configuration.
+
+   .. versionadded:: 4.2
+
+
 .. py:attribute:: logging.handlers..httpjson..extras
 
 .. py:attribute:: logging.handlers_perflog..httpjson..extras
@@ -1351,6 +1369,7 @@ An example configuration of this handler for performance logging is shown here:
        'type': 'httpjson',
        'url': 'http://httpjson-server:12345/rfm',
        'level': 'info',
+       'extra_headers': {'Authorization': 'Token YOUR_API_TOKEN'},
        'extras': {
            'facility': 'reframe',
            'data-version': '1.0'
@@ -1511,6 +1530,7 @@ General Configuration
 
    ReFrame's asynchronous execution policy will try to advance as many tests as possible in their pipeline, but some tests may take too long to proceed (e.g., due to copying of large files) blocking the advancement of previously started tests.
    If this timeout value is exceeded and at least one test has progressed, ReFrame will stop processing new tests and it will try to further advance tests that have already started.
+   See :ref:`pipeline-timeout` for more guidance on how to set this.
 
    :required: No
    :default: ``10``

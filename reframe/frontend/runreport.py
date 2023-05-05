@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import decimal
+import functools
 import json
 import jsonschema
 import lxml.etree as etree
@@ -13,12 +14,14 @@ import re
 import reframe as rfm
 import reframe.core.exceptions as errors
 import reframe.utility.jsonext as jsonext
+import reframe.utility.osext as osext
+from reframe.core.logging import getlogger
 from reframe.core.warnings import suppress_deprecations
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
 
-DATA_VERSION = '3.0'
+DATA_VERSION = '3.1'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
 
 
@@ -177,6 +180,36 @@ def load_report(*filenames):
         rpt.add_fallback(_load_report(f))
 
     return rpt
+
+
+def write_report(report, filename, compress=False, link_to_last=False):
+    with open(filename, 'w') as fp:
+        if compress:
+            jsonext.dump(report, fp)
+        else:
+            jsonext.dump(report, fp, indent=2)
+            fp.write('\n')
+
+        if not link_to_last:
+            return
+
+        # Add a symlink to the latest report
+        basedir = os.path.dirname(filename)
+        with osext.change_dir(basedir):
+            link_name = 'latest.json'
+            create_symlink = functools.partial(
+                os.symlink, os.path.basename(filename), link_name
+            )
+            if not os.path.exists(link_name):
+                create_symlink()
+            else:
+                if os.path.islink(link_name):
+                    os.remove(link_name)
+                    create_symlink()
+                else:
+                    getlogger().warning('could not create a symlink '
+                                        'to the latest report file: '
+                                        'path exists and is not a symlink')
 
 
 def junit_xml_report(json_report):

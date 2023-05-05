@@ -27,8 +27,9 @@ import unittests.utility as test_util
 from lxml import etree
 from reframe.core.exceptions import (AbortTaskError,
                                      FailureLimitError,
-                                     ReframeError,
                                      ForceExitError,
+                                     ReframeError,
+                                     RunSessionTimeout,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
@@ -496,6 +497,34 @@ def test_sigterm_handling(make_runner, make_cases, common_exec_ctx):
     assert len(runner.stats.failed()) == 1
 
 
+def test_reruns(make_runner, make_cases, common_exec_ctx):
+    runner = make_runner(reruns=2)
+    test = HelloTest()
+
+    runner.runall(make_cases([test]))
+    stats = runner.stats
+    assert stats.num_runs == 3
+    assert not stats.failed(run=None)
+
+
+def test_duration_limit(make_runner, make_cases, common_exec_ctx):
+    runner = make_runner(timeout=2)
+    test = HelloTest()
+
+    with pytest.raises(RunSessionTimeout):
+        runner.runall(make_cases([test]))
+        stats = runner.stats
+
+        assert not stats.failed(run=None)
+
+        # A task may or may not be aborted depending on when the timeout
+        # expires, but if it gets aborted, only a single test can be aborted
+        # in this case for both policies.
+        num_aborted = stats.aborted(run=None)
+        if num_aborted:
+            assert num_aborted == 1
+
+
 @pytest.fixture
 def dep_checks(make_loader):
     return make_loader(
@@ -582,6 +611,9 @@ class _TaskEventMonitor(executors.TaskEventListener):
         pass
 
     def on_task_failure(self, task):
+        pass
+
+    def on_task_abort(self, task):
         pass
 
     def on_task_skip(self, task):
@@ -1099,8 +1131,8 @@ def test_perf_logging(make_runner, make_exec_ctx, perf_test,
             ),
             perffmt=(
                 '%(check_perf_value)s,%(check_perf_unit)s,'
-                '%(check_perf_ref)s,%(check_perf_lower)s,'
-                '%(check_perf_upper)s,'
+                '%(check_perf_ref)s,%(check_perf_lower_thres)s,'
+                '%(check_perf_upper_thres)s,'
             )
         )
     )
@@ -1277,8 +1309,8 @@ def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
             ),
             perffmt=(
                 '%(check_perf_value)s,%(check_perf_unit)s,'
-                '%(check_perf_ref)s,%(check_perf_lower)s,'
-                '%(check_perf_upper)s,'
+                '%(check_perf_ref)s,%(check_perf_lower_thres)s,'
+                '%(check_perf_upper_thres)s,'
             )
         )
     )

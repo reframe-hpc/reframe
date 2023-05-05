@@ -94,6 +94,7 @@ of :class:`List[int]`.
 '''
 
 import abc
+import datetime
 import re
 
 
@@ -152,19 +153,6 @@ class ConvertibleType(abc.ABCMeta):
 # container types
 
 
-class _CompositeType(abc.ABCMeta):
-    def __instancecheck__(cls, inst):
-        assert hasattr(cls, '_types') and len(cls._types) == 2
-        return (issubclass(type(inst), cls._types[0]) or
-                issubclass(type(inst), cls._types[1]))
-
-
-class _InvertedType(abc.ABCMeta):
-    def __instancecheck__(cls, inst):
-        assert hasattr(cls, '_xtype')
-        return not issubclass(type(inst), cls._xtype)
-
-
 class _BuiltinType(ConvertibleType):
     def __init__(cls, name, bases, namespace):
         # Make sure that the class defines `_type`
@@ -175,8 +163,7 @@ class _BuiltinType(ConvertibleType):
 
     def __instancecheck__(cls, inst):
         if hasattr(cls, '_types'):
-            return (issubclass(type(inst), cls._types[0]) or
-                    issubclass(type(inst), cls._types[1]))
+            return any(issubclass(type(inst), t) for t in cls._types)
 
         if hasattr(cls, '_xtype'):
             return not issubclass(type(inst), cls._xtype)
@@ -424,3 +411,50 @@ List    = make_meta_type('List', list, _SequenceType)
 Set     = make_meta_type('Set', set, _SequenceType)
 Str     = make_meta_type('Str', str, _StrType)
 Tuple   = make_meta_type('Tuple', tuple, _TupleType)
+
+
+class Duration(metaclass=ConvertibleType):
+    '''A float type that represents duration in seconds.
+
+    This type supports the following implicit conversions:
+
+    - From integer values
+    - From string values in the form of ``<days>d<hours>h<minutes>m<seconds>s``
+
+    .. versionadded:: 4.2
+
+    '''
+
+    def _assert_non_negative(val):
+        if val < 0:
+            raise ValueError('duration cannot be negative')
+
+        return val
+
+    @classmethod
+    def __rfm_cast_int__(cls, val):
+        return Duration._assert_non_negative(float(val))
+
+    @classmethod
+    def __rfm_cast_float__(cls, val):
+        return Duration._assert_non_negative(val)
+
+    @classmethod
+    def __rfm_cast_str__(cls, val):
+        # First try to convert to a float
+        try:
+            val = float(val)
+        except ValueError:
+            time_match = re.match(r'^((?P<days>\d+)d)?'
+                                  r'((?P<hours>\d+)h)?'
+                                  r'((?P<minutes>\d+)m)?'
+                                  r'((?P<seconds>\d+)s)?$',
+                                  val)
+            if not time_match:
+                raise ValueError(f'invalid duration: {val}') from None
+
+            val = datetime.timedelta(
+                **{k: int(v) for k, v in time_match.groupdict().items() if v}
+            ).total_seconds()
+
+        return Duration._assert_non_negative(val)
