@@ -1338,7 +1338,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :attr:`~config.logging.handlers..httpjson..url`
+      Associated configuration parameter :attr:`~config.logging.handlers_perflog..httpjson..url`
       ================================== ==================
 
 

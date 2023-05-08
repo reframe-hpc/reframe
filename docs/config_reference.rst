@@ -1317,16 +1317,12 @@ The ``httpjson`` log handler
 This handler sends log records in JSON format to a server using HTTP POST requests.
 The additional properties for the ``httpjson`` handler are the following:
 
-.. py:attribute:: logging.handlers..httpjson..url
-
 .. py:attribute:: logging.handlers_perflog..httpjson..url
 
    :required: Yes
 
    The URL to be used in the HTTP(S) request server.
 
-
-.. py:attribute:: logging.handlers..httpjson..extra_headers
 
 .. py:attribute:: logging.handlers_perflog..httpjson..extra_headers
 
@@ -1339,8 +1335,6 @@ The additional properties for the ``httpjson`` handler are the following:
    .. versionadded:: 4.2
 
 
-.. py:attribute:: logging.handlers..httpjson..extras
-
 .. py:attribute:: logging.handlers_perflog..httpjson..extras
 
    :required: No
@@ -1348,8 +1342,6 @@ The additional properties for the ``httpjson`` handler are the following:
 
    A set of optional key/value pairs to be passed with each log record to the server.
    These may depend on the server configuration.
-
-.. py:attribute:: logging.handlers..httpjson..ignore_keys
 
 .. py:attribute:: logging.handlers_perflog..httpjson..ignore_keys
 
@@ -1380,8 +1372,6 @@ An example configuration of this handler for performance logging is shown here:
 
 This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
 
-.. py:attribute:: logging.handlers..httpjson..debug
-
 .. py:attribute:: logging.handlers_perflog..httpjson..debug
 
    :required: No
@@ -1392,8 +1382,6 @@ This handler transmits the whole log record, meaning that all the information wi
 
    .. versionadded:: 4.1
 
-
-.. py:attribute:: logging.handlers..httpjson..json_formatter
 
 .. py:attribute:: logging.handlers_perflog..httpjson..json_formatter
 
@@ -1406,8 +1394,8 @@ This handler transmits the whole log record, meaning that all the information wi
       :arg record: The prepared log record.
          The log record is a simple Python object with all the attributes listed in :attr:`~config.logging.handlers.format`, as well as all the default Python `log record <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ attributes.
          In addition to those, there is also the special :attr:`__rfm_check__` attribute that contains a reference to the actual test for which the performance is being logged.
-      :arg extras: Any extra attributes specified in :attr:`~config.logging.handlers..httpjson..extras`.
-      :arg ignore_keys: The set of keys specified in :attr:`~config.logging.handlers..httpjson..ignore_keys`.
+      :arg extras: Any extra attributes specified in :attr:`~config.logging.handlers_perflog..httpjson..extras`.
+      :arg ignore_keys: The set of keys specified in :attr:`~config.logging.handlers_perflog..httpjson..ignore_keys`.
          ReFrame always adds the default Python log record attributes in this set.
       :returns: A string representation of the JSON record to be sent to the server or :obj:`None` if the record should not be sent to the server.
 

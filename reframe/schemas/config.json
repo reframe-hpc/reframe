@@ -415,8 +415,7 @@
                                 {"$ref": "#/defs/filelog_handler"},
                                 {"$ref": "#/defs/graylog_handler"},
                                 {"$ref": "#/defs/stream_handler"},
-                                {"$ref": "#/defs/syslog_handler"},
-                                {"$ref": "#/defs/httpjson_handler"}
+                                {"$ref": "#/defs/syslog_handler"}
                             ]
                         }
                     },
@@ -442,7 +441,8 @@
                                 {"$ref": "#/defs/filelog_handler"},
                                 {"$ref": "#/defs/graylog_handler"},
                                 {"$ref": "#/defs/stream_handler"},
-                                {"$ref": "#/defs/syslog_handler"}
+                                {"$ref": "#/defs/syslog_handler"},
+                                {"$ref": "#/defs/httpjson_handler"}
                             ]
                         }
                     },
