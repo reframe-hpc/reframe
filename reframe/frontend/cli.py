@@ -14,7 +14,6 @@ import sys
 import time
 import traceback
 
-import reframe
 import reframe.core.config as config
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
@@ -761,10 +760,11 @@ def main():
             elif options.autodetect_xthostname:
                 printer.warning(
                     "RFM_AUTODETECT_XTHOSTNAME is deprecated; "
-                    "please use RFM_AUTODETECT_METHODS='cat /etc/xthostname' "
+                    "please use RFM_AUTODETECT_METHODS='cat /etc/xthostname,hostname' "  # noqa: E501
                     "instead"
                 )
-                autodetect_methods = ['cat /etc/xthostname']
+                autodetect_methods = ['cat /etc/xthostname',
+                                      'py::socket.gethostname']
 
         if autodetect_methods:
             site_config.set_autodetect_methods(autodetect_methods)

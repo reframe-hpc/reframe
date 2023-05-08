@@ -20,9 +20,7 @@ import reframe.core.settings as settings
 import reframe.utility as util
 import reframe.utility.osext as osext
 from reframe.core.environments import normalize_module_list
-from reframe.core.exceptions import (ConfigError,
-                                     ReframeFatalError,
-                                     SpawnedProcessError)
+from reframe.core.exceptions import (ConfigError, ReframeFatalError)
 from reframe.core.logging import getlogger
 from reframe.utility import ScopedDict
 
