@@ -30,7 +30,6 @@ def load_specs():
 def generate_tests(specs):
     tests = []
     for i, spec in enumerate(specs['stream_workflows']):
-        test_body = {}
         thread_scaling = spec.pop('thread_scaling', None)
         test_body = {
             'stream_binaries': builtins.fixture(stream.stream_build,
