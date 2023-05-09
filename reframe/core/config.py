@@ -62,30 +62,10 @@ def _normalize_syntax(conv):
     return _do_normalize
 
 
-def _hostname(use_fqdn, use_xthostname):
-    '''Return hostname'''
-    if use_xthostname:
-        try:
-            xthostname_file = '/etc/xthostname'
-            getlogger().debug(f'Trying {xthostname_file!r}...')
-            with open(xthostname_file) as fp:
-                return fp.read()
-        except OSError as e:
-            '''Log the error and continue to the next method'''
-            getlogger().debug(f'Failed to read {xthostname_file!r}')
-
-    if use_fqdn:
-        getlogger().debug('Using FQDN...')
-        return socket.getfqdn()
-
-    getlogger().debug('Using standard hostname...')
-    return socket.gethostname()
-
-
 class _SiteConfig:
     def __init__(self):
         self._site_config = None
-        self._config_module = None
+        self._config_modules = []
         self._sources = []
         self._subconfigs = {}
         self._local_system = None
@@ -364,7 +344,7 @@ class _SiteConfig:
                 f"not a valid Python configuration file: '{filename}'"
             )
 
-        self._config_module = mod
+        self._config_modules.append(mod)
         self.update_config(mod.site_configuration, filename)
 
     def load_config_json(self, filename):
@@ -389,15 +369,21 @@ class _SiteConfig:
             try:
                 if module:
                     mod = importlib.import_module(module)
-                else:
-                    mod = self._config_module
+                    return getattr(mod, symbol)
 
-                if mod is None:
+                if not self._config_modules:
                     raise ConfigError(
                         f'no module context for requested symbol: {symbol!r}'
                     )
 
-                return getattr(mod, symbol)
+                # Symbol is local to one of the config files; try to resolve
+                # it in reverse order
+                for mod in reversed(self._config_modules):
+                    if hasattr(mod, symbol):
+                        return getattr(mod, symbol)
+
+                raise ConfigError(f'symbol {symbol!r} is not defined in '
+                                  f'any of the loaded configuration files')
             except (AttributeError, ImportError, ConfigError) as e:
                 getlogger().warning(f"ignoring autodetection method 'py::{m}' "
                                     f"due to errors: {e}")

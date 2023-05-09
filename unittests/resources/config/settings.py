@@ -7,6 +7,11 @@
 # Configuration file just for unit testing
 #
 
+def hostname():
+    '''Custom hostname function for testing auto-detection'''
+    return 'testsys'
+
+
 site_configuration = {
     'systems': [
         {

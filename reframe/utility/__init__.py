@@ -1062,6 +1062,21 @@ class temp_setattr:
         setattr(self._obj, self._attr, self._saved)
 
 
+class temp_sys_path:
+    '''Context manager to temporarily change the py:obj:`sys.path`.'''
+
+    def __init__(self, path):
+        self._path = path
+        self._pos = None
+
+    def __enter__(self):
+        self._pos = len(sys.path)
+        sys.path.append(self._path)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.path.pop(self._pos)
+
+
 class ScopedDict(UserDict):
     '''This is a special dictionary that imposes scopes on its keys.
 
