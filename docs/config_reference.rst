@@ -68,15 +68,15 @@ It consists of the following properties, which we also call conventionally *conf
 
    A list of system auto-detection methods for identifying the current system.
 
-   The list can contain two type of methods:
+   The list can contain two types of methods:
 
    1. Python methods: These are prefixed with ``py::`` and should point to a Python callable taking zero arguments and returning a string.
-      If the specified Python callable is not prefixed with a module, it will be looked up in the loaded configuration file chain starting from the last file in the chain.
+      If the specified Python callable is not prefixed with a module, it will be looked up in the loaded configuration files starting from the last file.
       If the requested symbol cannot be found, a warning will be issued and the method will be ignored.
    2. Shell commands: Any string not prefixed with ``py::`` will be treated as a shell command and will be executed *during auto-detection* to retrieve the hostname.
       The standard output of the command will be used.
 
-   If the :option:`--system` option is not passed, ReFrame will try to autodetect the current system trying the methods in this list one after the other, until one of them succeeds.
+   If the :option:`--system` option is not passed, ReFrame will try to autodetect the current system trying the methods in this list successively, until one of them succeeds.
    The resulting name will be matched against the :attr:`~config.systems.hostnames` patterns of each system and the system that matches first will be used as the current one.
 
    The auto-detection methods can also be controlled through the :envvar:`RFM_AUTODETECT_METHODS` environment variable.
