@@ -311,12 +311,9 @@ As discussed previously, ReFrame's configuration file can store the configuratio
 When launched, ReFrame will pick the first matching configuration and load it.
 
 ReFrame uses an auto-detection mechanism to get information about the host it is running on and uses that information to pick the right system configuration.
-Currently, only one auto-detection method is supported that retrieves the hostname.
-Based on this, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns defined in each system's ``hostnames`` property.
-The detection process stops at the first match found, and that system's configuration is selected.
-
-The auto-detection process can be controlled through the :envvar:`RFM_AUTODETECT_METHOD`, :envvar:`RFM_AUTODETECT_FQDN` and :envvar:`RFM_AUTODETECT_XTHOSTNAME` environment variables.
-
+The default auto-detection method is using the ``hostname`` command, but you can define more methods using either the :attr:`~config.autodetect_methods` configuration parameter or the :envvar:`RFM_AUTODETECT_METHODS` environment variable.
+After having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match it against the :attr:`~config.systems.hostnames` patterns defined for every system.
+The first system whose :attr:`~config.systems.hostnames` match will become the current system and its configuration will be loaded.
 
 As soon as a system configuration is selected, all configuration objects that have a ``target_systems`` property are resolved against the selected system, and any configuration object that is not applicable is dropped.
 So, internally, ReFrame keeps an *instantiation* of the site configuration for the selected system only.

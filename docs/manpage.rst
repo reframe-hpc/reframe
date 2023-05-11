@@ -1136,6 +1136,9 @@ Whenever an environment variable is associated with a configuration option, its 
    .. versionchanged:: 4.0.0
       This variable now defaults to ``0``.
 
+   .. deprecated:: 4.3
+      Please use ``RFM_AUTODETECT_METHODS=py::fqdn`` in the future.
+
 
 .. envvar:: RFM_AUTODETECT_METHOD
 
@@ -1155,6 +1158,16 @@ Whenever an environment variable is associated with a configuration option, its 
 
 
    .. versionadded:: 3.11.0
+   .. deprecated:: 4.3
+      This has no effect.
+      For setting multiple auto-detection methods, please use the :envvar:`RFM_AUTODETECT_METHODS`.
+
+.. envvar:: RFM_AUTODETECT_METHODS
+
+   A comma-separated list of system auto-detection methods.
+   Please refer to the :attr:`autodetect_methods` configuration parameter for more information on how to set this variable.
+
+   .. versionadded:: 4.3
 
 
 .. envvar:: RFM_AUTODETECT_XTHOSTNAME
@@ -1178,6 +1191,10 @@ Whenever an environment variable is associated with a configuration option, its 
 
    .. versionchanged:: 4.0.0
       This variable now defaults to ``0``.
+
+   .. deprecated:: 4.3
+      Please use ``RFM_AUTODETECT_METHODS='cat /etc/xthostname,hostname'`` in the future.
+
 
 .. envvar:: RFM_CHECK_SEARCH_PATH
 
