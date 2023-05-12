@@ -234,6 +234,10 @@
     },
     "type": "object",
     "properties": {
+        "autodetect_methods": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
         "systems": {
             "type": "array",
             "items": {
@@ -513,6 +517,7 @@
     "required": ["systems", "environments", "logging"],
     "additionalProperties": false,
     "defaults": {
+        "autodetect_methods": ["py::socket.gethostname"],
         "environments/modules": [],
         "environments/env_vars": [],
         "environments/variables": [],

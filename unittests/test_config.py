@@ -5,6 +5,7 @@
 
 import json
 import pytest
+import sys
 
 import reframe.core.config as config
 import reframe.utility as util
@@ -18,7 +19,8 @@ def generate_partial_configs(tmp_path):
     part2 = tmp_path / 'settings-part2.py'
     part3 = tmp_path / 'settings-part3.py'
     mod = util.import_module_from_file(
-        'unittests/resources/config/settings.py')
+        'unittests/resources/config/settings.py'
+    )
     full_config = mod.site_configuration
 
     config_1 = {
@@ -37,7 +39,11 @@ def generate_partial_configs(tmp_path):
         'logging': full_config['logging'],
         'general': full_config['general'][3:],
     }
-    part1.write_text(f'site_configuration = {config_1!r}')
+
+    # We need to make sure that the custom hostname function is in one of the
+    # files
+    part1.write_text(f'def hostname(): return "testsys"\n'
+                     f'site_configuration = {config_1!r}')
     part2.write_text(f'site_configuration = {config_2!r}')
     part3.write_text(f'site_configuration = {config_3!r}')
     return part1, part2, part3
@@ -488,6 +494,56 @@ def test_variables(tmp_path):
     assert system.partitions[0].local_env.env_vars == {'FOO_GPU': 'yes'}
 
 
+def test_autodetect_meth_python(site_config, tmp_path):
+    moduledir = tmp_path / 'mymod'
+    moduledir.mkdir()
+    with open(moduledir / '__init__.py', 'w') as fp:
+        fp.write('def foo():\n\treturn "sys12"\n')
+
+    site_config.set_autodetect_methods(['py::mymod.foo'])
+    with util.temp_sys_path(str(tmp_path)):
+        site_config.select_subconfig()
+
+    assert site_config.get('systems/0/name') == 'sys0'
+
+    # Uncache the module
+    del sys.modules['mymod']
+
+
+def test_autodetect_meth_python_inline(site_config):
+    site_config.set_autodetect_methods(['py::hostname'])
+    site_config.select_subconfig()
+    assert site_config.get('systems/0/name') == 'testsys'
+
+
+def test_autodetect_meth_python_errors(site_config):
+    site_config.set_autodetect_methods(['py::mymod.foo'])
+    with pytest.raises(ConfigError):
+        site_config.select_subconfig()
+
+    site_config.set_autodetect_methods(['py::foo'])
+    with pytest.raises(ConfigError):
+        site_config.select_subconfig()
+
+
+def test_autodetect_meth_shell(site_config):
+    site_config.set_autodetect_methods(['echo testsys'])
+    site_config.select_subconfig()
+    assert site_config.get('systems/0/name') == 'testsys'
+
+
+def test_autodetect_meth_shell_errors(site_config):
+    site_config.set_autodetect_methods(['xxxxxxxxx'])
+    with pytest.raises(ConfigError):
+        site_config.select_subconfig()
+
+
+def test_autodetect_meth_multiple(site_config):
+    site_config.set_autodetect_methods(['py::foo', 'echo testsys'])
+    site_config.select_subconfig()
+    assert site_config.get('systems/0/name') == 'testsys'
+
+
 def test_hostname_autodetection(site_config):
     # This exercises only the various execution paths
 
@@ -495,7 +551,7 @@ def test_hostname_autodetection(site_config):
     # order to trigger the auto-detection
     for use_xthostname in (True, False):
         for use_fqdn in (True, False):
-            site_config.set_autodetect_meth('hostname',
-                                            use_fqdn=use_fqdn,
-                                            use_xthostname=use_xthostname)
+            site_config.set_autodetect_methods(['py::socket.gethostname',
+                                                'py::socket.getfqdn',
+                                                'cat /etc/xthostname'])
             site_config.select_subconfig()

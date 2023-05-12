@@ -7,18 +7,19 @@ import contextlib
 import copy
 import fnmatch
 import functools
+import importlib
 import itertools
 import json
 import jsonschema
 import os
 import re
-import socket
 
 import reframe
 import reframe.core.settings as settings
 import reframe.utility as util
+import reframe.utility.osext as osext
 from reframe.core.environments import normalize_module_list
-from reframe.core.exceptions import ConfigError, ReframeFatalError
+from reframe.core.exceptions import (ConfigError, ReframeFatalError)
 from reframe.core.logging import getlogger
 from reframe.utility import ScopedDict
 
@@ -60,40 +61,15 @@ def _normalize_syntax(conv):
     return _do_normalize
 
 
-def _hostname(use_fqdn, use_xthostname):
-    '''Return hostname'''
-    if use_xthostname:
-        try:
-            xthostname_file = '/etc/xthostname'
-            getlogger().debug(f'Trying {xthostname_file!r}...')
-            with open(xthostname_file) as fp:
-                return fp.read()
-        except OSError as e:
-            '''Log the error and continue to the next method'''
-            getlogger().debug(f'Failed to read {xthostname_file!r}')
-
-    if use_fqdn:
-        getlogger().debug('Using FQDN...')
-        return socket.getfqdn()
-
-    getlogger().debug('Using standard hostname...')
-    return socket.gethostname()
-
-
 class _SiteConfig:
     def __init__(self):
         self._site_config = None
+        self._config_modules = []
         self._sources = []
         self._subconfigs = {}
         self._local_system = None
         self._sticky_options = {}
-        self._autodetect_meth = 'hostname'
-        self._autodetect_opts = {
-            'hostname': {
-                'use_fqdn': False,
-                'use_xthostname': False,
-            }
-        }
+        self._autodetect_methods = []
         self._definitions = {
             'systems': {},
             'partitions': {},
@@ -195,7 +171,7 @@ class _SiteConfig:
         nc = copy.deepcopy(config)
         if self._site_config is None:
             self._site_config = nc
-            return self
+            return
 
         mergeable_sections = ('general', 'logging', 'schedulers')
         for sec in nc.keys():
@@ -206,10 +182,11 @@ class _SiteConfig:
                     self._site_config[sec], nc[sec]
                 )
             else:
-                if sec == 'systems':
-                    # Systems have to be inserted in the beginning of the list,
-                    # since they are selected by the first matching entry in
-                    # `hostnames`.
+                if sec in ('systems', 'autodetect_methods'):
+                    # Systems have to be inserted in the beginning of the
+                    # list, since they are selected by the first matching
+                    # entry in `hostnames`. Similarly, the autodetection
+                    # methods are tried from left to right.
                     self._site_config[sec] = nc[sec] + self._site_config[sec]
                 else:
                     self._site_config[sec] += nc[sec]
@@ -239,14 +216,8 @@ class _SiteConfig:
     def __getattr__(self, attr):
         return getattr(self._pick_config(), attr)
 
-    def set_autodetect_meth(self, method, **opts):
-        self._autodetect_meth = method
-        try:
-            self._autodetect_opts[method].update(opts)
-        except KeyError:
-            raise ConfigError(
-                f'unknown auto-detection method: {method!r}'
-            ) from None
+    def set_autodetect_methods(self, methods):
+        self._site_config['autodetect_methods'] = list(methods)
 
     @property
     def schema(self):
@@ -364,22 +335,15 @@ class _SiteConfig:
             # import_module_from_file() may raise an ImportError if the
             # configuration file is under ReFrame's top-level directory
             raise ConfigError(
-                f"could not load Python configuration file: '{filename}'"
+                f'could not load Python configuration file: {filename!r}'
             ) from e
 
-        if hasattr(mod, 'settings'):
-            # Looks like an old style config
-            raise ConfigError(
-                f"the syntax of the configuration file {filename!r} "
-                f"is no longer supported"
-            )
-
-        mod = util.import_module_from_file(filename)
         if not hasattr(mod, 'site_configuration'):
             raise ConfigError(
                 f"not a valid Python configuration file: '{filename}'"
             )
 
+        self._config_modules.append(mod)
         self.update_config(mod.site_configuration, filename)
 
     def load_config_json(self, filename):
@@ -393,14 +357,75 @@ class _SiteConfig:
 
         self.update_config(config, filename)
 
+    def _setup_autodect_methods(self):
+        def _py_meth(m):
+            try:
+                module, symbol = m.rsplit('.', maxsplit=1)
+            except ValueError:
+                # Not enough values to unpack; we assume a single symbol
+                module, symbol = None, m
+
+            try:
+                if module:
+                    mod = importlib.import_module(module)
+                    return getattr(mod, symbol)
+
+                if not self._config_modules:
+                    raise ConfigError(
+                        f'no module context for requested symbol: {symbol!r}'
+                    )
+
+                # Symbol is local to one of the config files; try to resolve
+                # it in reverse order
+                for mod in reversed(self._config_modules):
+                    if hasattr(mod, symbol):
+                        return getattr(mod, symbol)
+
+                raise ConfigError(f'symbol {symbol!r} is not defined in '
+                                  f'any of the loaded configuration files')
+            except (AttributeError, ImportError, ConfigError) as e:
+                getlogger().warning(f"ignoring autodetection method 'py::{m}' "
+                                    f"due to errors: {e}")
+
+        def _sh_meth(m):
+            def _fn():
+                completed = osext.run_command(m, check=True)
+                return completed.stdout.strip()
+
+            return _fn
+
+        methods = self._site_config.get(
+            'autodetect_methods',
+            self._schema['defaults']['autodetect_methods']
+        )
+        for m in methods:
+            if m.startswith('py::'):
+                fn = _py_meth(m.lstrip('py::'))
+                if fn is not None:
+                    self._autodetect_methods.append((m, fn))
+            else:
+                self._autodetect_methods.append((m, _sh_meth(m)))
+
     def _detect_system(self):
-        getlogger().debug(
-            f'Detecting system using method: {self._autodetect_meth!r}'
-        )
-        hostname = _hostname(
-            self._autodetect_opts[self._autodetect_meth]['use_fqdn'],
-            self._autodetect_opts[self._autodetect_meth]['use_xthostname'],
-        )
+        getlogger().debug('Autodetecting system')
+        if not self._autodetect_methods:
+            self._setup_autodect_methods()
+
+        hostname = None
+        for meth, fn in self._autodetect_methods:
+            getlogger().debug(f'Trying autodetection method: {meth!r}')
+            try:
+                hostname = fn()
+            except Exception as e:
+                getlogger().debug(f'Autodetection method {meth!r} failed: {e}')
+            else:
+                break
+
+        if hostname is None:
+            raise ConfigError('all autodetection methods failed; '
+                              'try passing a system name explicitly using '
+                              'the `--system` option')
+
         getlogger().debug(f'Retrieved hostname: {hostname!r}')
         getlogger().debug(f'Looking for a matching configuration entry')
         for system in self._site_config['systems']:
@@ -412,8 +437,8 @@ class _SiteConfig:
                     )
                     return sysname
 
-        raise ConfigError(f"could not find a configuration entry "
-                          f"for the current system: '{hostname}'")
+        raise ConfigError(f'could not find a configuration entry '
+                          f'for the current system: {hostname!r}')
 
     def validate(self):
         site_config = self._pick_config()
@@ -509,8 +534,8 @@ class _SiteConfig:
         # Create local configuration for the current or the requested system
         local_config['systems'] = systems
         for name, section in site_config.items():
-            if name == 'systems':
-                # The systems sections has already been treated
+            if name in ('systems', 'autodetect_methods'):
+                # These sections have already been treated
                 continue
 
             # Convert section to a scoped dict that will handle correctly and
@@ -625,10 +650,14 @@ def find_config_files(config_path=None, config_file=None):
 
 def load_config(*filenames):
     ret = _SiteConfig()
-    getlogger().debug('Loading the generic configuration')
+    getlogger().debug('Loading the builtin configuration')
     ret.update_config(settings.site_configuration, '<builtin>')
     for f in filenames:
-        getlogger().debug(f'Loading configuration file: {filenames!r}')
+        if f == '<builtin>':
+            # The builtin configuration is always loaded at the beginning
+            continue
+
+        getlogger().debug(f'Loading configuration file: {f!r}')
         _, ext = os.path.splitext(f)
         if ext == '.py':
             ret.load_config_python(f)
