@@ -8,6 +8,7 @@ import pytest
 import math
 
 import reframe as rfm
+import reframe.utility.typecheck as typ
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.warnings import ReframeDeprecationWarning
 
@@ -556,3 +557,68 @@ def test_var_aliases():
     s = S()
     with pytest.warns(ReframeDeprecationWarning):
         s.y = 10
+
+
+def test_inherit_mutable_vars():
+    class Base(rfm.RegressionTest):
+        x = variable(typ.List[int], value=[])
+        y = variable(typ.Dict[str, int], value={})
+
+    class X(Base):
+        x.append(1)
+        y['a'] = 1
+
+    class Y(Base):
+        x.append(2)
+        y['b'] = 2
+
+    x = X()
+    assert x.x == [1]
+    assert x.y == {'a': 1}
+
+    y = Y()
+    assert y.x == [2]
+    assert y.y == {'b': 2}
+
+
+def test_inherit_mutable_aliases():
+    class Base(rfm.RegressionTest):
+        x = variable(typ.List[int], value=[])
+        y = variable(alias=x)
+
+    class X(Base):
+        x.append(1)
+
+    class Y(Base):
+        y.append(2)
+
+    x = X()
+    assert x.x == [1]
+    assert x.y == [1]
+
+    y = Y()
+    assert y.x == [2]
+    assert y.y == [2]
+
+
+def test_inherit_mutable_aliases_deprecated():
+    class Base(rfm.RegressionTest):
+        x = variable(typ.List[int], value=[])
+        y = deprecate(variable(alias=x), 'y is deprecated')
+
+    class X(Base):
+        x.append(1)
+
+    with pytest.warns(ReframeDeprecationWarning):
+        class Y(Base):
+            y.append(2)
+
+    x = X()
+    assert x.x == [1]
+    with pytest.warns(ReframeDeprecationWarning):
+        assert x.y == [1]
+
+    y = Y()
+    assert y.x == [2]
+    with pytest.warns(ReframeDeprecationWarning):
+        assert y.y == [2]
