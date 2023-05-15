@@ -1022,6 +1022,29 @@ def perf_test():
 
 
 @pytest.fixture
+def perf_param_tests():
+    class _MyTest(rfm.RunOnlyRegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        executable = 'echo perf0=100 && echo perf1=50'
+        p = parameter([1, 2])
+
+        @sanity_function
+        def validate(self):
+            return sn.assert_found(r'perf0', self.stdout)
+
+        @performance_function('unit0')
+        def perf0(self):
+            return sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float)
+
+        @performance_function('unit1')
+        def perf1(self):
+            return sn.extractsingle(r'perf1=(\S+)', self.stdout, 1, float)
+
+    return [_MyTest(variant_num=v) for v in range(_MyTest.num_variants)]
+
+
+@pytest.fixture
 def failing_perf_test():
     class _MyFailingTest(rfm.RunOnlyRegressionTest):
         valid_systems = ['*']
@@ -1321,3 +1344,33 @@ def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
 
     logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_LazyPerfTest.log'
     assert os.path.exists(logfile)
+
+
+def test_perf_logging_all_attrs(make_runner, make_exec_ctx, perf_test,
+                                config_perflog, tmp_path):
+    make_exec_ctx(config_perflog(fmt='%(check_result)s|%(check_#ALL)s'))
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([perf_test])
+    runner.runall(testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    assert os.path.exists(logfile)
+    with open(logfile) as fp:
+        header = fp.readline()
+
+    loggable_attrs = type(perf_test).loggable_attrs()
+    assert len(header.split('|')) == len(loggable_attrs) + 1
+
+
+def test_perf_logging_param_test(make_runner, make_exec_ctx, perf_param_tests,
+                                 config_perflog, tmp_path):
+    make_exec_ctx(config_perflog(fmt='%(check_result)s|%(check_#ALL)s'))
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases(perf_param_tests)
+    runner.runall(testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    assert os.path.exists(logfile)
+    assert _count_lines(logfile) == 3
