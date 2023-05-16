@@ -15,7 +15,7 @@ Even if a configuration object contains a list of other objects, this is not ref
 For example, by ``systems.partitions.name`` we designate the ``name`` property of any partition object inside the ``partitions`` property of any system object inside the top level ``systems`` object.
 If we were to use indices, that would be rewritten as ``systems[i].partitions[j].name`` where ``i`` indexes the systems and ``j`` indexes the partitions of the i-th system.
 For cases, where the objects in a list are not homogeneous, e.g., the logging handlers, we surround the object type with ``..``.
-For example, the ``logging.handlers..filelog..name`` syntax designates the ``name`` attribute of the ``filelog`` logging handler.
+For example, the ``logging.handlers_perflog..filelog..name`` syntax designates the ``name`` attribute of the ``filelog`` logging handler.
 
 .. |schemas/config.json| replace:: ``reframe/schemas/config.json``
 .. _schemas/config.json: https://github.com/reframe-hpc/reframe/blob/master/reframe/schemas/config.json
@@ -1142,8 +1142,6 @@ This handler is meant primarily for performance logging and logs the performance
 The additional properties for the ``filelog`` handler are the following:
 
 
-.. py:attribute:: logging.handlers..filelog..basedir
-
 .. py:attribute:: logging.handlers_perflog..filelog..basedir
 
    :required: No
@@ -1152,13 +1150,11 @@ The additional properties for the ``filelog`` handler are the following:
    The base directory of performance data log files.
 
 
-.. py:attribute:: logging.handlers..filelog..prefix
-
 .. py:attribute:: logging.handlers_perflog..filelog..prefix
 
    :required: Yes
 
-   This is a directory prefix (usually dynamic), appended to the :attr:`~config.logging.handlers..filelog..basedir`, where the performance logs of a test will be stored.
+   This is a directory prefix (usually dynamic), appended to the :attr:`~config.logging.handlers_perflog..filelog..basedir`, where the performance logs of a test will be stored.
    This attribute accepts any of the check-specific `formatting placeholders <#config.logging.handlers_perflog.format>`__.
    This allows to create dynamic paths based on the current system, partition and/or programming environment a test executes with.
    For example, a value of ``%(check_system)s/%(check_partition)s`` would generate the following structure of performance log files:
@@ -1176,8 +1172,6 @@ The additional properties for the ``filelog`` handler are the following:
         system2/
         ...
 
-
-.. py:attribute:: logging.handlers..filelog..append
 
 .. py:attribute:: logging.handlers_perflog..filelog..append
 

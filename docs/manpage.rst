@@ -1445,7 +1445,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     :option:`--perflogdir`
-      Associated configuration parameter :attr:`~config.logging.handlers..filelog..basedir`
+      Associated configuration parameter :attr:`~config.logging.handlers_perflog..filelog..basedir`
       ================================== ==================
 
 
