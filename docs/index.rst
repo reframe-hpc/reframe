@@ -18,6 +18,7 @@ Finally, ReFrame offers a powerful and efficient runtime for running and managin
 Publications
 ============
 
+* Slides [`Google Slides <https://docs.google.com/presentation/d/1GmO2Uf29SaLg36bPB9g9eeaKMN-bLlDJ5IvLGLQJfD8/edit?usp=share_link>`__] @ `8th EasyBuild User Meeting 2023 <https://easybuild.io/eum23/>`__.
 * Slides [`pdf <https://drive.google.com/file/d/1vmaWyRHgtq3DrYhSCVBzR8U5ErKbxGNf/view?usp=sharing>`__] @ `7th EasyBuild User Meeting 2022 <https://easybuild.io/eum22/>`__.
 * Slides [`pdf <https://drive.google.com/file/d/1kNZu1QNBDDsbKarzwNWYjTGKgOukg-96/view?usp=sharing>`__] @ `6th EasyBuild User Meeting 2021 <https://easybuild.io/eum21/>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1W7R5lfRkXvBpVDSZ7dVBadk_d3K4dFrS>`__] @ `5th EasyBuild User Meeting 2020 <https://github.com/easybuilders/easybuild/wiki/5th-EasyBuild-User-Meeting>`__.
