@@ -1060,6 +1060,9 @@ All logging handlers share the following set of common attributes:
 
    There is also the special ``%(check_#ALL)s`` format specifier which expands to all the loggable test attributes.
    These include all the above specifiers and any additional loggable variables or parameters defined by the test.
+   On expanding this specifier, ReFrame will try to guess the delimiter to use for separating the different attributes based on the existing format.
+   If it cannot guess it, it will default to ``|``.
+
    Since this can lead to very length records, you may consider using it with the :attr:`~logging.handlers_perflog..filelog..ignore_keys` parameter to filter out some attributes that are not of interest.
 
 .. versionadded:: 3.3

@@ -147,7 +147,7 @@ def _guess_delim(s):
     if len(delims) == 1:
         return delims.pop()
     else:
-        return ','
+        return '|'
 
 
 class MultiFileHandler(logging.FileHandler):
