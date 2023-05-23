@@ -999,7 +999,6 @@ All logging handlers share the following set of common attributes:
    ReFrame accepts all log record attributes from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following attributes:
 
    .. csv-table::
-      :header: "Log record attribute", "Description"
 
       ``%(check_build_locally)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.build_locally` attribute.
       ``%(check_build_time_limit)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.build_time_limit` attribute.
@@ -1059,6 +1058,10 @@ All logging handlers share the following set of common attributes:
    ReFrame allows you to log any test variable, parameter or property if they are marked as "loggable".
    The log record attribute will have the form ``%(check_NAME)s`` where ``NAME`` is the variable name, the parameter name or the property name that is marked as loggable.
 
+   There is also the special ``%(check_#ALL)s`` format specifier which expands to all the loggable test attributes.
+   These include all the above specifiers and any additional loggable variables or parameters defined by the test.
+   Since this can lead to very length records, you may consider using it with the :attr:`~logging.handlers_perflog..filelog..ignore_keys` parameter to filter out some attributes that are not of interest.
+
 .. versionadded:: 3.3
    Allow arbitrary test attributes to be logged.
 
@@ -1067,6 +1070,9 @@ All logging handlers share the following set of common attributes:
 
 .. versionchanged:: 3.11.0
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
+
+.. versionadded:: 4.3
+   The ``%(check_#ALL)s`` special specifier is added.
 
 
 .. py:attribute:: logging.handlers.format_perfvars
@@ -1175,6 +1181,15 @@ The additional properties for the ``filelog`` handler are the following:
    The base directory of performance data log files.
 
 
+.. py:attribute:: logging.handlers..filelog..ignore_keys
+
+.. py:attribute:: logging.handlers_perflog..filelog..ignore_keys
+
+   A list of log record `format specifiers <#config.logging.handlers.format>`__ that will be ignored by the special ``%(check_#ALL)s`` specifier.
+
+   .. versionadded:: 4.3
+
+
 .. py:attribute:: logging.handlers..filelog..prefix
 
 .. py:attribute:: logging.handlers_perflog..filelog..prefix
@@ -1182,7 +1197,7 @@ The additional properties for the ``filelog`` handler are the following:
    :required: Yes
 
    This is a directory prefix (usually dynamic), appended to the :attr:`~config.logging.handlers..filelog..basedir`, where the performance logs of a test will be stored.
-   This attribute accepts any of the check-specific `formatting placeholders <#config.logging.handlers_perflog.format>`__.
+   This attribute accepts any of the check-specific `formatting specifiers <#config.logging.handlers_perflog.format>`__.
    This allows to create dynamic paths based on the current system, partition and/or programming environment a test executes with.
    For example, a value of ``%(check_system)s/%(check_partition)s`` would generate the following structure of performance log files:
 

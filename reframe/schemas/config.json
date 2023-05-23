@@ -84,7 +84,11 @@
                     "properties": {
                         "basedir": {"type": "string"},
                         "prefix": {"type": "string"},
-                        "append": {"type": "boolean"}
+                        "append": {"type": "boolean"},
+                        "ignore_keys": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        }
                     },
                     "required": ["prefix"]
                 }
@@ -573,6 +577,7 @@
         "logging/handlers*/file_timestamp": false,
         "logging/handlers*/filelog_append": true,
         "logging/handlers*/filelog_basedir": "./perflogs",
+        "logging/handlers*/filelog_ignore_keys": [],
         "logging/handlers*/graylog_extras": {},
         "logging/handlers*/httpjson_extras": {},
         "logging/handlers*/httpjson_ignore_keys": [],
