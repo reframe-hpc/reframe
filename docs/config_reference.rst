@@ -1138,7 +1138,7 @@ The additional properties for the ``file`` handler are the following:
 The ``filelog`` log handler
 ---------------------------
 
-This handler is meant primarily for performance logging and logs the performance of a test in one or more files.
+This handler is meant for performance logging only and logs the performance of a test in one or more files.
 The additional properties for the ``filelog`` handler are the following:
 
 
@@ -1191,10 +1191,8 @@ The additional properties for the ``filelog`` handler are the following:
 The ``graylog`` log handler
 ---------------------------
 
-This handler sends log records to a `Graylog <https://www.graylog.org/>`__ server.
+This handler is meant for performance logging only and sends log records to a `Graylog <https://www.graylog.org/>`__ server.
 The additional properties for the ``graylog`` handler are the following:
-
-.. py:attribute:: logging.handlers..graylog..address
 
 .. py:attribute:: logging.handlers_perflog..graylog..address
 
@@ -1202,8 +1200,6 @@ The additional properties for the ``graylog`` handler are the following:
 
    The address of the Graylog server defined as ``host:port``.
 
-
-.. py:attribute:: logging.handlers..graylog..extras
 
 .. py:attribute:: logging.handlers_perflog..graylog..extras
 

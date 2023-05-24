@@ -1321,7 +1321,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :attr:`~config.logging.handlers..graylog..address`
+      Associated configuration parameter :attr:`~config.logging.handlers_perflog..graylog..address`
       ================================== ==================
 
 
