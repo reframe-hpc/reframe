@@ -783,6 +783,16 @@ They are associated with `system partitions <#system-partition-configuration>`__
    .. versionadded:: 3.9.1
 
 
+.. py:attribute:: environments.prepare_cmds
+
+   :required: No
+   :default: ``[]``
+
+   List of shell commands to be emitted after the :attr:`~config.systems.partitions.prepare_cmds` but before any module loading commands(if applicable) and environment variables are set.
+
+   .. versionadded:: 4.3.0
+
+
 .. py:attribute:: environments.cc
 
    :required: No

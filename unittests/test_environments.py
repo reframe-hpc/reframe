@@ -53,7 +53,9 @@ def env0():
     return env.Environment(
         'TestEnv1', ['testmod_foo'],
         [('_var0', 'val1'), ('_var2', '$_var0'), ('_var3', '${_var1}')],
-        {'foo': 1, 'bar': 2}
+        {'foo': 1, 'bar': 2},
+        ['feat1', 'feat2'],
+        ['echo prep1', 'echo prep2']
     )
 
 
@@ -81,16 +83,25 @@ def test_env_construction(base_environ, env0):
     # Assert extras
     assert env0.extras == {'foo': 1, 'bar': 2}
 
+    # Assert features
+    assert env0.features == ['feat1', 'feat2']
+
+
+    # Assert prepare_cmds
+    assert env0.prepare_cmds == ['echo prep1', 'echo prep2']
+
 
 def test_progenv_construction():
     environ = env.ProgEnvironment('myenv',
                                   modules=['modfoo'],
                                   env_vars=[('var', 'val')],
-                                  extras={'foo': 'bar'})
+                                  extras={'foo': 'bar'},
+                                  prepare_cmds=['echo prep1', 'echo prep2'])
     assert environ.name == 'myenv'
     assert environ.modules == ['modfoo']
     assert environ.env_vars == {'var': 'val'}
     assert environ.extras == {'foo': 'bar'}
+    assert environ.prepare_cmds == ['echo prep1', 'echo prep2']
 
 
 def test_env_snapshot(base_environ, env0, env1):
@@ -248,6 +259,30 @@ def test_emit_loadenv_commands(base_environ, user_runtime,
                                modules_system, env0):
     ms = rt.runtime().modules_system
     expected_commands = [
+        *env0.prepare_cmds,
+        ms.emit_load_commands('testmod_foo')[0],
+        'export _var0=val1',
+        'export _var2=$_var0',
+        'export _var3=${_var1}',
+    ]
+    assert expected_commands == rt.emit_loadenv_commands(env0)
+
+
+def test_emit_loadenv_nomod_commands(base_environ, user_runtime, env0):
+    expected_commands = [
+        *env0.prepare_cmds,
+        'export _var0=val1',
+        'export _var2=$_var0',
+        'export _var3=${_var1}',
+    ]
+    assert expected_commands == rt.emit_loadenv_commands(env0)
+
+
+def test_emit_loadenv_commands(base_environ, user_runtime,
+                               modules_system, env0):
+    ms = rt.runtime().modules_system
+    expected_commands = [
+        *env0.prepare_cmds,
         ms.emit_load_commands('testmod_foo')[0],
         'export _var0=val1',
         'export _var2=$_var0',
@@ -272,6 +307,7 @@ def test_emit_loadenv_commands_ignore_confict(base_environ,
     with ms.change_module_path(test_util.TEST_MODULES):
         ms.load_module('testmod_bar')
         expected_commands = [
+            *env0.prepare_cmds,
             ms.emit_load_commands('testmod_foo')[0],
             'export _var0=val1',
             'export _var2=$_var0',
@@ -286,6 +322,8 @@ def test_emit_loadenv_commands_with_confict(base_environ, user_runtime,
     modules_system.load_module('testmod_bar')
     ms = rt.runtime().modules_system
     expected_commands = [
+        *env0.prepare_cmds,
+        ms.load_module('testmod_bar'),
         ms.emit_unload_commands('testmod_bar')[0],
         ms.emit_load_commands('testmod_foo')[0],
         'export _var0=val1',
