@@ -269,6 +269,9 @@ def test_emit_loadenv_commands(base_environ, user_runtime,
 
 
 def test_emit_loadenv_nomod_commands(base_environ, user_runtime, env0):
+    if test_util.has_sane_modules_system():
+        pytest.skip('test scenario not valid for a modules system')
+
     expected_commands = [
         *env0.prepare_cmds,
         'export _var0=val1',
@@ -323,7 +326,6 @@ def test_emit_loadenv_commands_with_confict(base_environ, user_runtime,
     ms = rt.runtime().modules_system
     expected_commands = [
         *env0.prepare_cmds,
-        ms.load_module('testmod_bar'),
         ms.emit_unload_commands('testmod_bar')[0],
         ms.emit_load_commands('testmod_foo')[0],
         'export _var0=val1',
