@@ -1,6 +1,6 @@
-=======================
+***********************
 Configuration Reference
-=======================
+***********************
 
 ReFrame's behavior can be configured through its configuration file (see :doc:`configure`), environment variables and command-line options.
 An option can be specified via multiple paths (e.g., a configuration file parameter and an environment variable), in which case command-line options precede environment variables, which in turn precede configuration file options.
@@ -22,7 +22,7 @@ For example, the ``logging.handlers_perflog..filelog..name`` syntax designates t
 
 
 Top-level Configuration
------------------------
+=======================
 
 The top-level configuration object is essentially the full configuration of ReFrame.
 It consists of the following properties, which we also call conventionally *configuration sections*:
@@ -69,7 +69,7 @@ It consists of the following properties, which we also call conventionally *conf
 
 
 System Configuration
---------------------
+====================
 
 .. currentmodule:: config
 
@@ -213,9 +213,8 @@ System Configuration
       This option is broken in 4.0.
 
 
-------------------------------
 System Partition Configuration
-------------------------------
+==============================
 
 .. py:attribute:: systems.partitions.name
 
@@ -419,6 +418,10 @@ System Partition Configuration
    :default: ``[]``
 
    A list of job scheduler options that will be passed to the generated job script for gaining access to that logical partition.
+
+ .. note::
+    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` parameters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
+    The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
 .. py:attribute:: systems.partitions.environs
@@ -690,12 +693,12 @@ ReFrame allows you to define custom scheduler resources for each partition that 
      }
 
  .. note::
-    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` attributes may either refer to actual ``qsub`` options or may be just resources specifications to be passed to the ``-l`` option.
+    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` parameters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
     The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
 Environment Configuration
--------------------------
+=========================
 
 Environments defined in this section will be used for running regression tests.
 They are associated with `system partitions <#system-partition-configuration>`__.
@@ -859,7 +862,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
 .. _logging-config-reference:
 
 Logging Configuration
----------------------
+=====================
 
 Logging in ReFrame is handled by logger objects which further delegate message to *logging handlers* which are eventually responsible for emitting or sending the log records to their destinations.
 You may define different logger objects per system but *not* per partition.
@@ -924,7 +927,6 @@ You may define different logger objects per system but *not* per partition.
 
 
 
----------------------------------
 Common logging handler properties
 ---------------------------------
 
@@ -1089,7 +1091,6 @@ All logging handlers share the following set of common attributes:
    In addition to the format directives supported by the standard library's `time.strftime() <https://docs.python.org/3.8/library/time.html#time.strftime>`__ function, ReFrame allows you to use the ``%:z`` directive -- a GNU ``date`` extension --  that will print the time zone difference in a RFC3339 compliant way, i.e., ``+/-HH:MM`` instead of ``+/-HHMM``.
 
 
-------------------------
 The ``file`` log handler
 ------------------------
 
@@ -1134,7 +1135,6 @@ The additional properties for the ``file`` handler are the following:
 
 .. _filelog-handler:
 
----------------------------
 The ``filelog`` log handler
 ---------------------------
 
@@ -1187,7 +1187,6 @@ The additional properties for the ``filelog`` handler are the following:
    Examples of changes in the logged information are when the log record format changes or a new performance metric is added, deleted or has its name changed.
    This behavior guarantees that each log file is consistent and it will not break existing parsers.
 
----------------------------
 The ``graylog`` log handler
 ---------------------------
 
@@ -1235,7 +1234,6 @@ Although the :attr:`~config.logging.handlers.format` attribute is defined for th
 This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
 
 
---------------------------
 The ``stream`` log handler
 --------------------------
 
@@ -1257,7 +1255,6 @@ The additional properties for the ``stream`` handler are the following:
    - ``stderr``: the standard error.
 
 
---------------------------
 The ``syslog`` log handler
 --------------------------
 
@@ -1300,7 +1297,6 @@ The additional properties for the ``syslog`` handler are the following:
    This can either be of the form ``<host>:<port>`` or simply a path that refers to a Unix domain socket.
 
 
-----------------------------
 The ``httpjson`` log handler
 ----------------------------
 
@@ -1399,7 +1395,7 @@ This handler transmits the whole log record, meaning that all the information wi
 .. _exec-mode-config:
 
 Execution Mode Configuration
-----------------------------
+============================
 
 ReFrame allows you to define groups of command line options that are collectively called *execution modes*.
 An execution mode can then be selected from the command line with the :option:`--mode` option.
@@ -1432,7 +1428,7 @@ The options of an execution mode will be passed to ReFrame as if they were speci
 
 
 General Configuration
----------------------
+=====================
 
 .. py:attribute:: general.check_search_path
 
@@ -1730,7 +1726,7 @@ General Configuration
 
 
 Module Objects
---------------
+==============
 
 .. versionadded:: 3.3
 
@@ -1780,7 +1776,7 @@ It can either be a simple string or a JSON object with the following attributes:
 
 
 Processor Info
---------------
+==============
 
 .. versionadded:: 3.5.0
 
@@ -1878,7 +1874,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 
 
 Device Info
------------
+===========
 
 .. versionadded:: 3.5.0
 
