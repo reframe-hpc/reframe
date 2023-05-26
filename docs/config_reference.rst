@@ -15,7 +15,7 @@ Even if a configuration object contains a list of other objects, this is not ref
 For example, by ``systems.partitions.name`` we designate the ``name`` property of any partition object inside the ``partitions`` property of any system object inside the top level ``systems`` object.
 If we were to use indices, that would be rewritten as ``systems[i].partitions[j].name`` where ``i`` indexes the systems and ``j`` indexes the partitions of the i-th system.
 For cases, where the objects in a list are not homogeneous, e.g., the logging handlers, we surround the object type with ``..``.
-For example, the ``logging.handlers..filelog..name`` syntax designates the ``name`` attribute of the ``filelog`` logging handler.
+For example, the ``logging.handlers_perflog..filelog..name`` syntax designates the ``name`` attribute of the ``filelog`` logging handler.
 
 .. |schemas/config.json| replace:: ``reframe/schemas/config.json``
 .. _schemas/config.json: https://github.com/reframe-hpc/reframe/blob/master/reframe/schemas/config.json
@@ -1138,11 +1138,9 @@ The additional properties for the ``file`` handler are the following:
 The ``filelog`` log handler
 ---------------------------
 
-This handler is meant primarily for performance logging and logs the performance of a test in one or more files.
+This handler is meant for performance logging only and logs the performance of a test in one or more files.
 The additional properties for the ``filelog`` handler are the following:
 
-
-.. py:attribute:: logging.handlers..filelog..basedir
 
 .. py:attribute:: logging.handlers_perflog..filelog..basedir
 
@@ -1152,13 +1150,11 @@ The additional properties for the ``filelog`` handler are the following:
    The base directory of performance data log files.
 
 
-.. py:attribute:: logging.handlers..filelog..prefix
-
 .. py:attribute:: logging.handlers_perflog..filelog..prefix
 
    :required: Yes
 
-   This is a directory prefix (usually dynamic), appended to the :attr:`~config.logging.handlers..filelog..basedir`, where the performance logs of a test will be stored.
+   This is a directory prefix (usually dynamic), appended to the :attr:`~config.logging.handlers_perflog..filelog..basedir`, where the performance logs of a test will be stored.
    This attribute accepts any of the check-specific `formatting placeholders <#config.logging.handlers_perflog.format>`__.
    This allows to create dynamic paths based on the current system, partition and/or programming environment a test executes with.
    For example, a value of ``%(check_system)s/%(check_partition)s`` would generate the following structure of performance log files:
@@ -1176,8 +1172,6 @@ The additional properties for the ``filelog`` handler are the following:
         system2/
         ...
 
-
-.. py:attribute:: logging.handlers..filelog..append
 
 .. py:attribute:: logging.handlers_perflog..filelog..append
 
@@ -1197,10 +1191,8 @@ The additional properties for the ``filelog`` handler are the following:
 The ``graylog`` log handler
 ---------------------------
 
-This handler sends log records to a `Graylog <https://www.graylog.org/>`__ server.
+This handler is meant for performance logging only and sends log records to a `Graylog <https://www.graylog.org/>`__ server.
 The additional properties for the ``graylog`` handler are the following:
-
-.. py:attribute:: logging.handlers..graylog..address
 
 .. py:attribute:: logging.handlers_perflog..graylog..address
 
@@ -1208,8 +1200,6 @@ The additional properties for the ``graylog`` handler are the following:
 
    The address of the Graylog server defined as ``host:port``.
 
-
-.. py:attribute:: logging.handlers..graylog..extras
 
 .. py:attribute:: logging.handlers_perflog..graylog..extras
 
@@ -1317,16 +1307,12 @@ The ``httpjson`` log handler
 This handler sends log records in JSON format to a server using HTTP POST requests.
 The additional properties for the ``httpjson`` handler are the following:
 
-.. py:attribute:: logging.handlers..httpjson..url
-
 .. py:attribute:: logging.handlers_perflog..httpjson..url
 
    :required: Yes
 
    The URL to be used in the HTTP(S) request server.
 
-
-.. py:attribute:: logging.handlers..httpjson..extra_headers
 
 .. py:attribute:: logging.handlers_perflog..httpjson..extra_headers
 
@@ -1339,8 +1325,6 @@ The additional properties for the ``httpjson`` handler are the following:
    .. versionadded:: 4.2
 
 
-.. py:attribute:: logging.handlers..httpjson..extras
-
 .. py:attribute:: logging.handlers_perflog..httpjson..extras
 
    :required: No
@@ -1348,8 +1332,6 @@ The additional properties for the ``httpjson`` handler are the following:
 
    A set of optional key/value pairs to be passed with each log record to the server.
    These may depend on the server configuration.
-
-.. py:attribute:: logging.handlers..httpjson..ignore_keys
 
 .. py:attribute:: logging.handlers_perflog..httpjson..ignore_keys
 
@@ -1380,8 +1362,6 @@ An example configuration of this handler for performance logging is shown here:
 
 This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
 
-.. py:attribute:: logging.handlers..httpjson..debug
-
 .. py:attribute:: logging.handlers_perflog..httpjson..debug
 
    :required: No
@@ -1392,8 +1372,6 @@ This handler transmits the whole log record, meaning that all the information wi
 
    .. versionadded:: 4.1
 
-
-.. py:attribute:: logging.handlers..httpjson..json_formatter
 
 .. py:attribute:: logging.handlers_perflog..httpjson..json_formatter
 
@@ -1406,8 +1384,8 @@ This handler transmits the whole log record, meaning that all the information wi
       :arg record: The prepared log record.
          The log record is a simple Python object with all the attributes listed in :attr:`~config.logging.handlers.format`, as well as all the default Python `log record <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ attributes.
          In addition to those, there is also the special :attr:`__rfm_check__` attribute that contains a reference to the actual test for which the performance is being logged.
-      :arg extras: Any extra attributes specified in :attr:`~config.logging.handlers..httpjson..extras`.
-      :arg ignore_keys: The set of keys specified in :attr:`~config.logging.handlers..httpjson..ignore_keys`.
+      :arg extras: Any extra attributes specified in :attr:`~config.logging.handlers_perflog..httpjson..extras`.
+      :arg ignore_keys: The set of keys specified in :attr:`~config.logging.handlers_perflog..httpjson..ignore_keys`.
          ReFrame always adds the default Python log record attributes in this set.
       :returns: A string representation of the JSON record to be sent to the server or :obj:`None` if the record should not be sent to the server.
 
