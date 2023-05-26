@@ -420,7 +420,7 @@ System Partition Configuration
    A list of job scheduler options that will be passed to the generated job script for gaining access to that logical partition.
 
  .. note::
-    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` paramters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
+    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` parameters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
     The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
@@ -693,7 +693,7 @@ ReFrame allows you to define custom scheduler resources for each partition that 
      }
 
  .. note::
-    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` paramters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
+    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` parameters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
     The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
