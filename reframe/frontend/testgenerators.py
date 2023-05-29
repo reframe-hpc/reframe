@@ -48,29 +48,73 @@ def getallnodes(state='all', jobs_cli_options=None):
     return nodes
 
 
-def _rfm_pin_run_nodes(obj):
-    nodelist = getattr(obj, '$nid')
-    if not obj.local:
-        obj.job.pin_nodes = nodelist
+def _generate_tests(testcases, gen_fn):
+    tmp_registry = TestRegistry()
+    unique_checks = set()
+    for tc in testcases:
+        check = tc.check
+        if check.is_fixture() or check in unique_checks:
+            continue
+
+        unique_checks.add(check)
+        cls = type(check)
+        variant_info = cls.get_variant_info(
+            check.variant_num, recurse=True
+        )
+        nc, params = gen_fn(tc)
+        nc._rfm_custom_prefix = check.prefix
+        for i in range(nc.num_variants):
+            # Check if this variant should be instantiated
+            vinfo = nc.get_variant_info(i, recurse=True)
+            for p in params:
+                vinfo['params'].pop(p)
+
+            if vinfo == variant_info:
+                tmp_registry.add(nc, variant_num=i)
+
+    new_checks = tmp_registry.instantiate_all()
+    return generate_testcases(new_checks)
 
 
-def _rfm_pin_build_nodes(obj):
-    pin_nodes = getattr(obj, '$nid')
-    if not obj.local and not obj.build_locally:
-        obj.build_job.pin_nodes = pin_nodes
+@time_function
+def distribute_tests(testcases, node_map):
+    def _rfm_pin_run_nodes(obj):
+        nodelist = getattr(obj, '$nid')
+        if not obj.local:
+            obj.job.pin_nodes = nodelist
 
+    def _rfm_pin_build_nodes(obj):
+        pin_nodes = getattr(obj, '$nid')
+        if not obj.local and not obj.build_locally:
+            obj.build_job.pin_nodes = pin_nodes
 
-def make_valid_systems_hook(systems):
-    '''Returns a function to be used as a hook that sets the
-    valid systems.
+    def _make_dist_test(testcase):
+        check, partition, _ = testcase
+        cls = type(check)
 
-    Since valid_systems change for each generated test, we need to
-    generate different post-init hooks for each one of them.
-    '''
-    def _rfm_set_valid_systems(obj):
-        obj.valid_systems = systems
+        def _rfm_set_valid_systems(obj):
+            obj.valid_systems = [partition.fullname]
 
-    return _rfm_set_valid_systems
+        return make_test(
+            f'{cls.__name__}_{partition.fullname.replace(":", "_")}',
+            (cls,),
+            {
+                'valid_systems': [partition.fullname],
+                '$nid': builtins.parameter(
+                    [[n] for n in node_map[partition.fullname]],
+                    fmt=util.nodelist_abbrev
+                )
+            },
+            methods=[
+                builtins.run_before('run')(_rfm_pin_run_nodes),
+                builtins.run_before('compile')(_rfm_pin_build_nodes),
+                # We re-set the valid system in a hook to make sure that it
+                # will not be overwritten by a parent post-init hook
+                builtins.run_after('init')(_rfm_set_valid_systems),
+            ]
+        ), ['$nid']
+
+    return _generate_tests(testcases, _make_dist_test)
 
 
 @time_function
@@ -131,6 +175,22 @@ def distribute_tests(testcases, node_map):
 @time_function
 def repeat_tests(testcases, num_repeats):
     '''Returns new test cases parameterized over their repetition number'''
+
+    def _make_repeat_test(testcase):
+        cls = type(testcase.check)
+        return make_test(
+            f'{cls.__name__}', (cls,),
+            {
+                '$repeat_no': builtins.parameter(range(num_repeats))
+            }
+        ), ['$repeat_no']
+
+    return _generate_tests(testcases, _make_repeat_test)
+
+
+@time_function
+def parameterise_tests(testcases, variables):
+    '''Returns new test cases parameterized over specific variables'''
 
     tmp_registry = TestRegistry()
     unique_checks = set()
