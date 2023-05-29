@@ -647,7 +647,7 @@ If you use a Python-based configuration file, you can define your custom launche
 .. code:: python
 
    from reframe.core.backends import register_launcher
-   from reframe.core.launchers import JobLaucher
+   from reframe.core.launchers import JobLauncher
 
 
    @register_launcher('slrun')
