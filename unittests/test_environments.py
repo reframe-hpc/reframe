@@ -281,19 +281,6 @@ def test_emit_loadenv_nomod_commands(base_environ, user_runtime, env0):
     assert expected_commands == rt.emit_loadenv_commands(env0)
 
 
-def test_emit_loadenv_commands(base_environ, user_runtime,
-                               modules_system, env0):
-    ms = rt.runtime().modules_system
-    expected_commands = [
-        *env0.prepare_cmds,
-        ms.emit_load_commands('testmod_foo')[0],
-        'export _var0=val1',
-        'export _var2=$_var0',
-        'export _var3=${_var1}',
-    ]
-    assert expected_commands == rt.emit_loadenv_commands(env0)
-
-
 def test_emit_loadenv_commands_ignore_confict(base_environ,
                                               make_exec_ctx, env0):
     if not test_util.has_sane_modules_system():

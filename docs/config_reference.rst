@@ -788,7 +788,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    :required: No
    :default: ``[]``
 
-   List of shell commands to be emitted after the :attr:`~config.systems.partitions.prepare_cmds` but before any module loading commands(if applicable) and environment variables are set.
+   List of shell commands to be emitted before any commands that load the environment.
 
    .. versionadded:: 4.3.0
 

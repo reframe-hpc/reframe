@@ -118,14 +118,11 @@ def fake_job(make_job):
 
 def prepare_job(job, command='hostname',
                 pre_run=None, post_run=None,
-                prepare_cmds=None, prepare_env_cmds=None):
-    environs = [
-        Environment(name='foo', modules=['testmod_foo'],
-                    prepare_cmds=prepare_env_cmds or ['echo prepenv'])
-    ]
+                prepare_cmds=None):
+    environs = [Environment(name='foo', modules=['testmod_foo'])]
     pre_run = pre_run or ['echo prerun']
     post_run = post_run or ['echo postrun']
-    prepare_cmds = prepare_cmds or ['echo prepsys']
+    prepare_cmds = prepare_cmds or ['echo prepare']
     with rt.module_use(test_util.TEST_MODULES):
         job.prepare(
             [
@@ -146,11 +143,9 @@ def submit_job(job):
 def assert_job_script_sanity(job):
     '''Assert the sanity of the produced script file.'''
     with open(job.script_filename) as fp:
-        matches = re.findall(
-            r'echo prepsys|echo prepenv|echo prerun|echo postrun|hostname',
-            fp.read()
-        )
-        assert ['echo prepsys', 'echo prepenv', 'echo prerun', 'hostname',
+        matches = re.findall(r'echo prepare|echo prerun|echo postrun|hostname',
+                             fp.read())
+        assert ['echo prepare', 'echo prerun', 'hostname',
                 'echo postrun'] == matches
 
 
@@ -730,8 +725,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
                 command='sleep 5 &',
                 pre_run=['trap -- "" TERM'],
                 post_run=['echo $!', 'wait'],
-                prepare_cmds=[''],
-                prepare_env_cmds=[''])
+                prepare_cmds=[''])
     submit_job(minimal_job)
 
     # Stall a bit here to let the the spawned process start and install its
@@ -778,8 +772,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
                                      'src', 'sleep_deeply.sh'),
                 pre_run=[''],
                 post_run=[''],
-                prepare_cmds=[''],
-                prepare_env_cmds=[''])
+                prepare_cmds=[''])
     submit_job(minimal_job)
 
     # Stall a bit here to let the the spawned process start and install its
