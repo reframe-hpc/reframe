@@ -936,20 +936,20 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
     namespace = RegressionTestMeta.__prepare__(name, bases, **kwargs)
     methods = methods or []
 
-    # Add methods to the body
-    for m in methods:
-        body[m.__name__] = m
-
-    # We update the namespace with the body of the class and we explicitly
-    # call reset on each namespace key to trigger the functionality of
-    # `__setitem__()` as if the body elements were actually being typed in the
-    # class definition
+    # Update the namespace with the body elements
     namespace.update(body)
+
+    # Add methods to the namespace
+    for m in methods:
+        namespace[m.__name__] = m
+
+    # We explicitly call reset on each namespace key to trigger the
+    # functionality of `__setitem__()` as if the body elements were actually
+    # being typed in the class definition
     for k in list(namespace.keys()):
         namespace.reset(k)
 
     cls = RegressionTestMeta(name, bases, namespace, **kwargs)
-
     if not module:
         # Set the test's module to be that of our callers
         caller = inspect.currentframe().f_back
