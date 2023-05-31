@@ -398,6 +398,7 @@ System Partition Configuration
    Available values are the following:
 
    - ``alps``: Parallel programs will be launched using the `Cray ALPS <https://pubs.cray.com/content/S-2393/CLE%205.2.UP03/cle-xc-system-administration-guide-s-2393-5203-xc/the-aprun-client>`__ ``aprun`` command.
+   - ``clush``: Parallel programs will be launched using the `clush` command. This launcher uses the partition's :attr:`~config.systems.partitions.access` property in order to determine the options to be passed to `clush`.
    - ``ibrun``: Parallel programs will be launched using the ``ibrun`` command.
      This is a custom parallel program launcher used at `TACC <https://portal.tacc.utexas.edu/user-guides/stampede2>`__.
    - ``local``: No parallel program launcher will be used.
@@ -406,6 +407,7 @@ System Partition Configuration
    - ``lrun-gpu``: Parallel programs will be launched using `LC Launcher <https://hpc.llnl.gov/training/tutorials/using-lcs-sierra-system#lrun>`__'s ``lrun -M "-gpu"`` command that enables the CUDA-aware Spectrum MPI.
    - ``mpirun``: Parallel programs will be launched using the ``mpirun`` command.
    - ``mpiexec``: Parallel programs will be launched using the ``mpiexec`` command.
+   - ``pdsh``: Parallel programs will be launched using the `pdsh` command. This launcher uses the partition's :attr:`~config.systems.partitions.access` property in order to determine the options to be passed to `pdsh`.
    - ``srun``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command.
    - ``srunalloc``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command, but job allocation options will also be emitted.
      This can be useful when combined with the ``local`` job scheduler.
