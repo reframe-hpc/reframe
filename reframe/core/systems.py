@@ -531,6 +531,9 @@ class System(jsonext.JSONSerializable):
                     env_vars=site_config.get(f'environments/@{e}/env_vars'),
                     extras=site_config.get(f'environments/@{e}/extras'),
                     features=site_config.get(f'environments/@{e}/features'),
+                    prepare_cmds=site_config.get(
+                        f'environments/@{e}/prepare_cmds'
+                    ),
                     cc=site_config.get(f'environments/@{e}/cc'),
                     cxx=site_config.get(f'environments/@{e}/cxx'),
                     ftn=site_config.get(f'environments/@{e}/ftn'),

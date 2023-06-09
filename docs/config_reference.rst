@@ -786,6 +786,16 @@ They are associated with `system partitions <#system-partition-configuration>`__
    .. versionadded:: 3.9.1
 
 
+.. py:attribute:: environments.prepare_cmds
+
+   :required: No
+   :default: ``[]``
+
+   List of shell commands to be emitted before any commands that load the environment.
+
+   .. versionadded:: 4.3.0
+
+
 .. py:attribute:: environments.cc
 
    :required: No
