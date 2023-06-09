@@ -267,7 +267,7 @@ def test_emit_loadenv_commands(base_environ, user_runtime,
     assert expected_commands == rt.emit_loadenv_commands(env0)
 
 
-def test_emit_loadenv_nomod_commands(base_environ, user_runtime, env0):
+def test_emit_loadenv_nomod_commands(base_environ, env0):
     expected_commands = [
         *env0.prepare_cmds,
         'export _var0=val1',
