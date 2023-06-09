@@ -86,7 +86,6 @@ def test_env_construction(base_environ, env0):
     # Assert features
     assert env0.features == ['feat1', 'feat2']
 
-
     # Assert prepare_cmds
     assert env0.prepare_cmds == ['echo prep1', 'echo prep2']
 
@@ -269,9 +268,6 @@ def test_emit_loadenv_commands(base_environ, user_runtime,
 
 
 def test_emit_loadenv_nomod_commands(base_environ, user_runtime, env0):
-    if test_util.has_sane_modules_system():
-        pytest.skip('test scenario not valid for a modules system')
-
     expected_commands = [
         *env0.prepare_cmds,
         'export _var0=val1',
