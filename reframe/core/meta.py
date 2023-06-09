@@ -117,6 +117,13 @@ class RegressionTestMeta(type):
             actual test parameter is set during the class instantiation).
             '''
 
+            def _find_root(v):
+                '''Find root variable of a possibly aliased variable v'''
+                while v.is_alias():
+                    v = v._target
+
+                return v
+
             try:
                 return super().__getitem__(key)
             except KeyError as err:
@@ -137,12 +144,29 @@ class RegressionTestMeta(type):
                         ) from None
                     else:
                         # As the last resource, look if key is a variable in
-                        # any of the base classes. If so, make its value
-                        # available in the current class' namespace.
+                        # any of the base classes. If so, create a shadow
+                        # (proxy) variable of it and all of its aliases in the
+                        # current namespace
                         for b in self['_rfm_bases']:
                             if key in b._rfm_var_space:
-                                v = variables.ShadowVar(b._rfm_var_space[key])
-                                self._namespace[key] = v
+                                # We suppress all warnings from the lowering
+                                # of variables here unless this is an alias
+                                v_orig = b._rfm_var_space[key]
+                                warn = False
+                                if v_orig.is_alias():
+                                    # If we need to lower an alias, we will do
+                                    # this through its root variable
+                                    v_orig = _find_root(v_orig)
+                                    warn = True
+
+                                v = variables.ShadowVar(v_orig)
+                                self._namespace[v_orig.name] = v
+                                for ref in v_orig.refs():
+                                    u = variables.ShadowVar(
+                                        ref, alias=v, warnings=warn
+                                    )
+                                    self._namespace[ref.name] = u
+
                                 return v
 
                         # If 'key' is neither a variable nor a parameter,
