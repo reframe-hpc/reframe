@@ -1101,7 +1101,7 @@ def main():
                 f'{len(testcases)} remaining'
             )
 
-        if options.parameterize is not None:
+        if options.parameterize:
             # Prepare parameters
             params = {}
             for param_spec in options.parameterize:
