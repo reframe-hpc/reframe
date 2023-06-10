@@ -790,7 +790,7 @@ def extractall_s(patt, string, tag=0, conv=None):
     ``patt`` in ``string``.
 
     :arg patt: as in :func:`extractall`.
-'   :arg string: The string to examine.
+    :arg string: The string to examine.
     :arg tag: as in :func:`extractall`.
     :arg conv: as in :func:`extractall`.
     :returns: same as :func:`extractall`.
