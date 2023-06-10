@@ -937,17 +937,15 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
     methods = methods or []
 
     # Update the namespace with the body elements
-    namespace.update(body)
+    #
+    # NOTE: We do not use `update()` here so as to force the `__setitem__`
+    # logic
+    for k, v in body.items():
+        namespace[k] = v
 
     # Add methods to the namespace
     for m in methods:
         namespace[m.__name__] = m
-
-    # We explicitly call reset on each namespace key to trigger the
-    # functionality of `__setitem__()` as if the body elements were actually
-    # being typed in the class definition
-    for k in list(namespace.keys()):
-        namespace.reset(k)
 
     cls = RegressionTestMeta(name, bases, namespace, **kwargs)
     if not module:
