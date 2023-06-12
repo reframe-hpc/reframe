@@ -175,7 +175,7 @@ class MultiFileHandler(logging.FileHandler):
     def __generate_header(self, record):
         # Generate the header from the record and fmt
 
-        # Expand the for the special check_#ALL specifier
+        # Expand the special check_#ALL specifier
         if '%(check_#ALL)s' in self.__fmt:
             delim = _guess_delim(self.__fmt)
             self.__fmt = self.__fmt.replace(

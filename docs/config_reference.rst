@@ -1063,7 +1063,7 @@ All logging handlers share the following set of common attributes:
    On expanding this specifier, ReFrame will try to guess the delimiter to use for separating the different attributes based on the existing format.
    If it cannot guess it, it will default to ``|``.
 
-   Since this can lead to very length records, you may consider using it with the :attr:`~logging.handlers_perflog..filelog..ignore_keys` parameter to filter out some attributes that are not of interest.
+   Since this can lead to very long records, you may consider using it with the :attr:`~logging.handlers_perflog..filelog..ignore_keys` parameter to filter out some attributes that are not of interest.
 
 .. versionadded:: 3.3
    Allow arbitrary test attributes to be logged.
