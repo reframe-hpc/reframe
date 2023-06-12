@@ -198,7 +198,7 @@ class TestVar:
     # to denote the "private" fields.
 
     __slots__ = ('_p_default_value', '_p_field',
-                 '_loggable', '_name', '_target')
+                 '_loggable', '_name', '_target', '_refs')
 
     __mutable_props = ('_default_value',)
 
@@ -227,8 +227,10 @@ class TestVar:
                 f'{fields.Field.__qualname__}'
             )
 
+        self._refs = []
         if alias is not None:
             self._p_field = alias._field
+            alias.add_ref(self)
         else:
             self._p_field = field_type(*args, **kwargs)
 
@@ -243,11 +245,31 @@ class TestVar:
         ret._p_default_value = var._default_value
         ret._loggable = var._loggable
         ret._target = var._target
+        ret._refs = var._refs
+        if var.is_alias():
+            # If we are deprecating an alias, we need to update the back
+            # reference in the target variable with the deprecated one
+            ret._target.replace_ref(var, ret)
+
         return ret
 
     def _warn_deprecation(self, kind):
         if self.is_deprecated() and self.field.op & kind:
             user_deprecation_warning(self.field.message)
+
+    def replace_ref(self, old, new):
+        for i, ref in enumerate(self._refs):
+            if ref is old:
+                break
+
+        if i < len(self._refs):
+            self._refs[i] = new
+
+    def add_ref(self, var):
+        self._refs.append(var)
+
+    def refs(self):
+        return self._refs
 
     def is_deprecated(self):
         return isinstance(self._p_field, fields.DeprecatedField)
@@ -682,25 +704,45 @@ class TestVar:
 class ShadowVar(TestVar):
     '''A shadow instance of another variable.
 
-    This is essentially a fully-fledged shallow copy of another variable. It
-    is used during the construction of the class namespace to bring in scope a
-    requested variable that is defined in a base class (see
+    This is essentially a fully-fledged copy of another variable. It is
+    practically a shallow copy of the variable except its default value, which
+    is deep copied, so that in case it is mutable to allow users to set it
+    without affecting the base classes.
+
+    The ShadowVar is used during the construction of the class namespace to
+    bring in scope a requested variable that is defined in a base class (see
     `MetaNamespace.__getitem__()`)
 
     We could not simply create a reference of the original variable in the
     current namespace, because we need a mechanism to differentiate the
-    lowered variable from any redefinition, which is illegal.
+    lowered variable from any redefinition, which is not allowed.
 
-    Also, we don't need a deep copy, since the shadow variable will replace
-    the original variable in the newly constructed `VarSpace`.
+    Also, we don't need a full deep copy, since the shadow variable will
+    replace the original variable in the newly constructed `VarSpace`.
 
     '''
 
-    def __init__(self, other):
-        for name in self.__slots__:
-            setattr(self, name, getattr(other, name))
+    def __init__(self, other, alias=None, warnings=True):
+        if alias and not isinstance(alias, ShadowVar):
+            raise TypeError(
+                'a ShadowVar can only be an alias of another ShadowVar'
+            )
 
-        self._warn_deprecation(DEPRECATE_RD)
+        for name in self.__slots__:
+            val = getattr(other, name)
+            if name == '_p_default_value':
+                if alias is not None:
+                    val = alias._default_value
+                else:
+                    val = copy.deepcopy(val)
+
+            setattr(self, name, val)
+
+        if alias is not None:
+            self._target = alias
+
+        if warnings:
+            self._warn_deprecation(DEPRECATE_RD)
 
     def __repr__(self):
         return super().__repr__().replace('TestVar', 'ShadowVar')

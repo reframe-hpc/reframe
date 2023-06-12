@@ -192,6 +192,7 @@ site_configuration = {
             'modules': [
                 {'name': 'PrgEnv-gnu', 'collection': False, 'path': None}
             ],
+            'prepare_cmds': ['echo prepare1', 'echo prepare2'],
             'extras': {
                 'foo': 2,
                 'bar': 'y'

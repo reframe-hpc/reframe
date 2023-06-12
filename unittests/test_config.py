@@ -307,6 +307,12 @@ def test_select_subconfig(site_config):
     assert site_config.get('systems/0/sched_options') == {
         'job_submit_timeout': 10
     }
+    assert site_config.get(
+        'systems/0/sched_options/resubmit_on_errors'
+    ) == []
+    assert site_config.get(
+        'systems/0/partitions/@gpu/sched_options/resubmit_on_errors'
+    ) == []
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
     assert site_config.get('environments/1/cxx') == 'CC'
     assert site_config.get('general/0/check_search_path') == ['c:d']

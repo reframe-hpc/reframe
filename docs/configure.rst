@@ -116,7 +116,7 @@ Environments Configuration
 We have seen already environments to be referred to by the ``environs`` property of a partition.
 An environment in ReFrame is simply a collection of environment modules, environment variables and compiler and compiler flags definitions.
 None of these attributes is required.
-An environment can simply by empty, in which case it refers to the actual environment that ReFrame runs in.
+An environment can simply be empty, in which case it refers to the actual environment that ReFrame runs in.
 In fact, this is what the generic fallback configuration of ReFrame does.
 
 Environments in ReFrame are configured under the ``environments`` section of the documentation.

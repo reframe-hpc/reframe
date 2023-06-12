@@ -1338,7 +1338,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :attr:`~config.logging.handlers..graylog..address`
+      Associated configuration parameter :attr:`~config.logging.handlers_perflog..graylog..address`
       ================================== ==================
 
 
@@ -1355,7 +1355,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :attr:`~config.logging.handlers..httpjson..url`
+      Associated configuration parameter :attr:`~config.logging.handlers_perflog..httpjson..url`
       ================================== ==================
 
 
@@ -1462,7 +1462,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     :option:`--perflogdir`
-      Associated configuration parameter :attr:`~config.logging.handlers..filelog..basedir`
+      Associated configuration parameter :attr:`~config.logging.handlers_perflog..filelog..basedir`
       ================================== ==================
 
 

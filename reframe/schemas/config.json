@@ -392,6 +392,10 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "prepare_cmds": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
                     "extras": {
                         "type": "object",
                         "propertyNames": {
@@ -420,11 +424,9 @@
                         "items": {
                             "anyOf": [
                                 {"$ref": "#/defs/file_handler"},
-                                {"$ref": "#/defs/filelog_handler"},
                                 {"$ref": "#/defs/graylog_handler"},
                                 {"$ref": "#/defs/stream_handler"},
-                                {"$ref": "#/defs/syslog_handler"},
-                                {"$ref": "#/defs/httpjson_handler"}
+                                {"$ref": "#/defs/syslog_handler"}
                             ]
                         }
                     },
@@ -433,11 +435,9 @@
                         "items": {
                             "anyOf": [
                                 {"$ref": "#/defs/file_handler"},
-                                {"$ref": "#/defs/filelog_handler"},
                                 {"$ref": "#/defs/graylog_handler"},
                                 {"$ref": "#/defs/stream_handler"},
-                                {"$ref": "#/defs/syslog_handler"},
-                                {"$ref": "#/defs/httpjson_handler"}
+                                {"$ref": "#/defs/syslog_handler"}
                             ]
                         },
                         "minItems": 1
@@ -450,7 +450,8 @@
                                 {"$ref": "#/defs/filelog_handler"},
                                 {"$ref": "#/defs/graylog_handler"},
                                 {"$ref": "#/defs/stream_handler"},
-                                {"$ref": "#/defs/syslog_handler"}
+                                {"$ref": "#/defs/syslog_handler"},
+                                {"$ref": "#/defs/httpjson_handler"}
                             ]
                         }
                     },
@@ -575,18 +576,18 @@
         "logging/handlers*/file_append": false,
         "logging/handlers*/file_name": "",
         "logging/handlers*/file_timestamp": false,
-        "logging/handlers*/filelog_append": true,
-        "logging/handlers*/filelog_basedir": "./perflogs",
-        "logging/handlers*/filelog_ignore_keys": [],
-        "logging/handlers*/graylog_extras": {},
-        "logging/handlers*/httpjson_extras": {},
-        "logging/handlers*/httpjson_ignore_keys": [],
-        "logging/handlers*/httpjson_json_formatter": null,
-        "logging/handlers*/httpjson_extra_headers": {},
-        "logging/handlers*/httpjson_debug": false,
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",
+        "logging/handlers_perflog/filelog_append": true,
+        "logging/handlers_perflog/filelog_basedir": "./perflogs",
+        "logging/handlers_perflog/filelog_ignore_keys": [],
+        "logging/handlers_perflog/graylog_extras": {},
+        "logging/handlers_perflog/httpjson_extras": {},
+        "logging/handlers_perflog/httpjson_ignore_keys": [],
+        "logging/handlers_perflog/httpjson_json_formatter": null,
+        "logging/handlers_perflog/httpjson_extra_headers": {},
+        "logging/handlers_perflog/httpjson_debug": false,
         "modes/options": [],
         "modes/target_systems": ["*"],
         "systems/descr": "",
@@ -619,9 +620,9 @@
         "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
         "systems/partitions/extras": {},
-        "{systems,systems/partitions}/sched_options/ignore_reqnodenotavail": false,
-        "{systems,systems/partitions}/sched_options/job_submit_timeout": 60,
-        "{systems,systems/partitions}/sched_options/resubmit_on_errors": [],
-        "{systems,systems/partitions}/sched_options/use_nodes_option": false
+        "systems*/sched_options/ignore_reqnodenotavail": false,
+        "systems*/sched_options/job_submit_timeout": 60,
+        "systems*/sched_options/resubmit_on_errors": [],
+        "systems*/sched_options/use_nodes_option": false
     }
 }
