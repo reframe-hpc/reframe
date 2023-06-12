@@ -198,9 +198,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. seealso::
     #:    - `Environment features
-    #:      <config_reference.html#environments-.features>`__
+    #:      <config_reference.html#config.environments.features>`__
     #:    - `Environment extras
-    #:      <config_reference.html#environments-.extras>`__
+    #:      <config_reference.html#config.environments.extras>`__
     #:
     #: .. versionchanged:: 2.12
     #:    Programming environments can now be specified using wildcards.
@@ -268,9 +268,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. seealso::
     #:    - `System partition features
-    #:      <config_reference.html#systems-.partitions-.features>`__
+    #:      <config_reference.html#config.systems.partitions.features>`__
     #:    - `System partition extras
-    #:      <config_reference.html#systems-.partitions-.extras>`__
+    #:      <config_reference.html#config.systems.partitions.extras>`__
     #:
     #: .. versionchanged:: 3.3
     #:    Default value changed from ``[]`` to ``None``.
