@@ -6,6 +6,20 @@
 from reframe.core.backends import register_launcher
 from reframe.core.launchers import JobLauncher
 
+# Remote shell launchers
+
+
+@register_launcher('clush')
+class ClushLauncher(JobLauncher):
+    def command(self, job):
+        return ['clush', *job.sched_access]
+
+
+@register_launcher('pdsh')
+class PdshLauncher(JobLauncher):
+    def command(self, job):
+        return ['pdsh', *job.sched_access]
+
 
 @register_launcher('ssh')
 class SSHLauncher(JobLauncher):
