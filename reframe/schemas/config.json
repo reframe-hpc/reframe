@@ -388,6 +388,10 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "prepare_cmds": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
                     "extras": {
                         "type": "object",
                         "propertyNames": {

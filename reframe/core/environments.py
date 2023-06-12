@@ -39,7 +39,7 @@ class Environment(jsonext.JSONSerializable):
     '''
 
     def __init__(self, name, modules=None, env_vars=None,
-                 extras=None, features=None):
+                 extras=None, features=None, prepare_cmds=None):
         modules = modules or []
         env_vars = env_vars or []
         self._name = name
@@ -56,6 +56,7 @@ class Environment(jsonext.JSONSerializable):
 
         self._extras = extras or {}
         self._features = features or []
+        self._prepare_cmds = prepare_cmds or []
 
     @property
     def name(self):
@@ -134,6 +135,16 @@ class Environment(jsonext.JSONSerializable):
         :type: :class:`List[str]`
         '''
         return self._features
+
+    @property
+    def prepare_cmds(self):
+        '''The prepare commands associated with this environment.
+
+        .. versionadded:: 4.3.0
+
+        :type: :class:`List[str]`
+        '''
+        return util.SequenceView(self._prepare_cmds)
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -220,6 +231,7 @@ class ProgEnvironment(Environment):
                  env_vars=None,
                  extras=None,
                  features=None,
+                 prepare_cmds=None,
                  cc='cc',
                  cxx='CC',
                  ftn='ftn',
@@ -230,7 +242,8 @@ class ProgEnvironment(Environment):
                  fflags=None,
                  ldflags=None,
                  **kwargs):
-        super().__init__(name, modules, env_vars, extras, features)
+        super().__init__(name, modules, env_vars, extras, features,
+                         prepare_cmds)
         self._cc = cc
         self._cxx = cxx
         self._ftn = ftn
