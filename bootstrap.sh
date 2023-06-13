@@ -88,15 +88,12 @@ fi
 export PIP_USER=0
 
 # Check if ensurepip is installed
-$python -m ensurepip --version &> /dev/null
-epip=$?
-
-export PATH=$(pwd)/external/usr/bin:$PATH
-
-# Install pip for Python 3
-if [ $epip -eq 0 ]; then
+if $python -m ensurepip --version &> /dev/null; then
+    # Install pip for Python 3
     CMD $python -m ensurepip --root $(pwd)/external/ --default-pip
 fi
+
+export PATH=$(pwd)/external/usr/bin:$PATH
 
 # ensurepip installs pip in `external/usr/` whereas the `--root` option installs
 # everything under `external/`. That's why we include both in the PYTHONPATH
