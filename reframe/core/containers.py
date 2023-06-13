@@ -78,6 +78,15 @@ class ContainerPlatform(abc.ABC):
     #:    This attribute is no more deprecated.
     workdir = fields.TypedField(str, type(None))
 
+    #: Use a separate launcher for your container
+    #:
+    #: This allows for a container to be lauched with a separate tool
+    #: If no launcher is provided, then the default container command is ran.
+    #: 
+    #: :type: :class:`list[str]` or :class:`None`
+    #: :default: :class:`None`
+    container_launcher = fields.TypedField(typ.List[str], type(None))
+
     def __init__(self):
         self.image = None
         self.command = None
@@ -85,6 +94,7 @@ class ContainerPlatform(abc.ABC):
         self.mount_points  = []
         self.options = []
         self.pull_image = True
+        self.container_launcher = None
 
     @abc.abstractmethod
     def emit_prepare_commands(self, stagedir):
@@ -254,6 +264,9 @@ class Singularity(ContainerPlatform):
         run_opts = [f'-B"{mp[0]}:{mp[1]}"' for mp in mount_points]
         if self.with_cuda:
             run_opts.append('--nv')
+
+        if self.container_launcher:
+            self._launch_command = f'{" ".join(self.container_launcher)} {self._launch_command}'
 
         if self.workdir:
             run_opts.append(f'--pwd {self.workdir}')
