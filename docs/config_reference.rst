@@ -1,6 +1,6 @@
-=======================
+***********************
 Configuration Reference
-=======================
+***********************
 
 ReFrame's behavior can be configured through its configuration file (see :doc:`configure`), environment variables and command-line options.
 An option can be specified via multiple paths (e.g., a configuration file parameter and an environment variable), in which case command-line options precede environment variables, which in turn precede configuration file options.
@@ -15,14 +15,14 @@ Even if a configuration object contains a list of other objects, this is not ref
 For example, by ``systems.partitions.name`` we designate the ``name`` property of any partition object inside the ``partitions`` property of any system object inside the top level ``systems`` object.
 If we were to use indices, that would be rewritten as ``systems[i].partitions[j].name`` where ``i`` indexes the systems and ``j`` indexes the partitions of the i-th system.
 For cases, where the objects in a list are not homogeneous, e.g., the logging handlers, we surround the object type with ``..``.
-For example, the ``logging.handlers..filelog..name`` syntax designates the ``name`` attribute of the ``filelog`` logging handler.
+For example, the ``logging.handlers_perflog..filelog..name`` syntax designates the ``name`` attribute of the ``filelog`` logging handler.
 
 .. |schemas/config.json| replace:: ``reframe/schemas/config.json``
 .. _schemas/config.json: https://github.com/reframe-hpc/reframe/blob/master/reframe/schemas/config.json
 
 
 Top-level Configuration
------------------------
+=======================
 
 The top-level configuration object is essentially the full configuration of ReFrame.
 It consists of the following properties, which we also call conventionally *configuration sections*:
@@ -61,6 +61,29 @@ It consists of the following properties, which we also call conventionally *conf
    A list of `general configuration objects <#general-configuration>`__.
 
 
+.. py:data:: autodetect_methods
+
+   :required: No
+   :default: ``["py::socket.gethostname"]``
+
+   A list of system auto-detection methods for identifying the current system.
+
+   The list can contain two types of methods:
+
+   1. Python methods: These are prefixed with ``py::`` and should point to a Python callable taking zero arguments and returning a string.
+      If the specified Python callable is not prefixed with a module, it will be looked up in the loaded configuration files starting from the last file.
+      If the requested symbol cannot be found, a warning will be issued and the method will be ignored.
+   2. Shell commands: Any string not prefixed with ``py::`` will be treated as a shell command and will be executed *during auto-detection* to retrieve the hostname.
+      The standard output of the command will be used.
+
+   If the :option:`--system` option is not passed, ReFrame will try to autodetect the current system trying the methods in this list successively, until one of them succeeds.
+   The resulting name will be matched against the :attr:`~config.systems.hostnames` patterns of each system and the system that matches first will be used as the current one.
+
+   The auto-detection methods can also be controlled through the :envvar:`RFM_AUTODETECT_METHODS` environment variable.
+
+   .. versionadded:: 4.3
+
+
 .. warning::
    .. versionchanged:: 4.0.0
       The :data:`schedulers` section is removed.
@@ -69,7 +92,7 @@ It consists of the following properties, which we also call conventionally *conf
 
 
 System Configuration
---------------------
+====================
 
 .. currentmodule:: config
 
@@ -213,9 +236,8 @@ System Configuration
       This option is broken in 4.0.
 
 
-------------------------------
 System Partition Configuration
-------------------------------
+==============================
 
 .. py:attribute:: systems.partitions.name
 
@@ -376,6 +398,7 @@ System Partition Configuration
    Available values are the following:
 
    - ``alps``: Parallel programs will be launched using the `Cray ALPS <https://pubs.cray.com/content/S-2393/CLE%205.2.UP03/cle-xc-system-administration-guide-s-2393-5203-xc/the-aprun-client>`__ ``aprun`` command.
+   - ``clush``: Parallel programs will be launched using the `ClusterShell <http://clustershell.readthedocs.org/>`__ ``clush`` command. This launcher uses the partition's :attr:`~config.systems.partitions.access` property in order to determine the options to be passed to ``clush``.
    - ``ibrun``: Parallel programs will be launched using the ``ibrun`` command.
      This is a custom parallel program launcher used at `TACC <https://portal.tacc.utexas.edu/user-guides/stampede2>`__.
    - ``local``: No parallel program launcher will be used.
@@ -384,6 +407,7 @@ System Partition Configuration
    - ``lrun-gpu``: Parallel programs will be launched using `LC Launcher <https://hpc.llnl.gov/training/tutorials/using-lcs-sierra-system#lrun>`__'s ``lrun -M "-gpu"`` command that enables the CUDA-aware Spectrum MPI.
    - ``mpirun``: Parallel programs will be launched using the ``mpirun`` command.
    - ``mpiexec``: Parallel programs will be launched using the ``mpiexec`` command.
+   - ``pdsh``: Parallel programs will be launched using the ``pdsh`` command. This launcher uses the partition's :attr:`~config.systems.partitions.access` property in order to determine the options to be passed to ``pdsh``.
    - ``srun``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command.
    - ``srunalloc``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command, but job allocation options will also be emitted.
      This can be useful when combined with the ``local`` job scheduler.
@@ -419,6 +443,10 @@ System Partition Configuration
    :default: ``[]``
 
    A list of job scheduler options that will be passed to the generated job script for gaining access to that logical partition.
+
+ .. note::
+    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` parameters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
+    The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
 .. py:attribute:: systems.partitions.environs
@@ -690,12 +718,12 @@ ReFrame allows you to define custom scheduler resources for each partition that 
      }
 
  .. note::
-    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` attributes may either refer to actual ``qsub`` options or may be just resources specifications to be passed to the ``-l`` option.
+    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` parameters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
     The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
 Environment Configuration
--------------------------
+=========================
 
 Environments defined in this section will be used for running regression tests.
 They are associated with `system partitions <#system-partition-configuration>`__.
@@ -758,6 +786,16 @@ They are associated with `system partitions <#system-partition-configuration>`__
    The attributes of this object must be alphanumeric strings starting with a non-digit character and their values can be of any type.
 
    .. versionadded:: 3.9.1
+
+
+.. py:attribute:: environments.prepare_cmds
+
+   :required: No
+   :default: ``[]``
+
+   List of shell commands to be emitted before any commands that load the environment.
+
+   .. versionadded:: 4.3.0
 
 
 .. py:attribute:: environments.cc
@@ -859,7 +897,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
 .. _logging-config-reference:
 
 Logging Configuration
----------------------
+=====================
 
 Logging in ReFrame is handled by logger objects which further delegate message to *logging handlers* which are eventually responsible for emitting or sending the log records to their destinations.
 You may define different logger objects per system but *not* per partition.
@@ -924,7 +962,6 @@ You may define different logger objects per system but *not* per partition.
 
 
 
----------------------------------
 Common logging handler properties
 ---------------------------------
 
@@ -976,7 +1013,6 @@ All logging handlers share the following set of common attributes:
    ReFrame accepts all log record attributes from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following attributes:
 
    .. csv-table::
-      :header: "Log record attribute", "Description"
 
       ``%(check_build_locally)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.build_locally` attribute.
       ``%(check_build_time_limit)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.build_time_limit` attribute.
@@ -1036,6 +1072,13 @@ All logging handlers share the following set of common attributes:
    ReFrame allows you to log any test variable, parameter or property if they are marked as "loggable".
    The log record attribute will have the form ``%(check_NAME)s`` where ``NAME`` is the variable name, the parameter name or the property name that is marked as loggable.
 
+   There is also the special ``%(check_#ALL)s`` format specifier which expands to all the loggable test attributes.
+   These include all the above specifiers and any additional loggable variables or parameters defined by the test.
+   On expanding this specifier, ReFrame will try to guess the delimiter to use for separating the different attributes based on the existing format.
+   If it cannot guess it, it will default to ``|``.
+
+   Since this can lead to very long records, you may consider using it with the :attr:`~logging.handlers_perflog..filelog..ignore_keys` parameter to filter out some attributes that are not of interest.
+
 .. versionadded:: 3.3
    Allow arbitrary test attributes to be logged.
 
@@ -1044,6 +1087,9 @@ All logging handlers share the following set of common attributes:
 
 .. versionchanged:: 3.11.0
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
+
+.. versionadded:: 4.3
+   The ``%(check_#ALL)s`` special specifier is added.
 
 
 .. py:attribute:: logging.handlers.format_perfvars
@@ -1089,7 +1135,6 @@ All logging handlers share the following set of common attributes:
    In addition to the format directives supported by the standard library's `time.strftime() <https://docs.python.org/3.8/library/time.html#time.strftime>`__ function, ReFrame allows you to use the ``%:z`` directive -- a GNU ``date`` extension --  that will print the time zone difference in a RFC3339 compliant way, i.e., ``+/-HH:MM`` instead of ``+/-HHMM``.
 
 
-------------------------
 The ``file`` log handler
 ------------------------
 
@@ -1134,15 +1179,12 @@ The additional properties for the ``file`` handler are the following:
 
 .. _filelog-handler:
 
----------------------------
 The ``filelog`` log handler
 ---------------------------
 
-This handler is meant primarily for performance logging and logs the performance of a test in one or more files.
+This handler is meant for performance logging only and logs the performance of a test in one or more files.
 The additional properties for the ``filelog`` handler are the following:
 
-
-.. py:attribute:: logging.handlers..filelog..basedir
 
 .. py:attribute:: logging.handlers_perflog..filelog..basedir
 
@@ -1152,13 +1194,18 @@ The additional properties for the ``filelog`` handler are the following:
    The base directory of performance data log files.
 
 
-.. py:attribute:: logging.handlers..filelog..prefix
+.. py:attribute:: logging.handlers_perflog..filelog..ignore_keys
+
+   A list of log record `format specifiers <#config.logging.handlers.format>`__ that will be ignored by the special ``%(check_#ALL)s`` specifier.
+
+   .. versionadded:: 4.3
+
 
 .. py:attribute:: logging.handlers_perflog..filelog..prefix
 
    :required: Yes
 
-   This is a directory prefix (usually dynamic), appended to the :attr:`~config.logging.handlers..filelog..basedir`, where the performance logs of a test will be stored.
+   This is a directory prefix (usually dynamic), appended to the :attr:`~config.logging.handlers_perflog..filelog..basedir`, where the performance logs of a test will be stored.
    This attribute accepts any of the check-specific `formatting placeholders <#config.logging.handlers_perflog.format>`__.
    This allows to create dynamic paths based on the current system, partition and/or programming environment a test executes with.
    For example, a value of ``%(check_system)s/%(check_partition)s`` would generate the following structure of performance log files:
@@ -1177,8 +1224,6 @@ The additional properties for the ``filelog`` handler are the following:
         ...
 
 
-.. py:attribute:: logging.handlers..filelog..append
-
 .. py:attribute:: logging.handlers_perflog..filelog..append
 
    :required: No
@@ -1193,14 +1238,11 @@ The additional properties for the ``filelog`` handler are the following:
    Examples of changes in the logged information are when the log record format changes or a new performance metric is added, deleted or has its name changed.
    This behavior guarantees that each log file is consistent and it will not break existing parsers.
 
----------------------------
 The ``graylog`` log handler
 ---------------------------
 
-This handler sends log records to a `Graylog <https://www.graylog.org/>`__ server.
+This handler is meant for performance logging only and sends log records to a `Graylog <https://www.graylog.org/>`__ server.
 The additional properties for the ``graylog`` handler are the following:
-
-.. py:attribute:: logging.handlers..graylog..address
 
 .. py:attribute:: logging.handlers_perflog..graylog..address
 
@@ -1208,8 +1250,6 @@ The additional properties for the ``graylog`` handler are the following:
 
    The address of the Graylog server defined as ``host:port``.
 
-
-.. py:attribute:: logging.handlers..graylog..extras
 
 .. py:attribute:: logging.handlers_perflog..graylog..extras
 
@@ -1245,7 +1285,6 @@ Although the :attr:`~config.logging.handlers.format` attribute is defined for th
 This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
 
 
---------------------------
 The ``stream`` log handler
 --------------------------
 
@@ -1267,7 +1306,6 @@ The additional properties for the ``stream`` handler are the following:
    - ``stderr``: the standard error.
 
 
---------------------------
 The ``syslog`` log handler
 --------------------------
 
@@ -1310,14 +1348,11 @@ The additional properties for the ``syslog`` handler are the following:
    This can either be of the form ``<host>:<port>`` or simply a path that refers to a Unix domain socket.
 
 
-----------------------------
 The ``httpjson`` log handler
 ----------------------------
 
 This handler sends log records in JSON format to a server using HTTP POST requests.
 The additional properties for the ``httpjson`` handler are the following:
-
-.. py:attribute:: logging.handlers..httpjson..url
 
 .. py:attribute:: logging.handlers_perflog..httpjson..url
 
@@ -1326,7 +1361,16 @@ The additional properties for the ``httpjson`` handler are the following:
    The URL to be used in the HTTP(S) request server.
 
 
-.. py:attribute:: logging.handlers..httpjson..extras
+.. py:attribute:: logging.handlers_perflog..httpjson..extra_headers
+
+   :required: No
+   :default: ``{}``
+
+   A set of optional key/value pairs to be sent as HTTP message headers (e.g. API keys).
+   These may depend on the server configuration.
+
+   .. versionadded:: 4.2
+
 
 .. py:attribute:: logging.handlers_perflog..httpjson..extras
 
@@ -1335,8 +1379,6 @@ The additional properties for the ``httpjson`` handler are the following:
 
    A set of optional key/value pairs to be passed with each log record to the server.
    These may depend on the server configuration.
-
-.. py:attribute:: logging.handlers..httpjson..ignore_keys
 
 .. py:attribute:: logging.handlers_perflog..httpjson..ignore_keys
 
@@ -1356,6 +1398,7 @@ An example configuration of this handler for performance logging is shown here:
        'type': 'httpjson',
        'url': 'http://httpjson-server:12345/rfm',
        'level': 'info',
+       'extra_headers': {'Authorization': 'Token YOUR_API_TOKEN'},
        'extras': {
            'facility': 'reframe',
            'data-version': '1.0'
@@ -1365,8 +1408,6 @@ An example configuration of this handler for performance logging is shown here:
 
 
 This handler transmits the whole log record, meaning that all the information will be available and indexable at the remote end.
-
-.. py:attribute:: logging.handlers..httpjson..debug
 
 .. py:attribute:: logging.handlers_perflog..httpjson..debug
 
@@ -1379,8 +1420,6 @@ This handler transmits the whole log record, meaning that all the information wi
    .. versionadded:: 4.1
 
 
-.. py:attribute:: logging.handlers..httpjson..json_formatter
-
 .. py:attribute:: logging.handlers_perflog..httpjson..json_formatter
 
    A callable for converting the log record into JSON.
@@ -1392,8 +1431,8 @@ This handler transmits the whole log record, meaning that all the information wi
       :arg record: The prepared log record.
          The log record is a simple Python object with all the attributes listed in :attr:`~config.logging.handlers.format`, as well as all the default Python `log record <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ attributes.
          In addition to those, there is also the special :attr:`__rfm_check__` attribute that contains a reference to the actual test for which the performance is being logged.
-      :arg extras: Any extra attributes specified in :attr:`~config.logging.handlers..httpjson..extras`.
-      :arg ignore_keys: The set of keys specified in :attr:`~config.logging.handlers..httpjson..ignore_keys`.
+      :arg extras: Any extra attributes specified in :attr:`~config.logging.handlers_perflog..httpjson..extras`.
+      :arg ignore_keys: The set of keys specified in :attr:`~config.logging.handlers_perflog..httpjson..ignore_keys`.
          ReFrame always adds the default Python log record attributes in this set.
       :returns: A string representation of the JSON record to be sent to the server or :obj:`None` if the record should not be sent to the server.
 
@@ -1407,7 +1446,7 @@ This handler transmits the whole log record, meaning that all the information wi
 .. _exec-mode-config:
 
 Execution Mode Configuration
-----------------------------
+============================
 
 ReFrame allows you to define groups of command line options that are collectively called *execution modes*.
 An execution mode can then be selected from the command line with the :option:`--mode` option.
@@ -1440,7 +1479,7 @@ The options of an execution mode will be passed to ReFrame as if they were speci
 
 
 General Configuration
----------------------
+=====================
 
 .. py:attribute:: general.check_search_path
 
@@ -1738,7 +1777,7 @@ General Configuration
 
 
 Module Objects
---------------
+==============
 
 .. versionadded:: 3.3
 
@@ -1788,7 +1827,7 @@ It can either be a simple string or a JSON object with the following attributes:
 
 
 Processor Info
---------------
+==============
 
 .. versionadded:: 3.5.0
 
@@ -1886,7 +1925,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 
 
 Device Info
------------
+===========
 
 .. versionadded:: 3.5.0
 

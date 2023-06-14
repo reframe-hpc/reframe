@@ -1,0 +1,18 @@
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+stream_workflows:
+  - elem_type: 'float'
+    array_size: 16777216
+    num_iters: 10
+    num_cpus_per_task: 4
+  - elem_type: 'double'
+    array_size: 1048576
+    num_iters: 100
+    num_cpus_per_task: 1
+  - elem_type: 'double'
+    array_size: 16777216
+    num_iters: 10
+    thread_scaling: [1, 2, 4, 8]

@@ -54,16 +54,40 @@ site_configuration = {
                     'type': 'filelog',
                     'prefix': '%(check_system)s/%(check_partition)s',
                     'level': 'info',
-                    'format': (
-                        '%(check_job_completion_time)s,%(version)s,'
-                        '%(check_display_name)s,%(check_system)s,'
-                        '%(check_partition)s,%(check_environ)s,'
-                        '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
-                    ),
+                    'format': ('%(check_result)s|'
+                               '%(check_job_completion_time)s|%(check_#ALL)s'),
+                    'ignore_keys': [
+                        'check_build_locally',
+                        'check_build_time_limit',
+                        'check_display_name',
+                        'check_executable',
+                        'check_executable_opts',
+                        'check_hashcode',
+                        'check_keep_files',
+                        'check_local',
+                        'check_maintainers',
+                        'check_max_pending_time',
+                        'check_outputdir',
+                        'check_prebuild_cmds',
+                        'check_prefix',
+                        'check_prerun_cmds',
+                        'check_postbuild_cmds',
+                        'check_postrun_cmds',
+                        'check_readonly_files',
+                        'check_sourcepath',
+                        'check_sourcesdir',
+                        'check_stagedir',
+                        'check_strict_check',
+                        'check_tags',
+                        'check_time_limit',
+                        'check_valid_prog_environs',
+                        'check_valid_systems',
+                        'check_variables'
+                    ],
                     'format_perfvars': (
-                        '%(check_perf_value)s,%(check_perf_unit)s,'
-                        '%(check_perf_ref)s,%(check_perf_lower_thres)s,'
-                        '%(check_perf_upper_thres)s,'
+                        '%(check_perf_value)s|%(check_perf_unit)s|'
+                        '%(check_perf_ref)s|%(check_perf_lower_thres)s|'
+                        '%(check_perf_upper_thres)s|'
                     ),
                     'append': True
                 }

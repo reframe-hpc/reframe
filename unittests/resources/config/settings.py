@@ -7,6 +7,11 @@
 # Configuration file just for unit testing
 #
 
+def hostname():
+    '''Custom hostname function for testing auto-detection'''
+    return 'testsys'
+
+
 site_configuration = {
     'systems': [
         {
@@ -187,6 +192,7 @@ site_configuration = {
             'modules': [
                 {'name': 'PrgEnv-gnu', 'collection': False, 'path': None}
             ],
+            'prepare_cmds': ['echo prepare1', 'echo prepare2'],
             'extras': {
                 'foo': 2,
                 'bar': 'y'

@@ -14,7 +14,6 @@ import sys
 import time
 import traceback
 
-import reframe
 import reframe.core.config as config
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
@@ -574,14 +573,13 @@ def main():
         dest='autodetect_method',
         envvar='RFM_AUTODETECT_METHOD',
         action='store',
-        default='hostname',
         help='Method to detect the system'
     )
     argparser.add_argument(
-        dest='config_path',
-        envvar='RFM_CONFIG_PATH :',
-        action='append',
-        help='Directories where ReFrame will look for base configuration'
+        dest='autodetect_methods',
+        envvar='RFM_AUTODETECT_METHODS',
+        action='store',
+        help='List of methods for detecting the current system'
     )
     argparser.add_argument(
         dest='autodetect_xthostname',
@@ -590,6 +588,12 @@ def main():
         default=False,
         type=typ.Bool,
         help="Use Cray's xthostname file to retrieve the host name"
+    )
+    argparser.add_argument(
+        dest='config_path',
+        envvar='RFM_CONFIG_PATH :',
+        action='append',
+        help='Directories where ReFrame will look for base configuration'
     )
     argparser.add_argument(
         dest='git_timeout',
@@ -707,9 +711,7 @@ def main():
     # First configure logging with our generic configuration so as to be able
     # to print pretty messages; logging will be reconfigured by user's
     # configuration later
-    site_config = config.load_config(
-        os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py')
-    )
+    site_config = config.load_config('<builtin>')
     site_config.select_subconfig('generic')
     options.update_config(site_config)
     logging.configure_logging(site_config)
@@ -739,11 +741,33 @@ def main():
         )
         site_config = config.load_config(*conf_files)
         site_config.validate()
-        site_config.set_autodetect_meth(
-            options.autodetect_method,
-            use_fqdn=options.autodetect_fqdn,
-            use_xthostname=options.autodetect_xthostname
-        )
+
+        if options.autodetect_method:
+            printer.warning('RFM_AUTODETECT_METHOD is deprecated; '
+                            'please use RFM_AUTODETECT_METHODS instead')
+
+        autodetect_methods = []
+        if options.autodetect_methods:
+            autodetect_methods = options.autodetect_methods.split(',')
+        else:
+            if options.autodetect_fqdn:
+                printer.warning(
+                    'RFM_AUTODETECT_FQDN is deprecated; '
+                    'please use RFM_AUTODETECT_METHODS=py::socket.getfqdn '
+                    'instead'
+                )
+                autodetect_methods = ['py::socket.getfqdn']
+            elif options.autodetect_xthostname:
+                printer.warning(
+                    "RFM_AUTODETECT_XTHOSTNAME is deprecated; "
+                    "please use RFM_AUTODETECT_METHODS='cat /etc/xthostname,hostname' "  # noqa: E501
+                    "instead"
+                )
+                autodetect_methods = ['cat /etc/xthostname',
+                                      'py::socket.gethostname']
+
+        if autodetect_methods:
+            site_config.set_autodetect_methods(autodetect_methods)
 
         # We ignore errors about unresolved sections or configuration
         # parameters here, because they might be defined at the individual

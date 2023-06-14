@@ -128,12 +128,35 @@ def handleError(func):
 logging.Handler.handleError = handleError(logging.Handler.handleError)
 
 
+def _expand_params(check):
+    cls = type(check)
+    return {
+        name: getattr(check, name) for name, param in cls.param_space.items
+        if param.is_loggable()
+    }
+
+
+def _guess_delim(s):
+    '''Guess the delimiter in the given logging format string'''
+    delims = set()
+    for m in re.finditer(r'\%\((.*?)\)s(.)?', s):
+        d = m.group(2)
+        if d:
+            delims.add(d)
+
+    if len(delims) == 1:
+        return delims.pop()
+    else:
+        return '|'
+
+
 class MultiFileHandler(logging.FileHandler):
     '''A file handler that allows writing on different log files based on
     information from the log record.
     '''
 
-    def __init__(self, prefix, mode='a', encoding=None, fmt=None, perffmt=None):
+    def __init__(self, prefix, mode='a', encoding=None, fmt=None,
+                 perffmt=None, ignore_keys=None):
         super().__init__(prefix, mode, encoding, delay=True)
 
         # Reset FileHandler's filename
@@ -147,9 +170,21 @@ class MultiFileHandler(logging.FileHandler):
         self.__fmt = fmt
         self.__perffmt = perffmt
         self.__attr_patt = re.compile(r'\%\((.*?)\)s(.)?')
+        self.__ignore_keys = set(ignore_keys) if ignore_keys else set()
 
     def __generate_header(self, record):
         # Generate the header from the record and fmt
+
+        # Expand the special check_#ALL specifier
+        if '%(check_#ALL)s' in self.__fmt:
+            delim = _guess_delim(self.__fmt)
+            self.__fmt = self.__fmt.replace(
+                '%(check_#ALL)s',
+                delim.join(f'%({x})s'
+                           for x in sorted(record.__rfm_loggable_attrs__)
+                           if x not in self.__ignore_keys)
+            )
+
         header = ''
         for m in self.__attr_patt.finditer(self.__fmt):
             attr = m.group(1)
@@ -222,9 +257,8 @@ class MultiFileHandler(logging.FileHandler):
         except OSError as e:
             raise LoggingError('logging failed') from e
 
-        self.baseFilename = os.path.join(
-            dirname, f'{record.__rfm_check__.short_name}.log'
-        )
+        check_basename = type(record.__rfm_check__).variant_name()
+        self.baseFilename = os.path.join(dirname, f'{check_basename}.log')
         self._emit_header(record)
         self.stream = self.__streams[self.baseFilename]
         super().emit(record)
@@ -263,13 +297,28 @@ class CheckFieldFormatter(logging.Formatter):
     regression test.'''
 
     # NOTE: This formatter will work only for the '%' style
-    def __init__(self, fmt=None, datefmt=None, perffmt=None, style='%'):
+    def __init__(self, fmt=None, datefmt=None, perffmt=None,
+                 ignore_keys=None, style='%'):
         super().__init__(fmt, datefmt, style)
 
         self.__fmt = fmt
         self.__fmtperf = perffmt[:-1] if perffmt else ''
         self.__specs = re.findall(r'\%\((\S+?)\)s', fmt)
         self.__delim = perffmt[-1] if perffmt else ''
+        self.__expand_vars = '%(check_#ALL)s' in self.__fmt
+        self.__expanded = False
+        self.__ignore_keys = set(ignore_keys) if ignore_keys else set()
+
+    def _expand_fmt(self, attrs):
+        if not self.__expand_vars or self.__expanded:
+            return self.__fmt
+
+        delim = _guess_delim(self.__fmt)
+        self.__fmt = self.__fmt.replace(
+            '%(check_#ALL)s', delim.join(f'%({x})s' for x in attrs
+                                         if x not in self.__ignore_keys)
+        )
+        self.__expanded = True
 
     def _format_perf(self, perfvars):
         chunks = []
@@ -292,6 +341,7 @@ class CheckFieldFormatter(logging.Formatter):
         return self.__delim.join(chunks)
 
     def formatMessage(self, record):
+        self._expand_fmt(sorted(record.__rfm_loggable_attrs__))
         for s in self.__specs:
             if not hasattr(record, s):
                 setattr(record, s, None)
@@ -383,8 +433,10 @@ def _create_filelog_handler(site_config, config_prefix):
     append = site_config.get(f'{config_prefix}/append')
     format = site_config.get(f'{config_prefix}/format')
     format_perf = site_config.get(f'{config_prefix}/format_perfvars')
+    ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
     return MultiFileHandler(filename_patt, mode='a+' if append else 'w+',
-                            fmt=format, perffmt=format_perf)
+                            fmt=format, perffmt=format_perf,
+                            ignore_keys=ignore_keys)
 
 
 def _create_syslog_handler(site_config, config_prefix):
@@ -473,6 +525,7 @@ def _create_httpjson_handler(site_config, config_prefix):
     extras = site_config.get(f'{config_prefix}/extras')
     ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
     json_formatter = site_config.get(f'{config_prefix}/json_formatter')
+    extra_headers = site_config.get(f'{config_prefix}/extra_headers')
     debug = site_config.get(f'{config_prefix}/debug')
 
     parsed_url = urllib.parse.urlparse(url)
@@ -514,7 +567,8 @@ def _create_httpjson_handler(site_config, config_prefix):
         getlogger().warning('httpjson: running in debug mode; '
                             'no data will be sent to the server')
 
-    return HTTPJSONHandler(url, extras, ignore_keys, json_formatter, debug)
+    return HTTPJSONHandler(url, extras, ignore_keys, json_formatter,
+                           extra_headers, debug)
 
 
 def _record_to_json(record, extras, ignore_keys):
@@ -563,7 +617,8 @@ class HTTPJSONHandler(logging.Handler):
     }
 
     def __init__(self, url, extras=None, ignore_keys=None,
-                 json_formatter=None, debug=False):
+                 json_formatter=None, extra_headers=None,
+                 debug=False):
         super().__init__()
         self._url = url
         self._extras = extras
@@ -580,6 +635,11 @@ class HTTPJSONHandler(logging.Handler):
                 "httpjson: 'json_formatter' has not the right signature: "
                 "it must be 'json_formatter(record, extras, ignore_keys)'"
             )
+
+        self._headers = {'Content-type': 'application/json',
+                         'Accept-Charset': 'UTF-8'}
+        if extra_headers:
+            self._headers.update(extra_headers)
 
         self._debug = debug
 
@@ -604,8 +664,7 @@ class HTTPJSONHandler(logging.Handler):
         try:
             requests.post(
                 self._url, data=json_record,
-                headers={'Content-type': 'application/json',
-                         'Accept-Charset': 'UTF-8'}
+                headers=self._headers
             )
         except requests.exceptions.RequestException as e:
             raise LoggingError('logging failed') from e
@@ -651,8 +710,10 @@ def _extract_handlers(site_config, handlers_group):
         fmt = site_config.get(f'{handler_prefix}/{i}/format')
         datefmt = site_config.get(f'{handler_prefix}/{i}/datefmt')
         perffmt = site_config.get(f'{handler_prefix}/{i}/format_perfvars')
+        ignore_keys = site_config.get(f'{handler_prefix}/{i}/ignore_keys')
         hdlr.setFormatter(RFC3339Formatter(fmt=fmt,
-                                           datefmt=datefmt, perffmt=perffmt))
+                                           datefmt=datefmt, perffmt=perffmt,
+                                           ignore_keys=ignore_keys))
         hdlr.setLevel(_check_level(level))
         hdlr._rfm_type = handler_type
         handlers.append(hdlr)
@@ -726,6 +787,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 # Here we only set the format specifiers that do not
                 # correspond directly to check attributes
                 '__rfm_check__': check,
+                '__rfm_loggable_attrs__': [],
                 'check_name': 'reframe',
                 'check_jobid': None,
                 'check_job_completion_time': None,
@@ -779,7 +841,9 @@ class LoggerAdapter(logging.LoggerAdapter):
                 # Attribute is parameter, so format it
                 val = check_type.raw_params[attr].format(val)
 
-            self.extra[f'check_{extra_name}'] = val
+            key = f'check_{extra_name}'
+            self.extra['__rfm_loggable_attrs__'].append(key)
+            self.extra[key] = val
 
         # Add special extras
         self.extra['check_info'] = self.check.info()
