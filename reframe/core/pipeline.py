@@ -1645,7 +1645,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _create_job(self, name, force_local=False, **job_opts):
+    def _create_job(self, job_type, force_local=False, **job_opts):
         '''Setup the job related to this check.'''
 
         if force_local:
@@ -1656,24 +1656,33 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             launcher = self._current_partition.launcher_type()
 
         self.logger.debug(
-            f'Setting up job {name!r} '
+            f'Setting up {type} job for test {self.name!r} '
             f'(scheduler: {scheduler.registered_name!r}, '
             f'launcher: {launcher.registered_name!r})'
         )
+
+        if job_type == 'build':
+            script_name = 'rfm_build.sh'
+        elif job_type == 'run':
+            script_name = 'rfm_job.sh'
+        else:
+            assert 0, "[internal error] unknown job type"
+
         return Job.create(scheduler,
                           launcher,
-                          name=name,
+                          name=f'rfm_{self.short_name}',
+                          script_filename=script_name,
                           workdir=self._stagedir,
                           sched_access=self._current_partition.access,
                           **job_opts)
 
     def _setup_build_job(self, **job_opts):
-        self._build_job = self._create_job(f'rfm_build',
-                                           self.local or self.build_locally,
-                                           **job_opts)
+        self._build_job = self._create_job(
+            'build', self.local or self.build_locally, **job_opts
+        )
 
     def _setup_run_job(self, **job_opts):
-        self._job = self._create_job(f'rfm_job', self.local, **job_opts)
+        self._job = self._create_job(f'run', self.local, **job_opts)
 
     def _setup_container_platform(self):
         try:

@@ -8,6 +8,7 @@
 #
 
 import abc
+import os
 import time
 
 import reframe.core.runtime as runtime
@@ -330,9 +331,11 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         self._cli_options = list(sched_options) if sched_options else []
         self._name = name
         self._workdir = workdir
-        self._script_filename = script_filename or '%s.sh' % name
-        self._stdout = stdout or '%s.out' % name
-        self._stderr = stderr or '%s.err' % name
+        self._script_filename = script_filename or f'{name}.sh'
+
+        basename, _ = os.path.splitext(self._script_filename)
+        self._stdout = stdout or f'{basename}.out'
+        self._stderr = stderr or f'{basename}.err'
 
         # Backend scheduler related information
         self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
