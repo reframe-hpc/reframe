@@ -697,6 +697,14 @@ def test_prune_deps(default_exec_ctx):
             assert len(pruned_deps[node('t5')]) == 0
             assert len(pruned_deps[node('t0')]) == 0
 
+            # Check the degree of the nodes of the pruned graph
+            assert in_degree(pruned_deps, node('t0')) == 1
+            assert in_degree(pruned_deps, node('t1')) == 2
+            assert in_degree(pruned_deps, node('t2')) == 1
+            assert in_degree(pruned_deps, node('t3')) == 0
+            assert in_degree(pruned_deps, node('t5')) == 1
+            assert in_degree(pruned_deps, node('t7')) == 0
+
 
 def test_toposort(default_exec_ctx):
     #
