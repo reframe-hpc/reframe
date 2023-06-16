@@ -1665,8 +1665,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             script_name = 'rfm_build.sh'
         elif job_type == 'run':
             script_name = 'rfm_job.sh'
-        else:
-            assert 0, "[internal error] unknown job type"
 
         return Job.create(scheduler,
                           launcher,
