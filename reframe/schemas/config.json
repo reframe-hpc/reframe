@@ -84,7 +84,11 @@
                     "properties": {
                         "basedir": {"type": "string"},
                         "prefix": {"type": "string"},
-                        "append": {"type": "boolean"}
+                        "append": {"type": "boolean"},
+                        "ignore_keys": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        }
                     },
                     "required": ["prefix"]
                 }
@@ -577,6 +581,7 @@
         "logging/handlers*/syslog_facility": "user",
         "logging/handlers_perflog/filelog_append": true,
         "logging/handlers_perflog/filelog_basedir": "./perflogs",
+        "logging/handlers_perflog/filelog_ignore_keys": [],
         "logging/handlers_perflog/graylog_extras": {},
         "logging/handlers_perflog/httpjson_extras": {},
         "logging/handlers_perflog/httpjson_ignore_keys": [],
