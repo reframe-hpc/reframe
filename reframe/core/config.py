@@ -17,6 +17,7 @@ import socket
 import reframe
 import reframe.core.settings as settings
 import reframe.utility as util
+import reframe.utility.jsonext as jsonext
 from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
@@ -225,7 +226,7 @@ class _SiteConfig:
                 f'sources={self._sources!r})')
 
     def __str__(self):
-        return json.dumps(self._pick_config(), indent=2)
+        return jsonext.dumps(self._pick_config(), indent=2)
 
     # Delegate everything to either the original config or to the reduced one
     # if a system is selected

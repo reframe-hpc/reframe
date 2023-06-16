@@ -831,7 +831,7 @@ def main():
                     f'no such configuration parameter found: {config_param}'
                 )
             else:
-                printer.info(json.dumps(value, indent=2))
+                printer.info(jsonext.dumps(value, indent=2))
 
         sys.exit(0)
 
