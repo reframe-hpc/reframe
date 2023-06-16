@@ -1585,6 +1585,12 @@ def test_jsonext_dumps():
     )
     assert '{"(1, 2, 3)": 1}' == jsonext.dumps({(1, 2, 3): 1})
 
+    def foo():
+        pass
+
+    assert ('{"fn": "py::test_jsonext_dumps.<locals>.foo"}' ==
+            jsonext.dumps({'fn': foo}))
+
 
 # Classes to test JSON deserialization
 
