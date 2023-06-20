@@ -11,7 +11,7 @@ from reframe.core.schedulers import Job, JobScheduler
 
 
 @pytest.fixture(params=[
-    'alps', 'launcherwrapper', 'local', 'mpiexec', 'mpirun',
+    'alps', 'clush', 'launcherwrapper', 'local', 'mpiexec', 'mpirun', 'pdsh',
     'srun', 'srunalloc', 'ssh', 'upcrun', 'upcxx-run', 'lrun', 'lrun-gpu'
 ])
 def launcher(request):
@@ -66,8 +66,11 @@ def make_job():
 
 @pytest.fixture()
 def job(make_job, launcher):
-    if type(launcher).registered_name == 'ssh':
+    launcher_name = type(launcher).registered_name
+    if launcher_name == 'ssh':
         access = ['-l user', '-p 22222', 'host']
+    elif launcher_name in ('clush', 'pdsh'):
+        access = ['-w', 'hostA', '-x', 'hostB']
     else:
         access = None
 
@@ -92,8 +95,11 @@ def job(make_job, launcher):
 
 @pytest.fixture
 def minimal_job(make_job, launcher):
-    if type(launcher).registered_name == 'ssh':
+    launcher_name = type(launcher).registered_name
+    if launcher_name == 'ssh':
         access = ['host']
+    elif launcher_name in ('clush', 'pdsh'):
+        access = ['-w', 'host']
     else:
         access = None
 
@@ -138,6 +144,8 @@ def test_run_command(job):
                            '--foo')
     elif launcher_name == 'ssh':
         assert command == 'ssh -o BatchMode=yes -l user -p 22222 --foo host'
+    elif launcher_name in ('clush', 'pdsh'):
+        assert command == f'{launcher_name} -w hostA -x hostB --foo'
     elif launcher_name == 'upcrun':
         assert command == 'upcrun -N 2 -n 4 --foo'
     elif launcher_name == 'upcxx-run':
@@ -175,6 +183,8 @@ def test_run_command_minimal(minimal_job):
                            '--foo')
     elif launcher_name == 'ssh':
         assert command == 'ssh -o BatchMode=yes --foo host'
+    elif launcher_name in ('clush', 'pdsh'):
+        assert command == f'{launcher_name} -w host --foo'
     elif launcher_name == 'upcrun':
         assert command == 'upcrun -n 1 --foo'
     elif launcher_name == 'upcxx-run':

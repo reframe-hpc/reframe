@@ -66,6 +66,9 @@ def encode(obj, **kwargs):
     if inspect.istraceback(obj):
         return traceback.format_tb(obj)
 
+    if inspect.isfunction(obj):
+        return f'py::{obj.__qualname__}'
+
     newobj = encode_dict(obj)
     if newobj is not None:
         return newobj

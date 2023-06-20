@@ -242,6 +242,9 @@ def loadenv(*environs):
     env_snapshot = snapshot()
     commands = []
     for env in environs:
+        for cmd in env.prepare_cmds:
+            commands.append(cmd)
+
         for mod in env.modules_detailed:
             if runtime().get_option('general/0/resolve_module_conflicts'):
                 commands += _load_cmds_tracked(**mod)

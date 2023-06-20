@@ -863,7 +863,7 @@ class Spack(BuildSystem):
     #: :default: :obj:`True`
     emit_load_cmds = variable(bool, value=True)
 
-    #: Options to pass to ``spack install``
+    #: Options to pass to ``spack install``.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
@@ -876,6 +876,21 @@ class Spack(BuildSystem):
     #:
     #: .. versionadded:: 4.2
     config_opts = variable(typ.List[str], value=[])
+
+    #: Options to pass to ``spack env create``.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    env_create_opts = variable(typ.List[str], value=[])
+
+    #: A list of commands to run after a Spack environment
+    #: is created, but before it is installed.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    #:
+    preinstall_cmds = variable(typ.List[str], value=[])
+
 
     def __init__(self):
         # Set to True if the environment was auto-generated
@@ -897,6 +912,10 @@ class Spack(BuildSystem):
             specs_str = ' '.join(self.specs)
             ret.append(f'spack -e {self.environment} add {specs_str}')
 
+        if self.preinstall_cmds:
+            for cmd in self.preinstall_cmds:
+                ret.append(cmd)
+
         install_cmd = f'spack -e {self.environment} install'
         if self.install_opts:
             install_cmd += ' ' + ' '.join(self.install_opts)
@@ -910,7 +929,12 @@ class Spack(BuildSystem):
 
         self.environment = 'rfm_spack_env'
         self._auto_env = True
-        return [f'spack env create -d {self.environment}']
+
+        if self.env_create_opts:
+            env_create_opts = ' '.join(self.env_create_opts)
+            return [f'spack env create -d {self.environment} {env_create_opts}']
+        else:
+            return [f'spack env create -d {self.environment}']
 
     def prepare_cmds(self):
         cmds = self._create_env_cmds()

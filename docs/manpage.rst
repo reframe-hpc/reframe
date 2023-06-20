@@ -219,6 +219,12 @@ An action must always be specified.
    You can set up your Gitlab CI to use the generated file to run every test as a separate Gitlab job respecting test dependencies.
    For more information, have a look in :ref:`generate-ci-pipeline`.
 
+   .. note::
+      The :option:`--ci-generate` option will not work with the test generation options, such as the :option:`--repeat` and :option:`--distribute` options, as the generated child pipeline will use the :option:`-n` option to select the test of the CI job and test filtering happens before any test generation.
+
+      This limitation will be removed in future versions.
+
+
    .. versionadded:: 3.4.1
 
 .. option:: --describe
