@@ -551,14 +551,17 @@ def test_timestamp_option(run_reframe):
 
 
 def test_timestamp_option_default(run_reframe):
-    timefmt_date_part = time.strftime('%FT')
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks'],
         action='list',
         more_options=['-R', '--timestamp']
     )
     assert returncode == 0
-    assert timefmt_date_part in stdout
+
+    matches = re.findall(
+        r'(stage|output) directory: .*\/(\d{6}T\d{6}\+\d{4})', stdout
+    )
+    assert len(matches) == 2
 
 
 def test_list_empty_prgenvs_check_and_options(run_reframe):
