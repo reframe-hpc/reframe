@@ -549,6 +549,12 @@ Options controlling ReFrame execution
 
    The :option:`-P` can be specified multiple times in order to parameterize multiple variables.
 
+   .. note::
+
+      Conversely to the :option:`-S` option that can set a variable in an arbitrarily nested fixture,
+      the :option:`-P` option can only parameterize the leaf test:
+      it cannot be used to parameterize a fixture of the test.
+
    .. versionadded:: 4.3
 
 .. option:: --repeat=N
