@@ -105,6 +105,8 @@ def run_reframe(tmp_path, monkeypatch):
             argv += ['--list-tags']
         elif action == 'help':
             argv += ['-h']
+        elif action == 'describe':
+            argv += ['--describe']
 
         if perflogdir:
             argv += ['--perflogdir', perflogdir]
@@ -955,6 +957,32 @@ def test_repeat_negative(run_reframe):
     assert 'Traceback' not in stderr
     assert errmsg in stdout
     assert returncode == 1
+
+
+def test_parameterize_tests(run_reframe):
+    returncode, stdout, _ = run_reframe(
+        more_options=['-P', 'num_tasks=2,4,8', '-n', '^HelloTest'],
+        checkpath=['unittests/resources/checks/hellocheck.py'],
+        action='describe'
+    )
+    assert returncode == 0
+
+    test_descr = json.loads(stdout)
+    print(json.dumps(test_descr, indent=2))
+    num_tasks = {t['num_tasks'] for t in test_descr}
+    assert num_tasks == {2, 4, 8}
+
+
+def test_parameterize_tests_invalid_params(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['-P', 'num_tasks', '-n', '^HelloTest'],
+        checkpath=['unittests/resources/checks/hellocheck.py'],
+        action='list'
+    )
+    assert returncode == 1
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'invalid parameter spec' in stdout
 
 
 def test_reruns_negative(run_reframe):
