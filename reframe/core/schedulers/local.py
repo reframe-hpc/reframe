@@ -12,7 +12,7 @@ import time
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import JobError, ReframeError
 
 
 class _TimeoutExpired(ReframeError):
@@ -187,9 +187,12 @@ class LocalJobScheduler(sched.JobScheduler):
             # Job has not finished; check if we have reached a timeout
             t_elapsed = time.time() - job.submit_time
             if job.time_limit and t_elapsed > job.time_limit:
-                self.log(f'Job {job.jobid} timed out; kill it')
                 self._kill_all(job)
                 job._state = 'TIMEOUT'
+                job._exception = JobError(
+                    f'job timed out ({t_elapsed:.2f}s > {job.time_limit}s)',
+                    job.jobid
+                )
 
             return
 
