@@ -190,7 +190,7 @@ class LocalJobScheduler(sched.JobScheduler):
                 self._kill_all(job)
                 job._state = 'TIMEOUT'
                 job._exception = JobError(
-                    f'job timed out ({t_elapsed:.2f}s > {job.time_limit}s)',
+                    f'job timed out ({t_elapsed:.6f}s > {job.time_limit}s)',
                     job.jobid
                 )
 
