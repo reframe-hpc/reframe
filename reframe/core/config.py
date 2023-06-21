@@ -161,7 +161,10 @@ class _SiteConfig:
             entry = functools.reduce(
                 lambda l, r: l.update(r) or l, optionset
             )
-            entry['target_systems'] = [system]
+            if 'target_systems' in entry.keys():
+                entry['target_systems'].append(system)
+            else:
+                entry['target_systems'] = [system]
             ret.append(entry)
 
         return ret
