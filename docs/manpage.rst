@@ -1023,7 +1023,7 @@ The format of the display name is the following in BNF notation:
 
 .. code-block:: bnf
 
-   <display_name> ::= <test_class_name> (<params>)* (<scope>)?
+   <display_name> ::= <test_class_name> (<params>)* (<scope> ("'"<fixtvar>)+)?
    <params> ::= "%" <parametrization> "=" <pvalue>
    <parametrization> ::= (<fname> ".")* <pname>
    <scope> ::= "~" <scope_descr>
@@ -1035,6 +1035,7 @@ The format of the display name is the following in BNF notation:
    <pvalue> ::= (* string *)
    <first> ::= (* string *)
    <second> ::= (* string *)
+   <fixtvar> ::= (* string *)
 
 The following is an example of a fictitious complex test that is itself parameterized and depends on parameterized fixtures as well.
 
