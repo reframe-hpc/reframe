@@ -545,6 +545,24 @@ Options controlling ReFrame execution
    .. versionchanged:: 4.1
       Options that can be specified multiple times are now combined between execution modes and the command line.
 
+.. option:: -P, --parameterize=[TEST.]VAR=VAL0,VAL1,...
+
+   Parameterize a test on an existing variable.
+
+   This option will create a new test with a parameter named ``$VAR`` with the values given in the comma-separated list ``VAL0,VAL1,...``.
+   The values will be converted based on the type of the target variable ``VAR``.
+   The ``TEST.`` prefix will only parameterize the variable ``VAR`` of test ``TEST``.
+
+   The :option:`-P` can be specified multiple times in order to parameterize multiple variables.
+
+   .. note::
+
+      Conversely to the :option:`-S` option that can set a variable in an arbitrarily nested fixture,
+      the :option:`-P` option can only parameterize the leaf test:
+      it cannot be used to parameterize a fixture of the test.
+
+   .. versionadded:: 4.3
+
 .. option:: --repeat=N
 
    Repeat the selected tests ``N`` times.

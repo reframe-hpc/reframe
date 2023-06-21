@@ -30,7 +30,8 @@ import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
 from reframe.frontend.testgenerators import (distribute_tests,
-                                             getallnodes, repeat_tests)
+                                             getallnodes, repeat_tests,
+                                             parameterize_tests)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
@@ -435,6 +436,10 @@ def main():
     )
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use'
+    )
+    run_options.add_argument(
+        '-P', '--parameterize', action='append', metavar='VAR:VAL0,VAL1,...',
+        default=[], help='Parameterize a test on a set of variables'
     )
     run_options.add_argument(
         '--repeat', action='store', metavar='N',
@@ -1095,6 +1100,22 @@ def main():
                 f'Filtering successful test case(s): '
                 f'{len(testcases)} remaining'
             )
+
+        if options.parameterize:
+            # Prepare parameters
+            params = {}
+            for param_spec in options.parameterize:
+                try:
+                    var, values_spec = param_spec.split('=')
+                except ValueError:
+                    raise errors.CommandLineError(
+                        f'invalid parameter spec: {param_spec}'
+                    ) from None
+                else:
+                    params[var] = values_spec.split(',')
+
+            testcases_all = parameterize_tests(testcases, params)
+            testcases = testcases_all
 
         if options.repeat is not None:
             try:
