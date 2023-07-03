@@ -632,6 +632,9 @@ Options controlling ReFrame execution
    - Sequence types: ``-S seqvar=1,2,3,4``
    - Mapping types: ``-S mapvar=a:1,b:2,c:3``
 
+   Nested mapping types can also be converted using JSON syntax.
+   For example, the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` complex dictionary could be set with ``-S extra_resources='{"gpu": {"num_gpus_per_node":8}}'``.
+
    Conversions to arbitrary objects are also supported.
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
 
