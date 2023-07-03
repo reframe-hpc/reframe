@@ -209,12 +209,12 @@ def test_mapping_type():
     assert typ.Dict[str, int]('a:1,b:2') == {'a': 1, 'b': 2}
 
     # Conversion with JSON syntax, for nested dictionaries
-    s = '{"gpu":{"num_gpus_per_node":8}, "mpi": {"num_slots": 64}}'
-    assert (typ.Dict[str, typ.Dict[str, object]](s) ==
-            {
-                "gpu": {"num_gpus_per_node": 8},
-                "mpi": {"num_slots": 64},
-            })
+    s = '{"gpu":{"num_gpus_per_node": 8}, "mpi": {"num_slots": 64}}'
+    expected = {
+        'gpu': {'num_gpus_per_node': 8},
+        'mpi': {'num_slots': 64},
+    }
+    assert typ.Dict[str, typ.Dict[str, object]](s) == expected
 
     with pytest.raises(TypeError):
         typ.Dict[str, int]('a:1,b')

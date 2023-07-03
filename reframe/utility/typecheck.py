@@ -325,9 +325,9 @@ class _MappingType(_BuiltinType):
         value_type = cls._value_type
 
         try:
-            d = json.loads(s)
+            items = json.loads(s)
         except json.JSONDecodeError:
-            seq = []
+            items = []
             for key_datum in s.split(','):
                 try:
                     k, v = key_datum.split(':')
@@ -337,11 +337,9 @@ class _MappingType(_BuiltinType):
                         f'cannot convert string {s!r} to {cls.__name__!r}'
                     ) from None
 
-                seq.append((key_type(k), value_type(v)))
+                items.append((key_type(k), value_type(v)))
 
-            return mappping_type(seq)
-        else:
-            return mappping_type(d)
+        return mappping_type(items)
 
 
 class _StrType(_SequenceType):
