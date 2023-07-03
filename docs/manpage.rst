@@ -690,6 +690,9 @@ Options controlling ReFrame execution
 
       Allow setting variables in fixtures.
 
+   .. versionchanged:: 4.4
+
+      Allow setting nested mapping types using JSON syntax.
 
 .. option:: --skip-performance-check
 
