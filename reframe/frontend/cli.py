@@ -1069,15 +1069,6 @@ def main():
             f'{len(testcases)} remaining'
         )
 
-        # Warn on any unset test variables for the final set of selected tests
-        for clsname in {type(tc.check).__name__ for tc in testcases}:
-            varlist = ', '.join(f'{v!r}' for v in loader.unset_vars(clsname))
-            if varlist:
-                printer.warning(
-                    f'test {clsname!r}: '
-                    f'the following variables were not set: {varlist}'
-                )
-
         # Filter in failed cases
         if options.failed:
             if options.restore_session is None:
@@ -1194,6 +1185,16 @@ def main():
             is_subgraph=options.restore_session is not None
         )
         printer.verbose(f'Final number of test cases: {len(testcases)}')
+
+        # Warn on any unset test variables for the final set of selected tests
+        # including any dependencies
+        for clsname in {type(tc.check).__name__ for tc in testcases}:
+            varlist = ', '.join(f'{v!r}' for v in loader.unset_vars(clsname))
+            if varlist:
+                printer.warning(
+                    f'test {clsname!r}: '
+                    f'the following variables were not set: {varlist}'
+                )
 
         # Disable hooks
         for tc in testcases:

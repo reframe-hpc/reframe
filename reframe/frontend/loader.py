@@ -155,6 +155,7 @@ class RegressionCheckLoader:
         if registry:
             candidate_tests = registry.instantiate_all(reset_sysenv,
                                                        self._external_vars)
+            self._unset_vars.update(registry.unset_vars)
         else:
             candidate_tests = []
 
