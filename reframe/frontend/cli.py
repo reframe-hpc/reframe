@@ -286,7 +286,7 @@ def main():
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
     )
     output_options.add_argument(
-        '--timestamp', action='store', nargs='?', const='%FT%T',
+        '--timestamp', action='store', nargs='?', const='%y%m%dT%H%M%S%z',
         metavar='TIMEFMT',
         help=('Append a timestamp to the output and stage directory prefixes '
               '(default: "%%FT%%T")'),

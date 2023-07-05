@@ -487,7 +487,9 @@ def test_submit_timelimit(minimal_job, local_only):
     t_job = time.time()
     submit_job(minimal_job)
     assert minimal_job.jobid is not None
-    minimal_job.wait()
+    with pytest.raises(JobError):
+        minimal_job.wait()
+
     t_job = time.time() - t_job
     assert t_job >= 2
     assert t_job < 3

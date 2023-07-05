@@ -650,6 +650,9 @@ Options controlling ReFrame execution
    - Sequence types: ``-S seqvar=1,2,3,4``
    - Mapping types: ``-S mapvar=a:1,b:2,c:3``
 
+   Nested mapping types can also be converted using JSON syntax.
+   For example, the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` complex dictionary could be set with ``-S extra_resources='{"gpu": {"num_gpus_per_node":8}}'``.
+
    Conversions to arbitrary objects are also supported.
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
 
@@ -705,6 +708,9 @@ Options controlling ReFrame execution
 
       Allow setting variables in fixtures.
 
+   .. versionchanged:: 4.4
+
+      Allow setting nested mapping types using JSON syntax.
 
 .. option:: --skip-performance-check
 
@@ -1023,7 +1029,7 @@ The format of the display name is the following in BNF notation:
 
 .. code-block:: bnf
 
-   <display_name> ::= <test_class_name> (<params>)* (<scope>)?
+   <display_name> ::= <test_class_name> (<params>)* (<scope> ("'"<fixtvar>)+)?
    <params> ::= "%" <parametrization> "=" <pvalue>
    <parametrization> ::= (<fname> ".")* <pname>
    <scope> ::= "~" <scope_descr>
@@ -1035,6 +1041,7 @@ The format of the display name is the following in BNF notation:
    <pvalue> ::= (* string *)
    <first> ::= (* string *)
    <second> ::= (* string *)
+   <fixtvar> ::= (* string *)
 
 The following is an example of a fictitious complex test that is itself parameterized and depends on parameterized fixtures as well.
 

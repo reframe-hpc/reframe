@@ -95,6 +95,7 @@ of :class:`List[int]`.
 
 import abc
 import datetime
+import json
 import re
 
 
@@ -322,19 +323,23 @@ class _MappingType(_BuiltinType):
         mappping_type = cls._type
         key_type = cls._key_type
         value_type = cls._value_type
-        seq = []
-        for key_datum in s.split(','):
-            try:
-                k, v = key_datum.split(':')
-            except ValueError:
-                # Re-raise as TypeError
-                raise TypeError(
-                    f'cannot convert string {s!r} to {cls.__name__!r}'
-                ) from None
 
-            seq.append((key_type(k), value_type(v)))
+        try:
+            items = json.loads(s)
+        except json.JSONDecodeError:
+            items = []
+            for key_datum in s.split(','):
+                try:
+                    k, v = key_datum.split(':')
+                except ValueError:
+                    # Re-raise as TypeError
+                    raise TypeError(
+                        f'cannot convert string {s!r} to {cls.__name__!r}'
+                    ) from None
 
-        return mappping_type(seq)
+                items.append((key_type(k), value_type(v)))
+
+        return mappping_type(items)
 
 
 class _StrType(_SequenceType):
