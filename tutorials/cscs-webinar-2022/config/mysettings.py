@@ -12,7 +12,7 @@ site_configuration = {
         {
             'name': 'tresa',
             'descr': 'My laptop',
-            'hostnames': ['tresa\.local'],
+            'hostnames': ['tresa\.local', 'tresa'],
             'partitions': [
                 {
                     'name': 'default',

@@ -161,7 +161,8 @@ class _SiteConfig:
             entry = functools.reduce(
                 lambda l, r: l.update(r) or l, optionset
             )
-            entry['target_systems'] = [system]
+            entry.setdefault('target_systems', [])
+            entry['target_systems'].append(system)
             ret.append(entry)
 
         return ret
