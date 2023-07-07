@@ -56,14 +56,15 @@ class TestRegistry:
     and the constructor arguments for the different instantiations of the
     test are stored as the dictionary value as a list of (args, kwargs)
     tuples.
-
-    For backward compatibility reasons, the registry also contains a set of
-    tests to be skipped. The machinery related to this should be dropped with
-    the ``required_version`` decorator.
     '''
 
     def __init__(self):
-        self._tests = dict()
+        self._tests = {}
+        self._unset_vars = {}
+
+    @property
+    def unset_vars(self):
+        return self._unset_vars
 
     @classmethod
     def create(cls, test, *args, **kwargs):
@@ -85,6 +86,10 @@ class TestRegistry:
         :param reset_sysenv: Reset valid_systems and valid_prog_environs after
             instantiating the tests. Bit 0 resets the valid_systems, bit 1
             resets the valid_prog_environs.
+
+        :param external_vars: Test variables to set in the instantiated
+            fixtures.
+
         '''
 
         # We first instantiate the leaf tests and then walk up their
@@ -118,6 +123,7 @@ class TestRegistry:
         # candidate tests; the leaf tests are consumed at the end of the
         # traversal and all instantiated tests (including fixtures) are stored
         # in `final_tests`.
+        unset_vars = {}
         final_tests = []
         fixture_registry = FixtureRegistry()
         while leaf_tests:
@@ -132,7 +138,9 @@ class TestRegistry:
             # Instantiate the new fixtures and update the registry
             new_fixtures = tmp_registry.difference(fixture_registry)
             if external_vars:
-                _setvars(new_fixtures.uninst_tests(), external_vars)
+                self._unset_vars.update(
+                    _setvars(new_fixtures.uninst_tests(), external_vars)
+                )
 
             leaf_tests = new_fixtures.instantiate_all()
             fixture_registry.update(new_fixtures)
