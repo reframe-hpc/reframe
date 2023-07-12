@@ -12,11 +12,7 @@ import time
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobError, ReframeError
-
-
-class _TimeoutExpired(ReframeError):
-    pass
+from reframe.core.exceptions import JobError
 
 
 class _LocalJob(sched.Job):
@@ -27,6 +23,7 @@ class _LocalJob(sched.Job):
         self._f_stderr = None
         self._signal = None
         self._cancel_time = None
+        self.spawn_command = f'./{self._script_filename}'
 
     @property
     def proc(self):
@@ -66,7 +63,7 @@ class LocalJobScheduler(sched.JobScheduler):
         # we can later kill any other processes that this might spawn by just
         # killing this one.
         proc = osext.run_command_async(
-            os.path.abspath(job.script_filename),
+            job.spawn_command,
             stdout=f_stdout,
             stderr=f_stderr,
             start_new_session=True

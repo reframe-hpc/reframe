@@ -6,6 +6,7 @@
 import os
 import pytest
 import random
+import signal
 import sys
 import time
 
@@ -83,6 +84,181 @@ def test_command_async():
     assert t_launch < 1
     assert t_sleep >= 1
 
+def test_command_futures():
+    proc = osext.run_command_async2('echo hello', shell=True)
+
+    # Check that some operations cannot be performed on an unstarted future
+    with pytest.raises(osext.UnstartedProcError):
+        proc.done()
+
+    with pytest.raises(osext.UnstartedProcError):
+        proc.cancel()
+
+    with pytest.raises(osext.UnstartedProcError):
+        proc.terminate()
+
+    with pytest.raises(osext.UnstartedProcError):
+        proc.wait()
+
+    assert not proc.started()
+    proc.start()
+    assert proc.started()
+    assert proc.pid is not None
+
+    # By default a process is not started as a new session
+    assert not proc.is_session()
+
+    # stdout must block
+    assert proc.stdout.read() == 'hello\n'
+    assert proc.exitcode == 0
+    assert proc.signal is None
+
+    # Additional wait() should have no effect
+    proc.wait()
+    proc.wait()
+
+    assert proc.done()
+    assert not proc.cancelled()
+    assert proc.exception() is None
+
+
+def test_command_futures_callbacks():
+    num_called = 0
+    def _callback(_):
+        nonlocal num_called
+        num_called += 1
+
+    proc = osext.run_command_async2("echo hello", shell=True)
+    proc.add_done_callback(_callback)
+    proc.start()
+    while not proc.done():
+        pass
+
+    # Call explicitly more times
+    proc.done()
+    proc.done()
+    assert num_called == 1
+
+
+@pytest.fixture(params=['checked', 'unchecked'])
+def _checked_cmd(request):
+    return request.param == 'checked'
+
+def test_command_futures_error(_checked_cmd):
+    proc = osext.run_command_async2("false", shell=True, check=_checked_cmd)
+    proc.start()
+
+    # exception() blocks until the process is finished
+    if _checked_cmd:
+        assert isinstance(proc.exception(), SpawnedProcessError)
+    else:
+        assert proc.exception() is None
+
+    assert proc.exitcode == 1
+    assert proc.signal is None
+
+@pytest.fixture(params=['SIGINT', 'SIGTERM', 'SIGKILL'])
+def _signal(request):
+    if request.param == 'SIGINT':
+        return signal.SIGINT
+    elif request.param == 'SIGTERM':
+        return signal.SIGTERM
+    elif request.param == 'SIGKILL':
+        return signal.SIGKILL
+
+    assert 0
+
+def test_command_futures_signal(_checked_cmd, _signal):
+    proc = osext.run_command_async2('sleep 3', shell=True, check=_checked_cmd)
+    proc.start()
+    if _signal == signal.SIGTERM:
+        proc.terminate()
+    elif _signal == signal.SIGKILL:
+        proc.cancel()
+    else:
+        proc.kill(_signal)
+
+    proc.wait()
+    assert proc.done()
+    if _signal == signal.SIGKILL:
+        assert proc.cancelled()
+    else:
+        assert not proc.cancelled()
+
+    assert proc.signal == _signal
+    assert proc.exitcode is None
+    if _checked_cmd:
+        assert isinstance(proc.exception(), SpawnedProcessError)
+    else:
+        assert proc.exception() is None
+
+def test_command_futures_chain(tmp_path):
+    with open(tmp_path / 'stdout.txt', 'w+') as fp:
+        proc0 = osext.run_command_async2('echo hello', shell=True, stdout=fp)
+        proc1 = osext.run_command_async2('sleep 1', shell=True, stdout=fp)
+        proc2 = osext.run_command_async2('sleep 1', shell=True, stdout=fp)
+        proc3 = osext.run_command_async2('echo world', shell=True, stdout=fp)
+        proc0.then(proc1)
+        proc0.then(proc2).then(proc3)
+
+        all_procs = [proc0, proc1, proc2, proc3]
+        t_start = time.time()
+        proc0.start()
+        while not all(p.done() for p in all_procs if p.started()):
+            pass
+
+        t_elapsed = time.time() - t_start
+        assert t_elapsed < 2
+        assert all(p.done() for p in all_procs)
+
+    with open(tmp_path / 'stdout.txt') as fp:
+        assert fp.read() == 'hello\nworld\n'
+
+@pytest.fixture(params=['fail_on_error', 'ignore_errors'])
+def _chain_policy(request):
+    return request.param
+
+def test_command_futures_chain_cond(_chain_policy, tmp_path):
+    if _chain_policy == 'fail_on_error':
+        def cond(proc):
+            return proc.exitcode == 0
+    else:
+        def cond(proc):
+            return True
+
+    with open(tmp_path / 'stdout.txt', 'w+') as fp:
+        proc0 = osext.run_command_async2("echo hello", shell=True, stdout=fp)
+        proc1 = osext.run_command_async2("false", shell=True)
+        proc2 = osext.run_command_async2("echo world", shell=True, stdout=fp)
+        proc0.then(proc1).then(proc2, when=cond)
+        proc0.start()
+        proc0.wait()
+        proc1.wait()
+        if _chain_policy == 'fail_on_error':
+            assert not proc2.started()
+        else:
+            proc2.wait()
+
+    with open(tmp_path / 'stdout.txt') as fp:
+        if _chain_policy == 'fail_on_error':
+            assert fp.read() == 'hello\n'
+        else:
+            assert fp.read() == 'hello\nworld\n'
+
+
+def test_command_futures_chain_cancel():
+    proc0 = osext.run_command_async2('echo hello', shell=True)
+    proc1 = osext.run_command_async2('sleep 1', shell=True)
+    proc2 = osext.run_command_async2('echo world', shell=True)
+    proc0.then(proc1).then(proc2)
+    proc0.start()
+    while not proc0.done():
+        pass
+
+    assert proc1.started()
+    proc1.cancel()
+    assert proc1.cancelled()
+    assert not proc2.started()
 
 def test_copytree(tmp_path):
     dir_src = tmp_path / 'src'

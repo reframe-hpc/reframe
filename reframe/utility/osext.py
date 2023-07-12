@@ -29,6 +29,151 @@ from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
 from . import OrderedSet
 
 
+class UnstartedProcError(ReframeError):
+    '''Raised when a process operation is attempted on an unstarted process future'''
+
+class _ProcFuture:
+    def __init__(self, check=False, *args, **kwargs):
+        self._proc = None
+        self._exitcode = None
+        self._signal = None
+        self._check = check
+        self._cmd_args = (args, kwargs)
+        self._next = []
+        self._done_callbacks = []
+        self._completed = False
+        self._cancelled = False
+
+    def _check_started(self):
+        if not self.started():
+            raise UnstartedProcError
+
+    def start(self):
+        args, kwargs = self._cmd_args
+        self._proc = run_command_async(*args, **kwargs)
+
+        if os.getsid(self._proc.pid) == self._proc.pid:
+            self._session = True
+        else:
+            self._session = False
+
+    @property
+    def pid(self):
+        return self._proc.pid
+
+    @property
+    def exitcode(self):
+        return self._exitcode
+
+    @property
+    def signal(self):
+        return self._signal
+
+    def cancelled(self):
+        return self._cancelled
+
+    def scheduled(self):
+        return self._scheduled
+
+    def is_session(self):
+        return self._session
+
+    def kill(self, signum):
+        self._check_started()
+        kill_fn = os.killpg if self.is_session() else os.kill
+        kill_fn(self.pid, signum)
+        self._signal = signum
+
+    def terminate(self):
+        self.kill(signal.SIGTERM)
+
+    def cancel(self):
+        self._check_started()
+        if not self.cancelled():
+            self.kill(signal.SIGKILL)
+
+        self._cancelled = True
+
+    def add_done_callback(self, func):
+        self._done_callbacks.append(func)
+
+    def then(self, future, when=None):
+        if when is None:
+            when = lambda fut: True
+
+        self._next.append((future, when))
+        return future
+
+    def started(self):
+        return self._proc is not None
+
+    def _wait(self, *, nohang=False):
+        self._check_started()
+        if self._completed:
+            return True
+
+        options = os.WNOHANG if nohang else 0
+        try:
+            pid, status = os.waitpid(self.pid, options)
+        except OSError as e:
+            if e.errno == errno.ECHILD:
+                self._completed = True
+                return self._completed
+            else:
+                raise e
+
+        if nohang and not pid:
+            return False
+
+        if os.WIFEXITED(status):
+            self._exitcode = os.WEXITSTATUS(status)
+        elif os.WIFSIGNALED(status):
+            self._signal = os.WTERMSIG(status)
+
+        self._completed = True
+
+        # Call any done callbacks
+        for func in self._done_callbacks:
+            func(self)
+
+        # Start the next futures in the chain
+        for fut, cond in self._next:
+            if cond(self):
+                fut.start()
+
+        return self._completed
+
+    def done(self):
+        self._check_started()
+        return self._wait(nohang=True)
+
+    def wait(self):
+        self._wait()
+
+    def exception(self):
+        self._wait()
+        if not self._check:
+            return
+
+        if self._proc.returncode == 0:
+            return
+
+        return SpawnedProcessError(self._proc.args,
+                                   self._proc.stdout.read(),
+                                   self._proc.stderr.read(),
+                                   self._proc.returncode)
+
+    @property
+    def stdout(self):
+        self._wait()
+        return self._proc.stdout
+
+    @property
+    def stderr(self):
+        self._wait()
+        return self._proc.stderr
+
+
 def run_command(cmd, check=False, timeout=None, **kwargs):
     '''Run command synchronously.
 
@@ -102,7 +247,7 @@ def run_command_async(cmd,
 
     if log:
         from reframe.core.logging import getlogger
-        getlogger().debug2(f'[CMD] {cmd!r}')
+        getlogger().debug(f'[CMD] {cmd!r}')
 
     if isinstance(cmd, str) and not shell:
         cmd = shlex.split(cmd)
@@ -115,6 +260,8 @@ def run_command_async(cmd,
                             shell=shell,
                             **popen_args)
 
+def run_command_async2(*args, check=False, **kwargs):
+    return _ProcFuture(check, *args, **kwargs)
 
 def osuser():
     '''Return the name of the current OS user.
