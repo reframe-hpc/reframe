@@ -83,6 +83,17 @@ if $python -c 'import sys; sys.exit(sys.version_info[:2] >= (3, 6))'; then
     exit 1
 fi
 
+venvdir=$(mktemp -d)
+CMD $python -m venv $venvdir
+CMD source $venvdir/bin/activate
+
+_shutdown_venv() {
+    deactivate
+    /bin/rm -rf $venvdir
+}
+
+trap _shutdown_venv EXIT
+
 # Disable the user installation scheme which is the default for Debian and
 # cannot be combined with `--target`
 export PIP_USER=0
