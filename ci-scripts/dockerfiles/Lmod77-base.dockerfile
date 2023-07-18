@@ -15,7 +15,7 @@ RUN \
   apt-get -y update && \
   apt-get -y install ca-certificates && \
   update-ca-certificates && \
-  apt-get -y install gcc make git python3 python3-pip
+  apt-get -y install gcc make git python3 python3-pip python3-venv
 
 # Required utilities
 RUN apt-get -y install wget

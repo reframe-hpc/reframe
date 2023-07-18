@@ -19,7 +19,7 @@ RUN \
   apt-get -y install gcc && \
   apt-get -y install make && \
   apt-get -y install git && \
-  apt-get -y install python3 python3-pip
+  apt-get -y install python3 python3-pip python3-venv
 
 # Install ReFrame from the current directory
 COPY --chown=rfmuser . /home/rfmuser/reframe/
