@@ -5,8 +5,6 @@
 
 import time
 
-from datetime import timedelta
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
