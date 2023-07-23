@@ -29,10 +29,10 @@ class filesystem_options_check(rfm.RunOnlyRegressionTest):
     #: Parameter pack with listing the mounted file systems, mount points
     #: type and mount options
     #:
-    #: :type: `Tupe[str, str, str]`. The keys should be
-    #:   'mount_poinnt' with the filesystem mount point as a str value
+    #: :type: `Tupe[str, str, str]`. The tuple fields represent
+    #:   'mount_point' with the filesystem mount point as a str value
     #:   'type' with the filesystem type as a str value
-    #:   'options' with the filesystem options as a List[str] value
+    #:   'options' with the filesystem options as a str value
     #:   E.g., '/home', 'xfs', 'rw,nosuid,logbsize=32k'
     #:
     #: :values: Values are generated using the `/proc/mounts` file
