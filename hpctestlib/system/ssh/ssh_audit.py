@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 class ssh_audit_check(rfm.RunOnlyRegressionTest):
     '''ssh audit config test.
 
-    `ssh-audit is a tool for ssh server & client configuration auditing.
+    ssh-audit is a tool for ssh server & client configuration auditing.
 
     The check consist on performing the basic ssh server config auditing
     using the master version of https://github.com/jtesta/ssh-audit.
