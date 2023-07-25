@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -11,23 +11,23 @@ import reframe.utility.typecheck as typ
 
 
 @rfm.simple_test
-class host_keys_check(rfm.RunOnlyRegressionTest):
-    '''host keys age check
+class ssh_host_keys_check(rfm.RunOnlyRegressionTest):
+    '''SSH host keys age check
 
-    The host keys should be renewed regularly.
+    The ssh host keys should be renewed regularly.
     In this case, we are checking against the
     max_key_age variable
     '''
 
     #: Parameter list with all host keys to check
     #:
-    #: The test skips if a key is not found
+    #: The test is skipped if a key is not found
     #:
     #: :type: :class:`str`
     #: :values: ``['/etc/ssh/ssh_host_rsa_key',
     #:              '/etc/ssh/ssh_host_ecdsa_key',
     #:              '/etc/ssh/ssh_host_ed25519_key']``
-    host_keys = parameter([
+    ssh_host_keys = parameter([
         '/etc/ssh/ssh_host_rsa_key',
         '/etc/ssh/ssh_host_ecdsa_key',
         '/etc/ssh/ssh_host_ed25519_key',
@@ -55,10 +55,8 @@ class host_keys_check(rfm.RunOnlyRegressionTest):
         self.skip_if(skip_me, msg=f'Skipping test because {self.host_keys}'
                                   f' was not found')
 
-        return sn.all([
-            sn.assert_lt(current_time -
+        return sn.assert_lt(current_time -
                          sn.extractsingle(r'\d+', self.stdout, 0, int),
                          typ.Duration(self.max_key_age),
                          msg=f'File {self.host_keys} is older than '
                              f'{self.max_key_age}')
-        ])
