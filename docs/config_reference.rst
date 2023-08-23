@@ -360,6 +360,14 @@ System Partition Configuration
    If timeout is reached, the test issuing that command will be marked as a failure.
 
 
+.. py:attribute:: systems.partitions.sched_options.lsf_bjobs_extras
+
+   :required: No
+   :default: ``[]``
+
+   List of extra options to be passed to the ``bjobs`` command of the LSF scheduler.
+
+
 .. py:attribute:: systems.partitions.sched_options.resubmit_on_errors
 
    :required: No

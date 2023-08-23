@@ -93,8 +93,10 @@ class LsfJobScheduler(PbsJobScheduler):
         if not jobs:
             return
 
+        # Retrieve extra options
+        bjobs_opts = ' '.join(self.get_option('lsf_bjobs_extras'))
         completed = _run_strict(
-            'bjobs -o "jobid: user:10 stat: queue:" -noheader '
+            f'bjobs {bjobs_opts} -noheader '
             f'{" ".join(job.jobid for job in jobs)}'
         )
         job_status = {}
