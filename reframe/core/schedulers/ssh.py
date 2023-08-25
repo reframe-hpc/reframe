@@ -40,13 +40,15 @@ class _SSHJob(Job):
     def ssh_options(self):
         return self._ssh_options
 
+
 @register_scheduler('ssh')
 class SSHJobScheduler(JobScheduler):
     def __init__(self):
         self._free_hosts = set(self.get_option('hosts'))
         self._allocated_hosts = set()
         if not self._free_hosts:
-            raise ConfigError(f'no hosts specified for the SSH scheduler: {self._config_prefix}')
+            raise ConfigError(f'no hosts specified for the SSH scheduler: '
+                              f'{self._config_prefix}')
 
         # Determine if rsync is available
         try:
@@ -78,7 +80,10 @@ class SSHJobScheduler(JobScheduler):
         options = ' '.join(job.ssh_options)
 
         # Create a temporary directory on the remote host and push the job artifacts
-        completed = osext.run_command(f'ssh -o BatchMode=yes {options} {job.host} mktemp -td rfm.XXXXXXXX', check=True)
+        completed = osext.run_command(
+            f'ssh -o BatchMode=yes {options} {job.host} '
+            f'mktemp -td rfm.XXXXXXXX', check=True
+        )
         remotedir = completed.stdout.strip()
 
         # Store the local and remote dirs
@@ -87,31 +92,36 @@ class SSHJobScheduler(JobScheduler):
 
         if self._has_rsync:
             job.steps['push'] = osext.run_command_async2(
-                f'rsync -az -e "ssh -o BatchMode=yes {options}" {job.localdir}/ {job.host}:{remotedir}/', check=True
+                f'rsync -az -e "ssh -o BatchMode=yes {options}" '
+                f'{job.localdir}/ {job.host}:{remotedir}/', check=True
             )
         else:
             job.steps['push'] = osext.run_command_async2(
-                f'scp -r -o BatchMode=yes {options} {job.localdir}/* {job.host}:{remotedir}/', shell=True, check=True
+                f'scp -r -o BatchMode=yes {options} '
+                f'{job.localdir}/* {job.host}:{remotedir}/',
+                shell=True, check=True
             )
-
 
     def _pull_artefacts(self, job):
         assert isinstance(job, _SSHJob)
         options = ' '.join(job.ssh_options)
         if self._has_rsync:
             job.steps['pull'] = osext.run_command_async2(
-                f'rsync -az -e "ssh -o BatchMode=yes {options}" {job.host}:{job.remotedir}/ {job.localdir}/'
+                f'rsync -az -e "ssh -o BatchMode=yes {options}" '
+                f'{job.host}:{job.remotedir}/ {job.localdir}/'
             )
         else:
             job.steps['pull'] = osext.run_command_async2(
-                f"scp -r -o BatchMode=yes {options} '{job.host}:{job.remotedir}/*' {job.localdir}/", shell=True
+                f"scp -r -o BatchMode=yes {options} "
+                f"'{job.host}:{job.remotedir}/*' {job.localdir}/", shell=True
             )
 
     def _do_submit(self, job):
         # Modify the spawn command and submit
         options = ' '.join(job.ssh_options)
         job.steps['exec'] = osext.run_command_async2(
-            f'ssh -o BatchMode=yes {options} {job.host} "cd {job.remotedir} && bash -l {job.script_filename}"'
+            f'ssh -o BatchMode=yes {options} {job.host} '
+            f'"cd {job.remotedir} && bash -l {job.script_filename}"'
         )
 
     def submit(self, job):
@@ -200,7 +210,8 @@ class SSHJobScheduler(JobScheduler):
         exec_proc = job.steps['exec']
         if exec_proc.started():
             with osext.change_dir(job.localdir):
-                with open(job.stdout, 'w+') as fout, open(job.stderr, 'w+') as ferr:
+                with (open(job.stdout, 'w+') as fout,
+                      open(job.stderr, 'w+') as ferr):
                     fout.write(exec_proc.stdout.read())
                     ferr.write(exec_proc.stderr.read())
 

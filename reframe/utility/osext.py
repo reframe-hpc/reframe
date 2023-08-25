@@ -30,7 +30,9 @@ from . import OrderedSet
 
 
 class UnstartedProcError(ReframeError):
-    '''Raised when a process operation is attempted on an unstarted process future'''
+    '''Raised when a process operation is attempted on a
+    not yet started process future'''
+
 
 class _ProcFuture:
     def __init__(self, check=False, *args, **kwargs):
@@ -99,7 +101,7 @@ class _ProcFuture:
 
     def then(self, future, when=None):
         if when is None:
-            when = lambda fut: True
+            def when(fut): return True
 
         self._next.append((future, when))
         return future
@@ -260,8 +262,10 @@ def run_command_async(cmd,
                             shell=shell,
                             **popen_args)
 
+
 def run_command_async2(*args, check=False, **kwargs):
     return _ProcFuture(check, *args, **kwargs)
+
 
 def osuser():
     '''Return the name of the current OS user.
