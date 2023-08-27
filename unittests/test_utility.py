@@ -84,6 +84,7 @@ def test_command_async():
     assert t_launch < 1
     assert t_sleep >= 1
 
+
 def test_command_futures():
     proc = osext.run_command_async2('echo hello', shell=True)
 
@@ -109,7 +110,7 @@ def test_command_futures():
     assert not proc.is_session()
 
     # stdout must block
-    assert proc.stdout.read() == 'hello\n'
+    assert proc.stdout().read() == 'hello\n'
     assert proc.exitcode == 0
     assert proc.signal is None
 
@@ -124,12 +125,16 @@ def test_command_futures():
 
 def test_command_futures_callbacks():
     num_called = 0
+
     def _callback(_):
         nonlocal num_called
         num_called += 1
 
     proc = osext.run_command_async2("echo hello", shell=True)
     proc.add_done_callback(_callback)
+    with pytest.raises(ValueError):
+        proc.add_done_callback(lambda: 1)
+
     proc.start()
     while not proc.done():
         pass
@@ -144,6 +149,7 @@ def test_command_futures_callbacks():
 def _checked_cmd(request):
     return request.param == 'checked'
 
+
 def test_command_futures_error(_checked_cmd):
     proc = osext.run_command_async2("false", shell=True, check=_checked_cmd)
     proc.start()
@@ -157,6 +163,7 @@ def test_command_futures_error(_checked_cmd):
     assert proc.exitcode == 1
     assert proc.signal is None
 
+
 @pytest.fixture(params=['SIGINT', 'SIGTERM', 'SIGKILL'])
 def _signal(request):
     if request.param == 'SIGINT':
@@ -167,6 +174,7 @@ def _signal(request):
         return signal.SIGKILL
 
     assert 0
+
 
 def test_command_futures_signal(_checked_cmd, _signal):
     proc = osext.run_command_async2('sleep 3', shell=True, check=_checked_cmd)
@@ -192,6 +200,7 @@ def test_command_futures_signal(_checked_cmd, _signal):
     else:
         assert proc.exception() is None
 
+
 def test_command_futures_chain(tmp_path):
     with open(tmp_path / 'stdout.txt', 'w+') as fp:
         proc0 = osext.run_command_async2('echo hello', shell=True, stdout=fp)
@@ -200,7 +209,6 @@ def test_command_futures_chain(tmp_path):
         proc3 = osext.run_command_async2('echo world', shell=True, stdout=fp)
         proc0.then(proc1)
         proc0.then(proc2).then(proc3)
-
         all_procs = [proc0, proc1, proc2, proc3]
         t_start = time.time()
         proc0.start()
@@ -214,9 +222,11 @@ def test_command_futures_chain(tmp_path):
     with open(tmp_path / 'stdout.txt') as fp:
         assert fp.read() == 'hello\nworld\n'
 
+
 @pytest.fixture(params=['fail_on_error', 'ignore_errors'])
 def _chain_policy(request):
     return request.param
+
 
 def test_command_futures_chain_cond(_chain_policy, tmp_path):
     if _chain_policy == 'fail_on_error':
@@ -231,6 +241,9 @@ def test_command_futures_chain_cond(_chain_policy, tmp_path):
         proc1 = osext.run_command_async2("false", shell=True)
         proc2 = osext.run_command_async2("echo world", shell=True, stdout=fp)
         proc0.then(proc1).then(proc2, when=cond)
+        with pytest.raises(ValueError):
+            proc0.then(proc1, when=lambda: False)
+
         proc0.start()
         proc0.wait()
         proc1.wait()
@@ -259,6 +272,7 @@ def test_command_futures_chain_cancel():
     proc1.cancel()
     assert proc1.cancelled()
     assert not proc2.started()
+
 
 def test_copytree(tmp_path):
     dir_src = tmp_path / 'src'
