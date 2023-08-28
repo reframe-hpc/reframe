@@ -23,7 +23,6 @@ class _LocalJob(sched.Job):
         self._f_stderr = None
         self._signal = None
         self._cancel_time = None
-        self.spawn_command = f'./{self._script_filename}'
 
     @property
     def proc(self):
@@ -63,7 +62,7 @@ class LocalJobScheduler(sched.JobScheduler):
         # we can later kill any other processes that this might spawn by just
         # killing this one.
         proc = osext.run_command_async(
-            job.spawn_command,
+            os.path.abspath(job.script_filename),
             stdout=f_stdout,
             stderr=f_stderr,
             start_new_session=True
