@@ -94,7 +94,8 @@ class LsfJobScheduler(PbsJobScheduler):
             return
 
         completed = _run_strict(
-            f'bjobs -noheader {" ".join(job.jobid for job in jobs)}'
+            'bjobs -o "jobid: user:10 stat: queue:" -noheader '
+            f'{" ".join(job.jobid for job in jobs)}'
         )
         job_status = {}
         job_status_lines = completed.stdout.split('\n')
