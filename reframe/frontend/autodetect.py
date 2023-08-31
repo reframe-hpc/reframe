@@ -125,10 +125,9 @@ def _is_part_local(part):
 
 def _remote_detect(part):
     def _emit_script(job, env):
-        launcher_cmd = job.launcher.run_command(job)
         commands = [
             f'./bootstrap.sh',
-            f'{launcher_cmd} ./bin/reframe --detect-host-topology=topo.json'
+            f'./bin/reframe --detect-host-topology=topo.json'
         ]
         job.prepare(commands, env, trap_errors=True)
 
