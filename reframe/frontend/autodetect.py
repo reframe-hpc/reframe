@@ -48,15 +48,19 @@ class _copy_reframe:
             tempfile.mkdtemp(prefix='rfm.', dir=self._prefix)
         )
         paths = ['bin/', 'reframe/', 'bootstrap.sh', 'requirements.txt']
-        for p in paths:
-            src = os.path.join(rfm.INSTALL_PREFIX, p)
-            if os.path.isdir(src):
-                dst = os.path.join(self._workdir, p)
-                osext.copytree(src, dst, dirs_exist_ok=True)
-            else:
-                shutil.copy2(src, self._workdir)
+        use_pip = False
+        try:
+            for p in paths:
+                src = os.path.join(rfm.INSTALL_PREFIX, p)
+                if os.path.isdir(src):
+                    dst = os.path.join(self._workdir, p)
+                    osext.copytree(src, dst, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(src, self._workdir)
+        except OSError:
+            use_pip = True
 
-        return self._workdir
+        return self._workdir, use_pip
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         osext.rmtree(self._workdir)
@@ -124,10 +128,20 @@ def _is_part_local(part):
 
 
 def _remote_detect(part):
-    def _emit_script(job, env):
+    def _emit_script_for_source(job, env):
         commands = [
-            f'./bootstrap.sh',
-            f'./bin/reframe --detect-host-topology=topo.json'
+            './bootstrap.sh',
+            './bin/reframe --detect-host-topology=topo.json'
+        ]
+        job.prepare(commands, env, trap_errors=True)
+
+    def _emit_script_for_pip(job, env):
+        commands = [
+            'python3 -m venv venv.reframe',
+            'source venv.reframe/bin/activate',
+            'pip install reframe-hpc',
+            'reframe --detect-host-topology=topo.json',
+            'deactivate'
         ]
         job.prepare(commands, env, trap_errors=True)
 
@@ -138,13 +152,17 @@ def _remote_detect(part):
     topo_info = {}
     try:
         prefix = runtime.runtime().get_option('general/0/remote_workdir')
-        with _copy_reframe(prefix) as dirname:
+        with _copy_reframe(prefix) as (dirname, use_pip):
             with osext.change_dir(dirname):
                 job = Job.create(part.scheduler,
                                  part.launcher_type(),
                                  name='rfm-detect-job',
                                  sched_access=part.access)
-                _emit_script(job, [part.local_env])
+                if use_pip:
+                    _emit_script_for_pip(job, [part.local_env])
+                else:
+                    _emit_script_for_source(job, [part.local_env])
+
                 getlogger().debug('submitting detection script')
                 _log_contents(job.script_filename)
                 job.submit()
