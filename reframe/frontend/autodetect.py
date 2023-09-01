@@ -57,7 +57,7 @@ class _copy_reframe:
                     osext.copytree(src, dst, dirs_exist_ok=True)
                 else:
                     shutil.copy2(src, self._workdir)
-        except OSError:
+        except FileNotFoundError:
             use_pip = True
 
         return self._workdir, use_pip
@@ -139,7 +139,7 @@ def _remote_detect(part):
         commands = [
             'python3 -m venv venv.reframe',
             'source venv.reframe/bin/activate',
-            'pip install reframe-hpc',
+            f'pip install reframe-hpc=={rfm.VERSION}',
             'reframe --detect-host-topology=topo.json',
             'deactivate'
         ]
