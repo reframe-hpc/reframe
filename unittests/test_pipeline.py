@@ -1162,6 +1162,53 @@ def test_overriden_hook_different_stages(HelloTest, local_exec_ctx):
     assert test.pipeline_hooks() == {'post_setup': [MyTest.foo]}
 
 
+def test_pinned_hooks():
+    @test_util.custom_prefix('unittests/resources/checks')
+    class X(rfm.RunOnlyRegressionTest):
+        @run_before('run', always_last=True)
+        def foo(self):
+            pass
+
+    class Y(X):
+        @run_before('run')
+        def bar(self):
+            pass
+
+    test = Y()
+    assert test.pipeline_hooks() == {'pre_run': [Y.bar, X.foo]}
+
+
+def test_pinned_hooks_multiple_last():
+    @test_util.custom_prefix('unittests/resources/checks')
+    class X(rfm.RunOnlyRegressionTest):
+        @run_before('run', always_last=True)
+        def foo(self):
+            pass
+
+    class Y(X):
+        @run_before('run', always_last=True)
+        def bar(self):
+            pass
+
+    with pytest.raises(ReframeSyntaxError):
+        test = Y()
+
+
+def test_pinned_hooks_multiple_last_inherited():
+    @test_util.custom_prefix('unittests/resources/checks')
+    class X(rfm.RunOnlyRegressionTest):
+        @run_before('run', always_last=True)
+        def foo(self):
+            pass
+
+        @run_before('run', always_last=True)
+        def bar(self):
+            pass
+
+    with pytest.raises(ReframeSyntaxError):
+        test = X()
+
+
 def test_disabled_hooks(HelloTest, local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class BaseTest(HelloTest):

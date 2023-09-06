@@ -9,16 +9,16 @@ import inspect
 import reframe.utility as util
 
 
-def attach_to(phase):
+def attach_to(phase, always_last):
     '''Backend function to attach a hook to a given phase.
 
     :meta private:
     '''
     def deco(func):
         if hasattr(func, '_rfm_attach'):
-            func._rfm_attach.append(phase)
+            func._rfm_attach.append((phase, always_last))
         else:
-            func._rfm_attach = [phase]
+            func._rfm_attach = [(phase, always_last)]
 
         try:
             # no need to resolve dependencies independently; this function is
@@ -124,6 +124,7 @@ class Hook:
     @property
     def stages(self):
         return self._rfm_attach
+        # return [stage for stage, _ in self._rfm_attach]
 
     def __getattr__(self, attr):
         return getattr(self.__fn, attr)
@@ -179,7 +180,7 @@ class HookRegistry:
             self.__hooks.discard(h)
             self.__hooks.add(h)
         elif hasattr(v, '_rfm_resolve_deps'):
-            v._rfm_attach = ['post_setup']
+            v._rfm_attach = [('post_setup', None)]
             self.__hooks.add(Hook(v))
 
     def update(self, other, *, denied_hooks=None):
