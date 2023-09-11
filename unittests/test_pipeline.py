@@ -1169,13 +1169,21 @@ def test_pinned_hooks():
         def foo(self):
             pass
 
+        @run_after('sanity', always_last=True)
+        def fooX(self):
+            '''Check that a single `always_last` hook is registered
+            correctly.'''
+
     class Y(X):
         @run_before('run')
         def bar(self):
             pass
 
     test = Y()
-    assert test.pipeline_hooks() == {'pre_run': [Y.bar, X.foo]}
+    assert test.pipeline_hooks() == {
+        'pre_run': [Y.bar, X.foo],
+        'post_sanity': [X.fooX]
+    }
 
 
 def test_pinned_hooks_multiple_last():
