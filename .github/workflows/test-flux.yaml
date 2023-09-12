@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ['fluxrm/flux-sched:focal']
+        container: ['fluxrm/flux-sched:focal-v0.28.0']
 
     container:
       image: ${{ matrix.container }}

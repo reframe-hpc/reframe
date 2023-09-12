@@ -1095,6 +1095,9 @@ All logging handlers share the following set of common attributes:
 .. py:attribute:: logging.handlers.format_perfvars
 .. py:attribute:: logging.handlers_perflog.format_perfvars
 
+   :required: No
+   :default: ``""``
+
    Format specifier for logging the performance variables.
 
    This defines how the ``%(check_perfvalues)s`` will be formatted.
