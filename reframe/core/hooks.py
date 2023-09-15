@@ -6,8 +6,6 @@
 import functools
 import inspect
 
-import reframe.utility as util
-
 
 def is_hook(func):
     return hasattr(func, '_rfm_attach')
