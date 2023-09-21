@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import re
+from collections import namedtuple
 
 from reframe.core.exceptions import ReframeError
 from reframe.core.runtime import runtime
@@ -109,16 +110,18 @@ def have_maintainer(patt):
 
 
 def have_gpu_only():
-    def _fn(case):
-        # NOTE: This takes into account num_gpus_per_node being None
-        return case.check.num_gpus_per_node
-
-    return _fn
+    return validates('num_gpus_per_node')
 
 
 def have_cpu_only():
+    return validates('not num_gpus_per_node')
+
+
+def validates(expr):
     def _fn(case):
-        # NOTE: This takes into account num_gpus_per_node being None
-        return not case.check.num_gpus_per_node
+        try:
+            return eval(expr, None, case.check.__dict__)
+        except Exception as err:
+            raise ReframeError(f'invalid expression `{expr}`') from err
 
     return _fn

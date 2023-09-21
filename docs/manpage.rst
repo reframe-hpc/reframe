@@ -68,6 +68,21 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    The value of this attribute is not required to be non-zero for GPU tests.
    Tests may or may not make use of it.
 
+   .. deprecated:: 4.4
+
+      Please use ``-E 'not num_gpus_per_node'`` instead.
+
+.. option:: -E, --filter-expr=EXPR
+
+   Select only tests that satisfy the given expression.
+
+   The expression ``EXPR`` can be any valid Python expression on the test variables or parameters.
+   For example, ``-E num_tasks > 10`` will select all tests, whose :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` exceeds ``10``.
+   You may use any test variable in expression, even user-defined.
+   Multiple variables can also be included such as ``-E num_tasks >= my_param``, where ``my_param`` is user-defined parameter.
+
+   .. versionadded:: 4.4
+
 .. option:: --failed
 
    Select only the failed test cases for a previous run.
@@ -77,12 +92,17 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
 
    .. versionadded:: 3.4
 
+
 .. option:: --gpu-only
 
    Select tests that can run on GPUs.
 
    These are all tests with :attr:`num_gpus_per_node` greater than zero.
    This option and :option:`--cpu-only` are mutually exclusive.
+
+   .. deprecated:: 4.4
+
+      Please use ``-E num_gpus_per_node`` instead.
 
 .. option:: --maintainer=MAINTAINER
 
@@ -100,6 +120,7 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
 
       The ``MAINTAINER`` pattern is matched anywhere in the maintainer's name and not at its beginning.
       If you want to match at the beginning of the name, you should prepend ``^``.
+
 
 .. option:: -n, --name=NAME
 

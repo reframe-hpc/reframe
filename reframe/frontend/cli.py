@@ -356,6 +356,10 @@ def main():
         metavar='PATTERN', default=[],
         help='Exclude checks whose name matches PATTERN'
     )
+    select_options.add_argument(
+        '-E', '--filter-expr', action='store', metavar='EXPR',
+        help='Select checks that satisfy the expression EXPR'
+    )
 
     # Action options
     action_options.add_argument(
@@ -1048,6 +1052,16 @@ def main():
             f'Filtering test cases(s) by tags: {len(testcases)} remaining'
         )
 
+        if options.filter_expr:
+            testcases = filter(filters.validates(options.filter_expr),
+                               testcases)
+
+            testcases = list(testcases)
+            printer.verbose(
+                f'Filtering test cases(s) by {options.filter_expr}: '
+                f'{len(testcases)} remaining'
+            )
+
         # Filter test cases by maintainers
         for maint in options.maintainers:
             testcases = filter(filters.have_maintainer(maint), testcases)
@@ -1059,8 +1073,12 @@ def main():
             sys.exit(1)
 
         if options.gpu_only:
+            printer.warning('the `--gpu-only` option is deprecated; '
+                            'please use `-E num_gpus_per_node` instead')
             testcases = filter(filters.have_gpu_only(), testcases)
         elif options.cpu_only:
+            printer.warning('the `--cpu-only` option is deprecated; '
+                            'please use `-E "not num_gpus_per_node"` instead')
             testcases = filter(filters.have_cpu_only(), testcases)
 
         testcases = list(testcases)
