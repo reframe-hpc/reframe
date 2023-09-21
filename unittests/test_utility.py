@@ -799,7 +799,6 @@ def test_scoped_dict_construction():
         'a': {'k1': 3, 'k2': 4},
         'b': {'k3': 5}
     }
-    namespace_dict = reframe.utility.ScopedDict()
     namespace_dict = reframe.utility.ScopedDict(d)
 
     # Change local dict and verify that the stored values are not affected
@@ -1086,6 +1085,17 @@ def test_scoped_dict_update():
         '*': {'k1': 7, 'k3': 9, 'k4': 10}
     })
     assert scoped_dict == scoped_dict_alt
+
+
+def test_scoped_dict_json_enc():
+    import json
+
+    d = {
+        'a': {'k1': 3, 'k2': 4},
+        'b': {'k3': 5}
+    }
+    ns_dict = reframe.utility.ScopedDict(d)
+    assert d == json.loads(jsonext.dumps(ns_dict))
 
 
 def test_sequence_view():
