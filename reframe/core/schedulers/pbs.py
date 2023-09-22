@@ -178,9 +178,21 @@ class PbsJobScheduler(sched.JobScheduler):
         job._nodelist = [x.split('/')[0] for x in nodespec.split('+')]
         job._nodelist.sort()
 
-    # The second argument is to specialise some code paths to PBS Pro only, but
-    # not Torque.
-    def _poll(self, is_pbs_pro, *jobs):
+    def _query_exit_code(self, job):
+        '''Try to retrieve the exit code of a past job.'''
+
+        # With PBS Pro we can obtain the exit status of a past job
+        extended_info = osext.run_command(f'qstat -xf {job.jobid}')
+        exit_status_match = re.search(
+            r'^ *Exit_status *= *(?P<exit_status>\d+)', extended_info.stdout,
+            flags=re.MULTILINE,
+        )
+        if exit_status_match:
+            return int(exit_status_match.group('exit_status'))
+
+        return None
+
+    def poll(self, *jobs):
         def output_ready(job):
             # We report a job as finished only when its stdout/stderr are
             # written back to the working directory
@@ -211,19 +223,7 @@ class PbsJobScheduler(sched.JobScheduler):
                 if job.cancelled or output_ready(job):
                     self.log(f'Assuming job {job.jobid} completed')
                     job._completed = True
-                if is_pbs_pro:
-                    # With PBS Pro we can obtain the exit status of the job,
-                    # in case it actually failed.
-                    extended_info = osext.run_command(
-                        f'qstat -xf {job.jobid}'
-                    )
-                    exit_status_match = re.search(
-                        r'^ *Exit_status *= *(?P<exit_status>\d+)',
-                        extended_info.stdout,
-                        flags=re.MULTILINE,
-                    )
-                    if exit_status_match:
-                        job._exitcode = int(exit_status_match.group('exit_status'))
+                    job._exitcode = self._query_exit_code(job)
 
             return
 
@@ -292,13 +292,13 @@ class PbsJobScheduler(sched.JobScheduler):
                     job._exception = JobError('maximum pending time exceeded',
                                               job.jobid)
 
-    def poll(self, *job):
-        self._poll(True, *job)
-
 
 @register_scheduler('torque')
 class TorqueJobScheduler(PbsJobScheduler):
     TASKS_OPT = '-l nodes={num_nodes}:ppn={num_cpus_per_node}'
 
-    def poll(self, *job):
-        self._poll(False, *job)
+    def _query_exit_code(self, job):
+        '''Try to retrieve the exit code of a past job.'''
+
+        # Torque does not provide a way to retrieve the history of jobs
+        return None
