@@ -43,7 +43,7 @@ class _SSHJob(Job):
 @register_scheduler('ssh')
 class SSHJobScheduler(JobScheduler):
     def __init__(self):
-        self._free_hosts = set(self.get_option('hosts'))
+        self._free_hosts = set(self.get_option('ssh_hosts'))
         self._allocated_hosts = set()
         if not self._free_hosts:
             raise ConfigError(f'no hosts specified for the SSH scheduler: '

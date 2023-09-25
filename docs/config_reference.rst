@@ -273,7 +273,7 @@ System Partition Configuration
      This backend does not rely on job accounting to retrieve job statuses, but ReFrame does its best to query the job state as reliably as possible.
    - ``ssh``: Jobs will be launched on a remote host using SSH.
 
-     The remote host will be selected from the list of hosts specified in :attr:`~systems.partitions.sched_options.hosts`.
+     The remote host will be selected from the list of hosts specified in :attr:`~systems.partitions.sched_options.ssh_hosts`.
      The scheduler keeps track of the hosts that it has submitted jobs to, and it will select the next available one in a round-robin fashion.
      For connecting to a remote host, the options specified in :attr:`~systems.partitions.access` will be used.
 
@@ -283,6 +283,11 @@ System Partition Configuration
      The same :attr:`~systems.partitions.access` options will be used in those operations as well.
      Please note, that the connection options of ``ssh`` and ``scp`` differ and ReFrame will not attempt to translate any options between the two utilities in case ``scp`` is selected for copying to the remote host.
      In this case, it is preferable to set up the host connection options in ``~/.ssh/config`` and leave :attr:`~systems.partition.access` blank.
+
+     Job-scheduler command line options can be used to interact with the ``ssh`` backend.
+     More specifically, if the :option:`--distribute` option is used, a test will be generated for each host listed in :attr:`~systems.partitions.sched_options.ssh_hosts`.
+     You can also pin a test to a specific host if you pass the ``#host`` directive to the :option:`-J` option, e.g., ``-J '#host=myhost'``.
+
    - ``torque``: Jobs will be launched using the `Torque <https://en.wikipedia.org/wiki/TORQUE>`__ scheduler.
 
    .. versionadded:: 3.7.2
@@ -352,7 +357,7 @@ System Partition Configuration
    .. warning::
       This option is broken in 4.0.
 
-.. py:attribute:: systems.partitions.sched_options.hosts
+.. py:attribute:: systems.partitions.sched_options.ssh_hosts
 
    :required: No
    :default: ``[]``
