@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
-import functools
 import time
 
 import reframe.utility.osext as osext
