@@ -619,7 +619,7 @@
         "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
         "systems/partitions/extras": {},
-        "systems/*/sched_options/ssh_hosts": [],
+        "systems*/sched_options/ssh_hosts": [],
         "systems*/sched_options/ignore_reqnodenotavail": false,
         "systems*/sched_options/job_submit_timeout": 60,
         "systems*/sched_options/resubmit_on_errors": [],
