@@ -150,7 +150,8 @@ class _ProcFuture:
         '''
 
         if when is None:
-            def when(fut): return True
+            def when(fut):
+                return True
 
         if not util.is_trivially_callable(when, non_def_args=1):
             raise ValueError("the 'when' function must "
