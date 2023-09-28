@@ -628,6 +628,7 @@ class Node(abc.ABC):
                      :class:`False` otherwise.
         '''
 
+
 class AlwaysIdleNode(Node):
     def __init__(self, name):
         self._name = name

@@ -78,7 +78,8 @@ class SSHJobScheduler(JobScheduler):
         assert isinstance(job, _SSHJob)
         options = ' '.join(job.ssh_options)
 
-        # Create a temporary directory on the remote host and push the job artifacts
+        # Create a temporary directory on the remote host and push the job
+        # artifacts
         completed = osext.run_command(
             f'ssh -o BatchMode=yes {options} {job.host} '
             f'mktemp -td rfm.XXXXXXXX', check=True

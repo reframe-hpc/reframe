@@ -43,7 +43,6 @@ class _ProcFuture:
     :meta public:
 
     .. versionadded:: 4.4
-
     '''
 
     def __init__(self, check=False, *args, **kwargs):
