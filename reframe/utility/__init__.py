@@ -1275,6 +1275,9 @@ class ScopedDict(UserDict):
     def __missing__(self, key):
         raise KeyError(str(key))
 
+    def __rfm_json_encode__(self):
+        return self.data
+
 
 @functools.total_ordering
 class OrderedSet(collections.abc.MutableSet):

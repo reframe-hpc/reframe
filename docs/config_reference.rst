@@ -1247,9 +1247,9 @@ The additional properties for the ``filelog`` handler are the following:
      {basedir}/
         system1/
             partition1/
-                test_short_name.log
+                <test_class_name>.log
             partition2/
-                test_short_name.log
+                <test_class_name>.log
             ...
         system2/
         ...
@@ -1268,6 +1268,12 @@ The additional properties for the ``filelog`` handler are the following:
    The ``filelog`` handler is very cautious when generating a test log file: if a change is detected in the information that is being logged, the hanlder will not append to the same file, but it will instead create a new one, saving the old file using the ``.h<N>`` suffix, where ``N`` is an integer that is increased every time a new file is being created due to such changes.
    Examples of changes in the logged information are when the log record format changes or a new performance metric is added, deleted or has its name changed.
    This behavior guarantees that each log file is consistent and it will not break existing parsers.
+
+.. versionchanged:: 4.3
+
+   In the generated log file, the name of the test class name is used instead of the test's short name (which included the test's hash).
+   This allows the results of different variants of a parameterized test to be stored in the same log file facilitating post-processing.
+
 
 The ``graylog`` log handler
 ---------------------------
