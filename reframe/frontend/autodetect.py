@@ -59,6 +59,9 @@ class _copy_reframe:
                     shutil.copy2(src, self._workdir)
         except FileNotFoundError:
             use_pip = True
+        except Exception as err:
+            osext.rmtree(self._workdir)
+            raise err
 
         return self._workdir, use_pip
 
