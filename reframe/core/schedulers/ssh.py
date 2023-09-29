@@ -52,7 +52,7 @@ class SSHJobScheduler(JobScheduler):
         # Determine if rsync is available
         try:
             osext.run_command('rsync --version', check=True)
-        except SpawnedProcessError:
+        except (FileNotFoundError, SpawnedProcessError):
             self._has_rsync = False
         else:
             self._has_rsync = True
