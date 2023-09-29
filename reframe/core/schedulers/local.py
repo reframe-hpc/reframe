@@ -12,11 +12,7 @@ import time
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobError, ReframeError
-
-
-class _TimeoutExpired(ReframeError):
-    pass
+from reframe.core.exceptions import JobError
 
 
 class _LocalJob(sched.Job):
