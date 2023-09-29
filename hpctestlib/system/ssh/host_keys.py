@@ -14,9 +14,8 @@ import reframe.utility.typecheck as typ
 class ssh_host_keys_check(rfm.RunOnlyRegressionTest):
     '''SSH host keys age check
 
-    The ssh host keys should be renewed regularly.
-    In this case, we are checking against the
-    max_key_age variable
+    The test checks if the list of SSH keys has been updated recently.
+    In this case, we are checking against the max_key_age variable
     '''
 
     #: Parameter list with all host keys to check
@@ -45,18 +44,18 @@ class ssh_host_keys_check(rfm.RunOnlyRegressionTest):
 
     @run_after('init')
     def set_hosts_keys(self):
-        self.executable_opts += [self.host_keys]
+        self.executable_opts += [self.ssh_host_keys]
 
     @sanity_function
     def assert_file_age(self):
         current_time = time.time()
 
         skip_me = sn.extractall('No such file or directory', self.stderr)
-        self.skip_if(skip_me, msg=f'Skipping test because {self.host_keys}'
+        self.skip_if(skip_me, msg=f'Skipping test because {self.ssh_host_keys}'
                                   f' was not found')
 
         return sn.assert_lt(current_time -
                          sn.extractsingle(r'\d+', self.stdout, 0, int),
                          typ.Duration(self.max_key_age),
-                         msg=f'File {self.host_keys} is older than '
+                         msg=f'File {self.ssh_host_keys} is older than '
                              f'{self.max_key_age}')

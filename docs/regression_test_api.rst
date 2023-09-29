@@ -67,9 +67,9 @@ The use of this module is required only when creating new tests programmatically
 
 .. autodecorator:: reframe.core.builtins.require_deps
 
-.. autodecorator:: reframe.core.builtins.run_after(stage)
+.. autodecorator:: reframe.core.builtins.run_after(stage, *, always_last=False)
 
-.. autodecorator:: reframe.core.builtins.run_before(stage)
+.. autodecorator:: reframe.core.builtins.run_before(stage, *, always_last=False)
 
 .. autodecorator:: reframe.core.builtins.sanity_function
 

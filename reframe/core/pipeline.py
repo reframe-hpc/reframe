@@ -179,12 +179,32 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @classmethod
     def pipeline_hooks(cls):
         ret = {}
+        last = {}
         for hook in cls._rfm_hook_registry:
-            for stage in hook.stages:
-                try:
-                    ret[stage].append(hook.fn)
-                except KeyError:
-                    ret[stage] = [hook.fn]
+            for stage, always_last in hook.stages:
+                if always_last:
+                    if stage in last:
+                        hook_name = hook.__qualname__
+                        pinned_name = last[stage].__qualname__
+                        raise ReframeSyntaxError(
+                            f'cannot pin hook {hook_name!r} as last '
+                            f'of stage {stage!r} as {pinned_name!r} '
+                            f'is already pinned last'
+                        )
+
+                    last[stage] = hook
+                else:
+                    try:
+                        ret[stage].append(hook.fn)
+                    except KeyError:
+                        ret[stage] = [hook.fn]
+
+        # Append the last hooks
+        for stage, hook in last.items():
+            try:
+                ret[stage].append(hook.fn)
+            except KeyError:
+                ret[stage] = [hook.fn]
 
         return ret
 
