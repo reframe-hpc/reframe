@@ -110,7 +110,7 @@ class trivy_scan_check(rfm.RunOnlyRegressionTest):
             return
 
         # using GitHub API in case the version is set to latest
-        # it may hit the maximum number of API calss to GitHub
+        # it may hit the maximum number of API calls to GitHub
         if self.trivy_release == 'latest':
             self.prerun_cmds = [
                 f"__tar_file=`curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep browser_download_url | grep _{self.trivy_os_arch}.tar.gz\\\" | awk '{{print $2}}' | tr -d '\"'`",  # noqa: E501
