@@ -27,7 +27,7 @@ class trivy_scan_check(rfm.RunOnlyRegressionTest):
     #:
     #: :type: :class:`str`
     #: :values: example values are '/home', '/usr/', and '/etc'
-    folders = parameter([], loggable=True)
+    folder = parameter([], loggable=True)
 
     #: The release version of the trivy to use.
     #:
