@@ -14,8 +14,7 @@ from reframe.core.exceptions import ReframeError
 
 @rfm.simple_test
 class trivy_scan_check(rfm.RunOnlyRegressionTest):
-    '''
-    filesystem scanning check
+    '''Filesystem scanning check
 
     Scan the file systems using aquasecurity/triyv
     (https://github.com/aquasecurity/trivy)
