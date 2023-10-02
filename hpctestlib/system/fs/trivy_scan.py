@@ -97,7 +97,7 @@ class trivy_scan_check(rfm.RunOnlyRegressionTest):
 
         validator = VersionValidator(f'>=0.37.0')
         if not validator.validate(self.trivy_release):
-            raise ReframeError(f'trivy version {self.trivy_release} '
+            raise ValueError(f'trivy version {self.trivy_release} '
                                f'is not supported')
 
     @run_after('init')
