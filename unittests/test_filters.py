@@ -11,6 +11,7 @@ import reframe.frontend.executors as executors
 import reframe.frontend.filters as filters
 import reframe.utility.sanity as sn
 import unittests.utility as test_util
+from reframe.core.exceptions import ReframeError
 
 
 def count_checks(filter_fn, checks):
@@ -140,3 +141,30 @@ def test_invalid_regex(sample_cases):
 
     with pytest.raises(errors.ReframeError):
         count_checks(filters.have_tag('*foo'), sample_cases).evaluate()
+
+
+def test_validates_expr(sample_cases, sample_param_cases):
+    validates = filters.validates
+    assert count_checks(validates('"a" in tags'), sample_cases) == 2
+    assert count_checks(validates('num_gpus_per_node == 1'), sample_cases) == 2
+    assert count_checks(validates('p > 5'), sample_param_cases) == 5
+    assert count_checks(validates('p > 5 or p < 1'), sample_param_cases) == 6
+    assert count_checks(validates('num_tasks in tags'), sample_cases) == 0
+
+
+def test_validates_expr_invalid(sample_cases):
+    validates = filters.validates
+
+    # undefined variables
+    with pytest.raises(ReframeError):
+        assert count_checks(validates('foo == 3'), sample_cases)
+
+    # invalid syntax
+    with pytest.raises(ReframeError):
+        assert count_checks(validates('num_tasks = 2'), sample_cases)
+
+    with pytest.raises(ReframeError):
+        assert count_checks(validates('import os'), sample_cases)
+
+    with pytest.raises(ReframeError):
+        assert count_checks(validates('"foo" i tags'), sample_cases)
