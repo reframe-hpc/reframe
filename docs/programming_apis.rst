@@ -3,7 +3,7 @@ Programming APIs
 ================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
    regression_test_api
    deferrable_functions_reference

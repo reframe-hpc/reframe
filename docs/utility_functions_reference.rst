@@ -7,6 +7,10 @@ Utility Functions
 This is a collection of utility functions and classes that are used by the framework but can also be useful when writing regression tests.
 Functions or classes marked as draft should be used with caution, since they might change or be replaced without a deprecation warning.
 
+.. contents:: Contents
+   :local:
+   :backlinks: entry
+
 
 General Utilities
 -----------------
