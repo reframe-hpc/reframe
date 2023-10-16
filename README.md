@@ -74,18 +74,16 @@ python3 -m http.server
 
 The documentation is now up on [localhost:8000](http://localhost:8000), where you can navigate with your browser.
 
-
 ## Test library
 
-The framework comes with a library of tests that users can either run them from the command line directly or extend them and fine tune them for their systems. See [here](https://reframe-hpc.readthedocs.io/en/stable/hpctestlib.html) for more details.
+The framework comes with an experimental library of tests that users can either run them from the command line directly or extend them and fine tune them for their systems. See [here](https://reframe-hpc.readthedocs.io/en/stable/hpctestlib.html) for more details.
 
+## Public test repositories
 
-## Test examples
+The ReFrame HPC [community Github page](https://github.com/reframe-hpc) provides mirror forks of interesting ReFrame test repositories maintained by various sites or projects.
+You can use those tests as an additional guidance to implement your own tests.
 
-You can find examples of real tests under the ReFrame HPC [community Github page](https://github.com/reframe-hpc).
-The most complete suite of tests currently publicly available is that of [CSCS](https://cscs.ch/), which you can also find [here](https://github.com/eth-cscs/cscs-reframe-tests).
-You can use those tests as a starting point for implementing your own tests.
-
+If you maintain a public test repository and you would like it to be listed in the community page, feel free to open an issue or contact us through [Slack](#slack).
 
 ## Contact
 
