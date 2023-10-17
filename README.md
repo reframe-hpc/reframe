@@ -76,7 +76,7 @@ The documentation is now up on [localhost:8000](http://localhost:8000), where yo
 
 ## Test library
 
-The framework comes with an experimental library of tests that users can either run them from the command line directly or extend them and fine tune them for their systems. See [here](https://reframe-hpc.readthedocs.io/en/stable/hpctestlib.html) for more details.
+The framework comes with an experimental library of tests that users can either run from the command line directly or extend and fine tune them for their systems. See [here](https://reframe-hpc.readthedocs.io/en/stable/hpctestlib.html) for more details.
 
 ## Public test repositories
 
