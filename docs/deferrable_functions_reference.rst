@@ -10,6 +10,10 @@ The key characteristic of these functions is that they store their arguments whe
 ReFrame provides an ample set of deferrable utilities and it also allows users to write their own deferrable functions when needed.
 Please refer to ":doc:`deferrables`" for a hands-on explanation on how deferrable functions work and how to create custom deferrable functions.
 
+.. contents:: Contents
+   :local:
+   :backlinks: entry
+
 
 Explicit evaluation of deferrable functions
 -------------------------------------------
