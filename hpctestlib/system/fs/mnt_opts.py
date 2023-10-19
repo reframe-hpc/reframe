@@ -76,11 +76,11 @@ class filesystem_options_check(rfm.RunOnlyRegressionTest):
     def assert_mnt_options(self):
         msg = Template('Found filesystem type(s) - "$mnt_type" - that are not '
                        'compatible with this test')
-        msg1 = Template('The mount point "$mnt_point" of type "$mnt_type" does '
-                        'not have the "$opt" option.')
+        msg1 = Template('The mount point "$mnt_point" of type "$mnt_type" does'
+                        ' not have the "$opt" option.')
         msg2 = Template('The "$variable" variable value of "$value" does not '
-                        'match the reference "$ref_value" for the "$mnt_point" '
-                        'mount point ("$mnt_type" type)')
+                        'match the reference "$ref_value" for the "$mnt_point"'
+                        ' mount point ("$mnt_type" type)')
 
         errors = []
         unsupported_types = set()
@@ -104,6 +104,7 @@ class filesystem_options_check(rfm.RunOnlyRegressionTest):
                                                   mnt_type=mnt_type))
 
         if self.fail_unknown_fs:
-            errors.append(msg.substitute(mnt_type=', '.join(unsupported_types)))
+            errors.append(msg.substitute(
+                mnt_type=', '.join(unsupported_types)))
 
         return sn.assert_true(errors == [], msg='\n'.join(errors))
