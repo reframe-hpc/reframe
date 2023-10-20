@@ -142,6 +142,7 @@ def _remote_detect(part):
         commands = [
             'python3 -m venv venv.reframe',
             'source venv.reframe/bin/activate',
+            'pip install --upgrade pip',
             f'pip install reframe-hpc=={rfm.VERSION}',
             'reframe --detect-host-topology=topo.json',
             'deactivate'
