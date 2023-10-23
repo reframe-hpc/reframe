@@ -25,9 +25,7 @@ class filesystem_options_check(rfm.RunOnlyRegressionTest):
     #: :type: `Dict[str, str]`. The key should be the file system type.
     #:   and the value should be a string with mount options.
     #:   E.g., {'xfs: 'nosuid,logbsize=32k'}
-    #: :default: ``{}``
-    fs_ref_opts = variable(typ.Dict, value={}, loggable=True)
-    fs_ref_opts = required
+    fs_ref_opts = variable(typ.Dict, loggable=True)
 
     #: Fail if the test finds a filesystem type that is not in the
     #:    reference dictionary
@@ -70,7 +68,7 @@ class filesystem_options_check(rfm.RunOnlyRegressionTest):
             keystr = opt_parts[0]
             valstr = opt_parts[1] if len(opt_parts) > 1 else ''
             result[keystr] = valstr
-        
+
         return result
 
     @sanity_function
