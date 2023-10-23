@@ -61,7 +61,7 @@ class filesystem_options_check(rfm.RunOnlyRegressionTest):
                 fp.write(f'{mnt_type} {options}\n')
 
     def explode_opts_str(self, opts_str):
-        result=dict()
+        result = {}
         for opt in opts_str.split(','):
             if opt == '':
                 continue
