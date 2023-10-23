@@ -829,11 +829,12 @@ def _rl_encode(seq):
 
 
 def _parse_node(nodename):
-    m = re.search(r'(.*\D)(\d+)', nodename)
+    m = re.search(r'(.*\D)(\d+)(\D*)', nodename)
     if m is None:
         basename = nodename
         width = 0
         nodeid = None
+        suffix = None
     else:
         basename = m.group(1)
         _id = m.group(2).lstrip('0')
@@ -843,8 +844,9 @@ def _parse_node(nodename):
 
         nodeid = int(_id)
         width = len(m.group(2))
+        suffix = m.group(3)
 
-    return basename, width, nodeid
+    return basename, width, nodeid, suffix
 
 
 def count_digits(n):
@@ -873,14 +875,19 @@ def _common_prefix(s1, s2):
 
 
 class _NodeGroup:
-    def __init__(self, name, width):
+    def __init__(self, name, width, suffix):
         self.__name = name
+        self.__suffix = suffix
         self.__width = width
         self.__nodes = []
 
     @property
     def name(self):
         return self.__name
+
+    @property
+    def suffix(self):
+        return self.__suffix
 
     @property
     def width(self):
@@ -903,12 +910,12 @@ class _NodeGroup:
             start, delta, size = unit
             if size == 1:
                 s_start = str(start).zfill(self.width)
-                abbrev.append(f'{self.name}{s_start}')
+                abbrev.append(f'{self.name}{s_start}{self.suffix}')
             elif delta != 1:
                 # We simply unpack node lists with delta != 1
                 for i in range(size):
                     s_start = str(start + i*delta).zfill(self.width)
-                    abbrev.append(f'{self.name}{s_start}')
+                    abbrev.append(f'{self.name}{s_start}{self.suffix}')
             else:
                 last = start + delta*(size-1)
                 digits_last = count_digits(last)
@@ -921,19 +928,21 @@ class _NodeGroup:
                 s_first = str(start).zfill(digits_last)
                 s_last  = str(last)
                 prefix, s_first, s_last = _common_prefix(s_first, s_last)
-                nd_range += f'{prefix}[{s_first}-{s_last}]'
+                nd_range += f'{prefix}[{s_first}-{s_last}]{self.suffix}'
                 abbrev.append(nd_range)
 
         return ','.join(abbrev)
 
     def __hash__(self):
-        return hash(self.name) ^ hash(self.width)
+        return hash(self.name) ^ hash(self.suffix) ^ hash(self.width)
 
     def __eq__(self, other):
         if not isinstance(other, _NodeGroup):
             return NotImplemented
 
-        return self.name == other.name and self.width == other.width
+        return (self.name == other.name and
+                self.suffix == other.suffix and
+                self.width == other.width)
 
 
 def nodelist_abbrev(nodes):
@@ -978,8 +987,8 @@ def nodelist_abbrev(nodes):
 
     node_groups = {}
     for n in sorted(nodes):
-        basename, width, nid = _parse_node(n)
-        ng = _NodeGroup(basename, width)
+        basename, width, nid, suffix = _parse_node(n)
+        ng = _NodeGroup(basename, width, suffix)
         node_groups.setdefault(ng, ng)
         if nid is not None:
             node_groups[ng].add(nid)
@@ -1004,7 +1013,9 @@ def nodelist_expand(nodespec):
         return []
 
     nodespec_parts = nodespec.split(',')
-    node_patt = re.compile(r'(?P<prefix>.+)\[(?P<l>\d+)-(?P<u>\d+)\]')
+    node_patt = re.compile(
+        r'(?P<prefix>.+)\[(?P<l>\d+)-(?P<u>\d+)\](?P<suffix>.*)'
+    )
     nodes = []
     for ns in nodespec_parts:
         if '[' not in ns and ']' not in ns:
@@ -1015,11 +1026,11 @@ def nodelist_expand(nodespec):
         if not match:
             raise ValueError(f'invalid nodespec: {nodespec}')
 
-        prefix = match.group('prefix')
+        prefix, suffix = match.group('prefix'), match.group('suffix')
         low, upper = int(match.group('l')), int(match.group('u'))
         width = count_digits(upper)
         for nid in range(low, upper+1):
-            nodes.append(f'{prefix}{nid:0{width}}')
+            nodes.append(f'{prefix}{nid:0{width}}{suffix}')
 
     return nodes
 
