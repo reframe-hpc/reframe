@@ -70,6 +70,7 @@ class filesystem_options_check(rfm.RunOnlyRegressionTest):
             keystr = opt_parts[0]
             valstr = opt_parts[1] if len(opt_parts) > 1 else ''
             result[keystr] = valstr
+        
         return result
 
     @sanity_function
