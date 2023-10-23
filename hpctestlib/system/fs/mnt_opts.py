@@ -65,6 +65,7 @@ class filesystem_options_check(rfm.RunOnlyRegressionTest):
         for opt in opts_str.split(','):
             if opt == '':
                 continue
+
             opt_parts = opt.split('=', maxsplit=2)
             keystr = opt_parts[0]
             valstr = opt_parts[1] if len(opt_parts) > 1 else ''
