@@ -348,9 +348,8 @@ class RegressionTestMeta(type):
         # parent classes in reverse MRO order
         for c in list(reversed(cls.mro()))[:-1]:
             if hasattr(c, '_rfm_local_hook_registry'):
-                cls._rfm_hook_registry.update(
-                    c._rfm_local_hook_registry, denied_hooks=namespace
-                )
+                cls._rfm_hook_registry.update(c._rfm_local_hook_registry,
+                                              forbidden_names=namespace)
 
         cls._rfm_hook_registry.update(cls._rfm_local_hook_registry)
 

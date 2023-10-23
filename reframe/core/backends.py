@@ -23,7 +23,8 @@ _scheduler_backend_modules = [
     'reframe.core.schedulers.pbs',
     'reframe.core.schedulers.oar',
     'reframe.core.schedulers.sge',
-    'reframe.core.schedulers.slurm'
+    'reframe.core.schedulers.slurm',
+    'reframe.core.schedulers.ssh'
 ]
 _schedulers = {}
 

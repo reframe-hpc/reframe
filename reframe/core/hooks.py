@@ -6,19 +6,25 @@
 import functools
 import inspect
 
-import reframe.utility as util
+
+def is_hook(func):
+    return hasattr(func, '_rfm_attach')
 
 
-def attach_to(phase):
+def is_dep_hook(func):
+    return hasattr(func, '_rfm_resolve_deps')
+
+
+def attach_to(phase, always_last):
     '''Backend function to attach a hook to a given phase.
 
     :meta private:
     '''
     def deco(func):
-        if hasattr(func, '_rfm_attach'):
-            func._rfm_attach.append(phase)
+        if is_hook(func):
+            func._rfm_attach.append((phase, always_last))
         else:
-            func._rfm_attach = [phase]
+            func._rfm_attach = [(phase, always_last)]
 
         try:
             # no need to resolve dependencies independently; this function is
@@ -118,12 +124,13 @@ class Hook:
 
     def __init__(self, fn):
         self.__fn = fn
-        if not hasattr(fn, '_rfm_attach'):
+        if not is_hook(fn):
             raise ValueError(f'{fn.__name__} is not a hook')
 
     @property
     def stages(self):
         return self._rfm_attach
+        # return [stage for stage, _ in self._rfm_attach]
 
     def __getattr__(self, attr):
         return getattr(self.__fn, attr)
@@ -152,7 +159,7 @@ class HookRegistry:
     '''Global hook registry.'''
 
     def __init__(self, hooks=None):
-        self.__hooks = util.OrderedSet()
+        self.__hooks = []
         if hooks is not None:
             self.update(hooks)
 
@@ -172,30 +179,36 @@ class HookRegistry:
         of the pipeline where they must be attached. Dependencies will be
         resolved first in the post-setup phase if not assigned elsewhere.
         '''
-
-        if hasattr(v, '_rfm_attach'):
+        if is_hook(v):
             # Always override hooks with the same name
             h = Hook(v)
-            self.__hooks.discard(h)
-            self.__hooks.add(h)
-        elif hasattr(v, '_rfm_resolve_deps'):
-            v._rfm_attach = ['post_setup']
-            self.__hooks.add(Hook(v))
+            try:
+                pos = self.__hooks.index(h)
+            except ValueError:
+                self.__hooks.append(h)
+            else:
+                self.__hooks[pos] = h
+        elif is_dep_hook(v):
+            v._rfm_attach = [('post_setup', None)]
+            self.__hooks.append(Hook(v))
 
-    def update(self, other, *, denied_hooks=None):
-        '''Update the hook registry with the hooks from another hook registry.
-
-        The optional ``denied_hooks`` argument takes a set of disallowed
-        hook names, preventing their inclusion into the current hook registry.
-        '''
+    def update(self, other, *, forbidden_names=None):
+        '''Update the hook registry with the hooks from another hook
+        registry.'''
 
         assert isinstance(other, HookRegistry)
-        denied_hooks = denied_hooks or set()
+        forbidden_names = forbidden_names or {}
         for h in other:
-            if h.__name__ not in denied_hooks:
-                # Hooks in `other` override ours
-                self.__hooks.discard(h)
-                self.__hooks.add(h)
+            if (h.__name__ in forbidden_names and
+                not is_hook(forbidden_names[h.__name__])):
+                continue
+
+            try:
+                pos = self.__hooks.index(h)
+            except ValueError:
+                self.__hooks.append(h)
+            else:
+                self.__hooks[pos] = h
 
     def __repr__(self):
         return repr(self.__hooks)

@@ -29,6 +29,228 @@ from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
 from . import OrderedSet
 
 
+class UnstartedProcError(ReframeError):
+    '''Raised when a process operation is attempted on a
+    not yet started process future'''
+
+
+class _ProcFuture:
+    '''A future encapsulating a command to be executed asynchronously.
+
+    Users may not create a :class:`_ProcFuture` directly, but should use
+    :func:`run_command_async2` instead.
+
+    :meta public:
+
+    .. versionadded:: 4.4
+    '''
+
+    def __init__(self, check=False, *args, **kwargs):
+        self._proc = None
+        self._exitcode = None
+        self._signal = None
+        self._check = check
+        self._cmd_args = (args, kwargs)
+        self._next = []
+        self._done_callbacks = []
+        self._completed = False
+        self._cancelled = False
+
+    def _check_started(self):
+        if not self.started():
+            raise UnstartedProcError
+
+    def start(self):
+        '''Start the future, i.e. spawn the encapsulated command.'''
+
+        args, kwargs = self._cmd_args
+        self._proc = run_command_async(*args, **kwargs)
+
+        if os.getsid(self._proc.pid) == self._proc.pid:
+            self._session = True
+        else:
+            self._session = False
+
+        return self
+
+    @property
+    def pid(self):
+        '''The PID of the spawned process.'''
+        return self._proc.pid
+
+    @property
+    def exitcode(self):
+        '''The exit code of the spawned process.'''
+        return self._exitcode
+
+    @property
+    def signal(self):
+        '''The signal number that caused the spawned process to exit.'''
+        return self._signal
+
+    def cancelled(self):
+        '''Returns :obj:`True` if the future was cancelled.'''
+        return self._cancelled
+
+    def is_session(self):
+        '''Returns :obj:`True` is the spawned process is a group or session
+        leader.'''
+        return self._session
+
+    def kill(self, signum):
+        '''Send signal ``signum`` to the spawned process.
+
+        If the process is a group or session leader, the signal will be sent
+        to the whole group or session.
+        '''
+
+        self._check_started()
+        kill_fn = os.killpg if self.is_session() else os.kill
+        kill_fn(self.pid, signum)
+        self._signal = signum
+
+    def terminate(self):
+        '''Terminate the spawned process by sending ``SIGTERM``.'''
+        self.kill(signal.SIGTERM)
+
+    def cancel(self):
+        '''Cancel the spawned process by sending ``SIGKILL``.'''
+        self._check_started()
+        if not self.cancelled():
+            self.kill(signal.SIGKILL)
+
+        self._cancelled = True
+
+    def add_done_callback(self, func):
+        '''Add a callback that will be called when this future is done.
+
+        The callback function will be called with the future as its sole
+        argument.
+        '''
+        if not util.is_trivially_callable(func, non_def_args=1):
+            raise ValueError('the callback function must '
+                             'accept a single argument')
+
+        self._done_callbacks.append(func)
+
+    def then(self, future, when=None):
+        '''Schedule another future for execution after this one.
+
+        :arg future: a :class:`_ProcFuture` to be started after this one
+            finishes.
+        :arg when: A callable that will be used as conditional for starting or
+            not the next future. It will be called with this future as its
+            sole argument and must return a boolean. If the return value is
+            true, then ``future`` will start execution, otherwise not.
+
+            If ``when`` is :obj:`None`, then the next future will be executed
+            unconditionally.
+        :returns: the passed ``future``, so that multiple :func:`then` calls
+            can be chained.
+        '''
+
+        if when is None:
+            def when(fut):
+                return True
+
+        if not util.is_trivially_callable(when, non_def_args=1):
+            raise ValueError("the 'when' function must "
+                             "accept a single argument")
+
+        self._next.append((future, when))
+        return future
+
+    def started(self):
+        '''Check if this future has started.'''
+        return self._proc is not None
+
+    def _wait(self, *, nohang=False):
+        self._check_started()
+        if self._completed:
+            return True
+
+        options = os.WNOHANG if nohang else 0
+        try:
+            pid, status = os.waitpid(self.pid, options)
+        except OSError as e:
+            if e.errno == errno.ECHILD:
+                self._completed = True
+                return self._completed
+            else:
+                raise e
+
+        if nohang and not pid:
+            return False
+
+        if os.WIFEXITED(status):
+            self._exitcode = os.WEXITSTATUS(status)
+        elif os.WIFSIGNALED(status):
+            self._signal = os.WTERMSIG(status)
+
+        self._completed = True
+
+        # Call any done callbacks
+        for func in self._done_callbacks:
+            func(self)
+
+        # Start the next futures in the chain
+        for fut, cond in self._next:
+            if cond(self):
+                fut.start()
+
+        return self._completed
+
+    def done(self):
+        '''Check if the future has finished.
+
+        This is a non-blocking call.
+        '''
+        self._check_started()
+        return self._wait(nohang=True)
+
+    def wait(self):
+        '''Wait for this future to finish.'''
+        self._wait()
+
+    def exception(self):
+        '''Retrieve the exception raised by this future.
+
+        This is a blocking call and will wait until this future finishes.
+
+        The only exception that a :func:`_ProcFuture` can return is a
+        :class:`SpawnedProcessError` if the ``check`` flag was set in
+        :func:`run_command_async2`.
+        '''
+
+        self._wait()
+        if not self._check:
+            return
+
+        if self._proc.returncode == 0:
+            return
+
+        return SpawnedProcessError(self._proc.args,
+                                   self._proc.stdout.read(),
+                                   self._proc.stderr.read(),
+                                   self._proc.returncode)
+
+    def stdout(self):
+        '''Retrieve the standard output of the spawned process.
+
+        This is a blocking call and will wait until the future finishes.
+        '''
+        self._wait()
+        return self._proc.stdout
+
+    def stderr(self):
+        '''Retrieve the standard error of the spawned process.
+
+        This is a blocking call and will wait until the future finishes.
+        '''
+        self._wait()
+        return self._proc.stderr
+
+
 def run_command(cmd, check=False, timeout=None, **kwargs):
     '''Run command synchronously.
 
@@ -102,7 +324,7 @@ def run_command_async(cmd,
 
     if log:
         from reframe.core.logging import getlogger
-        getlogger().debug2(f'[CMD] {cmd!r}')
+        getlogger().debug(f'[CMD] {cmd!r}')
 
     if isinstance(cmd, str) and not shell:
         cmd = shlex.split(cmd)
@@ -114,6 +336,26 @@ def run_command_async(cmd,
                             universal_newlines=True,
                             shell=shell,
                             **popen_args)
+
+
+def run_command_async2(*args, check=False, **kwargs):
+    '''Return a :class:`_ProcFuture` that encapsulates a command to be
+    executed.
+
+    The command to be executed will not start until the returned future is
+    started.
+
+    :arg args: Any of the arguments that can be passed to
+        :func:`run_command_async`
+    :arg check: If true, flag the future with a :func:`SpawnedProcessError`
+        exception, upon failure.
+    :arg kwargs: Any of the keyword arguments that can be passed to
+        :func:`run_command_async`.
+
+    .. versionadded:: 4.4
+
+    '''
+    return _ProcFuture(check, *args, **kwargs)
 
 
 def osuser():

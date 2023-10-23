@@ -95,6 +95,7 @@ of :class:`List[int]`.
 
 import abc
 import datetime
+import json
 import re
 
 
@@ -322,19 +323,23 @@ class _MappingType(_BuiltinType):
         mappping_type = cls._type
         key_type = cls._key_type
         value_type = cls._value_type
-        seq = []
-        for key_datum in s.split(','):
-            try:
-                k, v = key_datum.split(':')
-            except ValueError:
-                # Re-raise as TypeError
-                raise TypeError(
-                    f'cannot convert string {s!r} to {cls.__name__!r}'
-                ) from None
 
-            seq.append((key_type(k), value_type(v)))
+        try:
+            items = json.loads(s)
+        except json.JSONDecodeError:
+            items = []
+            for key_datum in s.split(','):
+                try:
+                    k, v = key_datum.split(':')
+                except ValueError:
+                    # Re-raise as TypeError
+                    raise TypeError(
+                        f'cannot convert string {s!r} to {cls.__name__!r}'
+                    ) from None
 
-        return mappping_type(seq)
+                items.append((key_type(k), value_type(v)))
+
+        return mappping_type(items)
 
 
 class _StrType(_SequenceType):
@@ -374,8 +379,9 @@ class Bool(metaclass=_BuiltinType):
     This type represents a boolean value but allows implicit conversions from
     :class:`str`. More specifically, the following conversions are supported:
 
-    - The strings ``'yes'``, ``'true'`` and ``'1'`` are converted to ``True``.
-    - The strings ``'no'``, ``'false'`` and ``'0'`` are converted to
+    - The strings ``'yes'``, ``'y'``, 'true'`` and ``'1'`` are converted to
+      ``True``.
+    - The strings ``'no'``, ``'n'``, ``'false'`` and ``'0'`` are converted to
       ``False``.
 
     The built-in :class:`bool` type is registered as a subclass of this type.
@@ -383,15 +389,21 @@ class Bool(metaclass=_BuiltinType):
     Boolean test variables that are meant to be set properly from the command
     line must be declared of this type and not :class:`bool`.
 
+    .. versionchanged:: 4.3.3
+
+       The strings ``'y'`` and ``'n'`` are also recognized as valid boolean
+       values and string comparison is now case-insensitive.
+
     '''
 
     _type = bool
 
     @classmethod
     def __rfm_cast_str__(cls, s):
-        if s in ('true', 'yes', '1'):
+        s = s.lower()
+        if s in ('true', 'yes', 'y', '1'):
             return True
-        elif s in ('false', 'no', '0'):
+        elif s in ('false', 'no', 'n', '0'):
             return False
 
         raise TypeError(f'cannot convert {s!r} to bool')

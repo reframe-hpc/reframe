@@ -27,17 +27,17 @@ def test_bool_type():
     with pytest.raises(TypeError):
         typ.Bool('foo')
 
-    with pytest.raises(TypeError):
-        typ.Bool('True')
-
-    with pytest.raises(TypeError):
-        typ.Bool('False')
-
     # Test for boolean conversion
     assert typ.Bool('true') is True
+    assert typ.Bool('True') is True
     assert typ.Bool('yes') is True
+    assert typ.Bool('y') is True
+    assert typ.Bool('YeS') is True
     assert typ.Bool('false') is False
+    assert typ.Bool('False') is False
     assert typ.Bool('no') is False
+    assert typ.Bool('n') is False
+    assert typ.Bool('nO') is False
 
 
 def test_duration_type():
@@ -207,6 +207,14 @@ def test_mapping_type():
 
     # Test conversions
     assert typ.Dict[str, int]('a:1,b:2') == {'a': 1, 'b': 2}
+
+    # Conversion with JSON syntax, for nested dictionaries
+    s = '{"gpu":{"num_gpus_per_node": 8}, "mpi": {"num_slots": 64}}'
+    expected = {
+        'gpu': {'num_gpus_per_node': 8},
+        'mpi': {'num_slots': 64},
+    }
+    assert typ.Dict[str, typ.Dict[str, object]](s) == expected
 
     with pytest.raises(TypeError):
         typ.Dict[str, int]('a:1,b')

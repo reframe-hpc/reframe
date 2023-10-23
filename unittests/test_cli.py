@@ -698,6 +698,42 @@ def test_filtering_exclude_hash(run_reframe):
     assert returncode == 0
 
 
+def test_filtering_cpu_only(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/hellocheck.py'],
+        action='list',
+        more_options=['--cpu-only']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 2 check(s)' in stdout
+    assert returncode == 0
+
+
+def test_filtering_gpu_only(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/hellocheck.py'],
+        action='list',
+        more_options=['--gpu-only']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 0 check(s)' in stdout
+    assert returncode == 0
+
+
+def test_filtering_by_expr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/hellocheck.py'],
+        action='list',
+        more_options=['-E num_tasks==1']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'Found 2 check(s)' in stdout
+    assert returncode == 0
+
+
 def test_show_config_all(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(

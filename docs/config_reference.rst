@@ -260,8 +260,9 @@ System Partition Configuration
    The job scheduler that will be used to launch jobs on this partition.
    Supported schedulers are the following:
 
-   - ``local``: Jobs will be launched locally without using any job scheduler.
    - ``flux``: Jobs will be launched using the `Flux Framework <https://flux-framework.org/>`_ scheduler.
+   - ``local``: Jobs will be launched locally without using any job scheduler.
+   - ``lsf``: Jobs will be launched using the `LSF <https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=lsf-session-scheduler>`__ scheduler.
    - ``oar``: Jobs will be launched using the `OAR <https://oar.imag.fr/>`__ scheduler.
    - ``pbs``: Jobs will be launched using the `PBS Pro <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
    - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
@@ -270,8 +271,24 @@ System Partition Configuration
      If not, you should consider using the ``squeue`` backend below.
    - ``squeue``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend does not rely on job accounting to retrieve job statuses, but ReFrame does its best to query the job state as reliably as possible.
+   - ``ssh``: Jobs will be launched on a remote host using SSH.
+
+     The remote host will be selected from the list of hosts specified in :attr:`~systems.partitions.sched_options.ssh_hosts`.
+     The scheduler keeps track of the hosts that it has submitted jobs to, and it will select the next available one in a round-robin fashion.
+     For connecting to a remote host, the options specified in :attr:`~systems.partitions.access` will be used.
+
+     When a job is submitted with this scheduler, its stage directory will be copied over to a unique temporary directory on the remote host, then the job will be executed and, finally, any produced artifacts will be copied back.
+
+     The contents of the stage directory are copied to the remote host either using ``rsync``, if available, or ``scp`` as a second choice.
+     The same :attr:`~systems.partitions.access` options will be used in those operations as well.
+     Please note, that the connection options of ``ssh`` and ``scp`` differ and ReFrame will not attempt to translate any options between the two utilities in case ``scp`` is selected for copying to the remote host.
+     In this case, it is preferable to set up the host connection options in ``~/.ssh/config`` and leave :attr:`~systems.partition.access` blank.
+
+     Job-scheduler command line options can be used to interact with the ``ssh`` backend.
+     More specifically, if the :option:`--distribute` option is used, a test will be generated for each host listed in :attr:`~systems.partitions.sched_options.ssh_hosts`.
+     You can also pin a test to a specific host if you pass the ``#host`` directive to the :option:`-J` option, e.g., ``-J '#host=myhost'``.
+
    - ``torque``: Jobs will be launched using the `Torque <https://en.wikipedia.org/wiki/TORQUE>`__ scheduler.
-   - ``lsf``: Jobs will be launched using the `LSF <https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=lsf-session-scheduler>`__ scheduler.
 
    .. versionadded:: 3.7.2
       Support for the SGE scheduler is added.
@@ -281,6 +298,9 @@ System Partition Configuration
 
    .. versionadded:: 3.11.0
       Support for the LSF scheduler is added.
+
+   .. versionadded:: 4.4
+      The ``ssh`` scheduler is added.
 
    .. note::
 
@@ -336,6 +356,14 @@ System Partition Configuration
 
    .. warning::
       This option is broken in 4.0.
+
+.. py:attribute:: systems.partitions.sched_options.ssh_hosts
+
+   :required: No
+   :default: ``[]``
+
+   List of hosts in a partition that uses the ``ssh`` scheduler.
+
 
 .. py:attribute:: systems.partitions.sched_options.ignore_reqnodenotavail
 
@@ -1095,6 +1123,9 @@ All logging handlers share the following set of common attributes:
 .. py:attribute:: logging.handlers.format_perfvars
 .. py:attribute:: logging.handlers_perflog.format_perfvars
 
+   :required: No
+   :default: ``""``
+
    Format specifier for logging the performance variables.
 
    This defines how the ``%(check_perfvalues)s`` will be formatted.
@@ -1216,9 +1247,9 @@ The additional properties for the ``filelog`` handler are the following:
      {basedir}/
         system1/
             partition1/
-                test_short_name.log
+                <test_class_name>.log
             partition2/
-                test_short_name.log
+                <test_class_name>.log
             ...
         system2/
         ...
@@ -1237,6 +1268,12 @@ The additional properties for the ``filelog`` handler are the following:
    The ``filelog`` handler is very cautious when generating a test log file: if a change is detected in the information that is being logged, the hanlder will not append to the same file, but it will instead create a new one, saving the old file using the ``.h<N>`` suffix, where ``N`` is an integer that is increased every time a new file is being created due to such changes.
    Examples of changes in the logged information are when the log record format changes or a new performance metric is added, deleted or has its name changed.
    This behavior guarantees that each log file is consistent and it will not break existing parsers.
+
+.. versionchanged:: 4.3
+
+   In the generated log file, the name of the test class name is used instead of the test's short name (which included the test's hash).
+   This allows the results of different variants of a parameterized test to be stored in the same log file facilitating post-processing.
+
 
 The ``graylog`` log handler
 ---------------------------

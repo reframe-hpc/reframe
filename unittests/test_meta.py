@@ -189,7 +189,7 @@ def test_hook_attachments(MyMeta):
         def hook_a(self):
             pass
 
-        @run_before('compile')
+        @run_before('compile', always_last=True)
         def hook_b(self):
             pass
 
@@ -198,11 +198,11 @@ def test_hook_attachments(MyMeta):
             pass
 
         @classmethod
-        def hook_in_stage(cls, hook, stage):
+        def hook_in_stage(cls, hook, stage, always_last=False):
             '''Assert that a hook is in a given registry stage.'''
             for h in cls._rfm_hook_registry:
                 if h.__name__ == hook:
-                    if stage in h.stages:
+                    if (stage, always_last) in h.stages:
                         return True
 
                     break
@@ -210,7 +210,7 @@ def test_hook_attachments(MyMeta):
             return False
 
     assert Foo.hook_in_stage('hook_a', 'post_setup')
-    assert Foo.hook_in_stage('hook_b', 'pre_compile')
+    assert Foo.hook_in_stage('hook_b', 'pre_compile', True)
     assert Foo.hook_in_stage('hook_c', 'post_run')
 
     class Bar(Foo):
