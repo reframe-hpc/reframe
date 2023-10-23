@@ -51,8 +51,7 @@ class filesystem_options_check(rfm.RunOnlyRegressionTest):
 
     @run_before('sanity')
     def print_test_variables_to_output(self):
-        '''
-        Write the reference mount point options used by the test
+        '''Write the reference mount point options used by the test
         at the time of execution.
         '''
         stdout = os.path.join(self.stagedir, sn.evaluate(self.stdout))
