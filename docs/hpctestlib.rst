@@ -6,6 +6,34 @@ ReFrame Test Library (experimental)
 This is a collection of generic tests that you can either run out-of-the-box by specializing them for your system using the :option:`-S` option or create your site-specific tests by building upon them.
 
 
+Data Analytics
+==============
+
+.. automodule:: hpctestlib.data_analytics.spark.spark_checks
+   :members:
+   :show-inheritance:
+
+
+Interactive Computing
+=====================
+
+.. automodule:: hpctestlib.interactive.jupyter.ipcmagic
+   :members:
+   :show-inheritance:
+
+
+Machine Learning
+================
+
+.. automodule:: hpctestlib.ml.tensorflow.horovod
+   :members:
+   :show-inheritance:
+
+.. automodule:: hpctestlib.ml.pytorch.horovod
+   :members:
+   :show-inheritance:
+
+
 Microbenchmarks
 ===============
 
@@ -55,6 +83,14 @@ GPU benchmarks
    :show-inheritance:
 
 
+Python
+======
+
+.. automodule:: hpctestlib.python.numpy.numpy_ops
+   :members:
+   :show-inheritance:
+
+
 Scientific Applications
 =======================
 
@@ -66,37 +102,10 @@ Scientific Applications
    :members:
    :show-inheritance:
 
-Data Analytics
-==============
 
-.. automodule:: hpctestlib.data_analytics.spark.spark_checks
-   :members:
-   :show-inheritance:
+System
+=======================
 
-
-Python
-======
-
-.. automodule:: hpctestlib.python.numpy.numpy_ops
-   :members:
-   :show-inheritance:
-
-
-Interactive Computing
-=====================
-
-.. automodule:: hpctestlib.interactive.jupyter.ipcmagic
-   :members:
-   :show-inheritance:
-
-
-Machine Learning
-================
-
-.. automodule:: hpctestlib.ml.tensorflow.horovod
-   :members:
-   :show-inheritance:
-
-.. automodule:: hpctestlib.ml.pytorch.horovod
+.. automodule:: hpctestlib.system.fs.mnt_opts
    :members:
    :show-inheritance:
