@@ -1188,7 +1188,7 @@ The additional properties for the ``file`` handler are the following:
 
 .. py:attribute:: logging.handlers..file..append
 
-.. py:attribute:: logging.handlers_perflog..file..ppend
+.. py:attribute:: logging.handlers_perflog..file..append
 
    :required: No
    :default: ``false``
