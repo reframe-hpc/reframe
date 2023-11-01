@@ -1079,6 +1079,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_prebuild_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prebuild_cmds` attribute.
       ``%(check_prefix)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prefix` attribute.
       ``%(check_prerun_cmds)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.prerun_cmds` attribute.
+      ``%(check_result)s``, The result of the test (``pass`` or ``fail``).
       ``%(check_readonly_files)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.readonly_files` attribute.
       ``%(check_short_name)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.short_name` attribute.
       ``%(check_sourcepath)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.sourcepath` attribute.
@@ -1115,6 +1116,9 @@ All logging handlers share the following set of common attributes:
 
 .. versionchanged:: 3.11.0
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
+
+.. versionadded:: 4.0
+   The ``%(check_result)s`` specifier is added.
 
 .. versionadded:: 4.3
    The ``%(check_#ALL)s`` special specifier is added.
