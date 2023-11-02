@@ -582,6 +582,11 @@ Options controlling ReFrame execution
       the :option:`-P` option can only parameterize the leaf test:
       it cannot be used to parameterize a fixture of the test.
 
+   .. note::
+
+      The :option:`-P` option supports only tests that use fixtures.
+      Tests that use raw dependencies are not supported.
+
    .. versionadded:: 4.3
 
 .. option:: --repeat=N
