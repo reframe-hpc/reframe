@@ -6,10 +6,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
+import platform
 import sys
 
 prefix = os.path.abspath(os.path.dirname(__file__))
-external = os.path.join(prefix, 'external')
+external = os.path.join(prefix, 'external', platform.machine())
 sys.path = [prefix, external] + sys.path
 
 import argparse                         # noqa: F401, F403
