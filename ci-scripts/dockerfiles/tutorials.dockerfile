@@ -3,14 +3,15 @@
 #
 
 
-FROM ghcr.io/reframe-hpc/rfm-ci-base:lmod
+FROM ghcr.io/reframe-hpc/lmod:8.4.12
 
 ENV _SPACK_VER=0.16
 ENV _EB_VER=4.4.1
 
-# Required utilities
+
+# Install ReFrame unit test requirements
 RUN apt-get -y update && \
-    apt-get -y install curl
+    apt-get -y install gcc git make python3 python3-pip python3-venv curl
 
 # ReFrame user
 RUN useradd -ms /bin/bash rfmuser
@@ -18,9 +19,8 @@ RUN useradd -ms /bin/bash rfmuser
 USER rfmuser
 
 # Install Spack
-RUN git clone https://github.com/spack/spack ~/spack && \
-    cd ~/spack && \
-    git checkout releases/v${_SPACK_VER}
+RUN git clone --branch releases/v${_SPACK_VER} https://github.com/spack/spack ~/spack && \
+    cd ~/spack
 
 RUN pip3 install easybuild==${_EB_VER}
 
