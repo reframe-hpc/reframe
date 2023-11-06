@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Reframe
         run: |
-          apt-get update && apt-get install -y python3-venv
+          apt-get update && apt-get install -y python3-pip curl
           /bin/bash ./bootstrap.sh
           export PATH=$PWD/bin:$PATH
           which reframe

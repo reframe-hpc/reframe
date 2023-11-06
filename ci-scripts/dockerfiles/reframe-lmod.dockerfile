@@ -7,7 +7,7 @@ FROM ghcr.io/reframe-hpc/lmod:8.4.12
 
 # Install ReFrame unit test requirements
 RUN apt-get -y update && \
-    apt-get -y install gcc git make python3 python3-pip python3-venv
+    apt-get -y install gcc git make python3 python3-pip curl
 
 # ReFrame user
 RUN useradd -ms /bin/bash rfmuser

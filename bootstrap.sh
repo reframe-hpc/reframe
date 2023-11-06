@@ -79,7 +79,6 @@ while [ -n "$1" ]; do
     esac
 done
 
-pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
 if $python -c 'import sys; sys.exit(sys.version_info[:2] >= (3, 6))'; then
     echo -e "ReFrame requires Python >= 3.6 (found $($python -V 2>&1))"
     exit 1
@@ -100,8 +99,14 @@ trap _destroy_venv EXIT
 py_pkg_prefix=external/$(uname -m)
 
 # Install a fresh pip in the current environment
-INFO "curl -s https://bootstrap.pypa.io/get-pip.py | $python"
-curl -s https://bootstrap.pypa.io/get-pip.py | $python
+if $python -c 'import sys; sys.exit(sys.version_info[:2] == (3, 6))'; then
+    get_pip_url="https://bootstrap.pypa.io/get-pip.py"
+else
+    get_pip_url="https://bootstrap.pypa.io/pip/3.6/get-pip.py"
+fi
+
+INFO "curl -s $get_pip_url | $python"
+curl -s $get_pip_url | $python
 
 export PATH=$(pwd)/$py_pkg_prefix/usr/bin:$PATH
 export PYTHONPATH=$(pwd)/$py_pkg_prefix:$PYTHONPATH

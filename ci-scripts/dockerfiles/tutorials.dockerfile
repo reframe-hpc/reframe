@@ -11,7 +11,7 @@ ENV _EB_VER=4.4.1
 
 # Install ReFrame unit test requirements
 RUN apt-get -y update && \
-    apt-get -y install gcc git make python3 python3-pip python3-venv curl
+    apt-get -y install gcc git make python3 python3-pip curl
 
 # ReFrame user
 RUN useradd -ms /bin/bash rfmuser
