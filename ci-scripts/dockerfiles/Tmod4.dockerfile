@@ -1,19 +1,27 @@
-#
-# Execute this from the top-level ReFrame source directory
-#
+FROM ubuntu:20.04
 
-FROM ghcr.io/reframe-hpc/rfm-ci-base:tmod4
+ENV TZ=Europe/Zurich
+ENV DEBIAN_FRONTEND=noninteractive
+ENV _TMOD_VER=4.6.0
 
-# ReFrame user
-RUN useradd -ms /bin/bash rfmuser
+# Setup apt
+RUN \
+  apt-get -y update && \
+  apt-get -y install ca-certificates && \
+  update-ca-certificates
 
-USER rfmuser
+# Required utilities
+RUN apt-get -y install wget less
 
-# Install ReFrame from the current directory
-COPY --chown=rfmuser . /home/rfmuser/reframe/
+# Install Tmod4
+RUN \
+  apt-get -y install autoconf tcl-dev && \
+  wget -q https://github.com/cea-hpc/modules/archive/v${_TMOD_VER}.tar.gz -O tmod.tar.gz && \
+  tar xzf tmod.tar.gz && \
+  cd modules-${_TMOD_VER} && \
+  ./configure && make install && \
+  cd .. && rm -rf tmod.tar.gz modules-${_TMOD_VER} && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
 
-WORKDIR /home/rfmuser/reframe
-
-RUN ./bootstrap.sh
-
-CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/tmod4.py -v"]
+ENV BASH_ENV=/usr/local/Modules/init/profile.sh

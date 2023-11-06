@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        modules-version: [Lmod, Lmod77, Tmod32, Tmod4]
+        modules-version: [lmod, lmod77, tmod32, tmod4]
     steps:
     - uses: actions/checkout@v3
     - name: Login to GitHub Container Registry
@@ -81,10 +81,10 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Image for ${{ matrix.modules-version }}
       run: |
-        docker build -f ci-scripts/dockerfiles/${{ matrix.modules-version }}.dockerfile -t reframe:${{ matrix.modules-version }} .
+        docker build -f ci-scripts/dockerfiles/reframe-${{ matrix.modules-version }}.dockerfile -t reframe-${{ matrix.modules-version }}:latest .
     - name: Run Unittests
       run: |
-        docker run reframe:${{ matrix.modules-version }}
+        docker run reframe-${{ matrix.modules-version }}:latest
 
   tutorialtest:
     runs-on: ubuntu-latest
@@ -99,11 +99,11 @@ jobs:
     - name: Build Image for Tutorial Tests
       run: |
         echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
-        docker build -f ci-scripts/dockerfiles/tutorials.dockerfile -t reframe:tutorials .
+        docker build -f ci-scripts/dockerfiles/tutorials.dockerfile -t reframe-tutorials:latest .
         docker logout
     - name: Run Tutorial Tests
       run: |
-        docker run reframe:tutorials
+        docker run reframe-tutorials:latest
 
   unusedimports:
     runs-on: ubuntu-latest
