@@ -178,6 +178,20 @@ class PbsJobScheduler(sched.JobScheduler):
         job._nodelist = [x.split('/')[0] for x in nodespec.split('+')]
         job._nodelist.sort()
 
+    def _query_exit_code(self, job):
+        '''Try to retrieve the exit code of a past job.'''
+
+        # With PBS Pro we can obtain the exit status of a past job
+        extended_info = osext.run_command(f'qstat -xf {job.jobid}')
+        exit_status_match = re.search(
+            r'^ *Exit_status *= *(?P<exit_status>\d+)', extended_info.stdout,
+            flags=re.MULTILINE,
+        )
+        if exit_status_match:
+            return int(exit_status_match.group('exit_status'))
+
+        return None
+
     def poll(self, *jobs):
         def output_ready(job):
             # We report a job as finished only when its stdout/stderr are
@@ -209,6 +223,7 @@ class PbsJobScheduler(sched.JobScheduler):
                 if job.cancelled or output_ready(job):
                     self.log(f'Assuming job {job.jobid} completed')
                     job._completed = True
+                    job._exitcode = self._query_exit_code(job)
 
             return
 
@@ -281,3 +296,9 @@ class PbsJobScheduler(sched.JobScheduler):
 @register_scheduler('torque')
 class TorqueJobScheduler(PbsJobScheduler):
     TASKS_OPT = '-l nodes={num_nodes}:ppn={num_cpus_per_node}'
+
+    def _query_exit_code(self, job):
+        '''Try to retrieve the exit code of a past job.'''
+
+        # Torque does not provide a way to retrieve the history of jobs
+        return None

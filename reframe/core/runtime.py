@@ -9,7 +9,7 @@
 
 import os
 import functools
-from datetime import datetime
+import time
 
 import reframe.core.config as config
 import reframe.utility.osext as osext
@@ -31,7 +31,7 @@ class RuntimeContext:
         self._site_config = site_config
         self._system = System.create(site_config)
         self._current_run = 0
-        self._timestamp = datetime.now()
+        self._timestamp = time.localtime()
 
     def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)
@@ -111,7 +111,7 @@ class RuntimeContext:
     @property
     def timestamp(self):
         timefmt = self.site_config.get('general/0/timestamp_dirs')
-        return self._timestamp.strftime(timefmt)
+        return time.strftime(timefmt, self._timestamp)
 
     @property
     def output_prefix(self):
@@ -170,9 +170,22 @@ class RuntimeContext:
         :returns: The value of the option.
 
         .. versionchanged:: 3.11.0
-          Add ``default`` named argument.
+           Add ``default`` named argument.
         '''
         return self._site_config.get(option, default=default)
+
+    def get_default(self, option):
+        '''Get the default value for the option as defined in the configuration
+        schema.
+
+        :arg option: The option whose default value is requested
+        :returns: The default value of the requested option
+        :raises KeyError: if option does not have a default value
+
+        .. versionadded:: 4.2
+        '''
+
+        return self._site_config.schema['defaults'][option]
 
 
 # Global resources for the current host
@@ -229,6 +242,9 @@ def loadenv(*environs):
     env_snapshot = snapshot()
     commands = []
     for env in environs:
+        for cmd in env.prepare_cmds:
+            commands.append(cmd)
+
         for mod in env.modules_detailed:
             if runtime().get_option('general/0/resolve_module_conflicts'):
                 commands += _load_cmds_tracked(**mod)

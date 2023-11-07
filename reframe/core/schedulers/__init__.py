@@ -8,9 +8,9 @@
 #
 
 import abc
+import os
 import time
 
-import reframe.core.fields as fields
 import reframe.core.runtime as runtime
 import reframe.core.shell as shell
 import reframe.utility.jsonext as jsonext
@@ -261,7 +261,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    time_limit = variable(type(None), field=fields.TimerField, value=None)
+    time_limit = variable(type(None), typ.Duration,
+                          value=None, allow_implicit=True)
 
     #: Maximum pending time for this job.
     #:
@@ -273,8 +274,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    max_pending_time = variable(type(None),
-                                field=fields.TimerField, value=None)
+    max_pending_time = variable(type(None), typ.Duration,
+                                value=None, allow_implicit=True)
 
     #: Arbitrary options to be passed to the backend job scheduler.
     #:
@@ -330,9 +331,11 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         self._cli_options = list(sched_options) if sched_options else []
         self._name = name
         self._workdir = workdir
-        self._script_filename = script_filename or '%s.sh' % name
-        self._stdout = stdout or '%s.out' % name
-        self._stderr = stderr or '%s.err' % name
+        self._script_filename = script_filename or f'{name}.sh'
+
+        basename, _ = os.path.splitext(self._script_filename)
+        self._stdout = stdout or f'{basename}.out'
+        self._stderr = stderr or f'{basename}.err'
 
         # Backend scheduler related information
         self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
@@ -624,3 +627,15 @@ class Node(abc.ABC):
            :returns: :class:`True` if the nodes's state matches the given one,
                      :class:`False` otherwise.
         '''
+
+
+class AlwaysIdleNode(Node):
+    def __init__(self, name):
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    def in_state(self, state):
+        return state.casefold() == 'idle'

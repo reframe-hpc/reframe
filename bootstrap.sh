@@ -33,6 +33,7 @@ usage()
     echo "Bootstrap ReFrame by pulling all its dependencies"
     echo "  -P EXEC     Use EXEC as Python interpreter"
     echo "  -h          Print this help message and exit"
+    echo "  --ignore-errors Ignore installation errors"
     echo "  --pip-opts  Pass additional options to pip."
     echo "  +docs       Build also the documentation"
     echo "  +pygelf     Install also the pygelf Python package"
@@ -43,16 +44,21 @@ while getopts "hP:-:"  opt; do
     case $opt in
         "P") python=$OPTARG ;;
         "h") usage && exit 0 ;;
-	"-")
-	    case "${OPTARG}" in
+	    "-")
+	        case "${OPTARG}" in
+                "ignore-errors") ignore_errors=1 ;;
                 pip-opts)
-	            PIPOPTS="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
-		pip-opts=*)
+	                PIPOPTS="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 )) ;;
+		        pip-opts=*)
                     PIPOPTS=${OPTARG#*=} ;;
             esac;;
         "?") usage && exit 0 ;;
     esac
 done
+
+if [ -z $ignore_errors ]; then
+    set -e
+fi
 
 shift $((OPTIND - 1))
 if [ -z $python ]; then
@@ -77,20 +83,28 @@ if $python -c 'import sys; sys.exit(sys.version_info[:2] >= (3, 6))'; then
     exit 1
 fi
 
+venvdir=$(mktemp -d)
+CMD $python -m venv $venvdir
+CMD source $venvdir/bin/activate
+
+_shutdown_venv() {
+    deactivate
+    /bin/rm -rf $venvdir
+}
+
+trap _shutdown_venv EXIT
+
 # Disable the user installation scheme which is the default for Debian and
 # cannot be combined with `--target`
 export PIP_USER=0
 
 # Check if ensurepip is installed
-$python -m ensurepip --version &> /dev/null
-epip=$?
-
-export PATH=$(pwd)/external/usr/bin:$PATH
-
-# Install pip for Python 3
-if [ $epip -eq 0 ]; then
+if $python -m ensurepip --version &> /dev/null; then
+    # Install pip for Python 3
     CMD $python -m ensurepip --root $(pwd)/external/ --default-pip
 fi
+
+export PATH=$(pwd)/external/usr/bin:$PATH
 
 # ensurepip installs pip in `external/usr/` whereas the `--root` option installs
 # everything under `external/`. That's why we include both in the PYTHONPATH

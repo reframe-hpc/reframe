@@ -12,11 +12,7 @@ import time
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import ReframeError
-
-
-class _TimeoutExpired(ReframeError):
-    pass
+from reframe.core.exceptions import JobError
 
 
 class _LocalJob(sched.Job):
@@ -98,7 +94,7 @@ class LocalJobScheduler(sched.JobScheduler):
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
             # group, so ignore this error
-            self.log(f'pid {job.jobid} already dead or assigned elsewhere')
+            self.log(f'pid {job.jobid} already dead')
         finally:
             # Close file handles
             job.f_stdout.close()
@@ -107,8 +103,15 @@ class LocalJobScheduler(sched.JobScheduler):
 
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
-        os.killpg(job.jobid, signal.SIGTERM)
-        job._signal = signal.SIGTERM
+        try:
+            os.killpg(job.jobid, signal.SIGTERM)
+            job._signal = signal.SIGTERM
+        except (ProcessLookupError, PermissionError):
+            # Job has finished already, close file handles
+            self.log(f'pid {job.jobid} already dead')
+            job.f_stdout.close()
+            job.f_stderr.close()
+            job._state = 'FAILURE'
 
     def cancel(self, job):
         '''Cancel job.
@@ -180,9 +183,12 @@ class LocalJobScheduler(sched.JobScheduler):
             # Job has not finished; check if we have reached a timeout
             t_elapsed = time.time() - job.submit_time
             if job.time_limit and t_elapsed > job.time_limit:
-                self.log(f'Job {job.jobid} timed out; kill it')
                 self._kill_all(job)
                 job._state = 'TIMEOUT'
+                job._exception = JobError(
+                    f'job timed out ({t_elapsed:.6f}s > {job.time_limit}s)',
+                    job.jobid
+                )
 
             return
 

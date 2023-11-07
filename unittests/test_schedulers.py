@@ -26,8 +26,8 @@ def launcher():
     return getlauncher('local')
 
 
-@pytest.fixture(params=['flux', 'local', 'lsf', 'oar',
-                        'pbs', 'sge', 'slurm', 'squeue', 'torque'])
+@pytest.fixture(params=['flux', 'local', 'lsf', 'oar', 'pbs',
+                        'sge', 'slurm', 'ssh', 'squeue', 'torque'])
 def scheduler(request):
     try:
         return getscheduler(request.param)
@@ -73,7 +73,13 @@ def exec_ctx(make_exec_ctx, scheduler):
 @pytest.fixture
 def make_job(scheduler, launcher, tmp_path):
     def _make_job(sched_opts=None, **jobargs):
-        sched = scheduler(**sched_opts) if sched_opts else scheduler()
+        if sched_opts:
+            sched = scheduler(**sched_opts)
+        elif scheduler.registered_name == 'ssh':
+            sched = scheduler(hosts=['localhost'])
+        else:
+            sched = scheduler()
+
         return Job.create(
             sched, launcher(),
             name='testjob',
@@ -361,6 +367,18 @@ def _expected_local_directives_no_tasks(job):
     return set()
 
 
+def _expected_ssh_directives(job):
+    return set()
+
+
+def _expected_ssh_directives_minimal(job):
+    return set()
+
+
+def _expected_ssh_directives_no_tasks(job):
+    return set()
+
+
 def test_prepare(fake_job):
     sched_name = fake_job.scheduler.registered_name
     if sched_name == 'pbs':
@@ -487,7 +505,9 @@ def test_submit_timelimit(minimal_job, local_only):
     t_job = time.time()
     submit_job(minimal_job)
     assert minimal_job.jobid is not None
-    minimal_job.wait()
+    with pytest.raises(JobError):
+        minimal_job.wait()
+
     t_job = time.time() - t_job
     assert t_job >= 2
     assert t_job < 3
@@ -647,6 +667,10 @@ def test_guess_num_tasks(minimal_job, scheduler):
         # of the default partition through the use of `scontrol show`
         minimal_job.scheduler._get_default_partition = lambda: 'pdef'
         assert minimal_job.guess_num_tasks() == 0
+    elif scheduler.registered_name == 'ssh':
+        minimal_job.num_tasks = 0
+        minimal_job._sched_flex_alloc_nodes = 'all'
+        assert minimal_job.guess_num_tasks() == 1
     else:
         with pytest.raises(NotImplementedError):
             minimal_job.guess_num_tasks()

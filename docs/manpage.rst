@@ -68,6 +68,21 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
    The value of this attribute is not required to be non-zero for GPU tests.
    Tests may or may not make use of it.
 
+   .. deprecated:: 4.4
+
+      Please use ``-E 'not num_gpus_per_node'`` instead.
+
+.. option:: -E, --filter-expr=EXPR
+
+   Select only tests that satisfy the given expression.
+
+   The expression ``EXPR`` can be any valid Python expression on the test variables or parameters.
+   For example, ``-E num_tasks > 10`` will select all tests, whose :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` exceeds ``10``.
+   You may use any test variable in expression, even user-defined.
+   Multiple variables can also be included such as ``-E num_tasks >= my_param``, where ``my_param`` is user-defined parameter.
+
+   .. versionadded:: 4.4
+
 .. option:: --failed
 
    Select only the failed test cases for a previous run.
@@ -77,12 +92,17 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
 
    .. versionadded:: 3.4
 
+
 .. option:: --gpu-only
 
    Select tests that can run on GPUs.
 
    These are all tests with :attr:`num_gpus_per_node` greater than zero.
    This option and :option:`--cpu-only` are mutually exclusive.
+
+   .. deprecated:: 4.4
+
+      Please use ``-E num_gpus_per_node`` instead.
 
 .. option:: --maintainer=MAINTAINER
 
@@ -100,6 +120,7 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
 
       The ``MAINTAINER`` pattern is matched anywhere in the maintainer's name and not at its beginning.
       If you want to match at the beginning of the name, you should prepend ``^``.
+
 
 .. option:: -n, --name=NAME
 
@@ -218,6 +239,12 @@ An action must always be specified.
 
    You can set up your Gitlab CI to use the generated file to run every test as a separate Gitlab job respecting test dependencies.
    For more information, have a look in :ref:`generate-ci-pipeline`.
+
+   .. note::
+      The :option:`--ci-generate` option will not work with the test generation options, such as the :option:`--repeat` and :option:`--distribute` options, as the generated child pipeline will use the :option:`-n` option to select the test of the CI job and test filtering happens before any test generation.
+
+      This limitation will be removed in future versions.
+
 
    .. versionadded:: 3.4.1
 
@@ -367,10 +394,14 @@ Options controlling ReFrame output
    The file where ReFrame will store its report.
 
    The ``FILE`` argument may contain the special placeholder ``{sessionid}``, in which case ReFrame will generate a new report each time it is run by appending a counter to the report file.
+   If the report is generated in the default location (see the :attr:`~config.general.report_file` configuration option), a symlink to the latest report named ``latest.json`` will also be created.
 
    This option can also be set using the :envvar:`RFM_REPORT_FILE` environment variable or the :attr:`~config.general.report_file` general configuration parameter.
 
    .. versionadded:: 3.1
+
+   .. versionadded:: 4.2
+      Symlink to the latest report is now created.
 
 .. option:: --report-junit=FILE
 
@@ -459,6 +490,20 @@ Options controlling ReFrame execution
    .. versionadded:: 3.11.0
 
 
+.. option:: --duration=TIMEOUT
+
+   Run the test session repeatedly until the specified timeout expires.
+
+   ``TIMEOUT`` can be specified in one of the following forms:
+
+   - ``<int>`` or ``<float>``: number of seconds
+   - ``<days>d<hours>h<minutes>m<seconds>s``: a string denoting days, hours, minutes and/or seconds.
+
+   At the end, failures from every run will be reported and, similarly, the failure statistics printed by the :option:`--failure-stats` option will include all runs.
+
+   .. versionadded:: 4.2
+
+
 .. option:: --exec-order=ORDER
 
    Impose an execution order for the independent tests.
@@ -521,6 +566,24 @@ Options controlling ReFrame execution
    .. versionchanged:: 4.1
       Options that can be specified multiple times are now combined between execution modes and the command line.
 
+.. option:: -P, --parameterize=[TEST.]VAR=VAL0,VAL1,...
+
+   Parameterize a test on an existing variable.
+
+   This option will create a new test with a parameter named ``$VAR`` with the values given in the comma-separated list ``VAL0,VAL1,...``.
+   The values will be converted based on the type of the target variable ``VAR``.
+   The ``TEST.`` prefix will only parameterize the variable ``VAR`` of test ``TEST``.
+
+   The :option:`-P` can be specified multiple times in order to parameterize multiple variables.
+
+   .. note::
+
+      Conversely to the :option:`-S` option that can set a variable in an arbitrarily nested fixture,
+      the :option:`-P` option can only parameterize the leaf test:
+      it cannot be used to parameterize a fixture of the test.
+
+   .. versionadded:: 4.3
+
 .. option:: --repeat=N
 
    Repeat the selected tests ``N`` times.
@@ -530,6 +593,24 @@ Options controlling ReFrame execution
       Repeating tests with dependencies is not supported, but you can repeat tests that use fixtures.
 
    .. versionadded:: 3.12.0
+
+
+.. option:: --reruns=N
+
+   Rerun the whole test session ``N`` times.
+
+   In total, the selected tests will run ``N+1`` times as the first time does not count as a rerun.
+
+   At the end, failures from every run will be reported and, similarly, the failure statistics printed by the :option:`--failure-stats` option will include all runs.
+
+   Although similar to :option:`--repeat`, this option behaves differently.
+   This option repeats the *whole* test session multiple times.
+   All the tests of the session will finish before a new run is started.
+   The :option:`--repeat` option on the other hand generates clones of the selected tests and schedules them for running in a single session.
+   As a result, all the test clones will run (by default) concurrently.
+
+   .. versionadded:: 4.2
+
 
 .. option:: --restore-session [REPORT1[,REPORT2,...]]
 
@@ -590,6 +671,9 @@ Options controlling ReFrame execution
    - Sequence types: ``-S seqvar=1,2,3,4``
    - Mapping types: ``-S mapvar=a:1,b:2,c:3``
 
+   Nested mapping types can also be converted using JSON syntax.
+   For example, the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` complex dictionary could be set with ``-S extra_resources='{"gpu": {"num_gpus_per_node":8}}'``.
+
    Conversions to arbitrary objects are also supported.
    See :class:`~reframe.utility.typecheck.ConvertibleType` for more details.
 
@@ -645,6 +729,9 @@ Options controlling ReFrame execution
 
       Allow setting variables in fixtures.
 
+   .. versionchanged:: 4.4
+
+      Allow setting nested mapping types using JSON syntax.
 
 .. option:: --skip-performance-check
 
@@ -963,7 +1050,7 @@ The format of the display name is the following in BNF notation:
 
 .. code-block:: bnf
 
-   <display_name> ::= <test_class_name> (<params>)* (<scope>)?
+   <display_name> ::= <test_class_name> (<params>)* (<scope> ("'"<fixtvar>)+)?
    <params> ::= "%" <parametrization> "=" <pvalue>
    <parametrization> ::= (<fname> ".")* <pname>
    <scope> ::= "~" <scope_descr>
@@ -975,6 +1062,7 @@ The format of the display name is the following in BNF notation:
    <pvalue> ::= (* string *)
    <first> ::= (* string *)
    <second> ::= (* string *)
+   <fixtvar> ::= (* string *)
 
 The following is an example of a fictitious complex test that is itself parameterized and depends on parameterized fixtures as well.
 
@@ -1100,6 +1188,9 @@ Whenever an environment variable is associated with a configuration option, its 
    .. versionchanged:: 4.0.0
       This variable now defaults to ``0``.
 
+   .. deprecated:: 4.3
+      Please use ``RFM_AUTODETECT_METHODS=py::fqdn`` in the future.
+
 
 .. envvar:: RFM_AUTODETECT_METHOD
 
@@ -1119,6 +1210,16 @@ Whenever an environment variable is associated with a configuration option, its 
 
 
    .. versionadded:: 3.11.0
+   .. deprecated:: 4.3
+      This has no effect.
+      For setting multiple auto-detection methods, please use the :envvar:`RFM_AUTODETECT_METHODS`.
+
+.. envvar:: RFM_AUTODETECT_METHODS
+
+   A comma-separated list of system auto-detection methods.
+   Please refer to the :attr:`autodetect_methods` configuration parameter for more information on how to set this variable.
+
+   .. versionadded:: 4.3
 
 
 .. envvar:: RFM_AUTODETECT_XTHOSTNAME
@@ -1142,6 +1243,10 @@ Whenever an environment variable is associated with a configuration option, its 
 
    .. versionchanged:: 4.0.0
       This variable now defaults to ``0``.
+
+   .. deprecated:: 4.3
+      Please use ``RFM_AUTODETECT_METHODS='cat /etc/xthostname,hostname'`` in the future.
+
 
 .. envvar:: RFM_CHECK_SEARCH_PATH
 
@@ -1285,7 +1390,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :attr:`~config.logging.handlers..graylog..address`
+      Associated configuration parameter :attr:`~config.logging.handlers_perflog..graylog..address`
       ================================== ==================
 
 
@@ -1302,7 +1407,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     N/A
-      Associated configuration parameter :attr:`~config.logging.handlers..httpjson..url`
+      Associated configuration parameter :attr:`~config.logging.handlers_perflog..httpjson..url`
       ================================== ==================
 
 
@@ -1409,8 +1514,25 @@ Whenever an environment variable is associated with a configuration option, its 
 
       ================================== ==================
       Associated command line option     :option:`--perflogdir`
-      Associated configuration parameter :attr:`~config.logging.handlers..filelog..basedir`
+      Associated configuration parameter :attr:`~config.logging.handlers_perflog..filelog..basedir`
       ================================== ==================
+
+
+.. envvar:: RFM_PIPELINE_TIMEOUT
+
+   Timeout in seconds for advancing the pipeline in the asynchronous execution policy.
+   See :ref:`pipeline-timeout` for more guidance on how to set this.
+
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.general.pipeline_timeout`
+      ================================== ==================
+
+   .. versionadded:: 3.10.0
 
 
 .. envvar:: RFM_PREFIX

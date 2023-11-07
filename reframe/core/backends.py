@@ -13,7 +13,7 @@ from reframe.core.exceptions import ConfigError
 _launcher_backend_modules = [
     'reframe.core.launchers.local',
     'reframe.core.launchers.mpi',
-    'reframe.core.launchers.ssh'
+    'reframe.core.launchers.rsh'
 ]
 _launchers = {}
 _scheduler_backend_modules = [
@@ -23,7 +23,8 @@ _scheduler_backend_modules = [
     'reframe.core.schedulers.pbs',
     'reframe.core.schedulers.oar',
     'reframe.core.schedulers.sge',
-    'reframe.core.schedulers.slurm'
+    'reframe.core.schedulers.slurm',
+    'reframe.core.schedulers.ssh'
 ]
 _schedulers = {}
 

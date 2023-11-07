@@ -20,19 +20,6 @@ from reframe.core.exceptions import NameConflictError, is_severe, what
 from reframe.core.logging import getlogger, time_function
 
 
-class temp_sys_path:
-    def __init__(self, path):
-        self._path = path
-        self._pos = None
-
-    def __enter__(self):
-        self._pos = len(sys.path)
-        sys.path.append(self._path)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.path.pop(self._pos)
-
-
 class no_op:
     def __enter__(self):
         pass
@@ -168,6 +155,7 @@ class RegressionCheckLoader:
         if registry:
             candidate_tests = registry.instantiate_all(reset_sysenv,
                                                        self._external_vars)
+            self._unset_vars.update(registry.unset_vars)
         else:
             candidate_tests = []
 
@@ -206,7 +194,7 @@ class RegressionCheckLoader:
         try:
             dirname = os.path.dirname(filename)
             with osext.change_dir(dirname):
-                with temp_sys_path(dirname):
+                with util.temp_sys_path(dirname):
                     return self.load_from_module(
                         util.import_module_from_file(filename, force)
                     )

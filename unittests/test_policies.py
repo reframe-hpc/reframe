@@ -27,8 +27,9 @@ import unittests.utility as test_util
 from lxml import etree
 from reframe.core.exceptions import (AbortTaskError,
                                      FailureLimitError,
-                                     ReframeError,
                                      ForceExitError,
+                                     ReframeError,
+                                     RunSessionTimeout,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
@@ -496,6 +497,34 @@ def test_sigterm_handling(make_runner, make_cases, common_exec_ctx):
     assert len(runner.stats.failed()) == 1
 
 
+def test_reruns(make_runner, make_cases, common_exec_ctx):
+    runner = make_runner(reruns=2)
+    test = HelloTest()
+
+    runner.runall(make_cases([test]))
+    stats = runner.stats
+    assert stats.num_runs == 3
+    assert not stats.failed(run=None)
+
+
+def test_duration_limit(make_runner, make_cases, common_exec_ctx):
+    runner = make_runner(timeout=2)
+    test = HelloTest()
+
+    with pytest.raises(RunSessionTimeout):
+        runner.runall(make_cases([test]))
+        stats = runner.stats
+
+        assert not stats.failed(run=None)
+
+        # A task may or may not be aborted depending on when the timeout
+        # expires, but if it gets aborted, only a single test can be aborted
+        # in this case for both policies.
+        num_aborted = stats.aborted(run=None)
+        if num_aborted:
+            assert num_aborted == 1
+
+
 @pytest.fixture
 def dep_checks(make_loader):
     return make_loader(
@@ -582,6 +611,9 @@ class _TaskEventMonitor(executors.TaskEventListener):
         pass
 
     def on_task_failure(self, task):
+        pass
+
+    def on_task_abort(self, task):
         pass
 
     def on_task_skip(self, task):
@@ -990,6 +1022,29 @@ def perf_test():
 
 
 @pytest.fixture
+def perf_param_tests():
+    class _MyTest(rfm.RunOnlyRegressionTest):
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        executable = 'echo perf0=100 && echo perf1=50'
+        p = parameter([1, 2])
+
+        @sanity_function
+        def validate(self):
+            return sn.assert_found(r'perf0', self.stdout)
+
+        @performance_function('unit0')
+        def perf0(self):
+            return sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float)
+
+        @performance_function('unit1')
+        def perf1(self):
+            return sn.extractsingle(r'perf1=(\S+)', self.stdout, 1, float)
+
+    return [_MyTest(variant_num=v) for v in range(_MyTest.num_variants)]
+
+
+@pytest.fixture
 def failing_perf_test():
     class _MyFailingTest(rfm.RunOnlyRegressionTest):
         valid_systems = ['*']
@@ -1099,8 +1154,8 @@ def test_perf_logging(make_runner, make_exec_ctx, perf_test,
             ),
             perffmt=(
                 '%(check_perf_value)s,%(check_perf_unit)s,'
-                '%(check_perf_ref)s,%(check_perf_lower)s,'
-                '%(check_perf_upper)s,'
+                '%(check_perf_ref)s,%(check_perf_lower_thres)s,'
+                '%(check_perf_upper_thres)s,'
             )
         )
     )
@@ -1277,8 +1332,8 @@ def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
             ),
             perffmt=(
                 '%(check_perf_value)s,%(check_perf_unit)s,'
-                '%(check_perf_ref)s,%(check_perf_lower)s,'
-                '%(check_perf_upper)s,'
+                '%(check_perf_ref)s,%(check_perf_lower_thres)s,'
+                '%(check_perf_upper_thres)s,'
             )
         )
     )
@@ -1289,3 +1344,33 @@ def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
 
     logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_LazyPerfTest.log'
     assert os.path.exists(logfile)
+
+
+def test_perf_logging_all_attrs(make_runner, make_exec_ctx, perf_test,
+                                config_perflog, tmp_path):
+    make_exec_ctx(config_perflog(fmt='%(check_result)s|%(check_#ALL)s'))
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([perf_test])
+    runner.runall(testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    assert os.path.exists(logfile)
+    with open(logfile) as fp:
+        header = fp.readline()
+
+    loggable_attrs = type(perf_test).loggable_attrs()
+    assert len(header.split('|')) == len(loggable_attrs) + 1
+
+
+def test_perf_logging_param_test(make_runner, make_exec_ctx, perf_param_tests,
+                                 config_perflog, tmp_path):
+    make_exec_ctx(config_perflog(fmt='%(check_result)s|%(check_#ALL)s'))
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases(perf_param_tests)
+    runner.runall(testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    assert os.path.exists(logfile)
+    assert _count_lines(logfile) == 3

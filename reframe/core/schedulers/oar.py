@@ -135,10 +135,16 @@ class OarJobScheduler(PbsJobScheduler):
             jobinfo = {}
 
             # Typical oarstat -fj <job_id> output:
+            #
             # https://github.com/oar-team/oar/blob/0fccc4fc3bb86ee935ce58effc5aec514a3e155d/sources/core/qfunctions/oarstat#L310
+            #
+            # Update 2023-07: oarstat now supports multiple types of output,
+            # once containing `id: XXX` and once containing `Job_Id: XXX`
+            #
+            # https://github.com/oar-team/oar/blob/37db5384c7827cca2d334e5248172bb700015434/sources/core/qfunctions/oarstat#L332
             job_raw_info = completed.stdout
             jobid_match = re.search(
-                r'^Job_Id:\s*(?P<jobid>\S+)', completed.stdout, re.MULTILINE
+                r'^(Job_Id|id):\s*(?P<jobid>\S+)', completed.stdout, re.MULTILINE
             )
             if jobid_match:
                 jobid = jobid_match.group('jobid')

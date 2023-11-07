@@ -179,12 +179,32 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @classmethod
     def pipeline_hooks(cls):
         ret = {}
+        last = {}
         for hook in cls._rfm_hook_registry:
-            for stage in hook.stages:
-                try:
-                    ret[stage].append(hook.fn)
-                except KeyError:
-                    ret[stage] = [hook.fn]
+            for stage, always_last in hook.stages:
+                if always_last:
+                    if stage in last:
+                        hook_name = hook.__qualname__
+                        pinned_name = last[stage].__qualname__
+                        raise ReframeSyntaxError(
+                            f'cannot pin hook {hook_name!r} as last '
+                            f'of stage {stage!r} as {pinned_name!r} '
+                            f'is already pinned last'
+                        )
+
+                    last[stage] = hook
+                else:
+                    try:
+                        ret[stage].append(hook.fn)
+                    except KeyError:
+                        ret[stage] = [hook.fn]
+
+        # Append the last hooks
+        for stage, hook in last.items():
+            try:
+                ret[stage].append(hook.fn)
+            except KeyError:
+                ret[stage] = [hook.fn]
 
         return ret
 
@@ -198,9 +218,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. seealso::
     #:    - `Environment features
-    #:      <config_reference.html#environments-.features>`__
+    #:      <config_reference.html#config.environments.features>`__
     #:    - `Environment extras
-    #:      <config_reference.html#environments-.extras>`__
+    #:      <config_reference.html#config.environments.extras>`__
     #:
     #: .. versionchanged:: 2.12
     #:    Programming environments can now be specified using wildcards.
@@ -268,9 +288,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. seealso::
     #:    - `System partition features
-    #:      <config_reference.html#systems-.partitions-.features>`__
+    #:      <config_reference.html#config.systems.partitions.features>`__
     #:    - `System partition extras
-    #:      <config_reference.html#systems-.partitions-.extras>`__
+    #:      <config_reference.html#config.systems.partitions.extras>`__
     #:
     #: .. versionchanged:: 3.3
     #:    Default value changed from ``[]`` to ``None``.
@@ -625,9 +645,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: :class:`None`
-    max_pending_time = variable(
-        type(None), field=fields.TimerField, value=None, loggable=True
-    )
+    max_pending_time = variable(type(None), typ.Duration, value=None,
+                                loggable=True, allow_implicit=True)
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
@@ -860,8 +879,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    .. versionchanged:: 3.5.1
     #:       The default value is now :class:`None` and it can be set globally
     #:       per partition via the configuration.
-    time_limit = variable(type(None), field=fields.TimerField,
-                          value=None, loggable=True)
+    time_limit = variable(type(None), typ.Duration, value=None,
+                          loggable=True, allow_implicit=True)
 
     #: .. versionadded:: 3.5.1
     #:
@@ -871,8 +890,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: :class:`None`
-    build_time_limit = variable(type(None), field=fields.TimerField,
-                                value=None, loggable=True)
+    build_time_limit = variable(type(None), typ.Duration, value=None,
+                                loggable=True, allow_implicit=True)
 
     #: .. versionadded:: 2.8
     #:
@@ -962,6 +981,29 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: boolean
     #: :default: :class:`True`
     build_locally = variable(typ.Bool, value=True, loggable=True)
+
+    #: .. versionadded:: 4.2
+    #:
+    #: Extra options to be passed to the child CI pipeline generated for this
+    #: test using the :option:`--ci-generate` option.
+    #:
+    #: This variable is a dictionary whose keys refer the CI generate backend
+    #: and the values can be in any CI backend-specific format.
+    #:
+    #: Currently, the only key supported is ``'gitlab'`` and the values is a
+    #: Gitlab configuration in JSON format. For example, if we want a pipeline
+    #: to run only when files in ``backend`` or ``src/main.c`` have changed,
+    #: this variable should be set as follows:
+    #:
+    #: .. code-block:: python
+    #:
+    #:    ci_extras = {
+    #:        'only': {'changes': ['backend/*', 'src/main.c']}
+    #:    }
+    #:
+    #: :type: :class:`dict`
+    #: :default: ``{}``
+    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object], value={})
 
     # Special variables
 
@@ -1623,7 +1665,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _create_job(self, name, force_local=False, **job_opts):
+    def _create_job(self, job_type, force_local=False, **job_opts):
         '''Setup the job related to this check.'''
 
         if force_local:
@@ -1634,24 +1676,31 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             launcher = self._current_partition.launcher_type()
 
         self.logger.debug(
-            f'Setting up job {name!r} '
+            f'Setting up {type} job for test {self.name!r} '
             f'(scheduler: {scheduler.registered_name!r}, '
             f'launcher: {launcher.registered_name!r})'
         )
+
+        if job_type == 'build':
+            script_name = 'rfm_build.sh'
+        elif job_type == 'run':
+            script_name = 'rfm_job.sh'
+
         return Job.create(scheduler,
                           launcher,
-                          name=name,
+                          name=f'rfm_{self.short_name}',
+                          script_filename=script_name,
                           workdir=self._stagedir,
                           sched_access=self._current_partition.access,
                           **job_opts)
 
     def _setup_build_job(self, **job_opts):
-        self._build_job = self._create_job(f'rfm_build',
-                                           self.local or self.build_locally,
-                                           **job_opts)
+        self._build_job = self._create_job(
+            'build', self.local or self.build_locally, **job_opts
+        )
 
     def _setup_run_job(self, **job_opts):
-        self._job = self._create_job(f'rfm_job', self.local, **job_opts)
+        self._job = self._create_job(f'run', self.local, **job_opts)
 
     def _setup_container_platform(self):
         try:

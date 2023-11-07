@@ -37,7 +37,7 @@ def final(fn):
 
 # Hook-related builtins
 
-def run_before(stage):
+def run_before(stage, *, always_last=False):
     '''Attach the decorated function before a certain pipeline stage.
 
     The function will run just before the specified pipeline stage and it
@@ -47,14 +47,25 @@ def run_before(stage):
 
     :param stage: The pipeline stage where this function will be attached to.
         See :ref:`pipeline-hooks` for the list of valid stage values.
+
+    :param always_last: Run this hook always as the last one of the stage. In
+        a whole test hierarchy, only a single hook can be explicitly pinned at
+        the end of the same-stage sequence of hooks. If another hook is
+        declared as ``always_last`` in the same stage, an error will be
+        issued.
+
+    .. versionchanged:: 4.4
+       The ``always_last`` argument was added.
+
     '''
-    return hooks.attach_to('pre_' + stage)
+
+    return hooks.attach_to('pre_' + stage, always_last)
 
 
-def run_after(stage):
+def run_after(stage, *, always_last=False):
     '''Attach the decorated function after a certain pipeline stage.
 
-    This is analogous to :func:`~RegressionMixin.run_before`, except that the
+    This is analogous to :func:`run_before`, except that the
     hook will execute right after the stage it was attached to. This decorator
     also supports ``'init'`` as a valid ``stage`` argument, where in this
     case, the hook will execute right after the test is initialized (i.e.
@@ -81,7 +92,7 @@ def run_after(stage):
        Add support for post-init hooks.
 
     '''
-    return hooks.attach_to('post_' + stage)
+    return hooks.attach_to('post_' + stage, always_last)
 
 
 require_deps = hooks.require_deps

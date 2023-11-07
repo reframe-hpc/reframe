@@ -48,7 +48,7 @@ class PrettyPrinter:
 
         status_stripped = status.strip()
         if self.colorize:
-            if status_stripped in ('DRY', 'SKIP'):
+            if status_stripped in ('ABORT', 'ABORTED', 'DRY', 'SKIP'):
                 status = color.colorize(status, color.YELLOW)
             elif status_stripped in ('FAIL', 'FAILED', 'ERROR'):
                 status = color.colorize(status, color.RED)
@@ -56,8 +56,10 @@ class PrettyPrinter:
                 status = color.colorize(status, color.GREEN)
 
         final_msg = f'[ {status} ] '
-        if status_stripped in ('OK', 'SKIP', 'FAIL'):
-            self._progress_count += 1
+        if status_stripped in ('ABORT', 'OK', 'SKIP', 'FAIL'):
+            if self._progress_count < self._progress_total:
+                self._progress_count += 1
+
             width = len(str(self._progress_total))
             padded_progress = str(self._progress_count).rjust(width)
             final_msg += f'({padded_progress}/{self._progress_total}) '

@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ['fluxrm/flux-sched:focal']
+        container: ['fluxrm/flux-sched:focal-v0.28.0']
 
     container:
       image: ${{ matrix.container }}
@@ -19,7 +19,7 @@ jobs:
     name: ${{ matrix.container }}
     steps:
       - name: Make Space
-        run: |        
+        run: |
           rm -rf /usr/share/dotnet
           rm -rf /opt/ghc
 
@@ -28,6 +28,7 @@ jobs:
 
       - name: Install Reframe
         run: |
+          apt-get update && apt-get install -y python3-venv
           /bin/bash ./bootstrap.sh
           export PATH=$PWD/bin:$PATH
           which reframe
@@ -36,7 +37,7 @@ jobs:
       - name: Start Flux and Run Test
         run: |
           export PATH=$PWD/bin:$PATH
-          which reframe   
+          which reframe
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py -l
           flux start reframe -c tutorials/flux -C tutorials/flux/settings.py --run
           flux start python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv

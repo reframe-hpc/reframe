@@ -19,6 +19,11 @@ Requirements
     Support for Python 3.5 has been dropped.
 
 
+.. warning::
+   Although ReFrame supports Python 3.6, you should note that Python 3.6 has reached its end-of-life and you are advised to use a newer Python version.
+   ReFrame installations on Python 3.6 may use out-of-date dependencies due to incompatibilities of their newer versions with Python 3.6.
+
+
 Getting the Framework
 ---------------------
 

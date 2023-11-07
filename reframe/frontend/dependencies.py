@@ -205,6 +205,14 @@ def prune_deps(graph, testcases, max_depth=None):
                 if adj not in pruned_graph:
                     unvisited.append(adj)
 
+    # Re-calculate the in-degree of the pruned graph nodes
+    for u in pruned_graph:
+        u.in_degree = 0
+
+    for u, adjacent in pruned_graph.items():
+        for v in adjacent:
+            v.in_degree += 1
+
     return pruned_graph
 
 

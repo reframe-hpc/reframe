@@ -14,7 +14,6 @@ import sys
 import time
 import traceback
 
-import reframe
 import reframe.core.config as config
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
@@ -30,9 +29,9 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
 
-
 from reframe.frontend.testgenerators import (distribute_tests,
-                                             getallnodes, repeat_tests)
+                                             getallnodes, repeat_tests,
+                                             parameterize_tests)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
@@ -287,7 +286,7 @@ def main():
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
     )
     output_options.add_argument(
-        '--timestamp', action='store', nargs='?', const='%FT%T',
+        '--timestamp', action='store', nargs='?', const='%y%m%dT%H%M%S%z',
         metavar='TIMEFMT',
         help=('Append a timestamp to the output and stage directory prefixes '
               '(default: "%%FT%%T")'),
@@ -357,6 +356,10 @@ def main():
         metavar='PATTERN', default=[],
         help='Exclude checks whose name matches PATTERN'
     )
+    select_options.add_argument(
+        '-E', '--filter-expr', action='store', metavar='EXPR',
+        help='Select checks that satisfy the expression EXPR'
+    )
 
     # Action options
     action_options.add_argument(
@@ -403,6 +406,10 @@ def main():
               'is in STATE (default: "idle"')
     )
     run_options.add_argument(
+        '--duration', action='store', metavar='TIMEOUT',
+        help='Run the test session repeatedly for the specified duration'
+    )
+    run_options.add_argument(
         '--exec-order', metavar='ORDER', action='store',
         choices=['name', 'random', 'rname', 'ruid', 'uid'],
         help='Impose an execution order for independent tests'
@@ -435,8 +442,16 @@ def main():
         '--mode', action='store', help='Execution mode to use'
     )
     run_options.add_argument(
+        '-P', '--parameterize', action='append', metavar='VAR:VAL0,VAL1,...',
+        default=[], help='Parameterize a test on a set of variables'
+    )
+    run_options.add_argument(
         '--repeat', action='store', metavar='N',
         help='Repeat selected tests N times'
+    )
+    run_options.add_argument(
+        '--reruns', action='store', metavar='N', default=0,
+        help='Rerun the whole test session N times', type=int
     )
     run_options.add_argument(
         '--restore-session', action='store', nargs='?', const='',
@@ -515,8 +530,10 @@ def main():
         envvar='RFM_CONFIG_FILES :'
     )
     misc_options.add_argument(
-        '--detect-host-topology', action='store', nargs='?', const='-',
-        help='Detect the local host topology and exit'
+        '--detect-host-topology', metavar='FILE', action='store',
+        nargs='?', const='-',
+        help=('Detect the local host topology and exit, '
+              'optionally saving it in FILE')
     )
     misc_options.add_argument(
         '--failure-stats', action='store_true', help='Print failure statistics'
@@ -565,14 +582,13 @@ def main():
         dest='autodetect_method',
         envvar='RFM_AUTODETECT_METHOD',
         action='store',
-        default='hostname',
         help='Method to detect the system'
     )
     argparser.add_argument(
-        dest='config_path',
-        envvar='RFM_CONFIG_PATH :',
-        action='append',
-        help='Directories where ReFrame will look for base configuration'
+        dest='autodetect_methods',
+        envvar='RFM_AUTODETECT_METHODS',
+        action='store',
+        help='List of methods for detecting the current system'
     )
     argparser.add_argument(
         dest='autodetect_xthostname',
@@ -581,6 +597,12 @@ def main():
         default=False,
         type=typ.Bool,
         help="Use Cray's xthostname file to retrieve the host name"
+    )
+    argparser.add_argument(
+        dest='config_path',
+        envvar='RFM_CONFIG_PATH :',
+        action='append',
+        help='Directories where ReFrame will look for base configuration'
     )
     argparser.add_argument(
         dest='git_timeout',
@@ -698,9 +720,7 @@ def main():
     # First configure logging with our generic configuration so as to be able
     # to print pretty messages; logging will be reconfigured by user's
     # configuration later
-    site_config = config.load_config(
-        os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py')
-    )
+    site_config = config.load_config('<builtin>')
     site_config.select_subconfig('generic')
     options.update_config(site_config)
     logging.configure_logging(site_config)
@@ -730,11 +750,33 @@ def main():
         )
         site_config = config.load_config(*conf_files)
         site_config.validate()
-        site_config.set_autodetect_meth(
-            options.autodetect_method,
-            use_fqdn=options.autodetect_fqdn,
-            use_xthostname=options.autodetect_xthostname
-        )
+
+        if options.autodetect_method:
+            printer.warning('RFM_AUTODETECT_METHOD is deprecated; '
+                            'please use RFM_AUTODETECT_METHODS instead')
+
+        autodetect_methods = []
+        if options.autodetect_methods:
+            autodetect_methods = options.autodetect_methods.split(',')
+        else:
+            if options.autodetect_fqdn:
+                printer.warning(
+                    'RFM_AUTODETECT_FQDN is deprecated; '
+                    'please use RFM_AUTODETECT_METHODS=py::socket.getfqdn '
+                    'instead'
+                )
+                autodetect_methods = ['py::socket.getfqdn']
+            elif options.autodetect_xthostname:
+                printer.warning(
+                    "RFM_AUTODETECT_XTHOSTNAME is deprecated; "
+                    "please use RFM_AUTODETECT_METHODS='cat /etc/xthostname,hostname' "  # noqa: E501
+                    "instead"
+                )
+                autodetect_methods = ['cat /etc/xthostname',
+                                      'py::socket.gethostname']
+
+        if autodetect_methods:
+            site_config.set_autodetect_methods(autodetect_methods)
 
         # We ignore errors about unresolved sections or configuration
         # parameters here, because they might be defined at the individual
@@ -822,7 +864,7 @@ def main():
                     f'no such configuration parameter found: {config_param}'
                 )
             else:
-                printer.info(json.dumps(value, indent=2))
+                printer.info(jsonext.dumps(value, indent=2))
 
         sys.exit(0)
 
@@ -924,6 +966,7 @@ def main():
         'config_files': rt.site_config.sources,
         'data_version': runreport.DATA_VERSION,
         'hostname': socket.gethostname(),
+        'log_files': logging.log_files(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
@@ -950,7 +993,7 @@ def main():
     print_infoline('stage directory', repr(session_info['prefix_stage']))
     print_infoline('output directory', repr(session_info['prefix_output']))
     print_infoline('log files',
-                   ', '.join(repr(s) for s in logging.log_files()))
+                   ', '.join(repr(s) for s in session_info['log_files']))
     printer.info('')
     try:
         logging.getprofiler().enter_region('test processing')
@@ -1009,6 +1052,16 @@ def main():
             f'Filtering test cases(s) by tags: {len(testcases)} remaining'
         )
 
+        if options.filter_expr:
+            testcases = filter(filters.validates(options.filter_expr),
+                               testcases)
+
+            testcases = list(testcases)
+            printer.verbose(
+                f'Filtering test cases(s) by {options.filter_expr}: '
+                f'{len(testcases)} remaining'
+            )
+
         # Filter test cases by maintainers
         for maint in options.maintainers:
             testcases = filter(filters.have_maintainer(maint), testcases)
@@ -1020,8 +1073,12 @@ def main():
             sys.exit(1)
 
         if options.gpu_only:
+            printer.warning('the `--gpu-only` option is deprecated; '
+                            'please use `-E num_gpus_per_node` instead')
             testcases = filter(filters.have_gpu_only(), testcases)
         elif options.cpu_only:
+            printer.warning('the `--cpu-only` option is deprecated; '
+                            'please use `-E "not num_gpus_per_node"` instead')
             testcases = filter(filters.have_cpu_only(), testcases)
 
         testcases = list(testcases)
@@ -1029,15 +1086,6 @@ def main():
             f'Filtering test cases(s) by other attributes: '
             f'{len(testcases)} remaining'
         )
-
-        # Warn on any unset test variables for the final set of selected tests
-        for clsname in {type(tc.check).__name__ for tc in testcases}:
-            varlist = ', '.join(f'{v!r}' for v in loader.unset_vars(clsname))
-            if varlist:
-                printer.warning(
-                    f'test {clsname!r}: '
-                    f'the following variables were not set: {varlist}'
-                )
 
         # Filter in failed cases
         if options.failed:
@@ -1061,6 +1109,22 @@ def main():
                 f'Filtering successful test case(s): '
                 f'{len(testcases)} remaining'
             )
+
+        if options.parameterize:
+            # Prepare parameters
+            params = {}
+            for param_spec in options.parameterize:
+                try:
+                    var, values_spec = param_spec.split('=')
+                except ValueError:
+                    raise errors.CommandLineError(
+                        f'invalid parameter spec: {param_spec}'
+                    ) from None
+                else:
+                    params[var] = values_spec.split(',')
+
+            testcases_all = parameterize_tests(testcases, params)
+            testcases = testcases_all
 
         if options.repeat is not None:
             try:
@@ -1139,6 +1203,16 @@ def main():
             is_subgraph=options.restore_session is not None
         )
         printer.verbose(f'Final number of test cases: {len(testcases)}')
+
+        # Warn on any unset test variables for the final set of selected tests
+        # including any dependencies
+        for clsname in {type(tc.check).__name__ for tc in testcases}:
+            varlist = ', '.join(f'{v!r}' for v in loader.unset_vars(clsname))
+            if varlist:
+                printer.warning(
+                    f'test {clsname!r}: '
+                    f'the following variables were not set: {varlist}'
+                )
 
         # Disable hooks
         for tc in testcases:
@@ -1296,11 +1370,21 @@ def main():
         if options.maxfail < 0:
             raise errors.CommandLineError(
                 f'--maxfail should be a non-negative integer: '
-                f'{options.maxfail!r}'
+                f'{options.maxfail}'
+            )
+
+        if options.reruns and options.duration:
+            raise errors.CommandLineError(
+                f"'--reruns' option cannot be combined with '--duration'"
+            )
+
+        if options.reruns < 0:
+            raise errors.CommandLineError(
+                f"'--reruns' should be a non-negative integer: {options.reruns}"
             )
 
         runner = Runner(exec_policy, printer, options.max_retries,
-                        options.maxfail)
+                        options.maxfail, options.reruns, options.duration)
         try:
             time_start = time.time()
             session_info['time_start'] = time.strftime(
@@ -1315,7 +1399,7 @@ def main():
             session_info['time_elapsed'] = time_end - time_start
 
             # Print a retry report if we did any retries
-            if runner.stats.failed(run=0):
+            if options.max_retries and runner.stats.failed(run=0):
                 printer.info(runner.stats.retry_report())
 
             # Print a failure report if we had failures in the last run
@@ -1323,10 +1407,13 @@ def main():
             if runner.stats.failed():
                 success = False
                 runner.stats.print_failure_report(
-                    printer, not options.distribute
+                    printer, not options.distribute,
+                    options.duration or options.reruns
                 )
                 if options.failure_stats:
-                    runner.stats.print_failure_stats(printer)
+                    runner.stats.print_failure_stats(
+                        printer, options.duration or options.reruns
+                    )
 
             if options.performance_report:
                 printer.info(runner.stats.performance_report())
@@ -1355,15 +1442,14 @@ def main():
                     json_report['restored_cases'].append(report.case(*c))
 
             report_file = runreport.next_report_filename(report_file)
+            default_loc = os.path.dirname(
+                osext.expandvars(rt.get_default('general/report_file'))
+            )
             try:
-                with open(report_file, 'w') as fp:
-                    if rt.get_option('general/0/compress_report'):
-                        jsonext.dump(json_report, fp)
-                    else:
-                        jsonext.dump(json_report, fp, indent=2)
-                        fp.write('\n')
-
-                printer.info(f'Run report saved in {report_file!r}')
+                runreport.write_report(json_report, report_file,
+                                       rt.get_option(
+                                           'general/0/compress_report'),
+                                       os.path.dirname(report_file) == default_loc)
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
@@ -1391,7 +1477,12 @@ def main():
     except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
-        printer.error(f'run session stopped: {errors.what(*exc_info)}')
+        message = f'run session stopped: {errors.what(*exc_info)}'
+        if errors.is_warning(*exc_info):
+            printer.warning(message)
+        else:
+            printer.error(message)
+
         if errors.is_exit_request(*exc_info):
             # Print stack traces for exit requests only when TOO verbose
             printer.debug2(tb)

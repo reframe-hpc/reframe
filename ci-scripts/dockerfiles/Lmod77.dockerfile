@@ -1,20 +1,33 @@
 #
-# Execute this from the top-level ReFrame source directory
+# LMod versions prior to 8.2 emitted Python commands differently, so we use this
+# Dockerfile to test the bindings of older versions
 #
 
 
-FROM reframehpc/rfm-ci-base:lmod77
+FROM ubuntu:20.04
 
-# ReFrame user
-RUN useradd -ms /bin/bash rfmuser
+ENV TZ=Europe/Zurich
+ENV DEBIAN_FRONTEND=noninteractive
+ENV _LMOD_VER=7.7
 
-USER rfmuser
+# Setup apt
+RUN \
+  apt-get -y update && \
+  apt-get -y install ca-certificates && \
+  update-ca-certificates
 
-# Install ReFrame from the current directory
-COPY --chown=rfmuser . /home/rfmuser/reframe/
+# Required utilities
+RUN apt-get -y install wget
 
-WORKDIR /home/rfmuser/reframe
+# Install Lmod
+RUN \
+  apt-get -y install lua5.3 lua-bit32:amd64 lua-posix:amd64 lua-posix-dev liblua5.3-0:amd64 liblua5.3-dev:amd64 tcl tcl-dev tcl8.6 tcl8.6-dev:amd64 libtcl8.6:amd64 lua-filesystem:amd64 lua-filesystem-dev:amd64 && \
+  wget -q https://github.com/TACC/Lmod/archive/${_LMOD_VER}.tar.gz -O lmod.tar.gz && \
+  tar xzf lmod.tar.gz && \
+  cd Lmod-${_LMOD_VER} && \
+  ./configure && make install && \
+  cd .. && rm -rf lmod.tar.gz Lmod-${_LMOD_VER} && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
 
-RUN ./bootstrap.sh
-
-CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/lmod.py -v"]
+ENV BASH_ENV=/usr/local/lmod/lmod/init/profile

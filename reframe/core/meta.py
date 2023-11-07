@@ -117,6 +117,13 @@ class RegressionTestMeta(type):
             actual test parameter is set during the class instantiation).
             '''
 
+            def _find_root(v):
+                '''Find root variable of a possibly aliased variable v'''
+                while v.is_alias():
+                    v = v._target
+
+                return v
+
             try:
                 return super().__getitem__(key)
             except KeyError as err:
@@ -137,12 +144,29 @@ class RegressionTestMeta(type):
                         ) from None
                     else:
                         # As the last resource, look if key is a variable in
-                        # any of the base classes. If so, make its value
-                        # available in the current class' namespace.
+                        # any of the base classes. If so, create a shadow
+                        # (proxy) variable of it and all of its aliases in the
+                        # current namespace
                         for b in self['_rfm_bases']:
                             if key in b._rfm_var_space:
-                                v = variables.ShadowVar(b._rfm_var_space[key])
-                                self._namespace[key] = v
+                                # We suppress all warnings from the lowering
+                                # of variables here unless this is an alias
+                                v_orig = b._rfm_var_space[key]
+                                warn = False
+                                if v_orig.is_alias():
+                                    # If we need to lower an alias, we will do
+                                    # this through its root variable
+                                    v_orig = _find_root(v_orig)
+                                    warn = True
+
+                                v = variables.ShadowVar(v_orig)
+                                self._namespace[v_orig.name] = v
+                                for ref in v_orig.refs():
+                                    u = variables.ShadowVar(
+                                        ref, alias=v, warnings=warn
+                                    )
+                                    self._namespace[ref.name] = u
+
                                 return v
 
                         # If 'key' is neither a variable nor a parameter,
@@ -324,9 +348,8 @@ class RegressionTestMeta(type):
         # parent classes in reverse MRO order
         for c in list(reversed(cls.mro()))[:-1]:
             if hasattr(c, '_rfm_local_hook_registry'):
-                cls._rfm_hook_registry.update(
-                    c._rfm_local_hook_registry, denied_hooks=namespace
-                )
+                cls._rfm_hook_registry.update(c._rfm_local_hook_registry,
+                                              forbidden_names=namespace)
 
         cls._rfm_hook_registry.update(cls._rfm_local_hook_registry)
 
@@ -830,7 +853,10 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
 
     .. code-block:: python
 
-       hello_cls = rfm.make_test(
+       from reframe.core.meta import make_test
+
+
+       hello_cls = make_test(
            'HelloTest', (rfm.RunOnlyRegressionTest,),
            {
                'valid_systems': ['*'],
@@ -860,6 +886,7 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
     .. code-block:: python
 
        import reframe.core.builtins as builtins
+       from reframe.core.meta import make_test
 
 
        def set_message(obj):
@@ -868,7 +895,7 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
        def validate(obj):
            return sn.assert_found(obj.message, obj.stdout)
 
-       hello_cls = rfm.make_test(
+       hello_cls = make_test(
            'HelloTest', (rfm.RunOnlyRegressionTest,),
            {
                'valid_systems': ['*'],
@@ -908,20 +935,18 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
     namespace = RegressionTestMeta.__prepare__(name, bases, **kwargs)
     methods = methods or []
 
-    # Add methods to the body
-    for m in methods:
-        body[m.__name__] = m
+    # Update the namespace with the body elements
+    #
+    # NOTE: We do not use `update()` here so as to force the `__setitem__`
+    # logic
+    for k, v in body.items():
+        namespace[k] = v
 
-    # We update the namespace with the body of the class and we explicitly
-    # call reset on each namespace key to trigger the functionality of
-    # `__setitem__()` as if the body elements were actually being typed in the
-    # class definition
-    namespace.update(body)
-    for k in list(namespace.keys()):
-        namespace.reset(k)
+    # Add methods to the namespace
+    for m in methods:
+        namespace[m.__name__] = m
 
     cls = RegressionTestMeta(name, bases, namespace, **kwargs)
-
     if not module:
         # Set the test's module to be that of our callers
         caller = inspect.currentframe().f_back

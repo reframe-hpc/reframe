@@ -94,6 +94,8 @@ of :class:`List[int]`.
 '''
 
 import abc
+import datetime
+import json
 import re
 
 
@@ -152,19 +154,6 @@ class ConvertibleType(abc.ABCMeta):
 # container types
 
 
-class _CompositeType(abc.ABCMeta):
-    def __instancecheck__(cls, inst):
-        assert hasattr(cls, '_types') and len(cls._types) == 2
-        return (issubclass(type(inst), cls._types[0]) or
-                issubclass(type(inst), cls._types[1]))
-
-
-class _InvertedType(abc.ABCMeta):
-    def __instancecheck__(cls, inst):
-        assert hasattr(cls, '_xtype')
-        return not issubclass(type(inst), cls._xtype)
-
-
 class _BuiltinType(ConvertibleType):
     def __init__(cls, name, bases, namespace):
         # Make sure that the class defines `_type`
@@ -175,8 +164,7 @@ class _BuiltinType(ConvertibleType):
 
     def __instancecheck__(cls, inst):
         if hasattr(cls, '_types'):
-            return (issubclass(type(inst), cls._types[0]) or
-                    issubclass(type(inst), cls._types[1]))
+            return any(issubclass(type(inst), t) for t in cls._types)
 
         if hasattr(cls, '_xtype'):
             return not issubclass(type(inst), cls._xtype)
@@ -335,19 +323,23 @@ class _MappingType(_BuiltinType):
         mappping_type = cls._type
         key_type = cls._key_type
         value_type = cls._value_type
-        seq = []
-        for key_datum in s.split(','):
-            try:
-                k, v = key_datum.split(':')
-            except ValueError:
-                # Re-raise as TypeError
-                raise TypeError(
-                    f'cannot convert string {s!r} to {cls.__name__!r}'
-                ) from None
 
-            seq.append((key_type(k), value_type(v)))
+        try:
+            items = json.loads(s)
+        except json.JSONDecodeError:
+            items = []
+            for key_datum in s.split(','):
+                try:
+                    k, v = key_datum.split(':')
+                except ValueError:
+                    # Re-raise as TypeError
+                    raise TypeError(
+                        f'cannot convert string {s!r} to {cls.__name__!r}'
+                    ) from None
 
-        return mappping_type(seq)
+                items.append((key_type(k), value_type(v)))
+
+        return mappping_type(items)
 
 
 class _StrType(_SequenceType):
@@ -387,8 +379,9 @@ class Bool(metaclass=_BuiltinType):
     This type represents a boolean value but allows implicit conversions from
     :class:`str`. More specifically, the following conversions are supported:
 
-    - The strings ``'yes'``, ``'true'`` and ``'1'`` are converted to ``True``.
-    - The strings ``'no'``, ``'false'`` and ``'0'`` are converted to
+    - The strings ``'yes'``, ``'y'``, 'true'`` and ``'1'`` are converted to
+      ``True``.
+    - The strings ``'no'``, ``'n'``, ``'false'`` and ``'0'`` are converted to
       ``False``.
 
     The built-in :class:`bool` type is registered as a subclass of this type.
@@ -396,15 +389,21 @@ class Bool(metaclass=_BuiltinType):
     Boolean test variables that are meant to be set properly from the command
     line must be declared of this type and not :class:`bool`.
 
+    .. versionchanged:: 4.3.3
+
+       The strings ``'y'`` and ``'n'`` are also recognized as valid boolean
+       values and string comparison is now case-insensitive.
+
     '''
 
     _type = bool
 
     @classmethod
     def __rfm_cast_str__(cls, s):
-        if s in ('true', 'yes', '1'):
+        s = s.lower()
+        if s in ('true', 'yes', 'y', '1'):
             return True
-        elif s in ('false', 'no', '0'):
+        elif s in ('false', 'no', 'n', '0'):
             return False
 
         raise TypeError(f'cannot convert {s!r} to bool')
@@ -424,3 +423,50 @@ List    = make_meta_type('List', list, _SequenceType)
 Set     = make_meta_type('Set', set, _SequenceType)
 Str     = make_meta_type('Str', str, _StrType)
 Tuple   = make_meta_type('Tuple', tuple, _TupleType)
+
+
+class Duration(metaclass=ConvertibleType):
+    '''A float type that represents duration in seconds.
+
+    This type supports the following implicit conversions:
+
+    - From integer values
+    - From string values in the form of ``<days>d<hours>h<minutes>m<seconds>s``
+
+    .. versionadded:: 4.2
+
+    '''
+
+    def _assert_non_negative(val):
+        if val < 0:
+            raise ValueError('duration cannot be negative')
+
+        return val
+
+    @classmethod
+    def __rfm_cast_int__(cls, val):
+        return Duration._assert_non_negative(float(val))
+
+    @classmethod
+    def __rfm_cast_float__(cls, val):
+        return Duration._assert_non_negative(val)
+
+    @classmethod
+    def __rfm_cast_str__(cls, val):
+        # First try to convert to a float
+        try:
+            val = float(val)
+        except ValueError:
+            time_match = re.match(r'^((?P<days>\d+)d)?'
+                                  r'((?P<hours>\d+)h)?'
+                                  r'((?P<minutes>\d+)m)?'
+                                  r'((?P<seconds>\d+)s)?$',
+                                  val)
+            if not time_match:
+                raise ValueError(f'invalid duration: {val}') from None
+
+            val = datetime.timedelta(
+                **{k: int(v) for k, v in time_match.groupdict().items() if v}
+            ).total_seconds()
+
+        return Duration._assert_non_negative(val)
