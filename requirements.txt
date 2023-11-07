@@ -19,3 +19,4 @@ setuptools==59.6.0; python_version == '3.6'
 setuptools==67.4.0; python_version >= '3.7'
 wcwidth==0.2.6
 #+pygelf%pygelf==0.4.0
+pyfirecrest==2.0.0

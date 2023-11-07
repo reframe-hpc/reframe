@@ -99,3 +99,18 @@ ENV/
 
 # Vim temp files
 *.swp
+
+docs/doctrees
+.vscode
+output
+stage
+external
+xml_files
+json_files
+.venv_reframe
+async_build_stats
+plot_bars.py
+plot_pipeline*
+run_test_reframe.sh
+send_reframe.sh
+my_checks
