@@ -16,6 +16,12 @@ if [ -t 1 ]; then
     NC='\033[0m'
 fi
 
+INFO()
+{
+    echo -e "${BLUE}==>${NC}" ${YELLOW}$*${NC}
+}
+
+
 CMD()
 {
     echo -e "${BLUE}==>${NC}" ${YELLOW}$*${NC} && $*
@@ -61,7 +67,7 @@ if [ -z $ignore_errors ]; then
 fi
 
 shift $((OPTIND - 1))
-if [ -z $python ]; then
+if [ -z "$python" ]; then
     python=python3
 fi
 
@@ -73,55 +79,46 @@ while [ -n "$1" ]; do
     esac
 done
 
-pyver=$($python -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
-
-# We need to exit with a zero code if the Python version is the correct
-# one, so we invert the comparison
-
 if $python -c 'import sys; sys.exit(sys.version_info[:2] >= (3, 6))'; then
     echo -e "ReFrame requires Python >= 3.6 (found $($python -V 2>&1))"
     exit 1
 fi
 
 venvdir=$(mktemp -d)
-CMD $python -m venv $venvdir
+CMD python3 -m venv --without-pip $venvdir
 CMD source $venvdir/bin/activate
 
-_shutdown_venv() {
+_destroy_venv() {
     deactivate
     /bin/rm -rf $venvdir
 }
 
-trap _shutdown_venv EXIT
+trap _destroy_venv EXIT
 
-# Disable the user installation scheme which is the default for Debian and
-# cannot be combined with `--target`
-export PIP_USER=0
+# Create an arch-specific installation
+py_pkg_prefix=external/$(uname -m)
 
-# Check if ensurepip is installed
-if $python -m ensurepip --version &> /dev/null; then
-    # Install pip for Python 3
-    CMD $python -m ensurepip --root $(pwd)/external/ --default-pip
+# Install a fresh pip in the current environment
+if $python -c 'import sys; sys.exit(sys.version_info[:2] == (3, 6))'; then
+    get_pip_url="https://bootstrap.pypa.io/get-pip.py"
+else
+    get_pip_url="https://bootstrap.pypa.io/pip/3.6/get-pip.py"
 fi
 
-export PATH=$(pwd)/external/usr/bin:$PATH
+INFO "curl -s $get_pip_url | $python"
+curl -s $get_pip_url | $python
 
-# ensurepip installs pip in `external/usr/` whereas the `--root` option installs
-# everything under `external/`. That's why we include both in the PYTHONPATH
-
-export PYTHONPATH=$(pwd)/external:$(pwd)/external/usr/lib/python$pyver/site-packages:$PYTHONPATH
-
-CMD $python -m pip install --no-cache-dir -q --upgrade pip --target=external/
-
+export PATH=$(pwd)/$py_pkg_prefix/usr/bin:$PATH
+export PYTHONPATH=$(pwd)/$py_pkg_prefix:$PYTHONPATH
 if [ -n "$PYGELF" ]; then
     tmp_requirements=$(mktemp)
     sed -e 's/^#+pygelf%//g' requirements.txt > $tmp_requirements
-    CMD_M +pygelf $python -m pip install --no-cache-dir -q -r $tmp_requirements --target=external/ --upgrade $PIPOPTS && rm $tmp_requirements
+    CMD_M +pygelf $python -m pip install --no-cache-dir -q -r $tmp_requirements --target=$py_pkg_prefix/ --upgrade $PIPOPTS && rm $tmp_requirements
 else
-    CMD $python -m pip install --no-cache-dir -q -r requirements.txt --target=external/ --upgrade $PIPOPTS
+    CMD $python -m pip install --no-cache-dir -q -r requirements.txt --target=$py_pkg_prefix/ --upgrade $PIPOPTS
 fi
 
 if [ -n "$MAKEDOCS" ]; then
-    CMD_M +docs $python -m pip install --no-cache-dir -q -r docs/requirements.txt --target=external/ --upgrade $PIPOPTS
+    CMD_M +docs $python -m pip install --no-cache-dir -q -r docs/requirements.txt --target=$py_pkg_prefix/ --upgrade $PIPOPTS
     make -C docs PYTHON=$python
 fi

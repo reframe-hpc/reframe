@@ -7,12 +7,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
+import platform
 import sys
 
 prefix = os.path.normpath(
     os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 )
-external = os.path.join(prefix, 'external')
+external = os.path.join(prefix, 'external', platform.machine())
 sys.path = [prefix, external] + sys.path
 
 
