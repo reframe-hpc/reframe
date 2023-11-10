@@ -6,7 +6,11 @@ This page provides a reference guide of the ReFrame API for writing regression t
 Internal data structures and APIs are covered only to the extent that this might be helpful to the final user of the framework.
 
 
- .. _regression-bases:
+.. contents:: Contents
+   :local:
+   :backlinks: entry
+
+.. _regression-bases:
 
 -----------------
 Test Base Classes
