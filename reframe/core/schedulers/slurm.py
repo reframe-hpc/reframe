@@ -115,9 +115,6 @@ class _SlurmFirecrestJob(sched.Job):
         self._remotedir = None
         self._localdir = None
 
-        self._local_filetimestamps = {}
-        self._remote_filetimestamps = {}
-        self._first_submission = True
 
         # The compacted nodelist as reported by Slurm. This must be updated in
         # every poll as Slurm may be slow in reporting the exact nodelist
@@ -745,6 +742,9 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
         )
         self._system_name = 'daint'
 
+        self._local_filetimestamps = {}
+        self._remote_filetimestamps = {}
+
     def make_job(self, *args, **kwargs):
         return _SlurmFirecrestJob(*args, **kwargs)
 
@@ -759,9 +759,8 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
             for f in filenames:
                 local_norm_path = join_and_normalize(job._localdir, dirpath, f)
                 modification_time = os.path.getmtime(local_norm_path)
-                if job._local_filetimestamps.get(local_norm_path) != modification_time:
-                    job._local_filetimestamps[local_norm_path] = modification_time
-
+                if self._local_filetimestamps.get(local_norm_path) != modification_time:
+                    self._local_filetimestamps[local_norm_path] = modification_time
                     self.log(f'Uploading file {f} in {join_and_normalize(job._remotedir, dirpath)}')
                     self.client.simple_upload(
                         self._system_name,
@@ -777,9 +776,7 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
             )
             for f in remote_files:
                 local_norm_path = join_and_normalize(remote_dir_path, f['name'])
-                job._remote_filetimestamps[local_norm_path] = f['last_modified']
-
-
+                self._remote_filetimestamps[local_norm_path] = f['last_modified']
 
     def _pull_artefacts(self, job):
         def firecrest_walk(directory):
@@ -816,7 +813,7 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
             for (f, modification_time) in files:
                 norm_path = join_and_normalize(dirpath, f)
                 local_file_path = join_and_normalize(local_dirpath, f)
-                if job._remote_filetimestamps.get(norm_path) != modification_time:
+                if self._remote_filetimestamps.get(norm_path) != modification_time:
                     self.log(f'Downloading file {f} in {local_dirpath}')
                     self.client.simple_download(
                         self._system_name,
@@ -824,10 +821,9 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
                         local_file_path
                     )
 
-                    job._remote_filetimestamps[norm_path] = modification_time
+                    self._remote_filetimestamps[norm_path] = modification_time
 
-                job._local_filetimestamps[local_file_path] = os.path.getmtime(local_file_path)
-
+                self._local_filetimestamps[local_file_path] = os.path.getmtime(local_file_path)
 
     def submit(self, job):
         job._localdir = os.getcwd()
@@ -836,7 +832,7 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
             os.path.relpath(os.getcwd(), job._stage_prefix)
         )
 
-        if job._first_submission:
+        if job._clean_up_stage:
             # Create clean stage directory in the remote system
             try:
                 self.client.simple_delete(self._system_name, job._remotedir)
@@ -845,9 +841,9 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
                 pass
 
             self.client.mkdir(self._system_name, job._remotedir, p=True)
-            job._first_submission = False
+            self.log(f'Creating remote directory {job._remotedir} in {self._system_name}')
 
-            self._push_artefacts(job)
+        self._push_artefacts(job)
 
         intervals = itertools.cycle([1, 2, 3])
         while True:
@@ -922,9 +918,6 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
 
             # Use ',' to join nodes to be consistent with Slurm syntax
             job._nodespec = ','.join(m['nodelist'] for m in jobarr_info)
-            # self._update_completion_time(
-            #     job, (m.group('end') for m in jobarr_info)
-            # )
 
     def wait(self, job):
         # Quickly return in case we have finished already

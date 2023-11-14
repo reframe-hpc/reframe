@@ -1665,7 +1665,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _create_job(self, job_type, force_local=False, **job_opts):
+    def _create_job(self, job_type, force_local=False, clean_up_stage=False, **job_opts):
         '''Setup the job related to this check.'''
 
         if force_local:
@@ -1692,14 +1692,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           script_filename=script_name,
                           workdir=self._stagedir,
                           sched_access=self._current_partition.access,
+                          clean_up_stage=clean_up_stage,
                           **job_opts)
 
-    def _setup_build_job(self, **job_opts):
+    def _setup_build_job(self, clean_up_stage=False, **job_opts):
         self._build_job = self._create_job(
-            'build', self.local or self.build_locally, **job_opts
+            'build', self.local or self.build_locally, clean_up_stage, **job_opts
         )
 
-    def _setup_run_job(self, **job_opts):
+    def _setup_run_job(self, clean_up_stage=False, **job_opts):
         self._job = self._create_job(f'run', self.local, **job_opts)
 
     def _setup_container_platform(self):
@@ -1743,7 +1744,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._setup_build_job(**job_opts)
+        self._setup_build_job(clean_up_stage=True, **job_opts)
         self._setup_run_job(**job_opts)
         self._setup_container_platform()
         self._resolve_fixtures()
@@ -2559,7 +2560,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._setup_run_job(**job_opts)
+        self._setup_run_job(clean_up_stage=True, **job_opts)
         self._setup_container_platform()
         self._resolve_fixtures()
 
@@ -2616,7 +2617,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._setup_build_job(**job_opts)
+        self._setup_build_job(clean_up_stage=True, **job_opts)
         self._setup_container_platform()
         self._resolve_fixtures()
 
