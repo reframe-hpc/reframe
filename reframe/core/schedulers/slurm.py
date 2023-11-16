@@ -111,7 +111,7 @@ class _SlurmFirecrestJob(sched.Job):
         self._is_cancelling = False
 
         # FIXME get this dynamically
-        self._remotedir_prefix = '/scratch/snx3000/eirinik/rfc_remote'
+        self._remotedir_prefix = os.environ.get('FIRECREST_BASEDIR')
         self._remotedir = None
         self._localdir = None
 
@@ -733,14 +733,15 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
         # FIXME set these in a better way
         client_id = os.environ.get("FIRECREST_CLIENT_ID")
         client_secret = os.environ.get("FIRECREST_CLIENT_SECRET")
-        token_uri = "https://auth.cscs.ch/auth/realms/firecrest-clients/protocol/openid-connect/token"
+        token_uri = os.environ.get("AUTH_TOKEN_URL")
+        firecrest_url = os.environ.get("FIRECREST_URL")
+        self._system_name = os.environ.get("FIRECREST_SYSTEM")
 
         # Setup the client for the specific account
         self.client = fc.Firecrest(
-            firecrest_url="https://firecrest.cscs.ch",
+            firecrest_url=firecrest_url,
             authorization=fc.ClientCredentialsAuth(client_id, client_secret, token_uri)
         )
-        self._system_name = 'daint'
 
         self._local_filetimestamps = {}
         self._remote_filetimestamps = {}
