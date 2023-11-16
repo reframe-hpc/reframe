@@ -841,8 +841,8 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
                 # The delete request will raise an exception if it doesn't exist
                 pass
 
-            self.client.mkdir(self._system_name, job._remotedir, p=True)
-            self.log(f'Creating remote directory {job._remotedir} in {self._system_name}')
+        self.client.mkdir(self._system_name, job._remotedir, p=True)
+        self.log(f'Creating remote directory {job._remotedir} in {self._system_name}')
 
         self._push_artefacts(job)
 
