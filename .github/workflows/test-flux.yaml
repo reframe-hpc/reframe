@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ['fluxrm/flux-sched:focal-v0.28.0']
+        container: ['fluxrm/flux-sched:focal']
 
     container:
       image: ${{ matrix.container }}
@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Reframe
         run: |
-          apt-get update && apt-get install -y python3-venv
+          apt-get update && apt-get install -y python3-pip curl
           /bin/bash ./bootstrap.sh
           export PATH=$PWD/bin:$PATH
           which reframe

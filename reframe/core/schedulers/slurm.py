@@ -86,8 +86,8 @@ class _SlurmJob(sched.Job):
 
     @property
     def nodelist(self):
-        # Redefine nodelist so as to generate it from the nodespec
-        if self._nodelist is None and self._nodespec is not None:
+        # Generate the nodelist only after the job is finished
+        if slurm_state_completed(self.state):
             completed = osext.run_command(
                 f'scontrol show hostname {self._nodespec}', log=False
             )

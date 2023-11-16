@@ -2052,6 +2052,12 @@ def test_nodelist_utilities():
     # Test the reverse operation
     assert expand('c2-01-[00-99]') == nodes
 
+    # Test host names with suffixes (see GH #3021)
+    nodes = [f'nid{n:03}-x' for n in range(100)]
+    nodes.append('nid100-y')
+    assert nodelist(nodes) == 'nid0[00-99]-x,nid100-y'
+    assert expand('nid0[00-99]-x,nid100-y') == nodes
+
     # Test node duplicates
     assert nodelist(['nid001', 'nid001', 'nid002']) == 'nid001,nid00[1-2]'
     assert expand('nid001,nid00[1-2]') == ['nid001', 'nid001', 'nid002']
