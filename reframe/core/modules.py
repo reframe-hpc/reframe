@@ -13,7 +13,6 @@ import re
 from collections import OrderedDict
 
 import reframe.core.fields as fields
-import reframe.core.runtime as rt
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError, EnvironError,
@@ -587,9 +586,8 @@ class TModImpl(ModulesSystemImpl):
     MIN_VERSION = (3, 2)
 
     def __init__(self):
-        # No need to check for a sane module system
-        if not rt.runtime().get_option('general/0/resolve_module_conflicts'):
-            return
+        # FIXME
+        return
 
         # Try to figure out if we are indeed using the TCL version
         try:
@@ -723,9 +721,8 @@ class TMod31Impl(TModImpl):
     MIN_VERSION = (3, 1)
 
     def __init__(self):
-        # No need to check for a sane module system
-        if not rt.runtime().get_option('general/0/resolve_module_conflicts'):
-            return
+        # FIXME
+        return
 
         # Try to figure out if we are indeed using the TCL version
         try:
@@ -802,9 +799,8 @@ class TMod4Impl(TModImpl):
     MIN_VERSION = (4, 1)
 
     def __init__(self):
-        # No need to check for a sane module system
-        if not rt.runtime().get_option('general/0/resolve_module_conflicts'):
-            return
+        # FIXME
+        return
 
         try:
             completed = osext.run_command(self.modulecmd('-V'), check=True)
