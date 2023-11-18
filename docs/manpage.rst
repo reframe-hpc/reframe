@@ -251,7 +251,7 @@ An action must always be specified.
    For more information, have a look in :ref:`generate-ci-pipeline`.
 
    .. note::
-      This option will not work with the `test generation options <#test-generators>`.
+      This option will not work with the :ref:`test generation options <test-generators>`.
 
 
    .. versionadded:: 3.4.1
@@ -583,7 +583,7 @@ Options controlling ReFrame execution
       This is not a problem when rerunning a failed case, since the stage directories of its dependencies are automatically kept, but if you want to rerun a successful test case, you should make sure to have run with the :option:`--keep-stage-files` option.
 
    .. note::
-      This option will not work with the `test generation options <#test-generators>`.
+      This option will not work with the :ref:`test generation options <test-generators>`.
 
    .. versionadded:: 3.4
 

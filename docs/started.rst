@@ -105,6 +105,10 @@ The ``./bootstrap.sh`` has two additional variant options:
       The bootstrap script for ReFrame was added.
       For previous ReFrame versions you should install its requirements using ``pip install -r requirements.txt`` in a Python virtual environment.
 
+   .. versionchanged:: 4.5
+      ReFrame supports now multiarch builds and it will place all of its dependencies in an arch-specific directory under its prefix.
+      Also, ``pip`` is no more required, as the bootstrap script will start a virtual environment without ``pip`` and will fetch a fresh ``pip``, which will be used to install the dependencies.
+
 
 Enabling auto-completion
 ------------------------

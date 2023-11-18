@@ -1,6 +1,5 @@
-=================
-ReFrame Tutorials
-=================
+Tutorials & How To
+==================
 
 
 .. toctree::
