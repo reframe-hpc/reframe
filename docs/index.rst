@@ -44,11 +44,11 @@ Webinars and Tutorials
 
 .. toctree::
    :caption: Table of Contents
-   :maxdepth: 2
 
    started
    whats_new_40
-   tutorials
+   tutorial
+   howto
    configure
    topics
    manuals

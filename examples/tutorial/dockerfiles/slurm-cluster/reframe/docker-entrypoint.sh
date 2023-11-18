@@ -11,9 +11,6 @@ sudo cp /scratch/munge.key /etc/munge/munge.key
 sudo service munge start
 sudo sed -i "s/REPLACE_IT/CPUs=${SLURM_CPUS_ON_NODE}/g" /etc/slurm-llnl/slurm.conf
 
-pip install reframe-hpc
-export PATH=/home/admin/.local/bin:$PATH
-
 echo "Container up and running: "
 echo "==> Run 'docker exec -it <container-id> /bin/bash' to run interactively"
 echo "==> Press Ctrl-C to exit"

@@ -27,7 +27,6 @@ RUN useradd -m admin -s /usr/bin/bash -d /home/admin && \
 COPY slurm.conf /etc/slurm-llnl/
 COPY cgroup.conf /etc/slurm-llnl/
 COPY docker-entrypoint.sh /etc/slurm-llnl/
-COPY container_cluster.py /reframe/container_cluster.py
 
 RUN mkdir /scratch && \
     chown -R admin:admin /scratch

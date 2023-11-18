@@ -1,4 +1,4 @@
-FROM ubuntu:23.04
+FROM ubuntu:22.04
 
 RUN apt-get -y update && \
     apt-get -y install curl && \
@@ -24,8 +24,8 @@ ENV PATH=/usr/local/share/stream/bin:$PATH
 RUN useradd -ms /bin/bash -G sudo user && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-COPY examples /home/user/reframe-examples
-RUN chown -R user:user /home/user/reframe-examples
+# COPY examples /home/user/reframe-examples
+# RUN chown -R user:user /home/user/reframe-examples
 WORKDIR /home/user
 
 USER user

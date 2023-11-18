@@ -51,7 +51,7 @@ class JobLauncher(metaclass=_JobLauncherMeta):
     #:
     #: If the modifier is empty, these options will be ignored.
     #:
-    #: :type: :clas:`List[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
     #:
     #: :versionadded:: 4.6.0

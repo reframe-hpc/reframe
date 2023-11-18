@@ -407,10 +407,11 @@ class TestFixture:
         of system partition and programming environment. Since the fixture is
         guaranteed to have the same partition and programming environment as
         the parent test, the fixture class can be any derived class from
-        :class:`~reframe.core.pipeline.RegressionTest`. * **test**: This scope
-        covers a single instance of the parent test, where the resources
-        provided by the fixture are exclusive to each parent test instance.
-        The fixture class can be any derived class from
+        :class:`~reframe.core.pipeline.RegressionTest`.
+
+      - **test**: This scope covers a single instance of the parent test,
+        where the resources provided by the fixture are exclusive to each
+        parent test instance. The fixture class can be any derived class from
         :class:`~reframe.core.pipeline.RegressionTest`.
 
     Rather than specifying the scope at the fixture class definition, ReFrame
