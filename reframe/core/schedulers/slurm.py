@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import firecrest as fc
 import functools
 import glob
 import itertools
 import os
 import re
 import shlex
+import sys
 import time
 from argparse import ArgumentParser
 from contextlib import suppress
@@ -23,6 +23,9 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobError,
                                      JobSchedulerError)
 from reframe.utility import nodelist_abbrev, seconds_to_hms
+
+if sys.version_info >= (3, 7):
+    import firecrest as fc
 
 
 def slurm_state_completed(state):
@@ -728,6 +731,10 @@ class _SlurmNode(sched.Node):
 @register_scheduler('slurmfc')
 class SlurmFirecrestJobScheduler(SlurmJobScheduler):
     def __init__(self, *args, **kwargs):
+        if sys.version_info < (3, 7):
+            raise JobSchedulerError('the firecrest scheduler needs '
+                                    'python>=3.7')
+
         super().__init__(*args, **kwargs)
         # FIXME set these in a better way
         client_id = os.environ.get("FIRECREST_CLIENT_ID")
