@@ -1665,7 +1665,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _create_job(self, job_type, force_local=False, clean_up_stage=False, **job_opts):
+    def _create_job(
+            self,
+            job_type,
+            force_local=False,
+            clean_up_stage=False,
+            **job_opts
+        ):
         '''Setup the job related to this check.'''
 
         if force_local:
@@ -1696,9 +1702,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           **job_opts)
 
     def _setup_build_job(self, clean_up_stage=False, **job_opts):
-        self._build_job = self._create_job(
-            'build', self.local or self.build_locally, clean_up_stage, **job_opts
-        )
+        self._build_job = self._create_job('build',
+                                           self.local or self.build_locally,
+                                           clean_up_stage,
+                                           **job_opts)
 
     def _setup_run_job(self, clean_up_stage=False, **job_opts):
         self._job = self._create_job(f'run', self.local, **job_opts)

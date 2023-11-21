@@ -106,22 +106,22 @@ class ModulesSystem:
     module_map = fields.TypedField(types.Dict[str, types.List[str]])
 
     @classmethod
-    def create(cls, modules_kind=None):
+    def create(cls, modules_kind=None, module_resolution=True):
         getlogger().debug(f'Initializing modules system {modules_kind!r}')
         if modules_kind is None or modules_kind == 'nomod':
             return ModulesSystem(NoModImpl())
         elif modules_kind == 'tmod31':
-            return ModulesSystem(TMod31Impl())
+            return ModulesSystem(TMod31Impl(module_resolution))
         elif modules_kind == 'tmod':
-            return ModulesSystem(TModImpl())
+            return ModulesSystem(TModImpl(module_resolution))
         elif modules_kind == 'tmod32':
-            return ModulesSystem(TModImpl())
+            return ModulesSystem(TModImpl(module_resolution))
         elif modules_kind == 'tmod4':
-            return ModulesSystem(TMod4Impl())
+            return ModulesSystem(TMod4Impl(module_resolution))
         elif modules_kind == 'lmod':
-            return ModulesSystem(LModImpl())
+            return ModulesSystem(LModImpl(module_resolution))
         elif modules_kind == 'spack':
-            return ModulesSystem(SpackImpl())
+            return ModulesSystem(SpackImpl(module_resolution))
         else:
             raise ConfigError('unknown module system: %s' % modules_kind)
 
@@ -585,9 +585,11 @@ class TModImpl(ModulesSystemImpl):
 
     MIN_VERSION = (3, 2)
 
-    def __init__(self):
-        # FIXME
-        return
+    def __init__(self, module_resolution=True):
+        if not module_resolution:
+            # The module system may not be available locally
+            self._version = None
+            return
 
         # Try to figure out if we are indeed using the TCL version
         try:
@@ -720,9 +722,13 @@ class TMod31Impl(TModImpl):
 
     MIN_VERSION = (3, 1)
 
-    def __init__(self):
-        # FIXME
-        return
+    def __init__(self, module_resolution=True):
+        self._version = None
+        self._command = None
+
+        if not module_resolution:
+            # The module system may not be available locally
+            return
 
         # Try to figure out if we are indeed using the TCL version
         try:
@@ -798,9 +804,12 @@ class TMod4Impl(TModImpl):
 
     MIN_VERSION = (4, 1)
 
-    def __init__(self):
-        # FIXME
-        return
+    def __init__(self, module_resolution=True):
+        self._version = None
+        self._extra_module_paths = []
+        if not module_resolution:
+            # The module system may not be available locally
+            return
 
         try:
             completed = osext.run_command(self.modulecmd('-V'), check=True)
@@ -924,7 +933,13 @@ class TMod4Impl(TModImpl):
 class LModImpl(TMod4Impl):
     '''Module system for Lmod (Tcl/Lua).'''
 
-    def __init__(self):
+    def __init__(self, module_resolution=True):
+        self._extra_module_paths = []
+        self._version = None
+        if not module_resolution:
+            # The module system may not be available locally
+            return
+
         # Try to figure out if we are indeed using LMOD
         self._lmod_cmd = os.getenv('LMOD_CMD')
         if self._lmod_cmd is None:
@@ -953,8 +968,6 @@ class LModImpl(TMod4Impl):
         if re.search(r'Unknown shell type', completed.stderr):
             raise ConfigError('Python is not supported by '
                               'this Lmod installation')
-
-        self._extra_module_paths = []
 
     def name(self):
         return 'lmod'
@@ -1103,7 +1116,14 @@ class SpackImpl(ModulesSystemImpl):
 
     '''
 
-    def __init__(self):
+    def __init__(self, module_resolution=True):
+        self._name_format = '{name}/{version}-{hash}'
+        self._version = None
+
+        if not module_resolution:
+            # The module system may not be available locally
+            return
+
         # Try to figure out if we are indeed using the TCL version
         try:
             completed = osext.run_command('spack -V')
@@ -1112,7 +1132,6 @@ class SpackImpl(ModulesSystemImpl):
                 'could not find a sane Spack installation') from e
 
         self._version = completed.stdout.strip()
-        self._name_format = '{name}/{version}-{hash}'
 
     def name(self):
         return 'spack'
