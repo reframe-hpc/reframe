@@ -115,9 +115,8 @@ class _SlurmFirecrestJob(sched.Job):
         self._remotedir = None
         self._localdir = None
 
-
-        # The compacted nodelist as reported by Slurm. This must be updated in
-        # every poll as Slurm may be slow in reporting the exact nodelist
+        # The compacted nodelist as reported by Slurm. This must be updated
+        # in every poll as Slurm may be slow in reporting the exact nodelist
         self._nodespec = None
         self._stage_prefix = rt.runtime().stage_prefix
 
@@ -740,7 +739,8 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
         # Setup the client for the specific account
         self.client = fc.Firecrest(
             firecrest_url=firecrest_url,
-            authorization=fc.ClientCredentialsAuth(client_id, client_secret, token_uri)
+            authorization=fc.ClientCredentialsAuth(client_id, client_secret,
+                                                   token_uri)
         )
 
         self._local_filetimestamps = {}
@@ -758,11 +758,17 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
 
             remote_dir_path = join_and_normalize(job._remotedir, dirpath)
             for f in filenames:
-                local_norm_path = join_and_normalize(job._localdir, dirpath, f)
-                modification_time = os.path.getmtime(local_norm_path)
-                if self._local_filetimestamps.get(local_norm_path) != modification_time:
-                    self._local_filetimestamps[local_norm_path] = modification_time
-                    self.log(f'Uploading file {f} in {join_and_normalize(job._remotedir, dirpath)}')
+                local_norm_path = join_and_normalize(
+                    job._localdir, dirpath, f
+                )
+                modtime = os.path.getmtime(local_norm_path)
+                last_modtime = self._local_filetimestamps.get(local_norm_path)
+                if (last_modtime != modtime):
+                    self._local_filetimestamps[local_norm_path] = modtime
+                    self.log(
+                        f'Uploading file {f} in '
+                        f'{join_and_normalize(job._remotedir, dirpath)}'
+                    )
                     self.client.simple_upload(
                         self._system_name,
                         local_norm_path,
@@ -776,8 +782,11 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
                 show_hidden=True
             )
             for f in remote_files:
-                local_norm_path = join_and_normalize(remote_dir_path, f['name'])
-                self._remote_filetimestamps[local_norm_path] = f['last_modified']
+                local_norm_path = join_and_normalize(remote_dir_path,
+                                                     f['name'])
+                self._remote_filetimestamps[local_norm_path] = (
+                    f['last_modified']
+                )
 
     def _pull_artefacts(self, job):
         def firecrest_walk(directory):
@@ -811,20 +820,20 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
                 self.log(f'Creating local directory {new_dir}')
                 os.makedirs(new_dir)
 
-            for (f, modification_time) in files:
+            for (f, modtime) in files:
                 norm_path = join_and_normalize(dirpath, f)
                 local_file_path = join_and_normalize(local_dirpath, f)
-                if self._remote_filetimestamps.get(norm_path) != modification_time:
+                if self._remote_filetimestamps.get(norm_path) != modtime:
                     self.log(f'Downloading file {f} in {local_dirpath}')
                     self.client.simple_download(
                         self._system_name,
                         norm_path,
                         local_file_path
                     )
+                    self._remote_filetimestamps[norm_path] = modtime
 
-                    self._remote_filetimestamps[norm_path] = modification_time
-
-                self._local_filetimestamps[local_file_path] = os.path.getmtime(local_file_path)
+                new_modtime = os.path.getmtime(local_file_path)
+                self._local_filetimestamps[local_file_path] = new_modtime
 
     def submit(self, job):
         job._localdir = os.getcwd()
@@ -838,11 +847,13 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
             try:
                 self.client.simple_delete(self._system_name, job._remotedir)
             except fc.HeaderException:
-                # The delete request will raise an exception if it doesn't exist
+                # The delete request will raise an exception if it doesn't
+                # exist, but it can be ignored
                 pass
 
         self.client.mkdir(self._system_name, job._remotedir, p=True)
-        self.log(f'Creating remote directory {job._remotedir} in {self._system_name}')
+        self.log(f'Creating remote directory {job._remotedir} in '
+                 f'{self._system_name}')
 
         self._push_artefacts(job)
 
@@ -875,7 +886,8 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
         job._submit_time = time.time()
 
     def allnodes(self):
-        raise NotImplementedError('firecrest slurm backend does not support node listing')
+        raise NotImplementedError('firecrest slurm backend does not support '
+                                  'node listing')
 
     def filternodes(self, job, nodes):
         raise NotImplementedError(
@@ -907,7 +919,8 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
             except KeyError:
                 continue
 
-            # Join the states with ',' in case of job arrays|heterogeneous jobs
+            # Join the states with ',' in case of job arrays|heterogeneous
+            # jobs
             job._state = ','.join(m['state'] for m in jobarr_info)
 
             self._cancel_if_pending_too_long(job)
