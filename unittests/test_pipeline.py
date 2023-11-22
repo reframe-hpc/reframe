@@ -1980,18 +1980,21 @@ def test_set_var_default():
     class _X(rfm.RunOnlyRegressionTest):
         foo = variable(int, value=10)
         bar = variable(int)
+        zoo = variable(int)
 
         @run_after('init')
         def set_defaults(self):
             self.set_var_default('foo', 100)
             self.set_var_default('bar', 100)
-
+            self.zoo = 1
+            self.set_var_default('zoo', 100)
             with pytest.raises(ValueError):
                 self.set_var_default('foobar', 10)
 
     x = _X()
     assert x.foo == 10
     assert x.bar == 100
+    assert x.zoo == 1
 
 
 def test_hashcode():
