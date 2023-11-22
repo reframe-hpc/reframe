@@ -115,7 +115,7 @@ With the executable's output available in the stage directory, one can simply us
     ...     test_output = ''.join(f.readlines())
     ...
     >>> # Evaluate the regular expression
-    >>> re.find(the_regex_pattern, test_output)
+    >>> re.findall(the_regex_pattern, test_output, re.MULTILINE)
 
 Alternatively to using the `re <https://docs.python.org/3/library/re.html>`_ module, one could use all the :mod:`~reframe.utility.sanity` utility provided by ReFrame directly from the Python shell.
 In order to do so, if ReFrame was installed manually using the ``bootstrap.sh`` script, one will have to make all the Python modules from the ``external`` directory accessible to the Python shell as shown below.
