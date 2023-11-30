@@ -112,9 +112,6 @@ class _SlurmFirecrestJob(sched.Job):
         super().__init__(*args, **kwargs)
         self._is_array = False
         self._is_cancelling = False
-
-        # FIXME get this dynamically
-        self._remotedir_prefix = os.environ.get('FIRECREST_BASEDIR')
         self._remotedir = None
         self._localdir = None
 
@@ -731,17 +728,25 @@ class _SlurmNode(sched.Node):
 @register_scheduler('slurmfc')
 class SlurmFirecrestJobScheduler(SlurmJobScheduler):
     def __init__(self, *args, **kwargs):
+        def set_mandatory_var(var):
+            res = os.environ.get(var)
+            if res:
+                return res
+
+            raise JobSchedulerError(f'the env var {var} is mandatory for the '
+                                    f'firecrest scheduler')
+
         if sys.version_info < (3, 7):
             raise JobSchedulerError('the firecrest scheduler needs '
                                     'python>=3.7')
 
         super().__init__(*args, **kwargs)
-        # FIXME set these in a better way
-        client_id = os.environ.get("FIRECREST_CLIENT_ID")
-        client_secret = os.environ.get("FIRECREST_CLIENT_SECRET")
-        token_uri = os.environ.get("AUTH_TOKEN_URL")
-        firecrest_url = os.environ.get("FIRECREST_URL")
-        self._system_name = os.environ.get("FIRECREST_SYSTEM")
+        client_id = set_mandatory_var("FIRECREST_CLIENT_ID")
+        client_secret = set_mandatory_var("FIRECREST_CLIENT_SECRET")
+        token_uri = set_mandatory_var("AUTH_TOKEN_URL")
+        firecrest_url = set_mandatory_var("FIRECREST_URL")
+        self._system_name = set_mandatory_var("FIRECREST_SYSTEM")
+        self._remotedir_prefix = set_mandatory_var('FIRECREST_BASEDIR')
 
         # Setup the client for the specific account
         self.client = fc.Firecrest(
@@ -845,7 +850,7 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
     def submit(self, job):
         job._localdir = os.getcwd()
         job._remotedir = os.path.join(
-            job._remotedir_prefix,
+            self._remotedir_prefix,
             os.path.relpath(os.getcwd(), job._stage_prefix)
         )
 
