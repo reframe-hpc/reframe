@@ -118,14 +118,13 @@ class ModulesSystem:
             'lmod': LModImpl,
             'spack': SpackImpl
         }
-
         try:
             impl_cls = modules_impl[modules_kind]
         except KeyError:
-            raise ConfigError('unknown module system: %s' % modules_kind)
+            raise ConfigError(f'unknown module system: {modules_kind}')
 
-        impl_cls.validate = True
-        return impl_cls()
+        impl_cls.validate = validate
+        return ModulesSystem(impl_cls())
 
     def __init__(self, backend):
         self._backend = backend
@@ -177,7 +176,7 @@ class ModulesSystem:
 
     @property
     def backend(self):
-        return(self._backend)
+        return (self._backend)
 
     def available_modules(self, substr=None):
         '''Return a list of available modules that contain ``substr`` in their
@@ -445,6 +444,7 @@ class ModulesSystemImpl(abc.ABC):
 
     :meta private:
     '''
+    validate = True
 
     def execute(self, cmd, *args):
         '''Execute an arbitrary module command using the modules backend.
@@ -590,7 +590,6 @@ class TModImpl(ModulesSystemImpl):
     def __init__(self):
         self._version = None
         if not self.validate:
-            # The module system may not be available locally
             return
 
         # Try to figure out if we are indeed using the TCL version
@@ -728,7 +727,6 @@ class TMod31Impl(TModImpl):
         self._version = None
         self._command = None
         if not self.validate:
-            # The module system may not be available locally
             return
 
         # Try to figure out if we are indeed using the TCL version
@@ -809,7 +807,6 @@ class TMod4Impl(TModImpl):
         self._version = None
         self._extra_module_paths = []
         if not self.validate:
-            # The module system may not be available locally
             return
 
         try:
@@ -938,7 +935,6 @@ class LModImpl(TMod4Impl):
         self._extra_module_paths = []
         self._version = None
         if not self.validate:
-            # The module system may not be available locally
             return
 
         # Try to figure out if we are indeed using LMOD
@@ -1121,7 +1117,6 @@ class SpackImpl(ModulesSystemImpl):
         self._name_format = '{name}/{version}-{hash}'
         self._version = None
         if not self.validate:
-            # The module system may not be available locally
             return
 
         # Try to figure out if we are indeed using the TCL version
