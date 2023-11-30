@@ -130,8 +130,6 @@ def test_run_command(job):
         assert command == ('srun '
                            '--job-name=fake_job '
                            '--time=0:10:0 '
-                           '--output=fake_stdout '
-                           '--error=fake_stderr '
                            '--ntasks=4 '
                            '--ntasks-per-node=2 '
                            '--ntasks-per-core=1 '
@@ -177,8 +175,6 @@ def test_run_command_minimal(minimal_job):
     elif launcher_name == 'srunalloc':
         assert command == ('srun '
                            '--job-name=fake_job '
-                           '--output=fake_job.out '
-                           '--error=fake_job.err '
                            '--ntasks=1 '
                            '--foo')
     elif launcher_name == 'ssh':
