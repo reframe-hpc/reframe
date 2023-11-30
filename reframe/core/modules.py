@@ -106,24 +106,26 @@ class ModulesSystem:
     module_map = fields.TypedField(types.Dict[str, types.List[str]])
 
     @classmethod
-    def create(cls, modules_kind=None, module_resolution=True):
+    def create(cls, modules_kind=None, validate=True):
         getlogger().debug(f'Initializing modules system {modules_kind!r}')
-        if modules_kind is None or modules_kind == 'nomod':
-            return ModulesSystem(NoModImpl())
-        elif modules_kind == 'tmod31':
-            return ModulesSystem(TMod31Impl(module_resolution))
-        elif modules_kind == 'tmod':
-            return ModulesSystem(TModImpl(module_resolution))
-        elif modules_kind == 'tmod32':
-            return ModulesSystem(TModImpl(module_resolution))
-        elif modules_kind == 'tmod4':
-            return ModulesSystem(TMod4Impl(module_resolution))
-        elif modules_kind == 'lmod':
-            return ModulesSystem(LModImpl(module_resolution))
-        elif modules_kind == 'spack':
-            return ModulesSystem(SpackImpl(module_resolution))
-        else:
+        modules_impl = {
+            None: NoModImpl,
+            'nomod': NoModImpl,
+            'tmod31': TMod31Impl,
+            'tmod': TModImpl,
+            'tmod32': TModImpl,
+            'tmod4': TMod4Impl,
+            'lmod': LModImpl,
+            'spack': SpackImpl
+        }
+
+        try:
+            impl_cls = modules_impl[modules_kind]
+        except KeyError:
             raise ConfigError('unknown module system: %s' % modules_kind)
+
+        impl_cls.validate = True
+        return impl_cls()
 
     def __init__(self, backend):
         self._backend = backend
@@ -585,9 +587,9 @@ class TModImpl(ModulesSystemImpl):
 
     MIN_VERSION = (3, 2)
 
-    def __init__(self, module_resolution=True):
+    def __init__(self):
         self._version = None
-        if not module_resolution:
+        if not self.validate:
             # The module system may not be available locally
             return
 
@@ -722,10 +724,10 @@ class TMod31Impl(TModImpl):
 
     MIN_VERSION = (3, 1)
 
-    def __init__(self, module_resolution=True):
+    def __init__(self):
         self._version = None
         self._command = None
-        if not module_resolution:
+        if not self.validate:
             # The module system may not be available locally
             return
 
@@ -803,10 +805,10 @@ class TMod4Impl(TModImpl):
 
     MIN_VERSION = (4, 1)
 
-    def __init__(self, module_resolution=True):
+    def __init__(self):
         self._version = None
         self._extra_module_paths = []
-        if not module_resolution:
+        if not self.validate:
             # The module system may not be available locally
             return
 
@@ -932,10 +934,10 @@ class TMod4Impl(TModImpl):
 class LModImpl(TMod4Impl):
     '''Module system for Lmod (Tcl/Lua).'''
 
-    def __init__(self, module_resolution=True):
+    def __init__(self):
         self._extra_module_paths = []
         self._version = None
-        if not module_resolution:
+        if not self.validate:
             # The module system may not be available locally
             return
 
@@ -1115,10 +1117,10 @@ class SpackImpl(ModulesSystemImpl):
 
     '''
 
-    def __init__(self, module_resolution=True):
+    def __init__(self):
         self._name_format = '{name}/{version}-{hash}'
         self._version = None
-        if not module_resolution:
+        if not self.validate:
             # The module system may not be available locally
             return
 
