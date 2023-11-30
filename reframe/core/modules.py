@@ -586,9 +586,9 @@ class TModImpl(ModulesSystemImpl):
     MIN_VERSION = (3, 2)
 
     def __init__(self, module_resolution=True):
+        self._version = None
         if not module_resolution:
             # The module system may not be available locally
-            self._version = None
             return
 
         # Try to figure out if we are indeed using the TCL version
@@ -725,7 +725,6 @@ class TMod31Impl(TModImpl):
     def __init__(self, module_resolution=True):
         self._version = None
         self._command = None
-
         if not module_resolution:
             # The module system may not be available locally
             return
@@ -1119,7 +1118,6 @@ class SpackImpl(ModulesSystemImpl):
     def __init__(self, module_resolution=True):
         self._name_format = '{name}/{version}-{hash}'
         self._version = None
-
         if not module_resolution:
             # The module system may not be available locally
             return

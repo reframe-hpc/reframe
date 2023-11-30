@@ -467,7 +467,8 @@ class System(jsonext.JSONSerializable):
         self._name = name
         self._descr = descr
         self._hostnames = hostnames
-        self._modules_system = ModulesSystem.create(modules_system, module_resolution)
+        self._modules_system = ModulesSystem.create(modules_system,
+                                                    module_resolution)
         self._preload_env = preload_env
         self._prefix = prefix
         self._outputdir = outputdir
@@ -591,7 +592,9 @@ class System(jsonext.JSONSerializable):
             resourcesdir=site_config.get('systems/0/resourcesdir'),
             stagedir=site_config.get('systems/0/stagedir'),
             partitions=partitions,
-            module_resolution=site_config.get('general/resolve_module_conflicts')
+            module_resolution=site_config.get(
+                'general/resolve_module_conflicts'
+            )
         )
 
     @property
