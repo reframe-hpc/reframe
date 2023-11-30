@@ -1632,6 +1632,11 @@ Whenever an environment variable is associated with a configuration option, its 
 
    .. versionadded:: 3.6.0
 
+   .. versionchanged:: 4.5.0
+
+      When the module conflict resolution is off, ReFrame will not check if the module system is available and sane where it is running.
+      It will only emit the module commands in the build and run scripts.
+
    .. table::
       :align: left
 
