@@ -791,7 +791,7 @@ def main():
         if options.mode:
             mode = site_config.get(f'modes/@{options.mode}')
             if mode is None:
-                printer.warning(f'invalid mode: {options.mode!r}; ignoring...')
+                raise errors.ReframeError(f'invalid mode: {options.mode!r}')
             else:
                 mode_args = site_config.get(f'modes/@{options.mode}/options')
 
@@ -809,6 +809,10 @@ def main():
         logging.configure_logging(site_config)
     except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
+        printer.info(logfiles_message())
+        sys.exit(1)
+    except errors.ReframeError as e:
+        printer.error(str(e))
         printer.info(logfiles_message())
         sys.exit(1)
 

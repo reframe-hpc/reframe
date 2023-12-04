@@ -527,7 +527,7 @@ def test_execution_modes(run_reframe, run_action):
     assert 'Ran 1/1 test case' in stdout
 
 
-def test_invalid_mode_warning(run_reframe):
+def test_invalid_mode_error(run_reframe):
     mode = 'invalid'
     returncode, stdout, stderr = run_reframe(
         action='list',
@@ -538,7 +538,8 @@ def test_invalid_mode_warning(run_reframe):
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    assert f'invalid mode: {mode!r}; ignoring' in stdout
+    assert returncode == 1
+    assert f'ERROR: invalid mode: {mode!r}' in stdout
 
 
 def test_timestamp_option(run_reframe):
