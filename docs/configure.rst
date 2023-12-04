@@ -132,11 +132,8 @@ Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
 A programming environment in ReFrame is essentially a collection of environment modules, environment variables and compiler definitions.
 
-An important feature in ReFrame's configuration, is that you can define section objects differently for different systems or system partitions by using the ``target_systems`` property.
-Notice, for example, how the ``gnu`` environment is defined differently for the system ``daint`` compared to the generic definition.
-The ``target_systems`` property is a list of systems or system/partition combinations where this definition of the environment is in effect.
-This means that ``gnu`` will be defined this way only for regression tests running on ``daint``.
-For all the other systems, it will be defined using the first definition.
+An important feature in ReFrame's configuration is that you can scope the definition of section objects to different systems or system/partition combinations by using the ``target_systems`` property.
+In our example, this means that the ``gnu`` environment will be defined this way only for tests running on the system ``daint``.
 
 
 ---------------------
