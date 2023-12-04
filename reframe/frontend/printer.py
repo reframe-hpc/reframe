@@ -3,8 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import datetime
-
+import time
 import reframe.core.logging as logging
 import reframe.utility.color as color
 
@@ -68,7 +67,7 @@ class PrettyPrinter:
         logging.getlogger().log(level, final_msg)
 
     def timestamp(self, msg='', separator=None):
-        msg = '%s %s' % (msg, datetime.datetime.today().strftime('%c %Z'))
+        msg = f'{msg} {time.strftime("%c%z")}'
         if separator:
             self.separator(separator, msg)
         else:
