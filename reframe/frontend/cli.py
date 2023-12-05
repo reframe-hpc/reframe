@@ -962,7 +962,7 @@ def main():
         printer.info(f"  {param.ljust(18)} {value}")
 
     session_info = {
-        'cmdline': ' '.join(sys.argv),
+        'cmdline': ' '.join(shlex.quote(arg) for arg in sys.argv),
         'config_files': rt.site_config.sources,
         'data_version': runreport.DATA_VERSION,
         'hostname': socket.gethostname(),
