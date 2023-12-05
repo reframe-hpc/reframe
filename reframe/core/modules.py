@@ -589,9 +589,13 @@ class TModImpl(ModulesSystemImpl):
 
     def __init__(self):
         self._version = None
-        if not self.validate:
-            return
+        if self.validate:
+            self._validate_installation()
+            self._has_validated = True
+        else:
+            self._has_validated = False
 
+    def _validate_installation(self):
         # Try to figure out if we are indeed using the TCL version
         try:
             completed = osext.run_command('modulecmd -V')
@@ -641,6 +645,9 @@ class TModImpl(ModulesSystemImpl):
         return ' '.join(['modulecmd', 'python', *args])
 
     def _execute(self, cmd, *args):
+        if not self._has_validated:
+            self._validate_installation()
+
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd)
         if re.search(r'\bERROR\b', completed.stderr) is not None:
@@ -726,9 +733,14 @@ class TMod31Impl(TModImpl):
     def __init__(self):
         self._version = None
         self._command = None
-        if not self.validate:
-            return
 
+        if self.validate:
+            self._validate_installation()
+            self._has_validated = True
+        else:
+            self._has_validated = False
+
+    def _validate_installation(self):
         # Try to figure out if we are indeed using the TCL version
         try:
             modulecmd = os.getenv('MODULESHOME')
@@ -778,6 +790,9 @@ class TMod31Impl(TModImpl):
         return ' '.join([self._command, *args])
 
     def _execute(self, cmd, *args):
+        if not self._has_validated:
+            self._validate_installation()
+
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd)
         if re.search(r'\bERROR\b', completed.stderr) is not None:
@@ -806,9 +821,13 @@ class TMod4Impl(TModImpl):
     def __init__(self):
         self._version = None
         self._extra_module_paths = []
-        if not self.validate:
-            return
+        if self.validate:
+            self._validate_installation()
+            self._has_validated = True
+        else:
+            self._has_validated = False
 
+    def _validate_installation(self):
         try:
             completed = osext.run_command(self.modulecmd('-V'), check=True)
         except OSError as e:
@@ -845,6 +864,9 @@ class TMod4Impl(TModImpl):
         return ' '.join(['modulecmd', 'python', *args])
 
     def _execute(self, cmd, *args):
+        if not self._has_validated:
+            self._validate_installation()
+
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd, check=False)
         namespace = {}
@@ -934,9 +956,13 @@ class LModImpl(TMod4Impl):
     def __init__(self):
         self._extra_module_paths = []
         self._version = None
-        if not self.validate:
-            return
+        if self.validate:
+            self._validate_installation()
+            self._has_validated = True
+        else:
+            self._has_validated = False
 
+    def _validate_installation(self):
         # Try to figure out if we are indeed using LMOD
         self._lmod_cmd = os.getenv('LMOD_CMD')
         if self._lmod_cmd is None:
@@ -1116,9 +1142,13 @@ class SpackImpl(ModulesSystemImpl):
     def __init__(self):
         self._name_format = '{name}/{version}-{hash}'
         self._version = None
-        if not self.validate:
-            return
+        if self.validate:
+            self._validate_installation()
+            self._has_validated = True
+        else:
+            self._has_validated = False
 
+    def _validate_installation(self):
         # Try to figure out if we are indeed using the TCL version
         try:
             completed = osext.run_command('spack -V')
@@ -1138,6 +1168,9 @@ class SpackImpl(ModulesSystemImpl):
         return ' '.join(['spack', *args])
 
     def _execute(self, cmd, *args):
+        if not self._has_validated:
+            self._validate_installation()
+
         modulecmd = self.modulecmd(cmd, *args)
         completed = osext.run_command(modulecmd, check=True)
         return completed.stdout
