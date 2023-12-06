@@ -13,8 +13,3 @@ ReFrame Tutorials
    tutorial_tips_tricks
    tutorial_flux
    tutorial_make_test
-
-Online Tutorials
-----------------
-
-- Tutorial at 6th EasyBuild User Meeting 2021 [`YouTube <https://youtube.com/playlist?list=PLhnGtSmEGEQjySVEPTUSLpewpOWwX5mjb>`__]
