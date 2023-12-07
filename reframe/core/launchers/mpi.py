@@ -126,12 +126,6 @@ class SrunAllocationLauncher(JobLauncher):
             h, m, s = seconds_to_hms(job.time_limit)
             ret += ['--time=%d:%d:%d' % (h, m, s)]
 
-        if job.stdout:
-            ret += ['--output=%s' % job.stdout]
-
-        if job.stderr:
-            ret += ['--error=%s' % job.stderr]
-
         if job.num_tasks:
             ret += ['--ntasks=%s' % str(job.num_tasks)]
 

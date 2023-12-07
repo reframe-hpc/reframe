@@ -1369,7 +1369,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if name not in var_space:
             raise ValueError(f'no such variable: {name!r}')
 
-        if not var_space[name].is_defined():
+        if not hasattr(self, name):
             setattr(self, name, value)
 
     @loggable
