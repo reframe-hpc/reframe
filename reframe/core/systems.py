@@ -461,13 +461,14 @@ class System(jsonext.JSONSerializable):
     '''
 
     def __init__(self, name, descr, hostnames, modules_system,
-                 preload_env, prefix, outputdir,
+                 modules_system_validate, preload_env, prefix, outputdir,
                  resourcesdir, stagedir, partitions):
         getlogger().debug(f'Initializing system {name!r}')
         self._name = name
         self._descr = descr
         self._hostnames = hostnames
-        self._modules_system = ModulesSystem.create(modules_system)
+        self._modules_system = ModulesSystem.create(modules_system,
+                                                    modules_system_validate)
         self._preload_env = preload_env
         self._prefix = prefix
         self._outputdir = outputdir
@@ -581,6 +582,9 @@ class System(jsonext.JSONSerializable):
             descr=site_config.get('systems/0/descr'),
             hostnames=site_config.get('systems/0/hostnames'),
             modules_system=site_config.get('systems/0/modules_system'),
+            modules_system_validate=site_config.get(
+                'general/resolve_module_conflicts'
+            ),
             preload_env=Environment(
                 name=f'__rfm_env_{sysname}',
                 modules=site_config.get('systems/0/modules'),

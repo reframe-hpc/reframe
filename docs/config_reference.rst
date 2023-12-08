@@ -146,8 +146,16 @@ System Configuration
    - ``spack``: `Spack <https://spack.readthedocs.io/en/latest/>`__'s built-in mechanism for managing modules.
    - ``nomod``: This is to denote that no modules system is used by this system.
 
-   .. versionadded:: 3.4
+   Normally,  upon loading the configuration of the system ReFrame checks that a sane installation exists for the modules system requested and will issue an error if it fails to find one.
+   The modules system sanity check is skipped when the :attr:`~config.general.resolve_module_conflicts` is set to :obj:`False`.
+   This is useful in cases where the current system does not have a modules system but the remote partitions have one and you would like ReFrame to generate the module commands.
+
+  .. versionadded:: 3.4
       The ``spack`` backend is added.
+
+  .. versionchanged:: 4.5.0
+     The modules system sanity check is skipped when the :attr:`config.general.resolve_module_conflicts` is not set.
+
 
 .. py:attribute:: systems.modules
 
