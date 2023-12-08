@@ -1,5 +1,6 @@
-archspec==0.2.1
-argcomplete==3.1.2
+archspec==0.2.2
+argcomplete==3.1.2; python_version < '3.8'
+argcomplete==3.1.6; python_version >= '3.8'
 importlib_metadata==4.0.1; python_version < '3.8'
 jsonschema==3.2.0
 lxml==4.9.3
@@ -9,7 +10,7 @@ pytest-forked==1.4.0; python_version == '3.6'
 pytest-forked==1.6.0; python_version >= '3.7'
 pytest-parallel==0.1.1
 pytest-rerunfailures==10.3; python_version == '3.6'
-pytest-rerunfailures==12.0; python_version >= '3.7'
+pytest-rerunfailures==13.0; python_version >= '3.7'
 PyYAML==6.0.1
 requests==2.27.1; python_version == '3.6'
 requests==2.31.0; python_version >= '3.7'
@@ -17,6 +18,6 @@ semver==2.13.0; python_version == '3.6'
 semver==3.0.2; python_version >= '3.7'
 setuptools==59.6.0; python_version == '3.6'
 setuptools==68.0.0; python_version == '3.7'
-setuptools==68.2.2; python_version >= '3.8'
+setuptools==69.0.2; python_version >= '3.8'
 wcwidth==0.2.9
 #+pygelf%pygelf==0.4.0
