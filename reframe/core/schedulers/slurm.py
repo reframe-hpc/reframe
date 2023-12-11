@@ -756,6 +756,12 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
                                                    token_uri)
         )
 
+        params = self.client.parameters()
+        for p in params['utilities']:
+            if p['name'] == 'UTILITIES_MAX_FILE_SIZE':
+                self._max_file_size_utilities = float(p['value'])*1000000
+                break
+
         self._local_filetimestamps = {}
         self._remote_filetimestamps = {}
 
@@ -763,12 +769,33 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
         return _SlurmFirecrestJob(*args, **kwargs)
 
     def _push_artefacts(self, job):
+        def _upload(local_path, remote_path):
+            f_size = os.path.getsize(local_path)
+            if f_size <= self._max_file_size_utilities:
+                self.client.simple_upload(
+                    self._system_name,
+                    local_path,
+                    remote_path
+                )
+            else:
+                self.log(
+                    f'File {f} is {f_size} bytes, so it may take some time...'
+                )
+                up_obj = self.client.external_upload(
+                    self._system_name,
+                    local_path,
+                    remote_path
+                )
+                up_obj.finish_upload()
+                return up_obj
+
         for dirpath, dirnames, filenames in os.walk('.'):
             for d in dirnames:
                 new_dir = join_and_normalize(job._remotedir, dirpath, d)
                 self.log(f'Creating remote directory {new_dir}')
                 self.client.mkdir(self._system_name, new_dir, p=True)
 
+            async_uploads = []
             remote_dir_path = join_and_normalize(job._remotedir, dirpath)
             for f in filenames:
                 local_norm_path = join_and_normalize(
@@ -782,11 +809,34 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
                         f'Uploading file {f} in '
                         f'{join_and_normalize(job._remotedir, dirpath)}'
                     )
-                    self.client.simple_upload(
-                        self._system_name,
+                    up = _upload(
                         local_norm_path,
                         remote_dir_path
                     )
+                    if up:
+                        async_uploads.append(up)
+
+            sleep_time = itertools.cycle([1, 5, 10])
+            while async_uploads:
+                still_uploading = []
+                for element in async_uploads:
+                    upload_status = int(element.status)
+                    if upload_status < 114:
+                        still_uploading.append(element)
+                        self.log(f'file is still uploafing, '
+                                 f'status: {upload_status}')
+                    elif upload_status > 114:
+                        raise JobSchedulerError(
+                            'could not upload file to remote staging '
+                            'area'
+                        )
+
+                async_uploads = still_uploading
+                t = next(sleep_time)
+                self.log(
+                    f'Waiting for the uploads, sleeping for {t} sec'
+                )
+                time.sleep(t)
 
             # Update timestamps for remote directory
             remote_files = self.client.list_files(
@@ -812,13 +862,33 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
                 if item['type'] == 'd':
                     dirs.append(item['name'])
                 else:
-                    nondirs.append((item['name'], item["last_modified"]))
+                    nondirs.append((item['name'],
+                                    item["last_modified"],
+                                    int(item['size'])))
 
             yield directory, dirs, nondirs
 
             for item in dirs:
                 item_path = f"{directory}/{item['name']}"
                 yield from firecrest_walk(item_path)
+
+        def _download(remote_path, local_path, f_size):
+            if f_size <= self._max_file_size_utilities:
+                self.client.simple_download(
+                    self._system_name,
+                    remote_path,
+                    local_path
+                )
+            else:
+                self.log(
+                    f'File {f} is {f_size} bytes, so it may take some time...'
+                )
+                up_obj = self.client.external_download(
+                    self._system_name,
+                    remote_path
+                )
+                up_obj.finish_download(local_path)
+                return up_obj
 
         for dirpath, dirnames, files in firecrest_walk(job._remotedir):
             local_dirpath = join_and_normalize(
@@ -833,17 +903,17 @@ class SlurmFirecrestJobScheduler(SlurmJobScheduler):
                 self.log(f'Creating local directory {new_dir}')
                 os.makedirs(new_dir)
 
-            for (f, modtime) in files:
+            for (f, modtime, fsize) in files:
                 norm_path = join_and_normalize(dirpath, f)
                 local_file_path = join_and_normalize(local_dirpath, f)
                 if self._remote_filetimestamps.get(norm_path) != modtime:
                     self.log(f'Downloading file {f} in {local_dirpath}')
-                    self.client.simple_download(
-                        self._system_name,
-                        norm_path,
-                        local_file_path
-                    )
                     self._remote_filetimestamps[norm_path] = modtime
+                    _download(
+                        norm_path,
+                        local_file_path,
+                        fsize
+                    )
 
                 new_modtime = os.path.getmtime(local_file_path)
                 self._local_filetimestamps[local_file_path] = new_modtime
