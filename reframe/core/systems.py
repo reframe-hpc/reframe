@@ -535,6 +535,9 @@ class System(jsonext.JSONSerializable):
                     prepare_cmds=site_config.get(
                         f'environments/@{e}/prepare_cmds'
                     ),
+                    sched_bind_options=site_config.get(
+                        f'environments/@{e}/sched_bind_options'
+                    ),
                     cc=site_config.get(f'environments/@{e}/cc'),
                     cxx=site_config.get(f'environments/@{e}/cxx'),
                     ftn=site_config.get(f'environments/@{e}/ftn'),

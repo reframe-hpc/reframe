@@ -395,6 +395,10 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "sched_bind_options": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
                     "extras": {
                         "type": "object",
                         "propertyNames": {

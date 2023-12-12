@@ -39,7 +39,8 @@ class Environment(jsonext.JSONSerializable):
     '''
 
     def __init__(self, name, modules=None, env_vars=None,
-                 extras=None, features=None, prepare_cmds=None):
+                 extras=None, features=None, prepare_cmds=None,
+                 sched_bind_options=None):
         modules = modules or []
         env_vars = env_vars or []
         self._name = name
@@ -57,6 +58,7 @@ class Environment(jsonext.JSONSerializable):
         self._extras = extras or {}
         self._features = features or []
         self._prepare_cmds = prepare_cmds or []
+        self._sched_bind_options = sched_bind_options or []
 
     @property
     def name(self):
@@ -146,6 +148,16 @@ class Environment(jsonext.JSONSerializable):
         '''
         return util.SequenceView(self._prepare_cmds)
 
+    @property
+    def sched_bind_options(self):
+        '''The scheduler options associated with this environment.
+
+        .. versionadded:: 4.5.0
+
+        :type: :class:`List[str]`
+        '''
+        return util.SequenceView(self._sched_bind_options)
+
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
@@ -232,6 +244,7 @@ class ProgEnvironment(Environment):
                  extras=None,
                  features=None,
                  prepare_cmds=None,
+                 sched_bind_options=None,
                  cc='cc',
                  cxx='CC',
                  ftn='ftn',
@@ -243,7 +256,7 @@ class ProgEnvironment(Environment):
                  ldflags=None,
                  **kwargs):
         super().__init__(name, modules, env_vars, extras, features,
-                         prepare_cmds)
+                         prepare_cmds, sched_bind_options)
         self._cc = cc
         self._cxx = cxx
         self._ftn = ftn
