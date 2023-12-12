@@ -1691,8 +1691,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           name=f'rfm_{self.short_name}',
                           script_filename=script_name,
                           workdir=self._stagedir,
-                          sched_access=(list(self._current_partition.access) +
-                                        list(self._current_environ.sched_bind_options)),
+                          sched_access=(
+                              list(self._current_partition.access) +
+                              list(self._current_environ.sched_bind_options)
+                          ),
                           **job_opts)
 
     def _setup_build_job(self, **job_opts):
