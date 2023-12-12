@@ -834,6 +834,17 @@ They are associated with `system partitions <#system-partition-configuration>`__
    .. versionadded:: 4.3.0
 
 
+.. py:attribute:: environments.sched_bind_options
+
+   :required: No
+   :default: ``[]``
+
+   List of scheduler options that are associated with this environment.
+   These options will be emitted in the job and build script.
+
+   .. versionadded:: 4.5.0
+
+
 .. py:attribute:: environments.cc
 
    :required: No
