@@ -962,6 +962,18 @@ def test_maxfail_negative(run_reframe):
     assert returncode == 1
 
 
+def test_distribute_build_remotely_runonly(run_reframe, run_action):
+    returncode, stdout, stderr = run_reframe(
+        local=False,
+        more_options=['--distribute', '-S', 'build_locally=0'],
+        checkpath=['unittests/resources/checks_unlisted/distribute.py'],
+        action=run_action
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+
 def test_repeat_option(run_reframe, run_action):
     returncode, stdout, stderr = run_reframe(
         more_options=['--repeat', '2', '-n', '^HelloTest'],
