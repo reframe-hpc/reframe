@@ -46,6 +46,8 @@ This is something that writers of regression tests should bear in mind.
    This option can also be set using the :envvar:`RFM_CHECK_SEARCH_RECURSIVE` environment variable or the :attr:`~config.general.check_search_recursive` general configuration parameter.
 
 
+.. _test-filtering:
+
 --------------
 Test filtering
 --------------
@@ -241,9 +243,7 @@ An action must always be specified.
    For more information, have a look in :ref:`generate-ci-pipeline`.
 
    .. note::
-      The :option:`--ci-generate` option will not work with the test generation options, such as the :option:`--repeat` and :option:`--distribute` options, as the generated child pipeline will use the :option:`-n` option to select the test of the CI job and test filtering happens before any test generation.
-
-      This limitation will be removed in future versions.
+      This option will not work with the `test generation options <#test-generators>`.
 
 
    .. versionadded:: 3.4.1
@@ -460,36 +460,6 @@ Options controlling ReFrame execution
 
    .. versionadded:: 3.2
 
-.. option:: --distribute[=NODESTATE]
-
-   Distribute the selected tests on all the nodes in state ``NODESTATE`` in their respective valid partitions.
-
-   ReFrame will parameterize and run the tests on the selected nodes.
-   Effectively, it will dynamically create new tests that inherit from the original tests and add a new parameter named ``$nid`` which contains the list of nodes that the test must run on.
-   The new tests are named with the following pattern  ``{orig_test_basename}_{partition_fullname}``.
-
-   When determining the list of nodes to distribute the selected tests, ReFrame will take into account any job options passed through the :option:`-J` option.
-
-   You can optionally specify the state of the nodes to consider when distributing the test through the ``NODESTATE`` argument:
-
-   - ``all``: Tests will run on all the nodes of their respective valid partitions regardless of the nodes' state.
-   - ``idle``: Tests will run on all *idle* nodes of their respective valid partitions.
-   - ``NODESTATE``: Tests will run on all the nodes in state ``NODESTATE`` of their respective valid partitions.
-     If ``NODESTATE`` is not specified, ``idle`` will be assumed.
-
-   The state of the nodes will be determined once, before beginning the
-   execution of the tests, so it might be different at the time the tests are actually submitted.
-
-   .. note::
-      Currently, only single-node jobs can be distributed and only local or the Slurm-based backends support this feature.
-
-   .. note::
-      Distributing tests with dependencies is not supported, but you can distribute tests that use fixtures.
-
-
-   .. versionadded:: 3.11.0
-
-
 .. option:: --duration=TIMEOUT
 
    Run the test session repeatedly until the specified timeout expires.
@@ -566,40 +536,6 @@ Options controlling ReFrame execution
    .. versionchanged:: 4.1
       Options that can be specified multiple times are now combined between execution modes and the command line.
 
-.. option:: -P, --parameterize=[TEST.]VAR=VAL0,VAL1,...
-
-   Parameterize a test on an existing variable.
-
-   This option will create a new test with a parameter named ``$VAR`` with the values given in the comma-separated list ``VAL0,VAL1,...``.
-   The values will be converted based on the type of the target variable ``VAR``.
-   The ``TEST.`` prefix will only parameterize the variable ``VAR`` of test ``TEST``.
-
-   The :option:`-P` can be specified multiple times in order to parameterize multiple variables.
-
-   .. note::
-
-      Conversely to the :option:`-S` option that can set a variable in an arbitrarily nested fixture,
-      the :option:`-P` option can only parameterize the leaf test:
-      it cannot be used to parameterize a fixture of the test.
-
-   .. note::
-
-      The :option:`-P` option supports only tests that use fixtures.
-      Tests that use raw dependencies are not supported.
-
-   .. versionadded:: 4.3
-
-.. option:: --repeat=N
-
-   Repeat the selected tests ``N`` times.
-   This option can be used in conjunction with the :option:`--distribute` option in which case the selected tests will be repeated multiple times and distributed on individual nodes of the system's partitions.
-
-   .. note::
-      Repeating tests with dependencies is not supported, but you can repeat tests that use fixtures.
-
-   .. versionadded:: 3.12.0
-
-
 .. option:: --reruns=N
 
    Rerun the whole test session ``N`` times.
@@ -637,6 +573,9 @@ Options controlling ReFrame execution
    .. note::
       In order for a test case to be restored, its stage directory must be present.
       This is not a problem when rerunning a failed case, since the stage directories of its dependencies are automatically kept, but if you want to rerun a successful test case, you should make sure to have run with the :option:`--keep-stage-files` option.
+
+   .. note::
+      This option will not work with the `test generation options <#test-generators>`.
 
    .. versionadded:: 3.4
 
@@ -892,6 +831,84 @@ It does so by leveraging the selected system's environment modules system.
    This option may be specified multiple times, in which case all specified modules will be unloaded in order.
 
    This option can also be set using the :envvar:`RFM_UNLOAD_MODULES` environment variable or the :attr:`~config.general.unload_modules` general configuration parameter.
+
+
+.. _test-generators:
+
+----------------------------------------
+Options for generating tests dynamically
+----------------------------------------
+
+These options generate *new* tests dynamically from a set of previously `selected <#test-filtering>`__ tests.
+The way the tests are generated and how they interact with the test filtering options poses some limitations:
+
+1. These tests do not have an associated test file and are *different* from their original tests although the share the same base name.
+   As a result, the :option:`--restore-session` option cannot be used to restore dynamically generated tests.
+2. Since these tests are generated after the test selection phase, the :option:`--ci-generate` option cannot be used to generate a child pipeline, as the child pipeline uses the :option:`-n` option to select the tests for running.
+
+
+.. option:: --distribute[=NODESTATE]
+
+   Distribute the selected tests on all the nodes in state ``NODESTATE`` in their respective valid partitions.
+
+   ReFrame will parameterize and run the tests on the selected nodes.
+   Effectively, it will dynamically create new tests that inherit from the original tests and add a new parameter named ``$nid`` which contains the list of nodes that the test must run on.
+   The new tests are named with the following pattern  ``{orig_test_basename}_{partition_fullname}``.
+
+   When determining the list of nodes to distribute the selected tests, ReFrame will take into account any job options passed through the :option:`-J` option.
+
+   You can optionally specify the state of the nodes to consider when distributing the test through the ``NODESTATE`` argument:
+
+   - ``all``: Tests will run on all the nodes of their respective valid partitions regardless of the nodes' state.
+   - ``idle``: Tests will run on all *idle* nodes of their respective valid partitions.
+   - ``NODESTATE``: Tests will run on all the nodes in state ``NODESTATE`` of their respective valid partitions.
+     If ``NODESTATE`` is not specified, ``idle`` will be assumed.
+
+   The state of the nodes will be determined once, before beginning the
+   execution of the tests, so it might be different at the time the tests are actually submitted.
+
+   .. note::
+      Currently, only single-node jobs can be distributed and only local or the Slurm-based backends support this feature.
+
+   .. note::
+      Distributing tests with dependencies is not supported, but you can distribute tests that use fixtures.
+
+
+   .. versionadded:: 3.11.0
+
+
+.. option:: -P, --parameterize=[TEST.]VAR=VAL0,VAL1,...
+
+   Parameterize a test on an existing variable.
+
+   This option will create a new test with a parameter named ``$VAR`` with the values given in the comma-separated list ``VAL0,VAL1,...``.
+   The values will be converted based on the type of the target variable ``VAR``.
+   The ``TEST.`` prefix will only parameterize the variable ``VAR`` of test ``TEST``.
+
+   The :option:`-P` can be specified multiple times in order to parameterize multiple variables.
+
+   .. note::
+
+      Conversely to the :option:`-S` option that can set a variable in an arbitrarily nested fixture,
+      the :option:`-P` option can only parameterize the leaf test:
+      it cannot be used to parameterize a fixture of the test.
+
+   .. note::
+
+      The :option:`-P` option supports only tests that use fixtures.
+      Tests that use raw dependencies are not supported.
+
+   .. versionadded:: 4.3
+
+.. option:: --repeat=N
+
+   Repeat the selected tests ``N`` times.
+   This option can be used in conjunction with the :option:`--distribute` option in which case the selected tests will be repeated multiple times and distributed on individual nodes of the system's partitions.
+
+   .. note::
+      Repeating tests with dependencies is not supported, but you can repeat tests that use fixtures.
+
+   .. versionadded:: 3.12.0
 
 
 ---------------------
