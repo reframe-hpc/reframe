@@ -367,6 +367,13 @@ class ModulesSystem:
         '''The version of this module system.'''
         return self._backend.version()
 
+    @property
+    def emit_extra_module_paths(self):
+        '''Emit extra module paths.'''
+        if hasattr(self._backend, '_extra_module_paths'):
+            return self._backend._emit_extra_module_paths()
+        return []
+
     def unload_all(self):
         '''Unload all loaded modules.'''
         return self._backend.unload_all()
@@ -624,6 +631,7 @@ class TModImpl(ModulesSystemImpl):
         if re.search(r'Unknown shell type', completed.stderr):
             raise ConfigError(
                 'Python is not supported by this TMod installation')
+        self._extra_module_paths = []
 
     def name(self):
         return 'tmod'
@@ -691,10 +699,12 @@ class TModImpl(ModulesSystemImpl):
 
     def searchpath_add(self, *dirs):
         if dirs:
+            self._extra_module_paths += [('+', mp) for mp in dirs]
             self.execute('use', *dirs)
 
     def searchpath_remove(self, *dirs):
         if dirs:
+            self._extra_module_paths += [('-', mp) for mp in dirs]
             self.execute('unuse', *dirs)
 
     def emit_load_instr(self, module):
@@ -710,6 +720,16 @@ class TModImpl(ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return [f'module unload {module}']
+
+    def _emit_extra_module_paths(self):
+        cmds = []
+        for op,mp in self._extra_module_paths:
+            if op == '+':
+                cmds.append(f'module use {mp}')
+            elif op == '-':
+                cmds.append(f'module unuse {mp}')
+
+        return cmds
 
 
 class TMod31Impl(TModImpl):
@@ -820,7 +840,6 @@ class TMod4Impl(TModImpl):
                 (version, self.MIN_VERSION))
 
         self._version = version
-        self._extra_module_paths = []
 
     def name(self):
         return 'tmod4'
@@ -898,18 +917,6 @@ class TMod4Impl(TModImpl):
             return []
 
         return super().emit_unload_instr(module)
-
-    def searchpath_add(self, *dirs):
-        if dirs:
-            self._extra_module_paths += [('+', mp) for mp in dirs]
-
-        super().searchpath_add(*dirs)
-
-    def searchpath_remove(self, *dirs):
-        if dirs:
-            self._extra_module_paths += [('-', mp) for mp in dirs]
-
-        super().searchpath_remove(*dirs)
 
 
 class LModImpl(TMod4Impl):

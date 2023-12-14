@@ -241,6 +241,7 @@ def loadenv(*environs):
     modules_system = runtime().modules_system
     env_snapshot = snapshot()
     commands = []
+    commands += modules_system.emit_extra_module_paths
     for env in environs:
         for cmd in env.prepare_cmds:
             commands.append(cmd)
