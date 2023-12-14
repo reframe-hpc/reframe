@@ -13,7 +13,8 @@ import os
 class Simple(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
-    executable = '/bin/true'
+    executable = 'true'
+    sanity_patterns = sn.assert_true(1)
 
 
 class MyFixture(rfm.RunOnlyRegressionTest):
@@ -30,7 +31,7 @@ class Complex(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
     f = fixture(MyFixture, scope='session')
-    executable = '/bin/true'
+    executable = 'true'
 
     @sanity_function
     def inspect_fixture(self):
