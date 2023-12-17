@@ -1183,7 +1183,6 @@ def test_overriden_hook_exec_order():
 
 
 def test_pinned_hooks():
-    @test_util.custom_prefix('unittests/resources/checks')
     class X(rfm.RunOnlyRegressionTest):
         @run_before('run', always_last=True)
         def foo(self):
@@ -1207,7 +1206,27 @@ def test_pinned_hooks():
 
 
 def test_pinned_hooks_multiple_last():
-    @test_util.custom_prefix('unittests/resources/checks')
+    class X(rfm.RunOnlyRegressionTest):
+        @run_before('run', always_last=True)
+        def hook_a(self): pass
+
+        @run_before('run')
+        def hook_b(self): pass
+
+    class Y(X):
+        @run_before('run', always_last=True)
+        def hook_c(self): pass
+
+        @run_before('run')
+        def hook_d(self): pass
+
+    test = Y()
+    assert test.pipeline_hooks() == {
+        'pre_run': [X.hook_b, Y.hook_d, Y.hook_c, X.hook_a]
+    }
+
+
+def test_pinned_hooks_multiple_last_inherited():
     class X(rfm.RunOnlyRegressionTest):
         @run_before('run', always_last=True)
         def foo(self):
@@ -1218,23 +1237,8 @@ def test_pinned_hooks_multiple_last():
         def bar(self):
             pass
 
-    with pytest.raises(ReframeSyntaxError):
-        test = Y()
-
-
-def test_pinned_hooks_multiple_last_inherited():
-    @test_util.custom_prefix('unittests/resources/checks')
-    class X(rfm.RunOnlyRegressionTest):
-        @run_before('run', always_last=True)
-        def foo(self):
-            pass
-
-        @run_before('run', always_last=True)
-        def bar(self):
-            pass
-
-    with pytest.raises(ReframeSyntaxError):
-        test = X()
+    test = Y()
+    assert test.pipeline_hooks() == {'pre_run': [Y.bar, X.foo]}
 
 
 def test_disabled_hooks(HelloTest, local_exec_ctx):
