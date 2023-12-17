@@ -1208,17 +1208,21 @@ def test_pinned_hooks():
 def test_pinned_hooks_multiple_last():
     class X(rfm.RunOnlyRegressionTest):
         @run_before('run', always_last=True)
-        def hook_a(self): pass
+        def hook_a(self):
+            pass
 
         @run_before('run')
-        def hook_b(self): pass
+        def hook_b(self):
+            pass
 
     class Y(X):
         @run_before('run', always_last=True)
-        def hook_c(self): pass
+        def hook_c(self):
+            pass
 
         @run_before('run')
-        def hook_d(self): pass
+        def hook_d(self):
+            pass
 
     test = Y()
     assert test.pipeline_hooks() == {
