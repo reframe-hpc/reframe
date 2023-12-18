@@ -112,7 +112,7 @@ the post-init hook will execute *right after* the test is initialized.
 The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
 
 Pipeline hooks are normally executed in reverse MRO order, i.e., the hooks of the least specialized class will be executed first.
-In the following example, :func:`BaseTest.x` will execute before :func:`DerivedTest.y`:
+In the following exampel, :func:`BaseTest.x` will execute before :func:`DerivedTest.y`:
 
 .. code-block:: python
 
@@ -173,6 +173,12 @@ the run hooks of :class:`Y` will be executed as follows:
              # Access the stage directory
              with osext.change_dir(self.stagedir):
                  ...
+
+.. note::
+   In versions prior to 4.3.4, overriding a pipeline hook in a subclass would re-attach it from scratch in the stage, therefore changing its execution order relative to other hooks of the superclass.
+   This is fixed in versions >= 4.3.4 where the execution order of the hook is not changed.
+   However, the fix may break existing workaround code that used to call explicitly the base class' hook from the derived one.
+   Check issue `#3012 <https://github.com/reframe-hpc/reframe/issues/3012>`__ for details on how to properly address this.
 
 .. warning::
    .. versionchanged:: 3.7.0
