@@ -1066,6 +1066,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_job_completion_time_unix)s``, The completion time of the associated run job (see :attr:`~reframe.core.schedulers.Job.completion_time`).
       ``%(check_job_exitcode)s``, The exit code of the associated run job.
       ``%(check_job_nodelist)s``, The list of nodes that the associated run job has run on.
+      ``%(check_job_submit_time)s``, The submission time of the associated run job (see :attr:`~reframe.core.schedulers.Job.submit_time`).
       ``%(check_jobid)s``, The ID of the associated run job.
       ``%(check_keep_files)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.keep_files` attribute.
       ``%(check_local)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.local` attribute.

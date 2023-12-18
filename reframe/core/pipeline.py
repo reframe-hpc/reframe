@@ -1497,6 +1497,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self.job:
             return self.job.jobid
 
+    @loggable_as('job_submit_time')
+    @property
+    def _job_submit_time(self):
+        if self.job:
+            return self.job.submit_time
+
     @loggable_as('job_completion_time_unix')
     @property
     def _job_completion_time(self):
