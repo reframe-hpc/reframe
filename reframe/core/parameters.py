@@ -121,7 +121,8 @@ class TestParam:
 
     :param loggable: Mark this parameter as loggable. If :obj:`True`, this
         parameter will become a log record attribute under the name
-        ``check_NAME``, where ``NAME`` is the name of the parameter.
+        ``check_NAME``, where ``NAME`` is the name of the parameter (default:
+        :obj:`True`)
 
     :returns: A new test parameter.
 
@@ -130,10 +131,14 @@ class TestParam:
 
     .. versionadded:: 3.11.0
        The ``loggable`` argument is added.
+
+    .. versionchanged:: 4.5
+       Parameters are now loggable by default.
+
     '''
 
     def __init__(self, values=None, inherit_params=False,
-                 filter_params=None, fmt=None, loggable=False):
+                 filter_params=None, fmt=None, loggable=True):
         if values is None:
             values = []
 
