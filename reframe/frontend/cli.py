@@ -228,6 +228,9 @@ def main():
     env_options = argparser.add_argument_group(
         'Options controlling the ReFrame environment'
     )
+    testgen_options = argparser.add_argument_group(
+        'Options for generating tests dynamically'
+    )
     misc_options = argparser.add_argument_group('Miscellaneous options')
 
     # Output directory options
@@ -400,12 +403,6 @@ def main():
         default=[], help='Disable a pipeline hook for this run'
     )
     run_options.add_argument(
-        '--distribute', action='store', metavar='{all|STATE}',
-        nargs='?', const='idle',
-        help=('Distribute the selected single-node jobs on every node that'
-              'is in STATE (default: "idle"')
-    )
-    run_options.add_argument(
         '--duration', action='store', metavar='TIMEOUT',
         help='Run the test session repeatedly for the specified duration'
     )
@@ -440,14 +437,6 @@ def main():
     )
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use'
-    )
-    run_options.add_argument(
-        '-P', '--parameterize', action='append', metavar='VAR:VAL0,VAL1,...',
-        default=[], help='Parameterize a test on a set of variables'
-    )
-    run_options.add_argument(
-        '--repeat', action='store', metavar='N',
-        help='Repeat selected tests N times'
     )
     run_options.add_argument(
         '--reruns', action='store', metavar='N', default=0,
@@ -520,6 +509,22 @@ def main():
         dest='unload_modules', default=[],
         help='Unload module MOD before running any regression check',
         envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
+    )
+
+    # Test generation options
+    testgen_options.add_argument(
+        '--distribute', action='store', metavar='{all|STATE}',
+        nargs='?', const='idle',
+        help=('Distribute the selected single-node jobs on every node that'
+              'is in STATE (default: "idle"')
+    )
+    testgen_options.add_argument(
+        '-P', '--parameterize', action='append', metavar='VAR:VAL0,VAL1,...',
+        default=[], help='Parameterize a test on a set of variables'
+    )
+    testgen_options.add_argument(
+        '--repeat', action='store', metavar='N',
+        help='Repeat selected tests N times'
     )
 
     # Miscellaneous options

@@ -23,18 +23,16 @@ from reframe.core.schedulers import Job
 @pytest.fixture
 def fake_check():
     class _FakeCheck(rfm.RegressionTest):
-        param = parameter(range(3), loggable=True, fmt=lambda x: 10*x)
-        custom = variable(str, value='hello extras', loggable=True)
-        custom2 = variable(alias=custom)
-        custom_list = variable(list,
-                               value=['custom', 3.0, ['hello', 'world']],
-                               loggable=True)
-        custom_dict = variable(dict, value={'a': 1, 'b': 2}, loggable=True)
+        param = parameter(range(3), fmt=lambda x: 10*x)
+        custom = variable(str, value='hello extras')
+        custom2 = variable(alias=custom, loggable=False)
+        custom_list = variable(list, value=['custom', 3.0, ['hello', 'world']])
+        custom_dict = variable(dict, value={'a': 1, 'b': 2})
 
         # x is a variable that is loggable, but is left undefined. We want to
         # make sure that logging does not crash and simply reports is as
         # undefined
-        x = variable(str, loggable=True)
+        x = variable(str)
 
     # A bit hacky, but we don't want to run a full test every time
     test = _FakeCheck(variant_num=1)

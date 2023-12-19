@@ -90,7 +90,7 @@ def distribute_tests(testcases, node_map):
 
     def _rfm_pin_build_nodes(obj):
         pin_nodes = getattr(obj, '$nid')
-        if not obj.local and not obj.build_locally:
+        if obj.build_job and not obj.local and not obj.build_locally:
             obj.build_job.pin_nodes = pin_nodes
 
     def _make_dist_test(testcase):
