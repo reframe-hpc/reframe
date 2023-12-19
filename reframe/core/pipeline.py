@@ -231,8 +231,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. versionchanged:: 3.11.0
     #:    Extend syntax to support features and key/value pairs.
-    valid_prog_environs = variable(typ.List[typ.Str[_VALID_ENV_SYNTAX]],
-                                   loggable=True)
+    valid_prog_environs = variable(typ.List[typ.Str[_VALID_ENV_SYNTAX]])
 
     #: List of systems or system features or system properties required by this
     #: test.
@@ -295,8 +294,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:  .. versionchanged:: 3.11.0
     #:     Extend syntax to support features and key/value pairs.
-    valid_systems = variable(typ.List[typ.Str[_VALID_SYS_SYNTAX]],
-                             loggable=True)
+    valid_systems = variable(typ.List[typ.Str[_VALID_SYS_SYNTAX]])
 
     #: A detailed description of the test.
     #:
@@ -323,7 +321,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    sourcepath = variable(str, value='', loggable=True)
+    sourcepath = variable(str, value='')
 
     #: The directory containing the test's resources.
     #:
@@ -353,7 +351,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        Default value is now conditionally set to either ``'src'`` or
     #:        :class:`None`.
-    sourcesdir = variable(str, type(None), value='src', loggable=True)
+    sourcesdir = variable(str, type(None), value='src')
 
     #: .. versionadded:: 2.14
     #:
@@ -370,7 +368,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`str` or :class:`reframe.core.buildsystems.BuildSystem`.
     #: :default: :class:`None`.
-    build_system = variable(type(None), field=BuildSystemField, value=None)
+    build_system = variable(type(None), field=BuildSystemField, value=None,
+                            loggable=False)
 
     #: .. versionadded:: 3.0
     #:
@@ -382,7 +381,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prebuild_cmds = variable(typ.List[str], value=[], loggable=True)
+    prebuild_cmds = variable(typ.List[str], value=[])
 
     #: .. versionadded:: 3.0
     #:
@@ -394,7 +393,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postbuild_cmds = variable(typ.List[str], value=[], loggable=True)
+    postbuild_cmds = variable(typ.List[str], value=[])
 
     #: The name of the executable to be launched during the run phase.
     #:
@@ -409,13 +408,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.7.3
     #:    Default value changed from ``os.path.join('.', self.unique_name)`` to
     #:    :class:`required`.
-    executable = variable(str, loggable=True)
+    executable = variable(str)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    executable_opts = variable(typ.List[str], value=[], loggable=True)
+    executable_opts = variable(typ.List[str], value=[])
 
     #: .. versionadded:: 2.20
     #:
@@ -455,7 +454,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    This field is now set automatically from the current partition's
     #:    configuration.
     container_platform = variable(field=ContainerPlatformField,
-                                  value=_NoRuntime())
+                                  value=_NoRuntime(), loggable=False)
 
     #: .. versionadded:: 3.0
     #:
@@ -467,7 +466,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prerun_cmds = variable(typ.List[str], value=[], loggable=True)
+    prerun_cmds = variable(typ.List[str], value=[])
 
     #: .. versionadded:: 3.0
     #:
@@ -478,7 +477,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postrun_cmds = variable(typ.List[str], value=[], loggable=True)
+    postrun_cmds = variable(typ.List[str], value=[])
 
     #: List of files to be kept after the test finishes.
     #:
@@ -498,7 +497,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.3
     #:    This field accepts now also file glob patterns.
     #:
-    keep_files = variable(typ.List[str], value=[], loggable=True)
+    keep_files = variable(typ.List[str], value=[])
 
     #: List of files or directories (relative to the :attr:`sourcesdir`) that
     #: will be symlinked in the stage directory and not copied.
@@ -508,7 +507,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    readonly_files = variable(typ.List[str], value=[], loggable=True)
+    readonly_files = variable(typ.List[str], value=[])
 
     #: Set of tags associated with this test.
     #:
@@ -516,7 +515,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`Set[str]`
     #: :default: an empty set
-    tags = variable(typ.Set[str], value=set(), loggable=True)
+    tags = variable(typ.Set[str], value=set())
 
     #: List of people responsible for this test.
     #:
@@ -524,7 +523,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    maintainers = variable(typ.List[str], value=[], loggable=True)
+    maintainers = variable(typ.List[str], value=[])
 
     #: Mark this test as a strict performance test.
     #:
@@ -534,7 +533,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean
     #: :default: :class:`True`
-    strict_check = variable(typ.Bool, value=True, loggable=True)
+    strict_check = variable(typ.Bool, value=True)
 
     #: Number of tasks required by this test.
     #:
@@ -577,7 +576,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:        number of required tasks by the test.
     #:     .. versionchanged:: 4.1
     #:        Allow :attr:`num_tasks` to be :obj:`None`.
-    num_tasks = variable(int, type(None), value=1, loggable=True)
+    num_tasks = variable(int, type(None), value=1)
 
     #: Number of tasks per node required by this test.
     #:
@@ -585,7 +584,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_node = variable(int, type(None), value=None, loggable=True)
+    num_tasks_per_node = variable(int, type(None), value=None)
 
     #: Number of GPUs per node required by this test.
     #: This attribute is translated internally to the ``_rfm_gpu`` resource.
@@ -597,7 +596,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. versionchanged:: 4.0.0
     #:    The default value changed to :const:`None`.
-    num_gpus_per_node = variable(int, type(None), value=None, loggable=True)
+    num_gpus_per_node = variable(int, type(None), value=None)
 
     #: Number of CPUs per task required by this test.
     #:
@@ -605,7 +604,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_cpus_per_task = variable(int, type(None), value=None, loggable=True)
+    num_cpus_per_task = variable(int, type(None), value=None)
 
     #: Number of tasks per core required by this test.
     #:
@@ -613,7 +612,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core = variable(int, type(None), value=None, loggable=True)
+    num_tasks_per_core = variable(int, type(None), value=None)
 
     #: Number of tasks per socket required by this test.
     #:
@@ -621,7 +620,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_socket = variable(int, type(None), value=None, loggable=True)
+    num_tasks_per_socket = variable(int, type(None), value=None)
 
     #: Specify whether this tests needs simultaneous multithreading enabled.
     #:
@@ -629,8 +628,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean or :class:`None`
     #: :default: :class:`None`
-    use_multithreading = variable(
-        typ.Bool, type(None), value=None, loggable=True)
+    use_multithreading = variable(typ.Bool, type(None), value=None)
 
     #: .. versionadded:: 3.0
     #:
@@ -641,19 +639,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: :class:`None`
     max_pending_time = variable(type(None), typ.Duration, value=None,
-                                loggable=True, allow_implicit=True)
+                                allow_implicit=True)
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    exclusive_access = variable(typ.Bool, value=False, loggable=True)
+    exclusive_access = variable(typ.Bool, value=False)
 
     #: Always execute this test locally.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    local = variable(typ.Bool, value=False, loggable=True)
+    local = variable(typ.Bool, value=False)
 
     #: The set of reference values for this test.
     #:
@@ -716,7 +714,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable],
         typ.Dict[str, typ.Dict[str, typ.Tuple[~Deferrable, ~Deferrable,
                                               ~Deferrable, ~Deferrable]]],
-        field=fields.ScopedDictField, value={}
+        field=fields.ScopedDictField, value={}, loggable=False
     )
 
     #: Require that a reference is defined for each system that this test is
@@ -729,7 +727,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :default: :const:`False`
     #:
     #: .. versionadded:: 4.0.0
-    require_reference = variable(typ.Bool, value=False)
+    require_reference = variable(typ.Bool, value=False, loggable=False)
 
     #:
     #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
@@ -756,7 +754,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:    .. versionchanged:: 3.6
     #:       The default value has changed from ``None`` to ``required``.
-    sanity_patterns = variable(_DeferredExpression)
+    sanity_patterns = variable(_DeferredExpression, loggable=False)
 
     #: Patterns for verifying the performance of this test.
     #:
@@ -775,7 +773,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    <reframe.core.builtins.performance_function>` builtin or the
     #:    :attr:`perf_variables`, as :attr:`perf_patterns` will likely be
     #:    deprecated in the future.
-    perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None))
+    perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None),
+                             loggable=False)
 
     #: The performance variables associated with the test.
     #:
@@ -811,7 +810,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. versionadded:: 3.8.0
     perf_variables = variable(typ.Dict[str, _DeferredPerformanceExpression],
-                              value={})
+                              value={}, loggable=False)
 
     #: List of modules to be loaded before running this test.
     #:
@@ -820,7 +819,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: :class:`List[str]` or :class:`Dict[str, object]`
     #: :default: ``[]``
     modules = variable(typ.List[str], typ.List[typ.Dict[str, object]],
-                       value=[], loggable=True)
+                       value=[])
 
     #: Environment variables to be set before running this test.
     #:
@@ -832,7 +831,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. versionadded:: 4.0.0
     env_vars = variable(typ.Dict[str, str],
-                        typ.Dict[str, object], value={}, loggable=True)
+                        typ.Dict[str, object], value={})
     # NOTE: We still keep the original type, just to allow setting this
     # variable from the command line, because otherwise, ReFrame will not know
     # how to convert a value to an arbitrary object.
@@ -843,7 +842,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: .. deprecated:: 4.0.0
     #:    Please use :attr:`env_vars` instead.
-    variables = deprecate(variable(alias=env_vars, loggable=True),
+    variables = deprecate(variable(alias=env_vars),
                           f"the use of 'variables' is deprecated; "
                           f"please use 'env_vars' instead")
 
@@ -875,7 +874,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       The default value is now :class:`None` and it can be set globally
     #:       per partition via the configuration.
     time_limit = variable(type(None), typ.Duration, value=None,
-                          loggable=True, allow_implicit=True)
+                          allow_implicit=True)
 
     #: .. versionadded:: 3.5.1
     #:
@@ -886,7 +885,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: :type: :class:`str` or :class:`float` or :class:`int`
     #: :default: :class:`None`
     build_time_limit = variable(type(None), typ.Duration, value=None,
-                                loggable=True, allow_implicit=True)
+                                allow_implicit=True)
 
     #: .. versionadded:: 2.8
     #:
@@ -959,7 +958,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       A new more powerful syntax was introduced
     #:       that allows also custom job script directive prefixes.
     extra_resources = variable(typ.Dict[str, typ.Dict[str, object]],
-                               value={}, loggable=True)
+                               value={})
 
     #: .. versionadded:: 3.3
     #:
@@ -975,7 +974,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: boolean
     #: :default: :class:`True`
-    build_locally = variable(typ.Bool, value=True, loggable=True)
+    build_locally = variable(typ.Bool, value=True)
 
     #: .. versionadded:: 4.2
     #:
@@ -998,12 +997,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #: :type: :class:`dict`
     #: :default: ``{}``
-    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object], value={})
+    ci_extras = variable(typ.Dict[typ.Str['gitlab'], object], value={},
+                         loggable=False)
 
     # Special variables
 
     #: Dry-run mode
-    _rfm_dry_run = variable(typ.Bool, value=False)
+    _rfm_dry_run = variable(typ.Bool, value=False, loggable=False)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
