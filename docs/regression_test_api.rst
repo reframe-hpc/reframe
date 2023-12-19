@@ -111,10 +111,10 @@ So although a "post-init" and a "pre-setup" hook will both run *after* a test ha
 the post-init hook will execute *right after* the test is initialized.
 The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
 
-Pipeline hooks are executed in reverse MRO order, i.e., the hooks of the least specialized class will be executed first.
+Pipeline hooks are normally executed in reverse MRO order, i.e., the hooks of the least specialized class will be executed first.
 In the following example, :func:`BaseTest.x` will execute before :func:`DerivedTest.y`:
 
-.. code:: python
+.. code-block:: python
 
    class BaseTest(rfm.RegressionTest):
        @run_after('setup')
@@ -125,6 +125,34 @@ In the following example, :func:`BaseTest.x` will execute before :func:`DerivedT
        @run_after('setup')
        def y(self):
            '''Hook y'''
+
+
+This order can be altered using the ``always_last`` argument of the :func:`@run_before <reframe.core.builtins.run_before>` and :func:`@run_after <reframe.core.builtins.run_after>` decorators.
+In this case, all hooks of the same stage defined with ``always_last=True`` will be executed in MRO order at the end of the stage's hook chain.
+For example, given the following hierarchy:
+
+ .. code-block:: python
+
+    class X(rfm.RunOnlyRegressionTest):
+        @run_before('run', always_last=True)
+        def hook_a(self): pass
+
+        @run_before('run')
+        def hook_b(self): pass
+
+    class Y(X):
+        @run_before('run', always_last=True)
+        def hook_c(self): pass
+
+        @run_before('run')
+        def hook_d(self): pass
+
+
+the run hooks of :class:`Y` will be executed as follows:
+
+.. code-block:: console
+
+   X.hook_b, Y.hook_d, Y.hook_c, X.hook_a
 
 
 .. seealso::
@@ -145,6 +173,12 @@ In the following example, :func:`BaseTest.x` will execute before :func:`DerivedT
              # Access the stage directory
              with osext.change_dir(self.stagedir):
                  ...
+
+.. note::
+   In versions prior to 4.3.4, overriding a pipeline hook in a subclass would re-attach it from scratch in the stage, therefore changing its execution order relative to other hooks of the superclass.
+   This is fixed in versions >= 4.3.4 where the execution order of the hook is not changed.
+   However, the fix may break existing workaround code that used to call explicitly the base class' hook from the derived one.
+   Check issue `#3012 <https://github.com/reframe-hpc/reframe/issues/3012>`__ for details on how to properly address this.
 
 .. warning::
    .. versionchanged:: 3.7.0
