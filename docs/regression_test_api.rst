@@ -112,7 +112,7 @@ the post-init hook will execute *right after* the test is initialized.
 The framework will then continue with other activities and it will execute the pre-setup hook *just before* it schedules the test for executing its setup stage.
 
 Pipeline hooks are normally executed in reverse MRO order, i.e., the hooks of the least specialized class will be executed first.
-In the following exampel, :func:`BaseTest.x` will execute before :func:`DerivedTest.y`:
+In the following example, :func:`BaseTest.x` will execute before :func:`DerivedTest.y`:
 
 .. code-block:: python
 
