@@ -1686,16 +1686,15 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         elif job_type == 'run':
             script_name = 'rfm_job.sh'
 
+        sched_bind_options = self._current_environ.sched_bind_options
+        sched_options = sched_bind_options + job_opts.get('sched_options', [])
         return Job.create(scheduler,
                           launcher,
                           name=f'rfm_{self.short_name}',
                           script_filename=script_name,
                           workdir=self._stagedir,
-                          sched_access=(
-                              list(self._current_partition.access) +
-                              list(self._current_environ.sched_bind_options)
-                          ),
-                          **job_opts)
+                          sched_access=self._current_partition.access,
+                          sched_options=sched_options)
 
     def _setup_build_job(self, **job_opts):
         self._build_job = self._create_job(

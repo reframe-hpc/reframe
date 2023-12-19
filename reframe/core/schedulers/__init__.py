@@ -325,7 +325,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
                  stdout=None,
                  stderr=None,
                  sched_flex_alloc_nodes=None,
-                 sched_access=[],
+                 sched_access=None,
                  sched_options=None):
 
         self._cli_options = list(sched_options) if sched_options else []
@@ -339,7 +339,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
 
         # Backend scheduler related information
         self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
-        self._sched_access = sched_access
+        self._sched_access = list(sched_access) if sched_access else []
 
         # Live job information; to be filled during job's lifetime by the
         # scheduler
