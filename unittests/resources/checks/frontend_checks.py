@@ -25,7 +25,7 @@ class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
 
     # Add two required variables that may affect the final run report
     x = variable(int)
-    xlog = variable(int, loggable=True)
+    xlog = variable(int)
 
     @run_after('setup')
     def setx(self):
