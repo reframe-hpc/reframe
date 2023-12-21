@@ -326,7 +326,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
                  stderr=None,
                  sched_flex_alloc_nodes=None,
                  sched_access=[],
-                 sched_options=None):
+                 sched_options=None,
+                 clean_up_stage=False):
 
         self._cli_options = list(sched_options) if sched_options else []
         self._name = name
@@ -353,6 +354,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         # Job errors discovered while polling; if not None this will be raised
         # in finished()
         self._exception = None
+
+        self._clean_up_stage = clean_up_stage
 
     @classmethod
     def create(cls, scheduler, launcher, *args, **kwargs):
