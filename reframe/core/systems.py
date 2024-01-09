@@ -583,7 +583,7 @@ class System(jsonext.JSONSerializable):
             hostnames=site_config.get('systems/0/hostnames'),
             modules_system=site_config.get('systems/0/modules_system'),
             modules_system_validate=site_config.get(
-                'general/resolve_module_conflicts'
+                'general/0/resolve_module_conflicts'
             ),
             preload_env=Environment(
                 name=f'__rfm_env_{sysname}',
