@@ -106,7 +106,7 @@ else
 fi
 
 if ! type "curl" > /dev/null 2>&1; then
-    echo "curl is missing; install curl and try again"
+    echo -e "could not find \`curl': please install curl and try again"
     exit 1
 fi
 
