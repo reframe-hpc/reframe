@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -85,7 +85,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'ReFrame'
-copyright = '2016-2023, CSCS/ETH Zurich, ReFrame Project Developers'
+copyright = '2016-2024, CSCS/ETH Zurich, ReFrame Project Developers'
 author = 'ReFrame Project Developers'
 
 # The version info for the project you're documenting, acts as replacement for
