@@ -105,6 +105,11 @@ else
     get_pip_url="https://bootstrap.pypa.io/pip/3.6/get-pip.py"
 fi
 
+if ! type "curl" > /dev/null 2>&1; then
+    echo -e "could not find \`curl': please install curl and try again"
+    exit 1
+fi
+
 INFO "curl -s $get_pip_url | $python"
 curl -s $get_pip_url | $python
 
