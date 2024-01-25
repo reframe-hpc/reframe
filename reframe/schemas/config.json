@@ -371,6 +371,7 @@
                     "cc": {"type": "string"},
                     "cxx": {"type": "string"},
                     "ftn": {"type": "string"},
+                    "nvcc": {"type": "string"},
                     "cppflags": {
                         "type": "array",
                         "items": {"type": "string"}

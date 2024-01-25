@@ -538,6 +538,7 @@ class System(jsonext.JSONSerializable):
                     cc=site_config.get(f'environments/@{e}/cc'),
                     cxx=site_config.get(f'environments/@{e}/cxx'),
                     ftn=site_config.get(f'environments/@{e}/ftn'),
+                    nvcc=site_config.get(f'environments/@{e}/nvcc', 'nvcc'),
                     cppflags=site_config.get(f'environments/@{e}/cppflags'),
                     cflags=site_config.get(f'environments/@{e}/cflags'),
                     cxxflags=site_config.get(f'environments/@{e}/cxxflags'),
