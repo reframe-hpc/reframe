@@ -529,6 +529,7 @@
         "environments/cc": "cc",
         "environments/cxx": "CC",
         "environments/ftn": "ftn",
+        "environments/nvcc": "nvcc",
         "environments/cppflags": [],
         "environments/cflags": [],
         "environments/cxxflags": [],

@@ -898,6 +898,16 @@ They are associated with `system partitions <#system-partition-configuration>`__
    A list of linker flags to be used with this environment by default.
 
 
+.. py:attribute:: environments.nvcc
+
+   :required: No
+   :default: ``"nvcc"``
+
+   The NVIDIA CUDA compiler to be used with this environment.
+
+   .. versionadded:: 4.6
+
+
 .. py:attribute:: environments.target_systems
 
    :required: No

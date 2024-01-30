@@ -321,7 +321,7 @@ class ProgEnvironment(Environment):
 
     @property
     def nvcc(self):
-        '''The NVIDIA nvcc compiler of this programming environment.
+        '''The NVIDIA CUDA compiler of this programming environment.
 
         :type: :class:`str`
         '''
