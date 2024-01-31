@@ -219,6 +219,7 @@ class ProgEnvironment(Environment):
     _cc = fields.TypedField(str)
     _cxx = fields.TypedField(str)
     _ftn = fields.TypedField(str)
+    _nvcc = fields.TypedField(str)
     _cppflags = fields.TypedField(typ.List[str])
     _cflags = fields.TypedField(typ.List[str])
     _cxxflags = fields.TypedField(typ.List[str])
@@ -320,4 +321,8 @@ class ProgEnvironment(Environment):
 
     @property
     def nvcc(self):
+        '''The NVIDIA CUDA compiler of this programming environment.
+
+        :type: :class:`str`
+        '''
         return self._nvcc

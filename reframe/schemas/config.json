@@ -371,6 +371,7 @@
                     "cc": {"type": "string"},
                     "cxx": {"type": "string"},
                     "ftn": {"type": "string"},
+                    "nvcc": {"type": "string"},
                     "cppflags": {
                         "type": "array",
                         "items": {"type": "string"}
@@ -528,6 +529,7 @@
         "environments/cc": "cc",
         "environments/cxx": "CC",
         "environments/ftn": "ftn",
+        "environments/nvcc": "nvcc",
         "environments/cppflags": [],
         "environments/cflags": [],
         "environments/cxxflags": [],
