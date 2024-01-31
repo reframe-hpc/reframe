@@ -131,6 +131,8 @@ def _is_part_local(part):
 
 
 def _remote_detect(part):
+    use_login_shell = runtime.runtime().get_option('general/0/use_login_shell')
+
     def _emit_script_for_source(job, env):
         commands = [
             './bootstrap.sh',
@@ -138,7 +140,7 @@ def _remote_detect(part):
         ]
         job.prepare(
             commands, env, trap_errors=True,
-            login=runtime.runtime().get_option('general/0/use_login_shell')
+            login=use_login_shell
         )
 
     def _emit_script_for_pip(job, env):
@@ -152,7 +154,7 @@ def _remote_detect(part):
         ]
         job.prepare(
             commands, env, trap_errors=True,
-            login=runtime.runtime().get_option('general/0/use_login_shell')
+            login=use_login_shell
         )
 
     getlogger().info(
