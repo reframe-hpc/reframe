@@ -131,12 +131,14 @@ def _is_part_local(part):
 
 
 def _remote_detect(part):
+    use_login_shell = runtime.runtime().get_option('general/0/use_login_shell')
+
     def _emit_script_for_source(job, env):
         commands = [
             './bootstrap.sh',
             './bin/reframe --detect-host-topology=topo.json'
         ]
-        job.prepare(commands, env, trap_errors=True)
+        job.prepare(commands, env, trap_errors=True, login=use_login_shell)
 
     def _emit_script_for_pip(job, env):
         commands = [
@@ -147,7 +149,7 @@ def _remote_detect(part):
             'reframe --detect-host-topology=topo.json',
             'deactivate'
         ]
-        job.prepare(commands, env, trap_errors=True)
+        job.prepare(commands, env, trap_errors=True, login=use_login_shell)
 
     getlogger().info(
         f'Detecting topology of remote partition {part.fullname!r}: '
