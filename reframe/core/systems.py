@@ -189,6 +189,12 @@ class SystemPartition(jsonext.JSONSerializable):
         self._features = features
         self._time_limit = time_limit
 
+        # Add implicit extras from scheduler and launcher
+        sched_name = self._sched_type.registered_name
+        launcher_name = self._launcher_type.registered_name
+        self._extras.setdefault('scheduler', sched_name)
+        self._extras.setdefault('launcher', launcher_name)
+
     @property
     def access(self):
         '''The scheduler options for accessing this system partition.

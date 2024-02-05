@@ -596,6 +596,7 @@ System Partition Configuration
    :default: ``[]``
 
    User defined features of the partition.
+
    These are accessible through the :attr:`~reframe.core.systems.SystemPartition.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
    The values of this list must be alphanumeric strings starting with a non-digit character and may also contain a ``-``.
 
@@ -608,10 +609,17 @@ System Partition Configuration
    :default: ``{}``
 
    User defined attributes of the partition.
+
    These are accessible through the :attr:`~reframe.core.systems.SystemPartition.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
    The attributes of this object must be alphanumeric strings starting with a non-digit character and their values can be of any type.
 
+   By default, the values of the :attr:`~config.systems.partitions.scheduler` and :attr:`~config.systems.partitions.launcher` of the partition are added to the partition's extras, if not already present.
+
    .. versionadded:: 3.5.0
+
+   .. versionchanged:: 4.6.0
+
+      The default ``scheduler`` and ``launcher`` extras are added.
 
 .. _container-platform-configuration:
 
