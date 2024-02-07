@@ -8,6 +8,7 @@ import pytest
 import shutil
 
 import reframe as rfm
+import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.frontend.loader import RegressionCheckLoader
 
@@ -140,3 +141,16 @@ def test_special_test():
         class TestSpecialDerived(TestSpecial):
             def setup(self, partition, environ, **job_opts):
                 super().setup(partition, environ, **job_opts)
+
+
+def test_relative_import_outside_rfm_prefix(loader, tmp_path):
+    # If a test file resides under the reframe installation prefix, it will be
+    # imported as a hierarchical module. If not, we want to make sure that
+    # reframe will still load its parent modules
+
+    osext.copytree(
+        os.path.abspath('unittests/resources/checks_unlisted/testlib'),
+        tmp_path / 'testlib', dirs_exist_ok=True
+    )
+    tests = loader.load_from_file(str(tmp_path / 'testlib' / 'simple.py'))
+    assert len(tests) == 2

@@ -70,7 +70,7 @@ def _do_import_module_from_file(filename, module_name=None):
     return module
 
 
-def import_module_from_file(filename, force=False):
+def import_module_from_file(filename, force=False, parent=None):
     '''Import module from file.
 
     If the file location refers to a directory, the contained ``__init__.py``
@@ -85,7 +85,14 @@ def import_module_from_file(filename, force=False):
 
     :arg filename: The path to the filename of a Python module.
     :arg force: Force reload of module in case it is already loaded.
+    :arg parent: The name of the parent module of the one that will be loaded.
+        This will essentially prefix the module of the newly loaded module with
+        ``parent`` so that Python would be able to resolve relative imports in
+        the module file.
     :returns: The loaded Python module.
+
+    .. versionchanged:: 4.6
+       The ``parent`` argument is added.
     '''
 
     # Expand and sanitize filename
@@ -103,6 +110,9 @@ def import_module_from_file(filename, force=False):
         # with other modules loaded with a standard `import` or with multiple
         # test files with the same name that reside in different directories.
         module_hash = sha256(filename.encode('utf-8')).hexdigest()[:8]
+        if parent:
+            module_name = f'{parent}.{module_name}'
+
         module_name = f'{module_name}@{module_hash}'
         return _do_import_module_from_file(filename, module_name)
 

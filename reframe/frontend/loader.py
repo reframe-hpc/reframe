@@ -195,8 +195,15 @@ class RegressionCheckLoader:
             dirname = os.path.dirname(filename)
             with osext.change_dir(dirname):
                 with util.temp_sys_path(dirname):
+                    if os.path.exists(os.path.join(dirname, '__init__.py')):
+                        # If the containing directory is a package,
+                        # import it, too.
+                        parent = util.import_module_from_file(dirname).__name__
+                    else:
+                        parent = None
+
                     return self.load_from_module(
-                        util.import_module_from_file(filename, force)
+                        util.import_module_from_file(filename, force, parent)
                     )
         except Exception:
             exc_info = sys.exc_info()
