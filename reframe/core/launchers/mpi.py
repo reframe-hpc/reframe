@@ -33,12 +33,12 @@ class SrunLauncher(JobLauncher):
                 if slurm_version < semver.VersionInfo(22, 5, 0):
                     self.use_cpus_per_task = False
             else:
-                getlogger().warning(
+                getlogger().debug(
                     'could not get version of Slurm, --cpus-per-task will be '
                     'set according to the num_cpus_per_task attribute'
                 )
         except Exception:
-            getlogger().warning(
+            getlogger().debug(
                 'could not get version of Slurm, --cpus-per-task will be set '
                 'according to the num_cpus_per_task attribute'
             )
