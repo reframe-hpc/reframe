@@ -27,7 +27,7 @@ Test discovery and test loading
 This is the very first phase of the frontend.
 ReFrame will search for tests in its *check search path* and will load them.
 When ReFrame loads a test, it actually *instantiates* it, meaning that it will call its :func:`__init__` method unconditionally whether this test is meant to run on the selected system or not.
-This is something that writers of regression tests should bear in mind.
+This is something that test developers should bear in mind.
 
 .. option:: -c, --checkpath=PATH
 
@@ -44,6 +44,14 @@ This is something that writers of regression tests should bear in mind.
    Search for test files recursively in directories found in the check search path.
 
    This option can also be set using the :envvar:`RFM_CHECK_SEARCH_RECURSIVE` environment variable or the :attr:`~config.general.check_search_recursive` general configuration parameter.
+
+.. note::
+   ReFrame will fail to load a test with a relative import unless *any* of the following holds true:
+
+   1. The test is located under ReFrame's installation prefix.
+   2. The parent directory of the test contains an ``__init__.py`` file.
+
+   For versions prior to 4.6, relative imports are supported only for case (1).
 
 
 .. _test-filtering:
