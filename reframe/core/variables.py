@@ -202,7 +202,7 @@ class TestVar:
     # to denote the "private" fields.
 
     __slots__ = ('_p_default_value', '_p_field',
-                 '_loggable', '_name', '_target', '_refs')
+                 '_loggable', '_name', '_target', '_refs', '_combine_fn')
 
     __mutable_props = ('_default_value',)
 
@@ -224,6 +224,7 @@ class TestVar:
         else:
             self._p_default_value = kwargs.pop('value', Undefined)
 
+        self._combine_fn = kwargs.pop('combine', None)
         self._loggable = kwargs.pop('loggable', True)
         if not issubclass(field_type, fields.Field):
             raise TypeError(
@@ -248,6 +249,7 @@ class TestVar:
                                               kind, from_version)
         ret._p_default_value = var._default_value
         ret._loggable = var._loggable
+        ret._combine_fn = var._combine_fn
         ret._target = var._target
         ret._refs = var._refs
         if var.is_alias():
@@ -281,6 +283,9 @@ class TestVar:
     def is_loggable(self):
         return self._loggable
 
+    def is_combinable(self):
+        return self._combine_fn is not None
+
     def is_defined(self):
         return self._default_value is not Undefined
 
@@ -293,6 +298,10 @@ class TestVar:
     def define(self, value):
         self._warn_deprecation(DEPRECATE_WR)
         self._default_value = value
+
+    def update_from(self, other):
+        self._default_value = self._combine_fn(self._default_value,
+                                               other._default_value)
 
     @property
     def _default_value(self):
@@ -781,12 +790,16 @@ class VarSpace(namespaces.Namespace):
             # Make doubly declared vars illegal. Note that this will be
             # triggered when inheriting from multiple RegressionTest classes.
             if key in self.vars:
-                raise ReframeSyntaxError(
-                    f'variable {key!r} is declared in more than one of the '
-                    f'parent classes of class {cls.__qualname__!r}'
-                )
-
-            self.vars[key] = copy.deepcopy(var)
+                this_var = self.vars[key]
+                if this_var.is_combinable():
+                    this_var.update_from(var)
+                else:
+                    raise ReframeSyntaxError(
+                        f'variable {key!r} is declared in more than one of '
+                        f'the parent classes of class {cls.__qualname__!r}'
+                    )
+            else:
+                self.vars[key] = copy.deepcopy(var)
 
         # Inherited variables are copied in the current namespace, so we need
         # to update any aliases to point to the current namespace copies

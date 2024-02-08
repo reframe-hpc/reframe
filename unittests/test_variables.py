@@ -622,3 +622,19 @@ def test_inherit_mutable_aliases_deprecated():
     assert y.x == [2]
     with pytest.warns(ReframeDeprecationWarning):
         assert y.y == [2]
+
+def test_combine_base_vars():
+    class Mixin(rfm.RegressionMixin):
+        x = variable(typ.List[int], value=[],
+                     combine=lambda x, y: list(map(max, zip(x, y))))
+
+    class X(Mixin):
+        x = [3, 4]
+
+    class Y(Mixin):
+        x = [10, 1]
+
+    class Z(X, Y):
+        pass
+
+    assert Z.x == [10, 4]
