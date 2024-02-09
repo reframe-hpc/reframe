@@ -623,9 +623,10 @@ def test_inherit_mutable_aliases_deprecated():
     with pytest.warns(ReframeDeprecationWarning):
         assert y.y == [2]
 
+
 class _MergeMixin(rfm.RegressionMixin):
     x = variable(typ.List[int], value=[],
-                    merge_func=lambda x, y: x + y)
+                 merge_func=lambda x, y: x + y)
 
 
 def test_merge_base_vars():

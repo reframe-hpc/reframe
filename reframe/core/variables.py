@@ -318,7 +318,7 @@ class TestVar:
     def update_from(self, other):
         if self.is_defined() and other.is_defined():
             self._default_value = self._merge_fn(self._default_value,
-                                                other._default_value)
+                                                 other._default_value)
         elif not self.is_defined() and other.is_defined():
             self._default_value = other._default_value
         else:
