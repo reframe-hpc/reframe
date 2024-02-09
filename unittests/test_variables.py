@@ -146,11 +146,9 @@ def test_set_var(OneVarTest):
 
 
 def test_var_type(OneVarTest):
-    class MyTest(OneVarTest):
-        foo = 'bananas'
-
     with pytest.raises(TypeError):
-        MyTest()
+        class MyTest(OneVarTest):
+            foo = 'bananas'
 
 
 def test_require_var(OneVarTest):
@@ -358,7 +356,7 @@ def test_var_div_operator():
         v = variable(int, value=4)
         assert (v / 3) == 4/3
         assert (3 / v) == 3/4
-        v /= 2
+        v //= 2
         assert v == 2
 
 

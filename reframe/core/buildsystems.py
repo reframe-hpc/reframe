@@ -981,4 +981,4 @@ class BuildSystemField(fields.TypedField):
             except KeyError:
                 raise ValueError(f'unknown build system: {value}') from None
 
-        super().__set__(obj, value)
+        return super().__set__(obj, value)

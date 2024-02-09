@@ -1607,11 +1607,9 @@ def test_reference_deferrable(dummy_perftest):
     with pytest.raises(TypeError):
         dummy_perftest.reference = {'*': {'value1': (sn.defer(1), -0.1, -0.1)}}
 
-    class T(rfm.RegressionTest):
-        reference = {'*': {'value1': (sn.defer(1), -0.1, -0.1)}}
-
     with pytest.raises(TypeError):
-        T()
+        class T(rfm.RegressionTest):
+            reference = {'*': {'value1': (sn.defer(1), -0.1, -0.1)}}
 
 
 def test_performance_invalid_value(dummytest, sanity_file,
