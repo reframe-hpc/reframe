@@ -1693,7 +1693,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                           workdir=self._stagedir,
                           sched_access=(
                               list(self._current_partition.access) +
-                              list(self._current_environ.sched_bind_options)
+                              list(self._current_partition.sched_bind_options)
                           ),
                           **job_opts)
 
@@ -2038,6 +2038,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             resources_opts += self._current_partition.get_resource(r, **v)
 
         return resources_opts
+
+    # def _map_env_bindings_to_jobopts(self):
+    #     pass
 
     @final
     def compile_complete(self):

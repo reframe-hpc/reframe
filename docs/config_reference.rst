@@ -485,6 +485,26 @@ System Partition Configuration
     The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
+.. py:attribute:: systems.partitions.sched_bind_options
+
+   :required: No
+   :default: ``[]``
+
+   List of scheduler options that are associated with this partition and can utilize the environment properties.
+   These options will be emitted in the job and build script.
+
+   For example, one could define some values in :attr:`~config.environments.extras` and use them in the parrtitions options, when relevant.
+
+   .. code:: python
+
+      'resources': [
+         '--uenv-file={env.extras["uenv_file"]}',
+         '--uenv-mount={env.extras["uenv_mount"]'
+      ]
+
+   .. versionadded:: 4.5.0
+
+
 .. py:attribute:: systems.partitions.environs
 
    :required: No
@@ -832,17 +852,6 @@ They are associated with `system partitions <#system-partition-configuration>`__
    List of shell commands to be emitted before any commands that load the environment.
 
    .. versionadded:: 4.3.0
-
-
-.. py:attribute:: environments.sched_bind_options
-
-   :required: No
-   :default: ``[]``
-
-   List of scheduler options that are associated with this environment.
-   These options will be emitted in the job and build script.
-
-   .. versionadded:: 4.5.0
 
 
 .. py:attribute:: environments.cc

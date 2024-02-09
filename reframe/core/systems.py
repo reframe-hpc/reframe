@@ -167,7 +167,7 @@ class SystemPartition(jsonext.JSONSerializable):
     def __init__(self, *, parent, name, sched_type, launcher_type,
                  descr, access, container_runtime, container_environs,
                  resources, local_env, environs, max_jobs, prepare_cmds,
-                 processor, devices, extras, features, time_limit):
+                 processor, devices, extras, features, time_limit, sched_bind_options):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -188,6 +188,7 @@ class SystemPartition(jsonext.JSONSerializable):
         self._extras = extras
         self._features = features
         self._time_limit = time_limit
+        self._sched_bind_options = sched_bind_options
 
     @property
     def access(self):
@@ -196,6 +197,16 @@ class SystemPartition(jsonext.JSONSerializable):
         :type: :class:`List[str]`
         '''
         return util.SequenceView(self._access)
+
+    @property
+    def sched_bind_options(self):
+        '''The scheduler options associated with this partitions.
+
+        .. versionadded:: 4.5.0
+
+        :type: :class:`List[str]`
+        '''
+        return util.SequenceView(self._sched_bind_options)
 
     @property
     def descr(self):

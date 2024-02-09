@@ -288,6 +288,10 @@
                                     "type": "array",
                                     "items": {"type": "string"}
                                 },
+                                "sched_bind_options": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
                                 "environs": {
                                     "type": "array",
                                     "items": {"type": "string"}
@@ -392,10 +396,6 @@
                         "items": {"type": "string"}
                     },
                     "prepare_cmds": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "sched_bind_options": {
                         "type": "array",
                         "items": {"type": "string"}
                     },
