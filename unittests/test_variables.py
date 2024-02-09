@@ -623,18 +623,58 @@ def test_inherit_mutable_aliases_deprecated():
     with pytest.warns(ReframeDeprecationWarning):
         assert y.y == [2]
 
-def test_combine_base_vars():
-    class Mixin(rfm.RegressionMixin):
-        x = variable(typ.List[int], value=[],
-                     combine=lambda x, y: list(map(max, zip(x, y))))
+class _MergeMixin(rfm.RegressionMixin):
+    x = variable(typ.List[int], value=[],
+                    merge_func=lambda x, y: x + y)
 
-    class X(Mixin):
+
+def test_merge_base_vars():
+    class X(_MergeMixin):
         x = [3, 4]
 
-    class Y(Mixin):
+    class Y(_MergeMixin):
         x = [10, 1]
 
     class Z(X, Y):
         pass
 
-    assert Z.x == [10, 4]
+    assert Z.x == [3, 4, 10, 1]
+
+
+def test_merge_base_vars_undefined_lhs():
+    class X(_MergeMixin):
+        x = required
+
+    class Y(_MergeMixin):
+        x = [10, 1]
+
+    class Z(X, Y):
+        pass
+
+    assert Z.x == [10, 1]
+
+
+def test_merge_base_vars_undefined_rhs():
+    class X(_MergeMixin):
+        x = [3, 4]
+
+    class Y(_MergeMixin):
+        x = required
+
+    class Z(X, Y):
+        pass
+
+    assert Z.x == [3, 4]
+
+
+def test_merge_base_vars_undefined_both():
+    class X(_MergeMixin):
+        x = required
+
+    class Y(_MergeMixin):
+        x = required
+
+    class Z(X, Y):
+        pass
+
+    assert not Z.x.is_defined()

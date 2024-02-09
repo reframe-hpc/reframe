@@ -180,6 +180,22 @@ class TestVar:
         variable will become a log record attribute under the name
         ``check_NAME``, where ``NAME`` is the name of the variable (default
         :obj:`True`).
+    :param merge_func: Enable multiple inheritance for this variable by
+        defining a merge strategy of their default values
+        (default: :obj:`None`).
+
+        This is a function that accepts two arguments of the type of the
+        variable and returns a new value of the same type. The new default
+        value of the variable will be determined as follows:
+
+        .. code-block:: python
+
+           current_value = merge_func(parent_value, current_value)
+
+        If ``current_value`` is undefined and ``parent_value`` is not, then
+        ``current_value = parent_value``. If ``parent_value`` is undefined or
+        both values are undefined, the variable remains intact.
+
     :param `kwargs`: keyword arguments to be forwarded to the constructor of
         the field validator.
     :returns: A new test variable.
@@ -202,7 +218,7 @@ class TestVar:
     # to denote the "private" fields.
 
     __slots__ = ('_p_default_value', '_p_field',
-                 '_loggable', '_name', '_target', '_refs', '_combine_fn')
+                 '_loggable', '_name', '_target', '_refs', '_merge_fn')
 
     __mutable_props = ('_default_value',)
 
@@ -224,7 +240,7 @@ class TestVar:
         else:
             self._p_default_value = kwargs.pop('value', Undefined)
 
-        self._combine_fn = kwargs.pop('combine', None)
+        self._merge_fn = kwargs.pop('merge_func', None)
         self._loggable = kwargs.pop('loggable', True)
         if not issubclass(field_type, fields.Field):
             raise TypeError(
@@ -249,7 +265,7 @@ class TestVar:
                                               kind, from_version)
         ret._p_default_value = var._default_value
         ret._loggable = var._loggable
-        ret._combine_fn = var._combine_fn
+        ret._merge_fn = var._merge_fn
         ret._target = var._target
         ret._refs = var._refs
         if var.is_alias():
@@ -283,8 +299,8 @@ class TestVar:
     def is_loggable(self):
         return self._loggable
 
-    def is_combinable(self):
-        return self._combine_fn is not None
+    def is_mergeable(self):
+        return self._merge_fn is not None
 
     def is_defined(self):
         return self._default_value is not Undefined
@@ -300,8 +316,14 @@ class TestVar:
         self._default_value = value
 
     def update_from(self, other):
-        self._default_value = self._combine_fn(self._default_value,
-                                               other._default_value)
+        if self.is_defined() and other.is_defined():
+            self._default_value = self._merge_fn(self._default_value,
+                                                other._default_value)
+        elif not self.is_defined() and other.is_defined():
+            self._default_value = other._default_value
+        else:
+            '''If other is undefined or both are undefined,
+            we keep our value'''
 
     @property
     def _default_value(self):
@@ -787,16 +809,14 @@ class VarSpace(namespaces.Namespace):
         :param cls: the target class.
         '''
         for key, var in other.items():
-            # Make doubly declared vars illegal. Note that this will be
-            # triggered when inheriting from multiple RegressionTest classes.
             if key in self.vars:
                 this_var = self.vars[key]
-                if this_var.is_combinable():
+                if this_var.is_mergeable():
                     this_var.update_from(var)
                 else:
                     raise ReframeSyntaxError(
-                        f'variable {key!r} is declared in more than one of '
-                        f'the parent classes of class {cls.__qualname__!r}'
+                        f'multiple inheritance is disabled for variable '
+                        f'{key!r}; consider declaring it with a `merge_func`'
                     )
             else:
                 self.vars[key] = copy.deepcopy(var)
