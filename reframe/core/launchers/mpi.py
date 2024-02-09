@@ -20,25 +20,25 @@ class SrunLauncher(JobLauncher):
         self.use_cpus_per_task = True
         try:
             out = osext.run_command('srun --version')
-            match = re.search('slurm (\d+)\.(\d+)\.(\d+)', out.stdout)
+            match = re.search(r'slurm(-wlm)? (\d+)\.(\d+)\.(\d+)', out.stdout)
             if match:
                 # We cannot pass to semver strings like 22.05.1 directly
                 # because it is not a valid version string for semver. We
                 # need to remove all the leading zeros.
                 slurm_version = (
                     semver.VersionInfo(
-                        match.group(1), match.group(2), match.group(3)
+                        match.group(2), match.group(3), match.group(4)
                     )
                 )
                 if slurm_version < semver.VersionInfo(22, 5, 0):
                     self.use_cpus_per_task = False
             else:
-                getlogger().warning(
+                getlogger().debug(
                     'could not get version of Slurm, --cpus-per-task will be '
                     'set according to the num_cpus_per_task attribute'
                 )
         except Exception:
-            getlogger().warning(
+            getlogger().debug(
                 'could not get version of Slurm, --cpus-per-task will be set '
                 'according to the num_cpus_per_task attribute'
             )
