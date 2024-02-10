@@ -4,12 +4,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
-
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
+from reframe.core.meta import RegressionTestMeta
+from reframe.core.warnings import user_deprecation_warning
 
 
-class JobLauncher(abc.ABC):
+class _JobLauncherMeta(RegressionTestMeta, abc.ABCMeta):
+    '''Job launcher metaclass.'''
+
+
+class JobLauncher(metaclass=_JobLauncherMeta):
     '''Abstract base class for job launchers.
 
     A job launcher is the executable that actually launches a distributed
@@ -30,7 +35,28 @@ class JobLauncher(abc.ABC):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedField(typ.List[str])
+    options = variable(typ.List[str], value=[])
+
+    #: Optional modifier of the launcher command.
+    #:
+    #: This will be combined with the :attr:`modifier_options` and prepended to
+    #: the parallel launch command.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``''``
+    #:
+    #: .. versionadded:: 4.6.0
+    modifier = variable(str, value='')
+
+    #: Options to be passed to the launcher :attr:`modifier`.
+    #:
+    #: If the modifier is empty, these options will be ignored.
+    #:
+    #: :type: :clas:`List[str]`
+    #: :default: ``[]``
+    #:
+    #: :versionadded:: 4.6.0
+    modifier_options = variable(typ.List[str], value=[])
 
     def __init__(self):
         self.options = []
@@ -53,7 +79,13 @@ class JobLauncher(abc.ABC):
         :param job: a job descriptor.
         :returns: the launcher command as a string.
         '''
-        return ' '.join(self.command(job) + self.options)
+        cmd_tokens = []
+        if self.modifier:
+            cmd_tokens.append(self.modifier)
+            cmd_tokens += self.modifier_options
+
+        cmd_tokens += self.command(job) + self.options
+        return ' '.join(cmd_tokens)
 
 
 class LauncherWrapper(JobLauncher):
@@ -90,8 +122,13 @@ class LauncherWrapper(JobLauncher):
 
     '''
 
-    def __init__(self, target_launcher, wrapper_command, wrapper_options=[]):
+    def __init__(self, target_launcher, wrapper_command, wrapper_options=None):
         super().__init__()
+        user_deprecation_warning("'LauncherWrapper is deprected; "
+                                 "please use the launcher's 'modifier' and "
+                                 "'modifier_options' instead")
+
+        wrapper_options = wrapper_options or []
         self.options = target_launcher.options
         self._target_launcher = target_launcher
         self._wrapper_command = [wrapper_command] + wrapper_options
