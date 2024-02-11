@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
-import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.warnings import user_deprecation_warning
