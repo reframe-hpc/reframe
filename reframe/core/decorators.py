@@ -123,7 +123,6 @@ class TestRegistry:
         # candidate tests; the leaf tests are consumed at the end of the
         # traversal and all instantiated tests (including fixtures) are stored
         # in `final_tests`.
-        unset_vars = {}
         final_tests = []
         fixture_registry = FixtureRegistry()
         while leaf_tests:
