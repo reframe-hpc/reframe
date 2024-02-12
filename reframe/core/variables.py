@@ -38,13 +38,16 @@ class TestVar:
     Declaring a test variable through the :func:`variable` built-in allows for
     a more robust test implementation than if the variables were just defined
     as regular test attributes (e.g. ``self.a = 10``). Using variables
-    declared through the :func:`variable` built-in guarantees that these
-    regression test variables will not be redeclared by any child class, while
-    also ensuring that any values that may be assigned to such variables
-    comply with its original declaration. In essence, declaring test variables
-    with the :func:`variable` built-in removes any potential test errors that
-    might be caused by accidentally overriding a class attribute. See the
-    example below.
+    declared through the :func:`variable` built-in has a number of advantages:
+
+    1. Variables are type checked, so attempts to assign a value of a wrong
+       type will cause the test to fail.
+    2. You can set the values of variables from the command line using the
+       :option:`-S` option.
+    3. You can avoid variable redefinitions.
+    4. You can control whether a varaible can be inherited multiple times.
+
+    The following is an example of type checking performed by variables:
 
     .. code:: python
 
@@ -66,8 +69,8 @@ class TestVar:
     standard Python data model, where a regular class attribute from a parent
     class is never available in the class body of a child class. Hence, using
     the :func:`variable` built-in enables us to directly use or modify any
-    variables that may have been declared upstream the class inheritance
-    chain, without altering their original value at the parent class level.
+    variables that may have been declared upstream the class hierarchy, without
+    altering their original value at the parent class level.
 
     .. code:: python
 
@@ -151,7 +154,7 @@ class TestVar:
     .. code:: python
 
        class MyRequiredTest(HelloTest):
-         what = required
+           what = required
 
 
     Running the above test will cause the :func:`set_exec_and_sanity` hook
@@ -166,7 +169,7 @@ class TestVar:
     when you want to rename a variable and you want to keep the old one for
     compatibility reasons.
 
-    :param `types`: the supported types for the variable.
+    :param types: the supported types for the variable.
     :param value: the default value assigned to the variable. If no value is
         provided, the variable is set as ``required``.
     :param field: the field validator to be used for this variable. If no
@@ -195,8 +198,7 @@ class TestVar:
         If ``current_value`` is undefined and ``parent_value`` is not, then
         ``current_value = parent_value``. If ``parent_value`` is undefined or
         both values are undefined, the variable remains intact.
-
-    :param `kwargs`: keyword arguments to be forwarded to the constructor of
+    :param kwargs: keyword arguments to be forwarded to the constructor of
         the field validator.
     :returns: A new test variable.
 
@@ -209,6 +211,8 @@ class TestVar:
     .. versionchanged:: 4.5
        Variables are now loggable by default.
 
+    .. versionchanged:: 4.6
+       The ``merge_func`` parameter is added.
     '''
 
     # NOTE: We can't use truly private fields in `__slots__`, because
@@ -241,6 +245,9 @@ class TestVar:
             self._p_default_value = kwargs.pop('value', Undefined)
 
         self._merge_fn = kwargs.pop('merge_func', None)
+        if self._merge_fn is not None and not callable(self._merge_fn):
+            raise TypeError("'merge_func' is not callable")
+
         self._loggable = kwargs.pop('loggable', True)
         if not issubclass(field_type, fields.Field):
             raise TypeError(
