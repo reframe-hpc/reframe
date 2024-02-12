@@ -680,6 +680,7 @@ def test_merge_base_vars_undefined_both():
 
     assert not Z.x.is_defined()
 
+
 def test_merge_func_not_callable():
     with pytest.raises(TypeError):
         class _MergeMixin(rfm.RegressionMixin):
