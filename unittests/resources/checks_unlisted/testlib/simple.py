@@ -5,21 +5,17 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-
-
-class dummy_fixture(rfm.RunOnlyRegressionTest, pin_prefix=True):
-    executable = 'echo'
-    sanity_patterns = sn.assert_true(1)
+from .utility import dummy_fixture
 
 
 @rfm.simple_test
-class simple_echo_check(rfm.RunOnlyRegressionTest):
+class simple_echo_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     descr = 'Simple Echo Test'
     valid_systems = ['*']
     valid_prog_environs = ['builtin']
     executable = 'echo'
     executable_opts = ['Hello']
-    message = variable(str, value='World') 
+    message = variable(str, value='World')
     dummy = fixture(dummy_fixture, scope='environment')
 
     @run_before('run')

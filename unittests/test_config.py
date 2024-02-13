@@ -436,6 +436,16 @@ def test_system_create(site_config):
     assert partition.local_env.env_vars == {'FOO_GPU': 'yes'}
     assert partition.max_jobs == 10
     assert partition.time_limit is None
+
+    # Check partition extras and features
+    assert partition.features == ['cuda', 'mpi']
+    assert partition.extras == {
+        'gpu_arch': 'a100',
+        'scheduler': 'slurm',
+        'launcher': 'srun'
+    }
+
+    # Check partition environments
     assert len(partition.environs) == 2
     assert partition.environment('PrgEnv-gnu').cc == 'cc'
     assert partition.environment('PrgEnv-gnu').cflags == []
