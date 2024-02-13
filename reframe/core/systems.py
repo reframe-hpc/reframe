@@ -1,4 +1,4 @@
-# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -590,7 +590,7 @@ class System(jsonext.JSONSerializable):
             hostnames=site_config.get('systems/0/hostnames'),
             modules_system=site_config.get('systems/0/modules_system'),
             modules_system_validate=site_config.get(
-                'general/resolve_module_conflicts'
+                'general/0/resolve_module_conflicts'
             ),
             preload_env=Environment(
                 name=f'__rfm_env_{sysname}',
