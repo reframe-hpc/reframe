@@ -283,8 +283,8 @@ def cpuinfo():
     ret = {
         'arch': archspec.cpu.host().name,
         'vendor': archspec.cpu.host().vendor,
-        'model':
-            archspec.cpu.detect.raw_info_dictionary().get("model name", "N/A")
+        'model': archspec.cpu.detect.raw_info_dictionary().get('model name',
+                                                               'N/A')
     }
 
     # Try first to get information from the filesystem
