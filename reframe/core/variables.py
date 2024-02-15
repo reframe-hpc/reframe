@@ -45,7 +45,7 @@ class TestVar:
     2. You can set the values of variables from the command line using the
        :option:`-S` option.
     3. You can avoid variable redefinitions.
-    4. You can control whether a varaible can be inherited multiple times.
+    4. You can control whether a variable can be inherited multiple times.
 
     The following is an example of type checking performed by variables:
 
@@ -184,7 +184,7 @@ class TestVar:
         ``check_NAME``, where ``NAME`` is the name of the variable (default
         :obj:`True`).
     :param merge_func: Enable multiple inheritance for this variable by
-        defining a merge strategy of their default values
+        defining a merge strategy of their default values.
         (default: :obj:`None`).
 
         This is a function that accepts two arguments of the type of the
