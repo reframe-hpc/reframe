@@ -9,6 +9,7 @@
 ![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/reframe-hpc/reframe?include_prereleases)
 ![GitHub commits since latest release](https://img.shields.io/github/commits-since/reframe-hpc/reframe/latest)
 ![GitHub contributors](https://img.shields.io/github/contributors-anon/reframe-hpc/reframe)<br/>
+[![Coverity scan](https://scan.coverity.com/projects/29428/badge.svg)](https://scan.coverity.com/projects/reframe-hpc)
 [![PyPI version](https://badge.fury.io/py/ReFrame-HPC.svg)](https://badge.fury.io/py/ReFrame-HPC)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/reframe-hpc)
 [![Downloads](https://pepy.tech/badge/reframe-hpc)](https://pepy.tech/project/reframe-hpc)
