@@ -123,7 +123,7 @@ class LauncherWrapper(JobLauncher):
 
     def __init__(self, target_launcher, wrapper_command, wrapper_options=None):
         super().__init__()
-        user_deprecation_warning("'LauncherWrapper is deprected; "
+        user_deprecation_warning("'LauncherWrapper is deprecated; "
                                  "please use the launcher's 'modifier' and "
                                  "'modifier_options' instead")
 
