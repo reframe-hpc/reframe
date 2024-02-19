@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2016-2022 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -103,6 +103,11 @@ if $python -c 'import sys; sys.exit(sys.version_info[:2] == (3, 6))'; then
     get_pip_url="https://bootstrap.pypa.io/get-pip.py"
 else
     get_pip_url="https://bootstrap.pypa.io/pip/3.6/get-pip.py"
+fi
+
+if ! type "curl" > /dev/null 2>&1; then
+    echo -e "could not find \`curl': please install curl and try again"
+    exit 1
 fi
 
 INFO "curl -s $get_pip_url | $python"

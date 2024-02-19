@@ -218,6 +218,8 @@
             "type": "object",
             "properties": {
                 "arch": {"type": "string"},
+                "vendor": {"type": "string"},
+                "model": {"type": "string"},
                 "num_cpus": {"type": "number"},
                 "num_cpus_per_core": {"type": "number"},
                 "num_cpus_per_socket": {"type": "number"},

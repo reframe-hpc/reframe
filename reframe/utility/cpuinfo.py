@@ -1,4 +1,4 @@
-# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -281,7 +281,10 @@ def _sysctl_topo():
 
 def cpuinfo():
     ret = {
-        'arch': archspec.cpu.host().name
+        'arch': archspec.cpu.host().name,
+        'vendor': archspec.cpu.host().vendor,
+        'model': archspec.cpu.detect.raw_info_dictionary().get('model name',
+                                                               'N/A')
     }
 
     # Try first to get information from the filesystem
