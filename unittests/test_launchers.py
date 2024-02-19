@@ -1,4 +1,4 @@
-# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -8,6 +8,7 @@ import pytest
 import reframe.core.launchers as launchers
 from reframe.core.backends import getlauncher
 from reframe.core.schedulers import Job, JobScheduler
+from reframe.core.warnings import ReframeDeprecationWarning
 
 
 @pytest.fixture(params=[
@@ -20,9 +21,10 @@ def launcher(request):
         # convenience for the rest of the unit tests
         wrapper_cls = launchers.LauncherWrapper
         wrapper_cls.registered_name = 'launcherwrapper'
-        return wrapper_cls(
-            getlauncher('alps')(), 'ddt', ['--offline']
-        )
+        with pytest.warns(ReframeDeprecationWarning):
+            return wrapper_cls(
+                getlauncher('alps')(), 'ddt', ['--offline']
+            )
 
     return getlauncher(request.param)()
 
@@ -154,38 +156,52 @@ def test_run_command(job):
         assert command == 'lrun -N 2 -T 2 -M "-gpu" --foo'
 
 
-def test_run_command_minimal(minimal_job):
+@pytest.fixture(params=['modifiers', 'plain'])
+def use_modifiers(request):
+    return request.param == 'modifiers'
+
+
+def test_run_command_minimal(minimal_job, use_modifiers):
     launcher_name = type(minimal_job.launcher).registered_name
     # This is relevant only for the srun launcher, because it may
     # run in different platforms with older versions of Slurm
     minimal_job.launcher.use_cpus_per_task = True
+    if use_modifiers and launcher_name != 'launcherwrapper':
+        minimal_job.launcher.modifier = 'ddt'
+        minimal_job.launcher.modifier_options = ['--offline']
+        prefix = 'ddt --offline'
+        if launcher_name != 'local':
+            prefix += ' '
+    else:
+        prefix = ''
+
     command = minimal_job.launcher.run_command(minimal_job)
     if launcher_name == 'alps':
-        assert command == 'aprun -n 1 --foo'
+        assert command == f'{prefix}aprun -n 1 --foo'
     elif launcher_name == 'launcherwrapper':
         assert command == 'ddt --offline aprun -n 1 --foo'
     elif launcher_name == 'local':
-        assert command == ''
+        assert command == f'{prefix}'
     elif launcher_name == 'mpiexec':
-        assert command == 'mpiexec -n 1 --foo'
+        assert command == f'{prefix}mpiexec -n 1 --foo'
     elif launcher_name == 'mpirun':
-        assert command == 'mpirun -np 1 --foo'
+        assert command == f'{prefix}mpirun -np 1 --foo'
     elif launcher_name == 'srun':
-        assert command == 'srun --foo'
+        assert command == f'{prefix}srun --foo'
     elif launcher_name == 'srunalloc':
-        assert command == ('srun '
+        assert command == (f'{prefix}srun '
                            '--job-name=fake_job '
                            '--ntasks=1 '
                            '--foo')
     elif launcher_name == 'ssh':
-        assert command == 'ssh -o BatchMode=yes --foo host'
+        assert command == f'{prefix}ssh -o BatchMode=yes --foo host'
     elif launcher_name in ('clush', 'pdsh'):
-        assert command == f'{launcher_name} -w host --foo'
+        assert command == f'{prefix}{launcher_name} -w host --foo'
     elif launcher_name == 'upcrun':
-        assert command == 'upcrun -n 1 --foo'
+        assert command == f'{prefix}upcrun -n 1 --foo'
     elif launcher_name == 'upcxx-run':
-        assert command == 'upcxx-run -n 1 --foo'
+        assert command == f'{prefix}upcxx-run -n 1 --foo'
     elif launcher_name == 'lrun':
-        assert command == 'lrun -N 1 -T 1 --foo'
+        assert command == f'{prefix}lrun -N 1 -T 1 --foo'
     elif launcher_name == 'lrun-gpu':
-        assert command == 'lrun -N 1 -T 1 -M "-gpu" --foo'
+        assert command == f'{prefix}lrun -N 1 -T 1 -M "-gpu" --foo'

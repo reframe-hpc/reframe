@@ -1,4 +1,4 @@
-# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -29,5 +29,11 @@ class SSHLauncher(JobLauncher):
         return ['ssh', '-o BatchMode=yes'] + ssh_opts + [hostname]
 
     def run_command(self, job):
+        cmd_tokens = []
+        if self.modifier:
+            cmd_tokens.append(self.modifier)
+            cmd_tokens += self.modifier_options
+
         # self.options is processed specially above
-        return ' '.join(self.command(job))
+        cmd_tokens += self.command(job)
+        return ' '.join(cmd_tokens)

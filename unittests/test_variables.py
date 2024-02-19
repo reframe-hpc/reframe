@@ -1,4 +1,4 @@
-# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -620,3 +620,66 @@ def test_inherit_mutable_aliases_deprecated():
     assert y.x == [2]
     with pytest.warns(ReframeDeprecationWarning):
         assert y.y == [2]
+
+
+class _MergeMixin(rfm.RegressionMixin):
+    x = variable(typ.List[int], value=[],
+                 merge_func=lambda x, y: x + y)
+
+
+def test_merge_base_vars():
+    class X(_MergeMixin):
+        x = [3, 4]
+
+    class Y(_MergeMixin):
+        x = [10, 1]
+
+    class Z(X, Y):
+        pass
+
+    assert Z.x == [3, 4, 10, 1]
+
+
+def test_merge_base_vars_undefined_lhs():
+    class X(_MergeMixin):
+        x = required
+
+    class Y(_MergeMixin):
+        x = [10, 1]
+
+    class Z(X, Y):
+        pass
+
+    assert Z.x == [10, 1]
+
+
+def test_merge_base_vars_undefined_rhs():
+    class X(_MergeMixin):
+        x = [3, 4]
+
+    class Y(_MergeMixin):
+        x = required
+
+    class Z(X, Y):
+        pass
+
+    assert Z.x == [3, 4]
+
+
+def test_merge_base_vars_undefined_both():
+    class X(_MergeMixin):
+        x = required
+
+    class Y(_MergeMixin):
+        x = required
+
+    class Z(X, Y):
+        pass
+
+    assert not Z.x.is_defined()
+
+
+def test_merge_func_not_callable():
+    with pytest.raises(TypeError):
+        class _MergeMixin(rfm.RegressionMixin):
+            x = variable(typ.List[int], value=[], merge_func=1)
