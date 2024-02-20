@@ -41,6 +41,13 @@ These are called *builtins* because they are directly available for use inside t
 However, almost all of these builtins are also available from the :obj:`reframe.core.builtins` module.
 The use of this module is required only when creating new tests programmatically using the :func:`~reframe.core.meta.make_test` function.
 
+.. versionchanged:: 3.7.0
+   Expose :func:`@deferrable <reframe.core.builtins.deferrable>` as a builtin.
+
+.. versionchanged:: 3.11.0
+   Builtins are now available also through the :obj:`reframe.core.builtins` module.
+
+
 .. py:method:: reframe.core.pipeline.RegressionMixin.bind(func, name=None)
 
    Bind a free function to a regression test.
@@ -78,13 +85,6 @@ The use of this module is required only when creating new tests programmatically
 .. autodecorator:: reframe.core.builtins.sanity_function
 
 .. autofunction:: reframe.core.builtins.variable
-
-
-.. versionchanged:: 3.7.0
-   Expose :func:`@deferrable <reframe.core.builtins.deferrable>` as a builtin.
-
-.. versionchanged:: 3.11.0
-   Builtins are now available also through the :obj:`reframe.core.builtins` module.
 
 
 .. _pipeline-hooks:

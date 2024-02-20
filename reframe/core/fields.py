@@ -56,7 +56,16 @@ class Field:
                                  (objtype.__name__, self._name)) from None
 
     def __set__(self, obj, value):
-        obj.__dict__[self._name] = remove_convertible(value)
+        # NOTE: We extend the Python data model by returning the value that
+        # would be otherwise written to the field, if ``obj`` is :obj:`None`.
+        # Subclasses must make sure to return to the caller the value returned
+        # from ``super().__set__(...)``.
+
+        value = remove_convertible(value)
+        if obj is None:
+            return value
+
+        obj.__dict__[self._name] = value
 
 
 class TypedField(Field):
@@ -79,7 +88,7 @@ class TypedField(Field):
         if not any(isinstance(value, t) for t in self._types):
             typedescr = '|'.join(t.__name__ for t in self._types)
             raise TypeError(
-                "failed to set field '%s': '%s' is not of type '%s'" %
+                "failed to set variable '%s': '%s' is not of type '%s'" %
                 (self._name, value, typedescr))
 
     def __set__(self, obj, value):
@@ -100,18 +109,17 @@ class TypedField(Field):
                 except TypeError:
                     continue
                 else:
-                    super().__set__(obj, value)
-                    return
+                    return super().__set__(obj, value)
 
             # Conversion failed
             typenames = [t.__name__ for t in self._types]
             raise TypeError(
-                f'failed to set field {self._name!r}: '
+                f'failed to set variable {self._name!r}: '
                 f'could not convert to any of the supported types: '
                 f'{typenames}'
             )
         else:
-            super().__set__(obj, value)
+            return super().__set__(obj, value)
 
 
 class ConstantField(Field):
@@ -152,7 +160,7 @@ class ScopedDictField(TypedField):
         if not isinstance(value, ScopedDict):
             value = ScopedDict(value) if value is not None else value
 
-        Field.__set__(self, obj, value)
+        return Field.__set__(self, obj, value)
 
 
 class DeprecatedField(Field):
@@ -187,7 +195,7 @@ class DeprecatedField(Field):
         if self._op & DeprecatedField.OP_SET:
             user_deprecation_warning(self._message, self._from_version)
 
-        self._target_field.__set__(obj, value)
+        return self._target_field.__set__(obj, value)
 
     def __get__(self, obj, objtype):
         if self._op & DeprecatedField.OP_GET:

@@ -287,4 +287,4 @@ class ContainerPlatformField(fields.TypedField):
         if isinstance(value, str):
             value = ContainerPlatform.create(value)
 
-        super().__set__(obj, value)
+        return super().__set__(obj, value)

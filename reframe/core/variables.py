@@ -343,8 +343,10 @@ class TestVar:
     def _default_value(self, value):
         if self.is_alias():
             self._target._default_value = value
-        else:
+        elif value is Undefined:
             self._p_default_value = value
+        else:
+            self._p_default_value = self._p_field.__set__(None, value)
 
     @property
     def default_value(self):
@@ -386,6 +388,18 @@ class TestVar:
 
     def __set_name__(self, owner, name):
         self._name = name
+        self._p_field.__set_name__(owner, name)
+
+        # Type check and convert the variable's value if defined
+        if self.is_defined():
+            if isinstance(self._p_default_value, TestVar):
+                # Treat shadow variables
+                value = self._p_default_value._p_default_value
+            else:
+                value = self._p_default_value
+
+            with suppress_deprecations():
+                self._p_default_value = self._p_field.__set__(None, value)
 
     def __setattr__(self, name, value):
         '''Set any additional variable attribute into the default value.'''
@@ -918,12 +932,16 @@ class VarSpace(namespaces.Namespace):
 
     def _inject(self, obj, cls):
         for name, var in self.items():
+            # Replace the variable with its descriptor
             setattr(cls, name, var.field)
             getattr(cls, name).__set_name__(obj, name)
 
             # If the var is defined, set its value
             if var.is_defined():
-                setattr(obj, name, var.default_value)
+                # Variable's value is already validated and converted,
+                # so we bypass completely the descriptor logic by not calling
+                # `setattr()`
+                obj.__dict__[name] = var.default_value
 
             # Track the variables that have been injected.
             self._injected_vars.add(name)
