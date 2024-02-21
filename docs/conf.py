@@ -66,7 +66,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.intersphinx',
               'sphinx.ext.ifconfig',
               'sphinx.ext.viewcode',
-              'sphinx.ext.githubpages']
+              'sphinx.ext.githubpages',
+              'sphinxcontrib.jquery']
 
 intersphinx_mapping = {
     'python': ('http://docs.python.org/3', None),
