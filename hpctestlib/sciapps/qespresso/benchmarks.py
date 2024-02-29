@@ -8,7 +8,7 @@ from reframe.core.builtins import (performance_function, run_after, run_before,
 from reframe.core.parameters import TestParam as parameter
 from reframe.core.variables import TestVar as variable
 
-input_template = """&CONTROL
+INPUT_TEMPLATE = """&CONTROL
   calculation  = "scf",
   prefix       = "Si",
   pseudo_dir   = ".",
@@ -39,7 +39,7 @@ K_POINTS {{automatic}}
 """
 
 @rfm.simple_test
-class qespresso_pw_check(rfm.RunOnlyRegressionTest):
+class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
     """QuantumESPRESSO benchmark test.
 
     `QuantumESPRESSO <https://www.quantum-espresso.org/>`__ is an integrated
@@ -74,7 +74,7 @@ class qespresso_pw_check(rfm.RunOnlyRegressionTest):
         """Write the input file for the calculation"""
         inp_file = os.path.join(self.stagedir, self.input_name)
         with open(inp_file, 'w', encoding='utf-8') as file:
-            file.write(input_template.format(
+            file.write(INPUT_TEMPLATE.format(
                 ecut=self.ecut,
                 nbnd=self.nbnd,
                 pseudo=self.pp_name,
