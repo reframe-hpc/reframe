@@ -101,12 +101,12 @@ class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
         elif kind == 'wall':
             tag = 2
         else:
-            raise ValueError(f'unknown kind: {kind}')  
-         
+            raise ValueError(f'unknown kind: {kind}')
+
         return sn.extractsingle(
             fr'{name}\s+:\s+([\d\.]+)s\s+CPU\s+([\d\.]+)s\s+WALL', self.stdout, tag, float
             )
-    
+
     @run_before('performance')
     def set_perf_variables(self):
         """Build a dictionary of performance variables"""
