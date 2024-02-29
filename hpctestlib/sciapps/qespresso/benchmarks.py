@@ -3,8 +3,8 @@ import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-
-from reframe.core.builtins import performance_function, run_before, run_after, sanity_function
+from reframe.core.builtins import (performance_function, run_after, run_before,
+                                   sanity_function)
 from reframe.core.parameters import TestParam as parameter
 from reframe.core.variables import TestVar as variable
 
@@ -29,7 +29,7 @@ input_template = """&CONTROL
   mixing_beta = 0.7D0,
 /
 ATOMIC_SPECIES
- Si  28.086  Si.pbe-n-kjpaw_psl.1.0.0.UPF
+ Si  28.086  {pseudo}
 ATOMIC_POSITIONS
  Si 0.00 0.00 0.00
  Si 0.25 0.25 0.25
@@ -59,12 +59,13 @@ class qespresso_pw_check(rfm.RunOnlyRegressionTest):
     descr = 'QuantumESPRESSO pw.x benchmark'
 
     input_name: str = variable(str, value='Si.scf.in')
+    pp_name: str = variable(str, value='Si.pbe-n-kjpaw_psl.1.0.0.UPF')
 
     @run_after('init')
     def prepare_test(self):
         """Hook to the set the downloading of the pseudo-potentials"""
         self.prerun_cmds = [
-            'wget -q http://pseudopotentials.quantum-espresso.org/upf_files/Si.pbe-n-kjpaw_psl.1.0.0.UPF'
+            f'wget -q http://pseudopotentials.quantum-espresso.org/upf_files/{self.pp_name}'
         ]
         self.executable_opts += [f'-in {self.input_name}']
 
@@ -72,12 +73,28 @@ class qespresso_pw_check(rfm.RunOnlyRegressionTest):
     def write_input(self):
         """Write the input file for the calculation"""
         inp_file = os.path.join(self.stagedir, self.input_name)
-        with open(inp_file, 'w') as file:
-            file.write(input_template.format(ecut=self.ecut, nbnd=self.nbnd))
+        with open(inp_file, 'w', encoding='utf-8') as file:
+            file.write(input_template.format(
+                ecut=self.ecut,
+                nbnd=self.nbnd,
+                pseudo=self.pp_name,
+                ))
 
 
     @performance_function('s')
     def extract_report_time(self, name: str = None, kind: str = None) -> float:
+        """Extract timings from pw.x stdout
+
+        Args:
+            name (str, optional): Name of the timing to extract. Defaults to None.
+            kind (str, optional): Kind ('cpu' or 'wall) of timing to extract. Defaults to None.
+
+        Raises:
+            ValueError: If the kind is not 'cpu' or 'wall'
+
+        Returns:
+            float: The timing in seconds
+        """
         kind = kind.lower()
         if kind == 'cpu':
             tag = 1
