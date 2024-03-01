@@ -1,10 +1,14 @@
 """ReFrame benchmark for QuantumESPRESSO"""
 import os
+from typing import TypeVar
+
+R = TypeVar('R')
 
 import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.builtins import (performance_function, run_after, run_before,
                                    sanity_function)
+from reframe.core.exceptions import SanityError
 from reframe.core.parameters import TestParam as parameter
 from reframe.core.variables import TestVar as variable
 
@@ -79,6 +83,37 @@ class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
                 nbnd=self.nbnd,
                 pseudo=self.pp_name,
                 ))
+            
+    @staticmethod
+    @sn.deferrable
+    def extractsingle_or_val(*args, on_except_value: str = '0s') -> str:
+        """Wrap extractsingle_or_val to return a default value if the regex is not found
+
+        Returns:
+            str: The value of the regular expression
+        """
+        try:
+            res = sn.extractsingle(*args).evaluate()
+        except SanityError:
+            res = on_except_value
+        
+        return res
+
+    @staticmethod
+    @sn.deferrable
+    def convert_timings(timing: str) -> float:
+        """Convert timings to seconds"""
+
+        if timing is None:
+            return 0
+    
+
+        days, timing = (['0', '0'] + timing.split('d'))[-2:]
+        hours, timing = (['0', '0'] + timing.split('h'))[-2:]
+        minutes, timing = (['0', '0'] + timing.split('m'))[-2:]
+        seconds = timing.split('s')[0]
+
+        return float(days) * 86400 + float(hours) * 3600 + float(minutes) * 60 + float(seconds)
 
 
     @performance_function('s')
@@ -95,6 +130,8 @@ class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
         Returns:
             float: The timing in seconds
         """
+        if kind is None:
+            return 0
         kind = kind.lower()
         if kind == 'cpu':
             tag = 1
@@ -103,15 +140,18 @@ class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
         else:
             raise ValueError(f'unknown kind: {kind}')
 
-        return sn.extractsingle(
-            fr'{name}\s+:\s+([\d\.]+)s\s+CPU\s+([\d\.]+)s\s+WALL', self.stdout, tag, float
-            )
+        # Possible formats      
+        #       PWSCF        :   4d 6h19m CPU  10d14h38m WALL  
+        # --> (Should also catch spaces)
+        return self.convert_timings(self.extractsingle_or_val(
+            fr'{name}\s+:\s+(.+)\s+CPU\s+(.+)\s+WALL', self.stdout, tag, str
+            ))
 
     @run_before('performance')
     def set_perf_variables(self):
         """Build a dictionary of performance variables"""
 
-        for name in ['PWSCF', 'electrons', 'c_bands', 'sum_bands', 'cegterg', 'calbec', 'fft', 'ffts', 'fftw']:
+        for name in ['PWSCF', 'electrons', 'c_bands', 'cegterg', 'calbec', 'fft', 'ffts', 'fftw']:
             for kind in ['cpu', 'wall']:
                 self.perf_variables[f'{name}_{kind}'] = self.extract_report_time(name, kind)
 
