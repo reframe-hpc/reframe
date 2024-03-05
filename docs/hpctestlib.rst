@@ -102,6 +102,9 @@ Scientific Applications
    :members:
    :show-inheritance:
 
+.. automodule:: hpctestlib.sciapps.qespresso.benchmarks
+   :members:
+   :show-inheritance:
 
 System
 =======================

@@ -51,7 +51,13 @@ class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
     suite of Open-Source computer codes for electronic-structure calculations
     and materials modeling at the nanoscale.
 
-    The benchmarks consist on a set of different inputs files ..."""
+    The benchmarks consist of one input file templated inside the code and
+    a pseudo-potential file that is downloaded from the official repository.
+    
+    This tests aims at measuring the scalability of the pw.x executable, in
+    particular the FFT and diagonalization algorithms, by running a simple
+    silicon calculation with high `ecut` (increases size of FFTs) and `nbnd` 
+    (increases size of matrices to diagonalize) values."""
 
     # Tests the performance of the FFTW algorithm, higher ecut -> more FFTs
     ecut = parameter([50, 150], loggable=True)
