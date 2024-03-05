@@ -59,10 +59,18 @@ class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
     silicon calculation with high `ecut` (increases size of FFTs) and `nbnd` 
     (increases size of matrices to diagonalize) values."""
 
-    # Tests the performance of the FFTW algorithm, higher ecut -> more FFTs
+    #: Parametert to tests the performance of the FFTW algorithm, 
+    #: higher `ecut` implicates more FFTs
+    #:
+    #: :type: :class:`int`
+    #: :values: ``[50, 150]``
     ecut = parameter([50, 150], loggable=True)
-    # Tests the performance of the diagonalization algorithm,
-    # higher nbnd -> bigger matrices
+
+    #: Parameter to Tests the performance of the diagonalization algorithm, higher ecut -> more FFTs
+    #: higher `nbnd` implicates bigger matrices
+    #:
+    #: :type: :class:`int`
+    #: :values: ``[10, 200]``
     nbnd = parameter([10, 200], loggable=True)
 
     executable = 'pw.x'
@@ -70,7 +78,17 @@ class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
 
     descr = 'QuantumESPRESSO pw.x benchmark'
 
+    #: The name of the input file used.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``'Si.scf.in'``
     input_name: str = variable(str, value='Si.scf.in')
+
+    #: The pseudo-potential file to be used check 
+    #: https://www.quantum-espresso.org/pseudopotentials/ for more info
+    #:
+    #: :type: :class:`str`
+    #: :default: ``'Si.pbe-n-kjpaw_psl.1.0.0.UPF'``
     pp_name: str = variable(str, value='Si.pbe-n-kjpaw_psl.1.0.0.UPF')
 
     @run_after('init')
