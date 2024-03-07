@@ -1,41 +1,30 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.2+5ea6b7a6
-  command:           './bin/reframe -c unittests/resources/checks_unlisted/deps_complex.py -n T6 -r'
-  launched by:       user@host
-  working directory: '/home/user/Repositories/reframe'
-  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
-  check search path: '/home/user/Repositories/reframe/unittests/resources/checks_unlisted/deps_complex.py'
-  stage directory:   '/home/user/Repositories/reframe/stage'
-  output directory:  '/home/user/Repositories/reframe/output'
-  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-8n8uvclh.log'
+  version:           4.6.0-dev.2
+  command:           '/usr/local/share/reframe/bin/reframe -c deps/deps_complex.py -n T6 -r --nocolor'
+  launched by:       user@myhost
+  working directory: '/home/user/reframe-examples/tutorial'
+  settings files:    '<builtin>'
+  check search path: '/home/user/reframe-examples/tutorial/deps/deps_complex.py'
+  stage directory:   '/home/user/reframe-examples/tutorial/stage'
+  output directory:  '/home/user/reframe-examples/tutorial/output'
+  log files:         '/tmp/rfm-umx3ijmp.log'
 
 [==========] Running 5 check(s)
-[==========] Started on Sat Nov 12 19:01:07 2022 
+[==========] Started on Wed Apr  3 21:41:17 2024+0000
 
 [----------] start processing checks
-[ RUN      ] T0 /c9c2be9f @tresa:default+gnu
-[ RUN      ] T0 /c9c2be9f @tresa:default+clang
-[       OK ] ( 1/10) T0 /c9c2be9f @tresa:default+gnu
-[       OK ] ( 2/10) T0 /c9c2be9f @tresa:default+clang
-[ RUN      ] T4 /11ee5e9a @tresa:default+gnu
-[ RUN      ] T4 /11ee5e9a @tresa:default+clang
-[       OK ] ( 3/10) T4 /11ee5e9a @tresa:default+gnu
-[       OK ] ( 4/10) T4 /11ee5e9a @tresa:default+clang
-[ RUN      ] T5 /020d01e5 @tresa:default+gnu
-[ RUN      ] T5 /020d01e5 @tresa:default+clang
-[       OK ] ( 5/10) T5 /020d01e5 @tresa:default+gnu
-[       OK ] ( 6/10) T5 /020d01e5 @tresa:default+clang
-[ RUN      ] T1 /1f93603d @tresa:default+gnu
-[ RUN      ] T1 /1f93603d @tresa:default+clang
-[       OK ] ( 7/10) T1 /1f93603d @tresa:default+gnu
-[       OK ] ( 8/10) T1 /1f93603d @tresa:default+clang
-[ RUN      ] T6 /6dbdaf93 @tresa:default+gnu
-[ RUN      ] T6 /6dbdaf93 @tresa:default+clang
-[       OK ] ( 9/10) T6 /6dbdaf93 @tresa:default+gnu
-[       OK ] (10/10) T6 /6dbdaf93 @tresa:default+clang
+[ RUN      ] T0 /c9c2be9f @generic:default+builtin
+[       OK ] (1/5) T0 /c9c2be9f @generic:default+builtin
+[ RUN      ] T4 /11ee5e9a @generic:default+builtin
+[       OK ] (2/5) T4 /11ee5e9a @generic:default+builtin
+[ RUN      ] T5 /020d01e5 @generic:default+builtin
+[       OK ] (3/5) T5 /020d01e5 @generic:default+builtin
+[ RUN      ] T1 /1f93603d @generic:default+builtin
+[       OK ] (4/5) T1 /1f93603d @generic:default+builtin
+[ RUN      ] T6 /6dbdaf93 @generic:default+builtin
+[       OK ] (5/5) T6 /6dbdaf93 @generic:default+builtin
 [----------] all spawned checks have finished
 
-[  PASSED  ] Ran 10/10 test case(s) from 5 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Sat Nov 12 19:01:08 2022 
-Run report saved in '/home/user/.reframe/reports/run-report-329.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-8n8uvclh.log'
+[  PASSED  ] Ran 5/5 test case(s) from 5 check(s) (0 failure(s), 0 skipped, 0 aborted)
+[==========] Finished on Wed Apr  3 21:41:19 2024+0000
+Log file(s) saved in '/tmp/rfm-umx3ijmp.log'

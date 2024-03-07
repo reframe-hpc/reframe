@@ -1,25 +1,22 @@
 [ReFrame Setup]
-  version:           4.0.0-dev.2+5ea6b7a6
-  command:           './bin/reframe --restore-session --keep-stage-files -n T6 -r'
-  launched by:       user@host
-  working directory: '/home/user/Repositories/reframe'
-  settings files:    '<builtin>', '/home/user/Repositories/reframe/tutorials/config/tresa.py'
-  check search path: '/home/user/Repositories/reframe/unittests/resources/checks_unlisted/deps_complex.py'
-  stage directory:   '/home/user/Repositories/reframe/stage'
-  output directory:  '/home/user/Repositories/reframe/output'
-  log files:         '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-vtnok1ih.log'
+  version:           4.6.0-dev.2
+  command:           '/usr/local/share/reframe/bin/reframe --restore-session --keep-stage-files -n T6 -r --nocolor'
+  launched by:       user@myhost
+  working directory: '/home/user/reframe-examples/tutorial'
+  settings files:    '<builtin>'
+  check search path: '/home/user/reframe-examples/tutorial/deps/deps_complex.py'
+  stage directory:   '/home/user/reframe-examples/tutorial/stage'
+  output directory:  '/home/user/reframe-examples/tutorial/output'
+  log files:         '/tmp/rfm-5nhx1_74.log'
 
 [==========] Running 1 check(s)
-[==========] Started on Sat Nov 12 19:01:06 2022 
+[==========] Started on Wed Apr  3 21:40:44 2024+0000
 
 [----------] start processing checks
-[ RUN      ] T6 /6dbdaf93 @tresa:default+gnu
-[ RUN      ] T6 /6dbdaf93 @tresa:default+clang
-[       OK ] (1/2) T6 /6dbdaf93 @tresa:default+gnu
-[       OK ] (2/2) T6 /6dbdaf93 @tresa:default+clang
+[ RUN      ] T6 /6dbdaf93 @generic:default+builtin
+[       OK ] (1/1) T6 /6dbdaf93 @generic:default+builtin
 [----------] all spawned checks have finished
 
-[  PASSED  ] Ran 2/2 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-[==========] Finished on Sat Nov 12 19:01:07 2022 
-Run report saved in '/home/user/.reframe/reports/run-report-328.json'
-Log file(s) saved in '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/rfm-vtnok1ih.log'
+[  PASSED  ] Ran 1/1 test case(s) from 1 check(s) (0 failure(s), 0 skipped, 0 aborted)
+[==========] Finished on Wed Apr  3 21:40:44 2024+0000
+Log file(s) saved in '/tmp/rfm-5nhx1_74.log'

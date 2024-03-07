@@ -9,16 +9,13 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class ContainerTest(rfm.RunOnlyRegressionTest):
-    platform = parameter(['Sarus', 'Singularity'])
-    valid_systems = ['daint:gpu']
-    valid_prog_environs = ['builtin']
+    container_platform = 'Docker'
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
 
     @run_before('run')
     def setup_container_platf(self):
-        self.descr = f'Run commands inside a container using {self.platform}'
-        image_prefix = 'docker://' if self.platform == 'Singularity' else ''
-        self.container_platform = self.platform
-        self.container_platform.image = f'{image_prefix}ubuntu:18.04'
+        self.container_platform.image = f'ubuntu:18.04'
         self.container_platform.command = (
             "bash -c 'cat /etc/os-release | tee /rfm_workdir/release.txt'"
         )

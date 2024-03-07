@@ -2449,10 +2449,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def getdep(self, target, environ=None, part=None):
         '''Retrieve the test case of a target dependency.
 
-        This is a low-level method. The :func:`@require_deps
-        <reframe.core.decorators.require_deps>` decorators should be
-        preferred.
-
         :arg target: The name of the target dependency to be retrieved.
         :arg environ: The name of the programming environment that will be
             used to retrieve the test case of the target test. If ``None``,

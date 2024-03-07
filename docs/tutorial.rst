@@ -478,6 +478,48 @@ Technically, all pipeline hooks could be attached to those two stages, but it's 
 
 For a detailed description of the pipeline hook API, you may refer to the :ref:`pipeline-hooks` guide.
 
+Disabling pipeline hooks
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 3.2
+
+Any pipeline hook can be disabled from the command line using the :option:`--disable-hook` command line option.
+This can be useful to temporarily disable a functionality of the test, e.g., a workaround.
+
+You can view the list of all the hooks of a test using the :option:`--describe` option:
+
+.. code-block:: bash
+
+   reframe -C config/baseline_environs.py -c stream/stream_variables.py --describe | jq .[].pipeline_hooks
+
+.. code-block:: json
+
+    {
+      "post_setup": [
+        "set_executable"
+      ],
+      "pre_run": [
+        "set_num_threads"
+      ]
+    }
+
+
+We could disable the :obj:`set_num_threads` hook by passing ``--disable-hook=set_num_threads``:
+
+.. code-block:: bash
+
+   reframe -C config/baseline_environs.py -c stream/stream_variables.py --disable-hook=set_num_threads --describe | jq .[].pipeline_hooks
+
+.. code-block:: json
+
+    {
+      "post_setup": [
+        "set_executable"
+      ]
+    }
+
+The :option:`--disable-hook` option can be passed multiple times to disable multiple hooks at the same time.
+
 
 Environment features and extras
 -------------------------------
@@ -1117,6 +1159,31 @@ However, you can use the :attr:`reframe.core.launcher.JobLauncher` API to emit t
 Here we invoke the job launcher's :func:`~reframe.core.launchers.JobLauncher.run_command` method, which is responsible for emitting the launcher prefix based on the current partition.
 
 
+Generally, ReFrame generates the job shell scripts using the following pattern:
+
+.. code-block:: bash
+
+   #!/bin/bash -l
+   {job_scheduler_preamble}
+   {prepare_cmds}
+   {env_load_cmds}
+   {prerun_cmds}
+   {parallel_launcher} {executable} {executable_opts}
+   {postrun_cmds}
+
+The ``job_scheduler_preamble`` contains the backend job scheduler directives that control the job allocation.
+The ``prepare_cmds`` are commands that can be emitted before the test environment commands.
+These can be specified with the :attr:`~config.systems.partitions.prepare_cmds` partition configuration option.
+The ``env_load_cmds`` are the necessary commands for setting up the environment of the test.
+These include any modules or environment variables set at the `system partition level <config_reference.html#system-partition-configuration>`__ or any `modules <regression_test_api.html#reframe.core.pipeline.RegressionTest.modules>`__ or `environment variables <regression_test_api.html#reframe.core.pipeline.RegressionTest.variables>`__ set at the test level.
+Then the commands specified in :attr:`prerun_cmds` follow, while those specified in the :attr:`postrun_cmds` come after the launch of the parallel job.
+The parallel launch itself consists of three parts:
+
+#. The parallel launcher program (e.g., ``srun``, ``mpirun`` etc.) with its options,
+#. the test executable as specified in the :attr:`~reframe.core.pipeline.executable` attribute and
+#. the options to be passed to the executable as specified in the :attr:`executable_opts` attribute.
+
+
 Accessing CPU topology information
 ==================================
 
@@ -1222,13 +1289,47 @@ The following tests run download, compile and launch the `OSU benchmarks <https:
 Notice the assignment of :attr:`num_tasks` and :attr:`num_tasks_per_node` in the base test class :class:`osu_base_test`.
 The :class:`RegressionTest` base class offers many more attributes for specifying the placement of tasks on the nodes.
 
-This set of tests showcase some other interesting aspects of writing tests in ReFrame.
+Unrelated to their multi-node nature, these examples showcase some other interesting aspects of ReFrame tests:
 
 - Fixtures can use other fixtures.
 - The ``session`` scope of the :attr:`osu_benchmarks` fixture will make the :class:`fetch_osu_benchmarks` test that downloads the benchmarks to run only once at the beginning of the session.
   Similarly, the ``environment`` scope of the :attr:`osu_binaries` fixture will make the :class:`build_osu_benchmarks` test execute once per partition and environment combination.
 - Instead of using the :func:`@performance_function <reframe.core.builtins.performance_function>` decorator to define performance variables, we could directly set the :attr:`perf_variables` test attribute.
   This is useful when we want to programmatically generate test's performance variables.
+
+Here is how to execute the tests.
+Note that we are using another configuration file, which defines an MPI-enabled environment so that we can compile the OSU benchmarks:
+
+.. code-block:: bash
+
+   reframe --prefix=/scratch/rfm-stage/ -C config/cluster_mpi.py -c mpi/osu.py --exec-policy=serial -r
+
+
+.. code-block:: console
+
+    [----------] start processing checks
+    [ RUN      ] fetch_osu_benchmarks ~pseudo-cluster /d20db00e @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (1/5) fetch_osu_benchmarks ~pseudo-cluster /d20db00e @pseudo-cluster:compute+gnu-mpi
+    [ RUN      ] build_osu_benchmarks ~pseudo-cluster:compute+gnu-mpi /be044b23 @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (2/5) build_osu_benchmarks ~pseudo-cluster:compute+gnu-mpi /be044b23 @pseudo-cluster:compute+gnu-mpi
+    [ RUN      ] osu_allreduce_test /63dd518c @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (3/5) osu_allreduce_test /63dd518c @pseudo-cluster:compute+gnu-mpi
+    P: bandwidth: 38618.05 MB/s (r:0, l:None, u:None)
+    [ RUN      ] osu_bandwidth_test /026711a1 @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (4/5) osu_bandwidth_test /026711a1 @pseudo-cluster:compute+gnu-mpi
+    P: bandwidth: 144.96 MB/s (r:0, l:None, u:None)
+    [ RUN      ] osu_latency_test /d2c978ad @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (5/5) osu_latency_test /d2c978ad @pseudo-cluster:compute+gnu-mpi
+    P: latency: 12977.31 us (r:0, l:None, u:None)
+    [----------] all spawned checks have finished
+
+    [  PASSED  ] Ran 5/5 test case(s) from 5 check(s) (0 failure(s), 0 skipped, 0 aborted)
+
+
+.. note::
+
+   The parameters passed to the OSU benchmarks are adapted for the purposes of the tutorial.
+   You should adapt them if running on an actual parallel cluster.
 
 
 Managing the run session
@@ -1384,6 +1485,71 @@ The :option:`--max-retries` has an effect only in the current run session.
 However, in order to rerun the failed tests of a previous session, you should use the :option:`--restore-session`  :option:`--failed` options.
 This is particularly useful when a failed test has long-running dependencies that have succeeded in the previous run.
 In this case, the dependencies will be restored and only the failed tests will be rerun.
+
+Let's see an artificial example that uses the following test dependency graph.
+
+.. _fig-deps-complex:
+
+.. figure:: _static/img/deps-complex.svg
+   :align: center
+
+   :sub:`Complex test dependency graph. Nodes in red are set to fail.`
+
+
+Tests :class:`T2` and :class:`T8` are set to fail.
+Let's run the whole test DAG:
+
+.. code-block:: bash
+
+   cd reframe-examples/tutorial/
+   reframe -c deps/deps_complex.py -r
+
+.. literalinclude:: listings/deps_complex_run.txt
+   :language: console
+
+You can restore the run session and run only the failed test cases as follows:
+
+
+.. code-block:: bash
+
+   reframe --restore-session --failed -r
+
+
+Of course, as expected, the run will fail again, since these tests were designed to fail.
+
+Instead of running the failed test cases of a previous run, you might simply want to rerun a specific test.
+This has little meaning if you don't use dependencies, because it would be equivalent to running it separately using the :option:`-n` option.
+However, if a test was part of a dependency chain, using :option:`--restore-session` will not rerun its dependencies, but it will rather restore them.
+This is useful in cases where the test that we want to rerun depends on time-consuming tests.
+There is a little tweak, though, for this to work:
+you need to have run with :option:`--keep-stage-files` in order to keep the stage directory even for tests that have passed.
+This is due to two reasons:
+(a) if a test needs resources from its parents, it will look into their stage directories and
+(b) ReFrame stores the state of a finished test case inside its stage directory and it will need that state information in order to restore a test case.
+
+Let's try to rerun the :class:`T6` test from the previous test dependency chain:
+
+
+.. code-block:: bash
+
+   reframe -c deps/deps_complex.py --keep-stage-files -r
+   reframe --restore-session --keep-stage-files -n T6 -r
+
+
+Notice how only the :class:`T6` test was rerun and none of its dependencies, since they were simply restored:
+
+.. literalinclude:: listings/deps_rerun_t6.txt
+   :language: console
+
+
+If we tried to run :class:`T6` without restoring the session, we would have to rerun also the whole dependency chain, i.e., also :class:`T5`, :class:`T1`, :class:`T4` and :class:`T0`.
+
+.. code-block:: bash
+
+   reframe -c deps/deps_complex.py -n T6 -r
+
+.. literalinclude:: listings/deps_run_t6.txt
+   :language: console
 
 
 Running continuously

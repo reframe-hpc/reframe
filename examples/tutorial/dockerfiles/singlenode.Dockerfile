@@ -8,8 +8,9 @@ RUN apt-get -y update && \
 
 # Install reframe
 ARG REFRAME_TAG=develop
+ARG REFRAME_REPO=reframe-hpc
 WORKDIR /usr/local/share
-RUN git clone --depth 1 --branch $REFRAME_TAG https://github.com/reframe-hpc/reframe.git && \
+RUN git clone --depth 1 --branch $REFRAME_TAG https://github.com/$REFRAME_REPO/reframe.git && \
     cd reframe/ && ./bootstrap.sh
 ENV PATH=/usr/local/share/reframe/bin:$PATH
 
