@@ -1222,13 +1222,47 @@ The following tests run download, compile and launch the `OSU benchmarks <https:
 Notice the assignment of :attr:`num_tasks` and :attr:`num_tasks_per_node` in the base test class :class:`osu_base_test`.
 The :class:`RegressionTest` base class offers many more attributes for specifying the placement of tasks on the nodes.
 
-This set of tests showcase some other interesting aspects of writing tests in ReFrame.
+Unrelated to their multi-node nature, these examples showcase some other interesting aspects of ReFrame tests:
 
 - Fixtures can use other fixtures.
 - The ``session`` scope of the :attr:`osu_benchmarks` fixture will make the :class:`fetch_osu_benchmarks` test that downloads the benchmarks to run only once at the beginning of the session.
   Similarly, the ``environment`` scope of the :attr:`osu_binaries` fixture will make the :class:`build_osu_benchmarks` test execute once per partition and environment combination.
 - Instead of using the :func:`@performance_function <reframe.core.builtins.performance_function>` decorator to define performance variables, we could directly set the :attr:`perf_variables` test attribute.
   This is useful when we want to programmatically generate test's performance variables.
+
+Here is how to execute the tests.
+Note that we are using another configuration file, which defines an MPI-enabled environment so that we can compile the OSU benchmarks:
+
+.. code-block:: bash
+
+   reframe --prefix=/scratch/rfm-stage/ -C config/cluster_mpi.py -c mpi/osu.py --exec-policy=serial -r
+
+
+.. code-block:: console
+
+    [----------] start processing checks
+    [ RUN      ] fetch_osu_benchmarks ~pseudo-cluster /d20db00e @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (1/5) fetch_osu_benchmarks ~pseudo-cluster /d20db00e @pseudo-cluster:compute+gnu-mpi
+    [ RUN      ] build_osu_benchmarks ~pseudo-cluster:compute+gnu-mpi /be044b23 @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (2/5) build_osu_benchmarks ~pseudo-cluster:compute+gnu-mpi /be044b23 @pseudo-cluster:compute+gnu-mpi
+    [ RUN      ] osu_allreduce_test /63dd518c @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (3/5) osu_allreduce_test /63dd518c @pseudo-cluster:compute+gnu-mpi
+    P: bandwidth: 38618.05 MB/s (r:0, l:None, u:None)
+    [ RUN      ] osu_bandwidth_test /026711a1 @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (4/5) osu_bandwidth_test /026711a1 @pseudo-cluster:compute+gnu-mpi
+    P: bandwidth: 144.96 MB/s (r:0, l:None, u:None)
+    [ RUN      ] osu_latency_test /d2c978ad @pseudo-cluster:compute+gnu-mpi
+    [       OK ] (5/5) osu_latency_test /d2c978ad @pseudo-cluster:compute+gnu-mpi
+    P: latency: 12977.31 us (r:0, l:None, u:None)
+    [----------] all spawned checks have finished
+
+    [  PASSED  ] Ran 5/5 test case(s) from 5 check(s) (0 failure(s), 0 skipped, 0 aborted)
+
+
+.. note::
+
+   The parameters passed to the OSU benchmarks are adapted for the purposes of the tutorial.
+   You should adapt them if running on an actual parallel cluster.
 
 
 Managing the run session

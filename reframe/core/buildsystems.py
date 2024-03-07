@@ -488,7 +488,7 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #: :default: :class:`None`
     builddir = variable(str, type(None), value=None)
 
-    #: Additional configuration options to be passed to the CMake invocation.
+    #: Additional configuration options to be passed to the configure step.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
@@ -778,6 +778,10 @@ class EasyBuild(BuildSystem):
 
     @property
     def generated_modules(self):
+        '''List of the EasyBuild generated modules.
+
+        This list will be populated *after* the build succeeds.
+        '''
         return self._eb_modules
 
 
@@ -890,7 +894,6 @@ class Spack(BuildSystem):
     #: :default: ``[]``
     #:
     preinstall_cmds = variable(typ.List[str], value=[])
-
 
     def __init__(self):
         # Set to True if the environment was auto-generated
