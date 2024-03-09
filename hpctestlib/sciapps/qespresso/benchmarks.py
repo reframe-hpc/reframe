@@ -53,20 +53,20 @@ class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
 
     The benchmarks consist of one input file templated inside the code and
     a pseudo-potential file that is downloaded from the official repository.
-    
+
     This tests aims at measuring the scalability of the pw.x executable, in
     particular the FFT and diagonalization algorithms, by running a simple
-    silicon calculation with high `ecut` (increases size of FFTs) and `nbnd` 
+    silicon calculation with high `ecut` (increases size of FFTs) and `nbnd`
     (increases size of matrices to diagonalize) values."""
 
-    #: Parametert to tests the performance of the FFTW algorithm, 
+    #: Parametert to tests the performance of the FFTW algorithm,
     #: higher `ecut` implicates more FFTs
     #:
     #: :type: :class:`int`
     #: :values: ``[50, 150]``
     ecut = parameter([50, 150], loggable=True)
 
-    #: Parameter to Tests the performance of the diagonalization algorithm, higher ecut -> more FFTs
+    #: Parameter to Tests the performance of the diagonalization algorithm,
     #: higher `nbnd` implicates bigger matrices
     #:
     #: :type: :class:`int`
@@ -84,7 +84,7 @@ class QEspressoPWCheck(rfm.RunOnlyRegressionTest):
     #: :default: ``'Si.scf.in'``
     input_name: str = variable(str, value='Si.scf.in')
 
-    #: The pseudo-potential file to be used check 
+    #: The pseudo-potential file to be used check
     #: https://www.quantum-espresso.org/pseudopotentials/ for more info
     #:
     #: :type: :class:`str`
