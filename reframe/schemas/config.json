@@ -233,6 +233,7 @@
             "properties": {
                 "type": {"type": "string"},
                 "arch": {"type": "string"},
+                "model": {"type": "string"},
                 "num_devices": {"type": "number"}
             }
         },

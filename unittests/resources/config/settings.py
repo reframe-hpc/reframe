@@ -117,7 +117,8 @@ site_configuration = {
                     'devices': [
                         {
                             'type': 'gpu',
-                            'arch': 'p100',
+                            'arch': 'sm_60',
+                            'model': 'p100',
                             'num_devices': 1
                         }
                     ]
