@@ -474,6 +474,14 @@ def test_system_create(site_config):
     assert partition.processor.num_numa_nodes == 1
     assert partition.processor.num_cores_per_numa_node == 4
 
+    # Check device info
+    assert len(partition.devices) == 1
+    assert partition.devices[0].type == 'gpu'
+    assert partition.devices[0].device_type == 'gpu'
+    assert partition.devices[0].arch == 'sm_60'
+    assert partition.devices[0].model == 'p100'
+    assert partition.devices[0].num_devices == 1
+
     # Select another subconfig and check that the default selection of
     # container runtime is done properly
     site_config.select_subconfig('testsys:login')
