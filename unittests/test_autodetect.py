@@ -26,7 +26,8 @@ def temp_topo(tmp_path, monkeypatch):
         json.dump([
             {
                 'type': 'gpu',
-                'arch': 'a100',
+                'arch': 'sm_80',
+                'model': 'a100',
                 'num_devices': 8
             }
         ], fp)
@@ -79,10 +80,14 @@ def test_autotect(default_exec_ctx):
     assert len(part.devices) == 1
     assert part.devices[0].info == {
         'type': 'gpu',
-        'arch': 'a100',
+        'arch': 'sm_80',
+        'model': 'a100',
         'num_devices': 8
     }
     assert part.devices[0].device_type == 'gpu'
+    assert part.devices[0].type == 'gpu'
+    assert part.devices[0].arch == 'sm_80'
+    assert part.devices[0].model == 'a100'
 
     # Test immutability of ProcessorInfo and DeviceInfo
     with pytest.raises(AttributeError):

@@ -128,7 +128,7 @@ class DeviceInfo(_ReadOnlyInfo, jsonext.JSONSerializable):
     '''
 
     __slots__ = ()
-    _known_attrs = ('type', 'arch')
+    _known_attrs = ('type', 'arch', 'model')
 
     @property
     def info(self):
