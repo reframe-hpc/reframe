@@ -178,7 +178,8 @@ class TestVar:
         field can be specified for an alias variable.
     :param loggable: Mark this variable as loggable. If :obj:`True`, this
         variable will become a log record attribute under the name
-        ``check_NAME``, where ``NAME`` is the name of the variable.
+        ``check_NAME``, where ``NAME`` is the name of the variable (default
+        :obj:`True`).
     :param `kwargs`: keyword arguments to be forwarded to the constructor of
         the field validator.
     :returns: A new test variable.
@@ -188,6 +189,9 @@ class TestVar:
 
     .. versionadded:: 4.0.0
        Alias variable are introduced.
+
+    .. versionchanged:: 4.5
+       Variables are now loggable by default.
 
     '''
 
@@ -220,7 +224,7 @@ class TestVar:
         else:
             self._p_default_value = kwargs.pop('value', Undefined)
 
-        self._loggable = kwargs.pop('loggable', False)
+        self._loggable = kwargs.pop('loggable', True)
         if not issubclass(field_type, fields.Field):
             raise TypeError(
                 f'field {field_type!r} is not derived from '

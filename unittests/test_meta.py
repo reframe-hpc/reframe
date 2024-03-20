@@ -512,10 +512,10 @@ def test_get_variant_nums(MyMeta):
 
 def test_loggable_attrs():
     class T(metaclass=meta.RegressionTestMeta):
-        x = variable(int, value=3, loggable=True)
-        y = variable(int, loggable=True)    # loggable but undefined
-        z = variable(int)
-        p = parameter(range(3), loggable=True)
+        x = variable(int, value=3)
+        y = variable(int)    # loggable but undefined
+        z = variable(int, loggable=False)
+        p = parameter(range(3))
 
         @loggable
         @property
@@ -555,6 +555,6 @@ def test_inherited_loggable_attrs():
 
 def test_deprecated_loggable_attrs():
     class T(metaclass=meta.RegressionTestMeta):
-        x = deprecate(variable(int, value=3, loggable=True), 'deprecated')
+        x = deprecate(variable(int, value=3), 'deprecated')
 
     assert T.loggable_attrs() == [('x', None)]

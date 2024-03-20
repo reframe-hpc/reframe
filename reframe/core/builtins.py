@@ -48,14 +48,17 @@ def run_before(stage, *, always_last=False):
     :param stage: The pipeline stage where this function will be attached to.
         See :ref:`pipeline-hooks` for the list of valid stage values.
 
-    :param always_last: Run this hook always as the last one of the stage. In
-        a whole test hierarchy, only a single hook can be explicitly pinned at
-        the end of the same-stage sequence of hooks. If another hook is
-        declared as ``always_last`` in the same stage, an error will be
-        issued.
+    :param always_last: Run this hook at the end of the stage's hook chain
+        instead of the beginning. If multiple tests set this flag for a hook
+        in the same stage, then all ``always_last`` hooks will be executed in
+        MRO order at the end of stage's hook chain. See :ref:`pipeline-hooks`
+        for an example execution.
 
     .. versionchanged:: 4.4
        The ``always_last`` argument was added.
+
+    .. versionchanged:: 4.5
+       Multiple tests can set ``always_last`` in the same stage.
 
     '''
 
