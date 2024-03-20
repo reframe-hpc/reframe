@@ -1,4 +1,4 @@
-# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -482,7 +482,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             return
 
         if not reasons:
-            completed = _run_strict('squeue -h -j %s -o %%r' % job.jobid)
+            completed = osext.run_command('squeue -h -j %s -o %%r' % job.jobid)
             reasons = completed.stdout.splitlines()
             if not reasons:
                 # Can't retrieve job's state. Perhaps it has finished already

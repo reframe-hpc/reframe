@@ -1,4 +1,4 @@
-# Copyright 2016-2023 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -6,7 +6,7 @@
 import os
 import sys
 
-VERSION = '4.5.0-dev.2'
+VERSION = '4.5.1'
 INSTALL_PREFIX = os.path.normpath(
     os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 )
