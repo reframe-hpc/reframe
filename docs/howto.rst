@@ -115,12 +115,12 @@ For running this test, we need the following Docker image:
    docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples -it <IMAGE>  /bin/bash -l
 
 
-EasyBuild requires a `modules system <working-with-modules-system>`__ to run, so we need a configuration file that sets the modules system of the current system:
+EasyBuild requires a `modules system <#working-with-environment-modules>`__ to run, so we need a configuration file that sets the modules system of the current system:
 
 .. literalinclude:: ../examples/tutorial/config/baseline_modules.py
    :lines: 5-
 
-We talk about modules system and how ReFrame interacts with them in :doc:`modules-systems`.
+We talk about modules system and how ReFrame interacts with them in :ref:`working-with-environment-modules`.
 For the moment, we will only use them for running the EasyBuild example:
 
 .. code-block:: bash
@@ -305,8 +305,44 @@ In this case, you could set the :attr:`build_system` to ``'CustomBuild'`` and su
     You should use  this build system with caution, because environment management, reproducibility and any potential side effects are all controlled by the custom build system.
 
 
+.. _working-with-environment-modules:
+
 Working with environment modules
 ================================
+
+A common practice in HPC environments is to provide the software stack through `environment modules <https://modules.readthedocs.io/>`__.
+An environment module is essentially a set of environment variables that are sourced in the user's current shell for making available the requested software stack components.
+
+ReFrame allows users to associate an environment modules system to a system in the configuration file.
+Tests may then specify the environment modules needed for them to run.
+
+We have seen environment modules in practice with the EasyBuild integration.
+Systems that use environment modules must set the :attr:`~config.systems.modules_system` system configuration parameter to the modules system that the system uses.
+
+.. literalinclude:: ../examples/tutorial/config/baseline_modules.py
+   :lines: 5-
+
+
+The tests that require environment modules must simply list the required modules in their :attr:`modules` variable.
+ReFrame will then emit the correct commands to load the modules based on the configured modules system.
+For older modules systems, such as Tmod 3.2, that do not support automatic conflict resolution, ReFrame will also emit commands to unload the conflicted modules before loading the requested ones.
+
+Test environments can also use modules by settings their :attr:`~config.environments.modules` parameter.
+
+.. code-block:: python
+
+    'environments': [
+        ...
+        {
+            'name': 'gnu',
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'modules': ['gnu'],
+            'features': ['openmp'],
+            'extras': {'omp_flag': '-fopenmp'}
+        }
+        ...
+    ]
 
 
 
@@ -370,3 +406,116 @@ The following figure shows one part of the automatically generated pipeline for 
 .. note::
 
    The ReFrame executable must be available in the Gitlab runner that will run the CI jobs.
+
+
+Using the Flux framework scheduler
+==================================
+
+This is a how to that will show how to use refame with `Flux
+Framework <https://github.com/flux-framework/>`__. First, build the
+container here from the root of reframe.
+
+.. code:: bash
+
+   $ docker build -f tutorials/flux/Dockerfile -t flux-reframe .
+
+Then shell inside, optionally binding the present working directory if
+you want to develop.
+
+.. code:: bash
+
+   $ docker run -it -v $PWD:/code flux-reframe
+   $ docker run -it flux-reframe
+
+Note that if you build the local repository, you’ll need to bootstrap
+and install again, as we have over-written the bin!
+
+.. code:: bash
+
+   ./bootstrap.sh
+
+And then reframe will again be in the local ``bin`` directory:
+
+.. code:: bash
+
+   # which reframe
+   /code/bin/reframe
+
+Then we can run ReFrame with the custom config `config.py <config.py>`__
+for flux.
+
+.. code:: bash
+
+   # What tests are under tutorials/flux?
+   $ cd tutorials/flux
+   $ reframe -c . -C settings.py -l
+
+.. code:: console
+
+   [ReFrame Setup]
+     version:           4.0.0-dev.1
+     command:           '/code/bin/reframe -c tutorials/flux -C tutorials/flux/settings.py -l'
+     launched by:       root@b1f6650222bc
+     working directory: '/code'
+     settings file:     'tutorials/flux/settings.py'
+     check search path: '/code/tutorials/flux'
+     stage directory:   '/code/stage'
+     output directory:  '/code/output'
+
+   [List of matched checks]
+   - EchoRandTest /66b93401
+   Found 1 check(s)
+
+   Log file(s) saved in '/tmp/rfm-ilqg7fqg.log'
+
+This also works
+
+.. code:: bash
+
+   $ reframe -c tutorials/flux -C tutorials/flux/settings.py -l
+
+And then to run tests, just replace ``-l`` (for list) with ``-r`` or
+``--run`` (for run):
+
+.. code:: bash
+
+   $ reframe -c tutorials/flux -C tutorials/flux/settings.py --run
+
+.. code:: console
+
+   root@b1f6650222bc:/code# reframe -c tutorials/flux -C tutorials/flux/settings.py --run
+   [ReFrame Setup]
+     version:           4.0.0-dev.1
+     command:           '/code/bin/reframe -c tutorials/flux -C tutorials/flux/settings.py --run'
+     launched by:       root@b1f6650222bc
+     working directory: '/code'
+     settings file:     'tutorials/flux/settings.py'
+     check search path: '/code/tutorials/flux'
+     stage directory:   '/code/stage'
+     output directory:  '/code/output'
+
+   [==========] Running 1 check(s)
+   [==========] Started on Fri Sep 16 20:47:15 2022
+
+   [----------] start processing checks
+   [ RUN      ] EchoRandTest /66b93401 @generic:default+builtin
+   [       OK ] (1/1) EchoRandTest /66b93401 @generic:default+builtin
+   [----------] all spawned checks have finished
+
+   [  PASSED  ] Ran 1/1 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
+   [==========] Finished on Fri Sep 16 20:47:15 2022
+   Run report saved in '/root/.reframe/reports/run-report.json'
+   Log file(s) saved in '/tmp/rfm-0avso9nb.log'
+
+For advanced users or developers, here is how to run tests within the container:
+
+Testing
+-------
+
+.. code:: console
+
+    ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py unittests/test_schedulers.py -xs
+
+
+Generating tests programmatically
+=================================
