@@ -81,10 +81,10 @@ class LocalJobScheduler(sched.JobScheduler):
         return []
 
     def allnodes(self):
-        return [_LocalNode(socket.gethostname())]
+        return [sched.AlwaysIdleNode(socket.gethostname())]
 
     def filternodes(self, job, nodes):
-        return [_LocalNode(socket.gethostname())]
+        return [sched.AlwaysIdleNode(socket.gethostname())]
 
     def _kill_all(self, job):
         '''Send SIGKILL to all the processes of the spawned job.'''
@@ -202,15 +202,3 @@ class LocalJobScheduler(sched.JobScheduler):
         elif os.WIFSIGNALED(status):
             job._state = 'FAILURE'
             job._signal = os.WTERMSIG(status)
-
-
-class _LocalNode(sched.Node):
-    def __init__(self, name):
-        self._name = name
-
-    @property
-    def name(self):
-        return self._name
-
-    def in_state(self, state):
-        return state.casefold() == 'idle'

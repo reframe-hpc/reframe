@@ -12,12 +12,12 @@ from reframe.core.decorators import TestRegistry
 from reframe.core.fields import make_convertible
 from reframe.core.logging import getlogger, time_function
 from reframe.core.meta import make_test
-from reframe.core.schedulers import Job
+from reframe.core.schedulers import Job, filter_nodes_by_state
 from reframe.frontend.executors import generate_testcases
 
 
 @time_function
-def getallnodes(state='all', jobs_cli_options=None):
+def getallnodes(state, jobs_cli_options=None):
     rt = runtime.runtime()
     nodes = {}
     for part in rt.system.partitions:
@@ -36,14 +36,7 @@ def getallnodes(state='all', jobs_cli_options=None):
             f'Total available nodes for {part.name}: {len(available_nodes)}'
         )
 
-        if state.casefold() != 'all':
-            available_nodes = {n for n in available_nodes
-                               if n.in_state(state)}
-            getlogger().debug(
-                f'[F] Selecting nodes in state {state!r}: '
-                f'available nodes now: {len(available_nodes)}'
-            )
-
+        available_nodes = filter_nodes_by_state(available_nodes, state)
         nodes[part.fullname] = [n.name for n in available_nodes]
 
     return nodes

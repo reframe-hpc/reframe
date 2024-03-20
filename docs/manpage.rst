@@ -737,17 +737,15 @@ If no node can be selected, the test will be marked as a failure with an appropr
 
    Available values are the following:
 
-   - ``all``: Flexible tests will be assigned as many tasks as needed in order to span over *all* the nodes of the node pool.
-   - ``STATE``: Flexible tests will be assigned as many tasks as needed in order to span over the nodes that are currently in state ``STATE``.
-     Querying of the node state and submission of the test job are two separate steps not executed atomically.
-     It is therefore possible that the number of tasks assigned does not correspond to the actual nodes in the given state.
-
-     If this option is not specified, the default allocation policy for flexible tests is 'idle'.
-   - Any positive integer: Flexible tests will be assigned as many tasks as needed in order to span over the specified number of nodes from the node pool.
+   - Any of the values supported by the :option:`--distribute` option.
+   - Any positive integer: flexible tests will be assigned as many tasks as needed in order to span over the specified number of nodes from the node pool.
 
    .. versionchanged:: 3.1
       It is now possible to pass an arbitrary node state as a flexible node allocation parameter.
 
+   .. versionchanged:: 4.6
+      Align the state selection with the :option:`--distribute` option.
+      See the :option:`--distribute` for more details.
 
 ---------------------------------------
 Options controlling ReFrame environment
@@ -867,10 +865,12 @@ The way the tests are generated and how they interact with the test filtering op
 
    You can optionally specify the state of the nodes to consider when distributing the test through the ``NODESTATE`` argument:
 
-   - ``all``: Tests will run on all the nodes of their respective valid partitions regardless of the nodes' state.
-   - ``idle``: Tests will run on all *idle* nodes of their respective valid partitions.
-   - ``NODESTATE``: Tests will run on all the nodes in state ``NODESTATE`` of their respective valid partitions.
-     If ``NODESTATE`` is not specified, ``idle`` will be assumed.
+   - ``all``: Tests will run on all the nodes of their respective valid partitions regardless of the node state.
+   - ``avail``: Tests will run on all the nodes of their respective valid partitions that are available for running jobs.
+     Note that if a node is currently allocated to another job it is still considered as "available."
+   - ``NODESTATE``: Tests will run on all the nodes of their respective valid partitions that are exclusively in state ``NODESTATE``.
+     aIf ``NODESTATE`` is not specified, ``idle`` is assumed.
+   - ``NODESTATE*``: Tests will run on all the nodes of their respective valid partitions that are at least in state ``NODESTATE``.
 
    The state of the nodes will be determined once, before beginning the
    execution of the tests, so it might be different at the time the tests are actually submitted.
@@ -881,8 +881,19 @@ The way the tests are generated and how they interact with the test filtering op
    .. note::
       Distributing tests with dependencies is not supported, but you can distribute tests that use fixtures.
 
+   .. note::
+      This option is supported only for the ``local``, ``squeue``, ``slurm`` and ``ssh`` scheduler backends.
 
    .. versionadded:: 3.11.0
+
+   .. versionadded:: 4.6
+
+      The ``avail`` argument is introduced and the ability to differentiate between exclusive and non-exclusive node states.
+
+   .. versionchanged:: 4.6
+
+      ``--distribute=NODESTATE`` now matches nodes that are exclusively in state ``NODESTATE``, so that the default ``--distribute=idle`` will match only the Slurm nodes that are in the ``IDLE`` state exclusively.
+      To achieve the previous behaviour, you should use ``--distribute=idle*``.
 
 
 .. option:: -P, --parameterize=[TEST.]VAR=VAL0,VAL1,...

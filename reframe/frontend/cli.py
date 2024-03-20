@@ -513,7 +513,7 @@ def main():
 
     # Test generation options
     testgen_options.add_argument(
-        '--distribute', action='store', metavar='{all|STATE}',
+        '--distribute', action='store', metavar='{all|avail|STATE}',
         nargs='?', const='idle',
         help=('Distribute the selected single-node jobs on every node that'
               'is in STATE (default: "idle"')
@@ -1150,7 +1150,8 @@ def main():
             testcases = testcases_all
 
         if options.distribute:
-            node_map = getallnodes(options.distribute, parsed_job_options)
+            node_map = getallnodes(options.distribute.lower(),
+                                   parsed_job_options)
 
             # Remove the job options that begin with '--nodelist' and '-w', so
             # that they do not override those set from the distribute feature.

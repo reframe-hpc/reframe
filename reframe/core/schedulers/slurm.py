@@ -659,8 +659,15 @@ class _SlurmNode(sched.Node):
         return all([self._states >= set(state.upper().split('+')),
                     self._partitions, self._active_features, self._states])
 
+    def in_statex(self, state):
+        return self._states == set(state.upper().split('+'))
+
+    def is_avail(self):
+        return any(self.in_statex(s)
+                   for s in ('ALLOCATED', 'COMPLETING', 'IDLE'))
+
     def is_down(self):
-        return bool({'DOWN', 'DRAIN', 'MAINT', 'NO_RESPOND'} & self._states)
+        return not self.is_avail()
 
     @property
     def active_features(self):
