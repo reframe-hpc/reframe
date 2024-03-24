@@ -571,40 +571,47 @@ The equivalent of our test generation for the third spec is exactly the followin
 
 .. code-block:: python
 
-   @rfm.simple_test
-   class stream_test_2(stream_test):
-       stream_binaries = fixture(stream_build, scope='environment',
-                                 variables={'elem_type': 'double',
-                                            'array_size': 16777216,
-                                            'num_iters': 10})
-       num_threads = parameter([1, 2, 4, 8])
+    @rfm.simple_test
+    class stream_test_2(stream_test):
+        stream_binary = fixture(build_stream, scope='environment',
+                                variables={'elem_type': 'double',
+                                           'array_size': 16777216,
+                                           'num_iters': 10})
+        nthr = parameter([1, 2, 4, 8])
 
-       @run_after('init')
-       def _set_num_threads(self):
-           self.num_cpus_per_task = self.num_threads
+        @run_after('init')
+        def _set_num_threads(self):
+            self.num_threads = self.nthr
+
 
 And here is the listing of generated tests:
 
 .. code-block:: bash
 
-   STREAM_SPEC_FILE=stream_config.yaml ./bin/reframe -C tutorials/cscs-webinar-2022/config/mysettings.py -c tutorials/advanced/make_test/stream_workflows.py -l
+   STREAM_SPEC_FILE=stream_config.yaml reframe -C config/baseline_environs.py -c stream/stream_workflows.py -l
 
 .. code-block:: console
 
-   [List of matched checks]
-   - stream_test_2 %num_threads=8 %stream_binaries.elem_type=double %stream_binaries.array_size=16777216 %stream_binaries.num_iters=10 /7b20a90a
-       ^stream_build %elem_type=double %array_size=16777216 %num_iters=10 ~tresa:default+gnu 'stream_binaries /1dd920e5
-   - stream_test_2 %num_threads=4 %stream_binaries.elem_type=double %stream_binaries.array_size=16777216 %stream_binaries.num_iters=10 /7cbd26d7
-       ^stream_build %elem_type=double %array_size=16777216 %num_iters=10 ~tresa:default+gnu 'stream_binaries /1dd920e5
-   - stream_test_2 %num_threads=2 %stream_binaries.elem_type=double %stream_binaries.array_size=16777216 %stream_binaries.num_iters=10 /797fb1ed
-       ^stream_build %elem_type=double %array_size=16777216 %num_iters=10 ~tresa:default+gnu 'stream_binaries /1dd920e5
-   - stream_test_2 %num_threads=1 %stream_binaries.elem_type=double %stream_binaries.array_size=16777216 %stream_binaries.num_iters=10 /7a7dcd20
-       ^stream_build %elem_type=double %array_size=16777216 %num_iters=10 ~tresa:default+gnu 'stream_binaries /1dd920e5
-   - stream_test_1 %stream_binaries.elem_type=double %stream_binaries.array_size=1048576 %stream_binaries.num_iters=100 %stream_binaries.num_cpus_per_task=1 /3e3643dd
-       ^stream_build %elem_type=double %array_size=1048576 %num_iters=100 %num_cpus_per_task=1 ~tresa:default+gnu 'stream_binaries /3611a49a
-   - stream_test_0 %stream_binaries.elem_type=float %stream_binaries.array_size=16777216 %stream_binaries.num_iters=10 %stream_binaries.num_cpus_per_task=4 /d99b89f1
-       ^stream_build %elem_type=float %array_size=16777216 %num_iters=10 %num_cpus_per_task=4 ~tresa:default+gnu 'stream_binaries /321abb06
-   Found 6 check(s)
+    [List of matched checks]
+    - stream_test_2 %nthr=8 %stream_binary.elem_type=double %stream_binary.array_size=16777216 %stream_binary.num_iters=10 /04f5cf62
+        ^build_stream %elem_type=double %array_size=16777216 %num_iters=10 ~tutorialsys:default+gnu 'stream_binary /74d12df7
+        ^build_stream %elem_type=double %array_size=16777216 %num_iters=10 ~tutorialsys:default+clang 'stream_binary /f3a963e3
+    - stream_test_2 %nthr=4 %stream_binary.elem_type=double %stream_binary.array_size=16777216 %stream_binary.num_iters=10 /1c09d755
+        ^build_stream %elem_type=double %array_size=16777216 %num_iters=10 ~tutorialsys:default+gnu 'stream_binary /74d12df7
+        ^build_stream %elem_type=double %array_size=16777216 %num_iters=10 ~tutorialsys:default+clang 'stream_binary /f3a963e3
+    - stream_test_2 %nthr=2 %stream_binary.elem_type=double %stream_binary.array_size=16777216 %stream_binary.num_iters=10 /acb6dc4d
+        ^build_stream %elem_type=double %array_size=16777216 %num_iters=10 ~tutorialsys:default+gnu 'stream_binary /74d12df7
+        ^build_stream %elem_type=double %array_size=16777216 %num_iters=10 ~tutorialsys:default+clang 'stream_binary /f3a963e3
+    - stream_test_2 %nthr=1 %stream_binary.elem_type=double %stream_binary.array_size=16777216 %stream_binary.num_iters=10 /e6eebc18
+        ^build_stream %elem_type=double %array_size=16777216 %num_iters=10 ~tutorialsys:default+gnu 'stream_binary /74d12df7
+        ^build_stream %elem_type=double %array_size=16777216 %num_iters=10 ~tutorialsys:default+clang 'stream_binary /f3a963e3
+    - stream_test_1 %stream_binary.elem_type=double %stream_binary.array_size=1048576 %stream_binary.num_iters=100 /514be749
+        ^build_stream %elem_type=double %array_size=1048576 %num_iters=100 ~tutorialsys:default+gnu 'stream_binary /b841f3c9
+        ^build_stream %elem_type=double %array_size=1048576 %num_iters=100 ~tutorialsys:default+clang 'stream_binary /ade049de
+    - stream_test_0 %stream_binary.elem_type=float %stream_binary.array_size=16777216 %stream_binary.num_iters=10 /c0c0f2bf
+        ^build_stream %elem_type=float %array_size=16777216 %num_iters=10 ~tutorialsys:default+gnu 'stream_binary /6767ce8c
+        ^build_stream %elem_type=float %array_size=16777216 %num_iters=10 ~tutorialsys:default+clang 'stream_binary /246007ff
+    Found 6 check(s)
 
 
 .. note::
