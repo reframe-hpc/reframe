@@ -305,6 +305,7 @@ class CheckFieldFormatter(logging.Formatter):
 
         self.__fmt = fmt
         self.__fmtperf = perffmt[:-1] if perffmt else ''
+        self.__specs = re.findall(r'\%\((\S+?)\)s', fmt)
         self.__delim = perffmt[-1] if perffmt else ''
         self.__expand_vars = '%(check_#ALL)s' in self.__fmt
         self.__expanded_fmt = {}
@@ -349,6 +350,10 @@ class CheckFieldFormatter(logging.Formatter):
 
     def formatMessage(self, record):
         fmt = self._expand_fmt(record)
+        for s in self.__specs:
+            if s != 'check_#ALL' and not hasattr(record, s):
+                setattr(record, s, None)
+
         record_proxy = dict(record.__dict__)
         for k, v in record_proxy.items():
             if k == 'check_perfvalues':
