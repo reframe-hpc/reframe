@@ -178,15 +178,17 @@ class MultiFileHandler(logging.FileHandler):
         # Expand the special check_#ALL specifier
         if '%(check_#ALL)s' in self.__fmt:
             delim = _guess_delim(self.__fmt)
-            self.__fmt = self.__fmt.replace(
+            fmt = self.__fmt.replace(
                 '%(check_#ALL)s',
                 delim.join(f'%({x})s'
                            for x in sorted(record.__rfm_loggable_attrs__)
                            if x not in self.__ignore_keys)
             )
+        else:
+            fmt = self.__fmt
 
         header = ''
-        for m in self.__attr_patt.finditer(self.__fmt):
+        for m in self.__attr_patt.finditer(fmt):
             attr = m.group(1)
             delim = m.group(2)
             if attr == 'check_perfvalues':
@@ -306,19 +308,25 @@ class CheckFieldFormatter(logging.Formatter):
         self.__specs = re.findall(r'\%\((\S+?)\)s', fmt)
         self.__delim = perffmt[-1] if perffmt else ''
         self.__expand_vars = '%(check_#ALL)s' in self.__fmt
-        self.__expanded = False
+        self.__expanded_fmt = {}
         self.__ignore_keys = set(ignore_keys) if ignore_keys else set()
 
-    def _expand_fmt(self, attrs):
-        if not self.__expand_vars or self.__expanded:
+    def _expand_fmt(self, record):
+        if not self.__expand_vars:
             return self.__fmt
 
-        delim = _guess_delim(self.__fmt)
-        self.__fmt = self.__fmt.replace(
-            '%(check_#ALL)s', delim.join(f'%({x})s' for x in attrs
-                                         if x not in self.__ignore_keys)
-        )
-        self.__expanded = True
+        key = id(record.__rfm_check__)
+        attrs = sorted(record.__rfm_loggable_attrs__)
+        try:
+            return self.__expanded_fmt[key]
+        except KeyError:
+            delim = _guess_delim(self.__fmt)
+            fmt = self.__fmt.replace(
+                '%(check_#ALL)s', delim.join(f'%({x})s' for x in attrs
+                                             if x not in self.__ignore_keys)
+            )
+            self.__expanded_fmt[key] = fmt
+            return fmt
 
     def _format_perf(self, perfvars):
         chunks = []
@@ -341,9 +349,9 @@ class CheckFieldFormatter(logging.Formatter):
         return self.__delim.join(chunks)
 
     def formatMessage(self, record):
-        self._expand_fmt(sorted(record.__rfm_loggable_attrs__))
+        fmt = self._expand_fmt(record)
         for s in self.__specs:
-            if not hasattr(record, s):
+            if s != 'check_#ALL' and not hasattr(record, s):
                 setattr(record, s, None)
 
         record_proxy = dict(record.__dict__)
@@ -362,7 +370,7 @@ class CheckFieldFormatter(logging.Formatter):
             )
 
         try:
-            return self.__fmt % record_proxy
+            return fmt % record_proxy
         except ValueError:
             return ("<error formatting the log message: "
                     "please check the 'format' string>")

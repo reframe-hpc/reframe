@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import contextlib
+import io
 import json
 import jsonschema
 import os
@@ -999,89 +1000,79 @@ def test_config_params(make_runner, make_exec_ctx):
     assert not runner.stats.failed()
 
 
+class _MyPerfTest(rfm.RunOnlyRegressionTest):
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    executable = 'echo perf0=100 && echo perf1=50'
+
+    @sanity_function
+    def validate(self):
+        return sn.assert_found(r'perf0', self.stdout)
+
+    @performance_function('unit0')
+    def perf0(self):
+        return sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float)
+
+    @performance_function('unit1')
+    def perf1(self):
+        return sn.extractsingle(r'perf1=(\S+)', self.stdout, 1, float)
+
+
+class _MyPerfParamTest(_MyPerfTest):
+    p = parameter([1, 2])
+
+
+class _MyFailingTest(rfm.RunOnlyRegressionTest):
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    executable = 'echo perf0=100'
+
+    @sanity_function
+    def validate(self):
+        return False
+
+    @performance_function('unit0')
+    def perf0(self):
+        return sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float)
+
+
+class _LazyPerfTest(rfm.RunOnlyRegressionTest):
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    executable = 'echo perf0=100'
+
+    @sanity_function
+    def validate(self):
+        return True
+
+    @run_before('performance')
+    def set_perf_vars(self):
+        self.perf_variables = {
+            'perf0': sn.make_performance_function(
+                sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float),
+                'unit0'
+            )
+        }
+
+
 @pytest.fixture
 def perf_test():
-    class _MyTest(rfm.RunOnlyRegressionTest):
-        valid_systems = ['*']
-        valid_prog_environs = ['*']
-        executable = 'echo perf0=100 && echo perf1=50'
-
-        @sanity_function
-        def validate(self):
-            return sn.assert_found(r'perf0', self.stdout)
-
-        @performance_function('unit0')
-        def perf0(self):
-            return sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float)
-
-        @performance_function('unit1')
-        def perf1(self):
-            return sn.extractsingle(r'perf1=(\S+)', self.stdout, 1, float)
-
-    return _MyTest()
+    return _MyPerfTest()
 
 
 @pytest.fixture
 def perf_param_tests():
-    class _MyTest(rfm.RunOnlyRegressionTest):
-        valid_systems = ['*']
-        valid_prog_environs = ['*']
-        executable = 'echo perf0=100 && echo perf1=50'
-        p = parameter([1, 2])
-
-        @sanity_function
-        def validate(self):
-            return sn.assert_found(r'perf0', self.stdout)
-
-        @performance_function('unit0')
-        def perf0(self):
-            return sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float)
-
-        @performance_function('unit1')
-        def perf1(self):
-            return sn.extractsingle(r'perf1=(\S+)', self.stdout, 1, float)
-
-    return [_MyTest(variant_num=v) for v in range(_MyTest.num_variants)]
+    return [_MyPerfParamTest(variant_num=v)
+            for v in range(_MyPerfParamTest.num_variants)]
 
 
 @pytest.fixture
 def failing_perf_test():
-    class _MyFailingTest(rfm.RunOnlyRegressionTest):
-        valid_systems = ['*']
-        valid_prog_environs = ['*']
-        executable = 'echo perf0=100'
-
-        @sanity_function
-        def validate(self):
-            return False
-
-        @performance_function('unit0')
-        def perf0(self):
-            return sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float)
-
     return _MyFailingTest()
 
 
 @pytest.fixture
 def lazy_perf_test():
-    class _LazyPerfTest(rfm.RunOnlyRegressionTest):
-        valid_systems = ['*']
-        valid_prog_environs = ['*']
-        executable = 'echo perf0=100'
-
-        @sanity_function
-        def validate(self):
-            return True
-
-        @run_before('performance')
-        def set_perf_vars(self):
-            self.perf_variables = {
-                'perf0': sn.make_performance_function(
-                    sn.extractsingle(r'perf0=(\S+)', self.stdout, 1, float),
-                    'unit0'
-                )
-            }
-
     return _LazyPerfTest()
 
 
@@ -1142,6 +1133,14 @@ def _assert_header(filepath, header):
         assert fp.readline().strip() == header
 
 
+def _assert_no_logging_error(fn, *args, **kwargs):
+    captured_stderr = io.StringIO()
+    with contextlib.redirect_stderr(captured_stderr):
+        fn(*args, **kwargs)
+
+    assert 'Logging error' not in captured_stderr.getvalue()
+
+
 def test_perf_logging(make_runner, make_exec_ctx, perf_test,
                       config_perflog, tmp_path):
     make_exec_ctx(
@@ -1164,14 +1163,14 @@ def test_perf_logging(make_runner, make_exec_ctx, perf_test,
     testcases = executors.generate_testcases([perf_test])
     runner.runall(testcases)
 
-    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyPerfTest.log'
     assert os.path.exists(logfile)
     assert _count_lines(logfile) == 2
 
     # Rerun with the same configuration and check that new entry is appended
     testcases = executors.generate_testcases([perf_test])
     runner = make_runner()
-    runner.runall(testcases)
+    _assert_no_logging_error(runner.runall, testcases)
     assert _count_lines(logfile) == 3
 
     # Change the configuration and rerun
@@ -1189,7 +1188,7 @@ def test_perf_logging(make_runner, make_exec_ctx, perf_test,
     logging.configure_logging(rt.runtime().site_config)
     testcases = executors.generate_testcases([perf_test])
     runner = make_runner()
-    runner.runall(testcases)
+    _assert_no_logging_error(runner.runall, testcases)
     assert _count_lines(logfile) == 2
     _assert_header(logfile,
                    'job_completion_time,version,display_name,system,partition,'
@@ -1209,7 +1208,7 @@ def test_perf_logging(make_runner, make_exec_ctx, perf_test,
     logging.configure_logging(rt.runtime().site_config)
     testcases = executors.generate_testcases([perf_test])
     runner = make_runner()
-    runner.runall(testcases)
+    _assert_no_logging_error(runner.runall, testcases)
     assert _count_lines(logfile) == 2
     _assert_header(logfile,
                    'job_completion_time,version,display_name,system,partition,'
@@ -1238,9 +1237,9 @@ def test_perf_logging_no_end_delim(make_runner, make_exec_ctx, perf_test,
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases([perf_test])
-    runner.runall(testcases)
+    _assert_no_logging_error(runner.runall, testcases)
 
-    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyPerfTest.log'
     assert os.path.exists(logfile)
     assert _count_lines(logfile) == 2
 
@@ -1270,9 +1269,9 @@ def test_perf_logging_no_perfvars(make_runner, make_exec_ctx, perf_test,
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases([perf_test])
-    runner.runall(testcases)
+    _assert_no_logging_error(runner.runall, testcases)
 
-    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyPerfTest.log'
     assert os.path.exists(logfile)
     assert _count_lines(logfile) == 2
 
@@ -1307,9 +1306,9 @@ def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
     testcases = executors.generate_testcases(
         [perf_test, simple_test, failing_perf_test]
     )
-    runner.runall(testcases)
+    _assert_no_logging_error(runner.runall, testcases)
 
-    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyPerfTest.log'
     assert os.path.exists(logfile)
     assert _count_lines(logfile) == 3
 
@@ -1340,7 +1339,7 @@ def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases([lazy_perf_test])
-    runner.runall(testcases)
+    _assert_no_logging_error(runner.runall, testcases)
 
     logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_LazyPerfTest.log'
     assert os.path.exists(logfile)
@@ -1352,9 +1351,9 @@ def test_perf_logging_all_attrs(make_runner, make_exec_ctx, perf_test,
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases([perf_test])
-    runner.runall(testcases)
+    _assert_no_logging_error(runner.runall, testcases)
 
-    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyPerfTest.log'
     assert os.path.exists(logfile)
     with open(logfile) as fp:
         header = fp.readline()
@@ -1363,14 +1362,41 @@ def test_perf_logging_all_attrs(make_runner, make_exec_ctx, perf_test,
     assert len(header.split('|')) == len(loggable_attrs) + 1
 
 
+def test_perf_logging_custom_vars(make_runner, make_exec_ctx,
+                                  config_perflog, tmp_path):
+    # Create two tests with different loggable variables
+    class _X(_MyPerfTest):
+        x = variable(int, value=1, loggable=True)
+
+    class _Y(_MyPerfTest):
+        y = variable(int, value=2, loggable=True)
+
+    make_exec_ctx(config_perflog(fmt='%(check_result)s|%(check_#ALL)s'))
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([_X(), _Y()])
+    _assert_no_logging_error(runner.runall, testcases)
+
+    logfiles = [tmp_path / 'perflogs' / 'generic' / 'default' / '_X.log',
+                tmp_path / 'perflogs' / 'generic' / 'default' / '_Y.log']
+    for f in logfiles:
+        with open(f) as fp:
+            header = fp.readline().strip()
+            if os.path.basename(f).startswith('_X'):
+                assert 'x' in header.split('|')
+            else:
+                assert 'y' in header.split('|')
+
+
 def test_perf_logging_param_test(make_runner, make_exec_ctx, perf_param_tests,
                                  config_perflog, tmp_path):
     make_exec_ctx(config_perflog(fmt='%(check_result)s|%(check_#ALL)s'))
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases(perf_param_tests)
-    runner.runall(testcases)
+    _assert_no_logging_error(runner.runall, testcases)
 
-    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyTest.log'
+    logfile = (tmp_path / 'perflogs' / 'generic' /
+               'default' / '_MyPerfParamTest.log')
     assert os.path.exists(logfile)
     assert _count_lines(logfile) == 3
