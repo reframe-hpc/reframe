@@ -414,36 +414,39 @@ Flexible tests
 
 .. versionadded:: 2.15
 
-ReFrame can automatically set the number of tasks of a particular test, if its :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` attribute is set to a negative value or zero.
+ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks` attribute is set to a negative value or zero.
 In ReFrame's terminology, such tests are called *flexible*.
 Negative values indicate the minimum number of tasks that are acceptable for this test (a value of ``-4`` indicates that at least ``4`` tasks are required).
-A zero value indicates the default minimum number of tasks which is equal to :attr:`~reframe.core.pipeline.RegressionTest.num_tasks_per_node`.
+A zero value indicates the default minimum number of tasks which is equal to :attr:`num_tasks_per_node`.
 
-By default, ReFrame will spawn such a test on all the idle nodes of the current system partition, but this behavior can be adjusted with the |--flex-alloc-nodes|_ command-line option.
-Flexible tests are very useful for diagnostics tests, e.g., tests for checking the health of a whole set nodes.
-In this example, we demonstrate this feature through a simple test that runs ``hostname``.
-The test will verify that all the nodes print the expected host name:
+By default, ReFrame will spawn such a test on all the idle nodes of the current system partition, but this behavior can be adjusted with :option:`--flex-alloc-nodes` command-line option.
+Flexible tests are very useful for multi-node diagnostic tests.
+
+In this example, we demonstrate this feature by forcing flexible execution in the OSU allreduce benchmark.
+
+.. code-block:: bash
+
+   reframe --prefix=/scratch/rfm-stage/ -C config/cluster_mpi.py -c mpi/osu.py -n osu_allreduce_test -S num_tasks=0 -r
+
+By default, our version of the OSU allreduce benchmark uses two processes, but setting :attr:`num_tasks` to zero will span the test to the full pseudo-cluster occupying all three available nodes:
 
 .. code-block:: console
 
-   cat tutorials/advanced/flexnodes/flextest.py
+    admin@login:~$ squeue
+                 JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+                     5       all rfm_osu_    admin  R       1:04      3 nid[00-02]
 
-
-.. literalinclude:: ../tutorials/advanced/flexnodes/flextest.py
-   :start-at: import reframe
-   :emphasize-lines: 10-
-
-The first thing to notice in this test is that :attr:`~reframe.core.pipeline.RegressionTest.num_tasks` is set to zero as default, which is a requirement for flexible tests.
-However, with flexible tests, this value is updated right after the job completes to the actual number of tasks that were used.
-Consequently, this allows the sanity function of the test to assert that the number host names printed matches :attr:`~reframe.core.pipeline.RegressionTest.num_tasks`.
-
-.. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
-.. _--flex-alloc-nodes: manpage.html#cmdoption-flex-alloc-nodes
-
+Note that for flexible tests, :attr:`num_tasks` is updated to the actual value of tasks that ReFrame requested just after the test job is submitted.
+Thus, the actual number of tasks can then be used in sanity or performance checking.
 
 .. tip::
 
-   If you want to run multiple flexible tests at once, it's better to run them using the serial execution policy, because the first test might take all the available nodes and will cause the rest to fail immediately, since there will be no available nodes for them.
+   If you want to run multiple flexible tests at once that compete for the same nodes, you will have to run them using the serial execution policy, because the first test will take all the available idel nodes causing the rest to fail immediately, as there will be no available nodes for them.
+
+
+Testing containerized applications
+==================================
+
 
 
 
