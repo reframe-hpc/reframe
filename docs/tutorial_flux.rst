@@ -8,15 +8,16 @@ container here from the root of reframe.
 
 .. code:: bash
 
-   $ docker build -f tutorials/flux/Dockerfile -t flux-reframe .
+   docker build -f examples/tutorial/dockerfiles/flux.dockerfile -t flux-reframe .
+
 
 Then shell inside, optionally binding the present working directory if
 you want to develop.
 
 .. code:: bash
 
-   $ docker run -it -v $PWD:/code flux-reframe
-   $ docker run -it flux-reframe
+   docker run -it -v $PWD:/code flux-reframe
+   docker run -it flux-reframe
 
 Note that if you build the local repository, you’ll need to bootstrap
 and install again, as we have over-written the bin!
@@ -27,7 +28,7 @@ and install again, as we have over-written the bin!
 
 And then reframe will again be in the local ``bin`` directory:
 
-.. code:: bash
+.. code:: console
 
    # which reframe
    /code/bin/reframe
@@ -35,7 +36,7 @@ And then reframe will again be in the local ``bin`` directory:
 Then we can run ReFrame with the custom config `config.py <config.py>`__
 for flux.
 
-.. code:: bash
+.. code:: console
 
    # What tests are under tutorials/flux?
    $ cd tutorials/flux
@@ -63,14 +64,14 @@ This also works
 
 .. code:: bash
 
-   $ reframe -c tutorials/flux -C tutorials/flux/settings.py -l
+   reframe -c tutorials/flux -C tutorials/flux/settings.py -l
 
 And then to run tests, just replace ``-l`` (for list) with ``-r`` or
 ``--run`` (for run):
 
 .. code:: bash
 
-   $ reframe -c tutorials/flux -C tutorials/flux/settings.py --run
+   reframe -c tutorials/flux -C tutorials/flux/settings.py --run
 
 .. code:: console
 
@@ -86,7 +87,7 @@ And then to run tests, just replace ``-l`` (for list) with ``-r`` or
      output directory:  '/code/output'
 
    [==========] Running 1 check(s)
-   [==========] Started on Fri Sep 16 20:47:15 2022 
+   [==========] Started on Fri Sep 16 20:47:15 2022
 
    [----------] start processing checks
    [ RUN      ] EchoRandTest /66b93401 @generic:default+builtin
@@ -94,15 +95,15 @@ And then to run tests, just replace ``-l`` (for list) with ``-r`` or
    [----------] all spawned checks have finished
 
    [  PASSED  ] Ran 1/1 test case(s) from 1 check(s) (0 failure(s), 0 skipped)
-   [==========] Finished on Fri Sep 16 20:47:15 2022 
+   [==========] Finished on Fri Sep 16 20:47:15 2022
    Run report saved in '/root/.reframe/reports/run-report.json'
    Log file(s) saved in '/tmp/rfm-0avso9nb.log'
-   
+
 For advanced users or developers, here is how to run tests within the container:
 
 Testing
 -------
 
-.. code:: console
+.. code:: bash
 
     ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py unittests/test_schedulers.py -xs
