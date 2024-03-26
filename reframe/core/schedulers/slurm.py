@@ -482,7 +482,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             return
 
         if not reasons:
-            completed = _run_strict('squeue -h -j %s -o %%r' % job.jobid)
+            completed = osext.run_command('squeue -h -j %s -o %%r' % job.jobid)
             reasons = completed.stdout.splitlines()
             if not reasons:
                 # Can't retrieve job's state. Perhaps it has finished already
