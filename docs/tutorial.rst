@@ -1117,6 +1117,31 @@ However, you can use the :attr:`reframe.core.launcher.JobLauncher` API to emit t
 Here we invoke the job launcher's :func:`~reframe.core.launchers.JobLauncher.run_command` method, which is responsible for emitting the launcher prefix based on the current partition.
 
 
+Generally, ReFrame generates the job shell scripts using the following pattern:
+
+.. code-block:: bash
+
+   #!/bin/bash -l
+   {job_scheduler_preamble}
+   {prepare_cmds}
+   {env_load_cmds}
+   {prerun_cmds}
+   {parallel_launcher} {executable} {executable_opts}
+   {postrun_cmds}
+
+The ``job_scheduler_preamble`` contains the backend job scheduler directives that control the job allocation.
+The ``prepare_cmds`` are commands that can be emitted before the test environment commands.
+These can be specified with the :attr:`~config.systems.partitions.prepare_cmds` partition configuration option.
+The ``env_load_cmds`` are the necessary commands for setting up the environment of the test.
+These include any modules or environment variables set at the `system partition level <config_reference.html#system-partition-configuration>`__ or any `modules <regression_test_api.html#reframe.core.pipeline.RegressionTest.modules>`__ or `environment variables <regression_test_api.html#reframe.core.pipeline.RegressionTest.variables>`__ set at the test level.
+Then the commands specified in :attr:`prerun_cmds` follow, while those specified in the :attr:`postrun_cmds` come after the launch of the parallel job.
+The parallel launch itself consists of three parts:
+
+#. The parallel launcher program (e.g., ``srun``, ``mpirun`` etc.) with its options,
+#. the test executable as specified in the :attr:`~reframe.core.pipeline.executable` attribute and
+#. the options to be passed to the executable as specified in the :attr:`executable_opts` attribute.
+
+
 Accessing CPU topology information
 ==================================
 
