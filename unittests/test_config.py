@@ -465,6 +465,7 @@ def test_system_create(site_config):
     assert partition.processor.info is not None
     assert partition.processor.topology is not None
     assert partition.processor.arch == 'skylake'
+    assert partition.processor.model == 'Intel Skylake'
     assert partition.processor.num_cpus == 8
     assert partition.processor.num_cpus_per_core == 2
     assert partition.processor.num_cpus_per_socket == 8
