@@ -7,6 +7,7 @@ import archspec.cpu
 import contextlib
 import glob
 import os
+import platform
 import re
 
 import reframe.utility.osext as osext
@@ -284,7 +285,8 @@ def cpuinfo():
         'arch': archspec.cpu.host().name,
         'vendor': archspec.cpu.host().vendor,
         'model': archspec.cpu.detect.raw_info_dictionary().get('model name',
-                                                               'N/A')
+                                                               'N/A'),
+        'platform': platform.machine()
     }
 
     # Try first to get information from the filesystem

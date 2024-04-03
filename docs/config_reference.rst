@@ -1923,6 +1923,15 @@ A *processor info object* in ReFrame's configuration is used to hold information
 
    .. versionadded:: 4.6
 
+.. attribute:: systems.partitions.processor.platform
+
+   :required: No
+   :default: ``None``
+
+   The OS platform for this processor (e.g., ``x86_64``, ``arm64`` etc.)
+
+   .. versionadded:: 4.6
+
 .. attribute:: systems.partitions.processor.num_cpus
 
    :required: No

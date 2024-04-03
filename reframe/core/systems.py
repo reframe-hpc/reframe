@@ -56,7 +56,7 @@ class ProcessorInfo(_ReadOnlyInfo, jsonext.JSONSerializable):
 
     __slots__ = ()
     _known_attrs = (
-        'arch', 'model', 'num_cpus', 'num_cpus_per_core',
+        'arch', 'model', 'platform', 'num_cpus', 'num_cpus_per_core',
         'num_cpus_per_socket', 'num_sockets', 'topology'
     )
 
