@@ -75,6 +75,7 @@ site_configuration = {
                     },
                     'processor': {
                         'arch': 'skylake',
+                        'model': 'Intel Skylake',
                         'num_cpus': 8,
                         'num_cpus_per_core': 2,
                         'num_cpus_per_socket': 8,
