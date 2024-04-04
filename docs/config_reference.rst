@@ -1914,6 +1914,15 @@ A *processor info object* in ReFrame's configuration is used to hold information
    The microarchitecture of the processor.
 
 
+.. attribute:: systems.partitions.processor.model
+
+   :required: No
+   :default: ``None``
+
+   The model of the processor.
+
+   .. versionadded:: 4.6
+
 .. attribute:: systems.partitions.processor.num_cpus
 
    :required: No
@@ -2017,6 +2026,15 @@ A *device info object* in ReFrame's configuration is used to hold information ab
 
    The microarchitecture of the device.
 
+.. attribute:: systems.partitions.devices.model
+   :noindex:
+
+   :required: No
+   :default: ``None``
+
+   The model of the device.
+
+   .. versionadded:: 4.6
 
 .. attribute:: systems.partitions.devices.num_devices
 

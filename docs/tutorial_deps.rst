@@ -53,7 +53,7 @@ In order for the binding to work correctly the function arguments must be named 
 Referring to a dependency only by the test's name is not enough, since a test might be associated with multiple programming environments.
 For this reason, each dependency argument is actually bound to a function that accepts as argument the name of the target partition and target programming environment.
 If no arguments are passed, the current programming environment is implied, such that ``OSUDownloadTest()`` is equivalent to ``OSUDownloadTest(self.current_environ.name, self.current_partition.name)``.
-In this case, since both the partition and environment of the target dependency do not much those of the current test, we need to specify both.
+In this case, since both the partition and environment of the target dependency do not match those of the current test, we need to specify both.
 
 This call returns the actual test case of the dependency that has been executed.
 This allows you to access any attribute from the target test, as we do in this example by accessing the target test's stage directory, which we use to construct the sourcesdir of the test.
