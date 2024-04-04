@@ -39,8 +39,7 @@ class Environment(jsonext.JSONSerializable):
     '''
 
     def __init__(self, name, modules=None, env_vars=None,
-                 extras=None, features=None, prepare_cmds=None,
-                 resources=None):
+                 extras=None, features=None, prepare_cmds=None):
         modules = modules or []
         env_vars = env_vars or []
         self._name = name
@@ -58,7 +57,6 @@ class Environment(jsonext.JSONSerializable):
         self._extras = extras or {}
         self._features = features or []
         self._prepare_cmds = prepare_cmds or []
-        self._resources = resources or {}
 
     @property
     def name(self):
@@ -147,16 +145,6 @@ class Environment(jsonext.JSONSerializable):
         :type: :class:`List[str]`
         '''
         return util.SequenceView(self._prepare_cmds)
-
-    @property
-    def resources(self):
-        '''The resources associated with this environment.
-
-        .. versionadded:: 4.6.0
-
-        :type: :class:`Dict[str, object]`
-        '''
-        return self._resources
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -254,6 +242,7 @@ class ProgEnvironment(Environment):
                  cxxflags=None,
                  fflags=None,
                  ldflags=None,
+                 resources=None,
                  **kwargs):
         super().__init__(name, modules, env_vars, extras, features,
                          prepare_cmds)
@@ -266,6 +255,7 @@ class ProgEnvironment(Environment):
         self._cxxflags = cxxflags or []
         self._fflags   = fflags   or []
         self._ldflags  = ldflags  or []
+        self._resources = resources or {}
 
     @property
     def cc(self):
@@ -338,3 +328,13 @@ class ProgEnvironment(Environment):
         :type: :class:`str`
         '''
         return self._nvcc
+
+    @property
+    def resources(self):
+        '''The resources associated with this environment.
+
+        .. versionadded:: 4.6.0
+
+        :type: :class:`Dict[str, object]`
+        '''
+        return self._resources
