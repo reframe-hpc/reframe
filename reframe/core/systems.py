@@ -167,7 +167,8 @@ class SystemPartition(jsonext.JSONSerializable):
     def __init__(self, *, parent, name, sched_type, launcher_type,
                  descr, access, container_runtime, container_environs,
                  resources, local_env, environs, max_jobs, prepare_cmds,
-                 processor, devices, extras, features, time_limit, env_resources):
+                 processor, devices, extras, features, time_limit,
+                 env_resources):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
