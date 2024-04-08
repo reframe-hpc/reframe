@@ -176,6 +176,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''
         self._disabled_hooks.add(hook_name)
 
+    @property
+    def disabled_hooks(self):
+        return self._disabled_hooks
+
     @classmethod
     def pipeline_hooks(cls):
         ret = {}

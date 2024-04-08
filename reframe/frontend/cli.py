@@ -156,8 +156,9 @@ def describe_checks(testcases, printer):
             rec['variant_num'] = tc.check.variant_num
             for stage, hooks in tc.check.pipeline_hooks().items():
                 for hk in hooks:
-                    rec['pipeline_hooks'].setdefault(stage, [])
-                    rec['pipeline_hooks'][stage].append(hk.__name__)
+                    if hk.__name__ not in tc.check.disabled_hooks:
+                        rec['pipeline_hooks'].setdefault(stage, [])
+                        rec['pipeline_hooks'][stage].append(hk.__name__)
 
             for attr in list(rec.keys()):
                 if attr == '__rfm_class__':
