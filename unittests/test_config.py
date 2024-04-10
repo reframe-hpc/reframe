@@ -465,7 +465,7 @@ def test_system_create(site_config):
         'uenv', mount='mount_point', file='file_path'
     )
     assert env_resources_spec == ['--mount=mount_point',
-                              '--file=file_path']
+                                  '--file=file_path']
 
     # Check processor info
     assert partition.processor.info is not None
