@@ -461,6 +461,12 @@ def test_system_create(site_config):
     assert resources_spec == ['#DW jobdw capacity=100GB',
                               '#DW stage_in source=/foo']
 
+    env_resources_spec = partition.get_env_resource(
+        'uenv', mount='mount_point', file='file_path'
+    )
+    assert env_resources_spec == ['--mount=mount_point',
+                              '--file=file_path']
+
     # Check processor info
     assert partition.processor.info is not None
     assert partition.processor.topology is not None

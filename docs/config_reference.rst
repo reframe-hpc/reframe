@@ -684,7 +684,7 @@ ReFrame can launch containerized applications, but you need to configure properl
 Custom Job Scheduler Resources
 ==============================
 
-ReFrame allows you to define custom scheduler resources for each partition that you can then transparently access through the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute of a regression test.
+ReFrame allows you to define custom scheduler resources for each partition that you can then transparently access through the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute of a regression test or the environment.
 
 .. py:attribute:: systems.partitions.resources.name
 
@@ -764,6 +764,27 @@ ReFrame allows you to define custom scheduler resources for each partition that 
  .. note::
     For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` parameters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
     The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
+
+
+.. py:attribute:: systems.partitions.env_resources.name
+
+   :required: Yes
+
+  The name of this resources.
+  This name will be used to request this resource in a programming environment :attr:`~environments.resources`.
+
+   .. versionadded:: 4.6
+
+
+.. py:attribute:: systems.partitions.env_resources.options
+
+   :required: No
+   :default: ``[]``
+
+   A list of options to be passed to this partition’s job scheduler.
+   This is very similar to the :attr:`~config.systems.partitions.resources.options` parameter, but it is used to define resources that are specific to a programming environment.
+
+   .. versionadded:: 4.6
 
 
 Environment Configuration
@@ -946,6 +967,16 @@ They are associated with `system partitions <#system-partition-configuration>`__
    However, if the current system was ``daint:gpu``, the first definition would be selected, despite the fact that the second definition is relevant for another partition of the same system.
    To better understand this, ReFrame resolves definitions in a hierarchical way.
    It first looks for definitions for the current partition, then for the containing system and, finally, for global definitions (the ``*`` pseudo-system).
+
+
+.. py:attribute:: environments.resources
+
+   :required: No
+   :default: ``{}``
+
+   This is similar to a regression test's :attr:`~reframe.core.pipeline.RegressionTest.extra_resources`.
+
+   .. versionadded:: 4.6
 
 
 .. _logging-config-reference:

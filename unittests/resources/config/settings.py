@@ -63,6 +63,15 @@ site_configuration = {
                             ]
                         }
                     ],
+                    'env_resources': [
+                        {
+                            'name': 'uenv',
+                            'options': [
+                                '--mount={mount}',
+                                '--file={file}'
+                            ],
+                        },
+                    ],
                     'features': ['cuda', 'mpi'],
                     'extras': {
                         'gpu_arch': 'a100'
