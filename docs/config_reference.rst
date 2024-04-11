@@ -782,7 +782,7 @@ ReFrame allows you to define custom scheduler resources for each partition that 
    :default: ``[]``
 
    A list of options to be passed to this partition’s job scheduler.
-   This is very similar to the :attr:`~config.systems.partitions.resources.options` parameter, but it is used to define resources that are specific to a programming environment.
+   This is very similar to the :attr:`~config.systems.partitions.resources.options` parameter, but it is used to define resources specific to a programming environment.
 
    .. versionadded:: 4.6
 
