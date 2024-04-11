@@ -140,6 +140,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._submit_timeout = self.get_option('job_submit_timeout')
         self._use_nodes_opt = self.get_option('use_nodes_option')
         self._resubmit_on_errors = self.get_option('resubmit_on_errors')
+        self._access_on_submission_command = self.get_option('access_on_submission_command')
 
     def make_job(self, *args, **kwargs):
         return _SlurmJob(*args, **kwargs)
@@ -250,7 +251,11 @@ class SlurmJobScheduler(sched.JobScheduler):
         return list(filter(None, preamble))
 
     def submit(self, job):
-        cmd = f'sbatch {job.script_filename}'
+        cmd_opts = (
+            ' '.join(job.sched_access) if self._access_on_submission_command
+            else ''
+        )
+        cmd = f'sbatch {cmd_opts} {job.script_filename}'
         intervals = itertools.cycle([1, 2, 3])
         while True:
             try:

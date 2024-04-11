@@ -365,6 +365,20 @@ System Partition Configuration
    .. warning::
       This option is broken in 4.0.
 
+
+.. py:attribute:: systems.partitions.sched_options.access_on_submission_command
+
+   :required: No
+   :default: ``false``
+
+   Normally, ReFrame will pass the :attr:`~config.systems.partitions.access` options to the job script only.
+   When this attribute is ``true`` the options are passed verbatim also in the submission command.
+
+   This option is currently relevant for the Slurm backends only.
+
+   .. versionadded:: 4.6.0
+
+
 .. py:attribute:: systems.partitions.sched_options.ssh_hosts
 
    :required: No

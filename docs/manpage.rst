@@ -1209,6 +1209,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame.
 Whenever an environment variable is associated with a configuration option, its default value is omitted as it is the same.
 
 
+.. envvar:: RFM_ACCESS_ON_SUBMISSION_COMMAND
+
+   Pass access options in the submission command (only for Slurm).
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr::attr:`~config.systems.partitions.sched_options.access_on_submission_command`
+      ================================== ==================
+
+.. versionadded:: 4.6.0
+
+
 .. envvar:: RFM_AUTODETECT_FQDN
 
    Use the fully qualified domain name as the hostname.
