@@ -770,7 +770,7 @@ ReFrame allows you to define custom scheduler resources for each partition/envir
 
    :required: Yes
 
-  The name of this resources.
+  The name of the resources.
   This name will be used to request this resource in a programming environment :attr:`~environments.resources`.
 
    .. versionadded:: 4.6
