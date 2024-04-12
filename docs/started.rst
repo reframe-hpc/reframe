@@ -127,10 +127,8 @@ Auto-completion is supported for Bash, Tcsh and Fish shells.
 Where to Go from Here
 ---------------------
 
-If you are new to ReFrame, the place to start is the first tutorial :doc:`tutorial_basics`, which will guide you step-by-step in both writing your first tests and in configuring ReFrame.
-The rest of the tutorials explore additional capabilities of the framework and cover several topics that you will likely come across when writing your own tests.
+If you are new to ReFrame, the place to start is the :doc:`tutorial`, which will guide you through all the concepts of the framework and get you up and running.
+If you are looking for a particular topic that is not covered in the tutorial, you can refer to the :doc:`howto` or the :doc:`topics`.
+For detailed reference guides for the command line, the configuration and the programming API, refer to th :doc:`manuals`.
 
-The :doc:`configure` page provides more details on how a configuration file is structured and the :doc:`topics` explain some more advanced concepts as well as some implementation details.
-The :doc:`manuals` provide complete reference guides for the command line interface, the configuration parameters and the programming APIs for writing tests.
-
-Finally, if you are not new to ReFrame and you have been using the 3.x versions, you should read the :doc:`whats_new_40` page, which explains what are the key new features of ReFrame 4.0 as well as all the breaking changes.
+Finally, if you are an existing ReFrame user of the 3.x versions, you should read the :doc:`whats_new_40` page, which explains what are the key new features of ReFrame 4.0 as well as all the breaking changes.

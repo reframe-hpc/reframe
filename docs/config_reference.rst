@@ -2,7 +2,7 @@
 Configuration Reference
 ***********************
 
-ReFrame's behavior can be configured through its configuration file (see :doc:`configure`), environment variables and command-line options.
+ReFrame's behavior can be configured through its configuration file, environment variables and command-line options.
 An option can be specified via multiple paths (e.g., a configuration file parameter and an environment variable), in which case command-line options precede environment variables, which in turn precede configuration file options.
 This section provides a complete reference guide of the configuration options of ReFrame that can be set in its configuration file or specified using environment variables.
 
@@ -577,7 +577,24 @@ System Partition Configuration
    :default: ``{}``
 
    Processor information for this partition stored in a `processor info object <#processor-info>`__.
-   If not set, ReFrame will try to auto-detect this information (see :ref:`proc-autodetection` for more information).
+   If not set, ReFrame will try to determine this information as follows:
+
+   #. If the processor configuration metadata file in ``~/.reframe/topology/{system}-{part}/processor.json`` exists, the topology information is loaded from there.
+      These files are generated automatically by ReFrame from previous runs.
+
+   #. If the corresponding metadata files are not found, the processor information will be auto-detected.
+      If the system partition is local (i.e., ``local`` scheduler + ``local`` launcher), the processor information is auto-detected unconditionally and stored in the corresponding metadata file for this partition.
+      If the partition is remote, ReFrame will not try to auto-detect it unless the :envvar:`RFM_REMOTE_DETECT` or the :attr:`general.remote_detect` configuration option is set.
+      In that case, the steps to auto-detect the remote processor information are the following:
+
+        a. ReFrame creates a fresh clone of itself in a temporary directory created under ``.`` by default.
+           This temporary directory prefix can be changed by setting the :envvar:`RFM_REMOTE_WORKDIR` environment variable.
+        b. ReFrame changes to that directory and launches a job that will first bootstrap the fresh clone and then run that clone with ``{launcher} ./bin/reframe --detect-host-topology=topo.json``.
+           The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host,
+           which in this case would be the remote compute nodes.
+
+      In case of errors during auto-detection, ReFrame will simply issue a warning and continue.
+
 
    .. versionadded:: 3.5.0
 
@@ -1658,7 +1675,6 @@ General Configuration
 
    Try to auto-detect processor information of remote partitions as well.
    This may slow down the initialization of the framework, since it involves submitting auto-detection jobs to the remote partitions.
-   For more information on how ReFrame auto-detects processor information, you may refer to :ref:`proc-autodetection`.
 
    .. versionadded:: 3.7.0
 

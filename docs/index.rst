@@ -46,10 +46,9 @@ Webinars and Tutorials
    :caption: Table of Contents
 
    started
-   whats_new_40
    tutorial
    howto
-   configure
    topics
    manuals
+   whats_new_40
    hpctestlib

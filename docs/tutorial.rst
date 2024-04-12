@@ -1187,6 +1187,8 @@ The parallel launch itself consists of three parts:
 Accessing CPU topology information
 ==================================
 
+.. versionadded:: 3.7
+
 Sometimes a test may need to access processor topology information for the partition it runs so as to better set up the run.
 Of course, you could hard code the information in the test, but wouldn't be so portable.
 ReFrame auto-detects the local host topology and it can also auto-detect the topology of remote hosts.
@@ -1263,7 +1265,7 @@ To enable remote host auto-detection, we should set the :envvar:`RFM_REMOTE_DETE
     In our setup we need to set also the :envvar:`RFM_REMOTE_WORKDIR` since the current volume (``/home``) is not shared with the head node.
 
 ReFrame caches the result of host auto-detection, so that it avoids re-detecting the topology every time.
-Check out the section ":ref:`proc-autodetection`" for more information on topology autodetection.
+For a detailed description of the process, refer to the documentation of the :attr:`~config.system.partitions.processor` configuration option.
 
 
 Device information
