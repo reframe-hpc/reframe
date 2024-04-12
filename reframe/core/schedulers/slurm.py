@@ -213,11 +213,15 @@ class SlurmJobScheduler(sched.JobScheduler):
             if not opt.strip().startswith(('-C', '--constraint')):
                 preamble.append('%s %s' % (self._prefix, opt))
 
+        # To avoid overriding a constraint that's passed into `sched_access`,
+        # we AND it with the `--constraint` option passed either in `options`
+        # or in `cli_options`
         constraints = []
         constraint_parser = ArgumentParser()
         constraint_parser.add_argument('-C', '--constraint')
         parsed_options, _ = constraint_parser.parse_known_args(
-            job.sched_access)
+            job.sched_access
+        )
         if parsed_options.constraint:
             constraints.append(parsed_options.constraint.strip())
 
@@ -230,9 +234,14 @@ class SlurmJobScheduler(sched.JobScheduler):
             constraints.append(parsed_options.constraint.strip())
 
         if constraints:
-            preamble.append(
-                self._format_option('&'.join(constraints), '--constraint={0}')
-            )
+            if len(constraints) == 1:
+                constr = constraints[0]
+            else:
+                # Parenthesize the constraints prior to joining them with `&`
+                # to make sure that precedence is respected.
+                constr = '&'.join(f'({c})' for c in constraints)
+
+            preamble.append(self._format_option(constr, '--constraint={0}'))
 
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
@@ -350,8 +359,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         self.log(f'[F] Filtering nodes by partition(s) {partitions}: '
                  f'available nodes now: {len(nodes)}')
         if constraints:
-            constraints = set(constraints.strip().split('&'))
-            nodes = {n for n in nodes if n.active_features >= constraints}
+            nodes = {n for n in nodes if n.satisfies(constraints)}
             self.log(f'[F] Filtering nodes by constraint(s) {constraints}: '
                      f'available nodes now: {len(nodes)}')
 
@@ -668,6 +676,15 @@ class _SlurmNode(sched.Node):
 
     def is_down(self):
         return not self.is_avail()
+
+    def satisfies(self, slurm_constraint):
+        # Convert the Slurm constraint to a Python expression and evaluate it
+        names = {grp[0]
+                 for grp in re.finditer(r'(\w(\w|\d)*)', slurm_constraint)}
+        expr = slurm_constraint.replace('|', ' or ').replace('&', ' and ')
+        vars = {n: True for n in self.active_features}
+        vars.update({n: False for n in names - self.active_features})
+        return eval(expr, {}, vars)
 
     @property
     def active_features(self):

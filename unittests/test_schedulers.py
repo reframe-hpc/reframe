@@ -617,7 +617,7 @@ def test_combined_access_constraint(make_job, slurm_only):
     with open(job.script_filename) as fp:
         script_content = fp.read()
 
-    assert re.search(r'(?m)--constraint=c1&c2&c3$', script_content)
+    assert re.search(r'(?m)--constraint=\(c1\)&\(c2&c3\)$', script_content)
     assert re.search(r'(?m)--constraint=(c1|c2&c3)$', script_content) is None
 
 
@@ -628,7 +628,7 @@ def test_combined_access_multiple_constraints(make_job, slurm_only):
     with open(job.script_filename) as fp:
         script_content = fp.read()
 
-    assert re.search(r'(?m)--constraint=c1&c3$', script_content)
+    assert re.search(r'(?m)--constraint=\(c1\)&\(c3\)$', script_content)
     assert re.search(r'(?m)--constraint=(c1|c2|c3)$', script_content) is None
 
 
@@ -1174,6 +1174,20 @@ def test_flex_alloc_enough_nodes_constraint_partition(make_flexible_job):
     job.num_tasks = -4
     prepare_job(job)
     assert job.num_tasks == 4
+
+
+def test_flex_alloc_enough_nodes_constraint_expr(make_flexible_job):
+    job = make_flexible_job('all')
+    job.options = ['-C "(f1|f2)&f3"']
+    prepare_job(job)
+    assert job.num_tasks == 8
+
+
+def test_flex_alloc_not_enough_nodes_constraint_expr(make_flexible_job):
+    job = make_flexible_job('all')
+    job.options = ['-C "(f1|f2)&(f8|f9)"']
+    with pytest.raises(JobError):
+        prepare_job(job)
 
 
 @pytest.fixture
