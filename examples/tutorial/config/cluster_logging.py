@@ -76,7 +76,8 @@ site_configuration = {
                     'name': 'reframe.log',
                     'timestamp': '%FT%T',
                     'level': 'debug2',
-                    'format': '[%(asctime)s] %(levelname)s: %(check_info)s: %(message)s',
+                    'format': ('[%(asctime)s] %(levelname)s: '
+                               '%(check_info)s: %(message)s'),
                     'append': False
                 },
                 {

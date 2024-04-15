@@ -114,7 +114,8 @@ site_configuration = {
                         'data-version': '1.0'
                     },
                     'ignore_keys': ['check_perfvalues'],
-                    'json_formatter': _format_record if os.getenv('CUSTOM_JSON') else None
+                    'json_formatter': (_format_record
+                                       if os.getenv('CUSTOM_JSON') else None)
                 }
             ]
         }
