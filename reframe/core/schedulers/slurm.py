@@ -678,13 +678,21 @@ class _SlurmNode(sched.Node):
         return not self.is_avail()
 
     def satisfies(self, slurm_constraint):
-        # Convert the Slurm constraint to a Python expression and evaluate it
+        # Convert the Slurm constraint to a Python expression and evaluate it,
+        # but restrict our syntax to accept only AND or OR constraints and
+        # their combinations
+        if not re.match(r'^[\w\d\(\)\|\&]*$', slurm_constraint):
+            return False
+
         names = {grp[0]
                  for grp in re.finditer(r'(\w(\w|\d)*)', slurm_constraint)}
         expr = slurm_constraint.replace('|', ' or ').replace('&', ' and ')
         vars = {n: True for n in self.active_features}
         vars.update({n: False for n in names - self.active_features})
-        return eval(expr, {}, vars)
+        try:
+            return eval(expr, {}, vars)
+        except BaseException:
+            return False
 
     @property
     def active_features(self):

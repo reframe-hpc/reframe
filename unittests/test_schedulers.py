@@ -1183,6 +1183,19 @@ def test_flex_alloc_enough_nodes_constraint_expr(make_flexible_job):
     assert job.num_tasks == 8
 
 
+def test_flex_alloc_nodes_unsupported_constraint(make_flexible_job):
+    job = make_flexible_job('all')
+    job.options = ['-C "[f1*2&f2*4]"']
+    with pytest.raises(JobError):
+        prepare_job(job)
+
+def test_flex_alloc_nodes_invalid_constraint(make_flexible_job):
+    job = make_flexible_job('all')
+    job.options = ['-C "(f1|f2)&"']
+    with pytest.raises(JobError):
+        prepare_job(job)
+
+
 def test_flex_alloc_not_enough_nodes_constraint_expr(make_flexible_job):
     job = make_flexible_job('all')
     job.options = ['-C "(f1|f2)&(f8|f9)"']
