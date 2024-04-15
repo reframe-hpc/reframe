@@ -473,6 +473,44 @@ To fully understand how the different cases of a test depend on the cases of ano
 It is generally preferable to use the higher-level fixture API instead of the low-level dependencies as it's more intuitive, less error-prone and offers more flexibility.
 
 
+.. _param_deps:
+
+Depending on parameterized tests
+--------------------------------
+
+As we have seen earlier, tests define their dependencies by referencing the target tests by their unique name.
+This is straightforward when referring to regular tests, where their name matches the class name, but it becomes cumbersome trying to refer to a parameterized tests, since no safe assumption should be made as of the variant number of the test or how the parameters are encoded in the name.
+In order to safely and reliably refer to a parameterized test, you should use the :func:`~reframe.core.pipeline.RegressionMixin.get_variant_nums` and :func:`~reframe.core.pipeline.RegressionMixin.variant_name` class methods as shown in the following example:
+
+.. literalinclude:: ../tutorials/deps/parameterized.py
+   :lines: 6-
+
+In this example, :class:`TestB` depends only on selected variants of :class:`TestA`.
+The :func:`get_variant_nums` method accepts a set of key-value pairs representing the target test parameters and selector functions and returns the list of the variant numbers that correspond to these variants.
+Using the :func:`variant_name` subsequently, we can get the actual name of the variant.
+
+
+.. code-block:: bash
+
+   reframe -c reframe-examples/tutorial/deps/parameterized.py -l
+
+.. code-block:: console
+
+    [List of matched checks]
+    - TestB /cc291487
+        ^TestA %z=9 /ca1c96ee
+        ^TestA %z=8 /75b6718c
+        ^TestA %z=7 /1d87616c
+        ^TestA %z=6 /06c8e673
+    - TestA %z=5 /536115e0
+    - TestA %z=4 /b1aa0bc1
+    - TestA %z=3 /e62d23e8
+    - TestA %z=2 /423a76e9
+    - TestA %z=1 /8258ae7a
+    - TestA %z=0 /7a14ae93
+    Found 11 check(s)
+
+
 .. _generate-ci-pipeline:
 
 Integrating into a CI pipeline
@@ -1051,6 +1089,8 @@ Try passing a specific system or partition with the :option:`--system` option or
 
 Extending the framework
 =======================
+
+.. _custom-launchers:
 
 Implementing a parallel launcher backend
 ----------------------------------------
