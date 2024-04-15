@@ -1189,6 +1189,7 @@ def test_flex_alloc_nodes_unsupported_constraint(make_flexible_job):
     with pytest.raises(JobError):
         prepare_job(job)
 
+
 def test_flex_alloc_nodes_invalid_constraint(make_flexible_job):
     job = make_flexible_job('all')
     job.options = ['-C "(f1|f2)&"']
