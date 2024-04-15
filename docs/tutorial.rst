@@ -15,6 +15,7 @@ Requirements
 ============
 
 To run this tutorial you need ``docker`` for the local examples and ``docker compose`` for the examples emulating a Slurm cluster.
+Note, that the Docker daemon must be running.
 
 The tutorial container images provide already the latest ReFrame version installed.
 For installing a stand-alone version of ReFrame, please refer to the ":doc:`started`" guide.
@@ -29,7 +30,10 @@ To run the local examples, launch the single-node tutorial container by binding 
 
 .. code-block:: bash
 
-   docker run -h myhost -it --mount type=bind,source=(pwd)/examples/,target=/home/user/reframe-examples reframe-tut-singlenode:latest /bin/bash
+   git clone https://github.com/reframe-hpc/reframe.git
+   cd reframe
+   docker build -t reframe-tut-singlenode:latest -f examples/tutorial/dockerfiles/singlenode.Dockerfile .
+   docker run -h myhost -it --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples reframe-tut-singlenode:latest /bin/bash
 
 
 .. _multi-node-setup:
@@ -41,6 +45,8 @@ To run the multi-node examples you need first to launch a Slurm pseudo cluster u
 
 .. code-block:: bash
 
+   git clone https://github.com/reframe-hpc/reframe.git
+   cd reframe
    docker compose --project-directory=$(pwd) -f examples/tutorial/dockerfiles/slurm-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend
 
 Once the Docker compose stack is up, you execute the following from a difference console window in order to "log in" in the frontend container:
@@ -48,6 +54,12 @@ Once the Docker compose stack is up, you execute the following from a difference
 .. code-block::
 
    docker exec -it $(docker ps -f name=frontend --format=json | jq -r .ID) /bin/bash
+
+.. note::
+
+   The above command is tested with Docker 24.0.6.
+   On older Docker versions the ``jq`` command that parses the container ID may not be working as shown.
+   In this case you may fetch manually the container ID from the ``docker ps -f name=frontend`` output and pass it to the ``docker exec`` command.
 
 
 Once done, press Ctl-D in the frontend container and Ctl-C in the Docker compose console window.
