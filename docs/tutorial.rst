@@ -166,7 +166,7 @@ This can be suppressed by increasing the level at which this information is logg
 Run reports and performance logging
 -----------------------------------
 
-Once a test session finishes, ReFrame a generates a detailed JSON report under ``$HOME/.reframe/reports``.
+Once a test session finishes, ReFrame generates a detailed JSON report under ``$HOME/.reframe/reports``.
 Every time ReFrame is run a new report will be generated automatically.
 The latest one is always symlinked by the ``latest.json`` name, unless the :option:`--report-file` option is given.
 
@@ -211,7 +211,7 @@ The ``rfm_job.sh`` is the actual test script that was generated and executed and
    #!/bin/bash
    stream.x
 
-Inspecting  test failures
+Inspecting test failures
 -------------------------
 
 When a test fails, ReFrame will not move its artifacts to the output directory and will keep everything inside the stage directory.
@@ -1202,7 +1202,7 @@ Accessing CPU topology information
 .. versionadded:: 3.7
 
 Sometimes a test may need to access processor topology information for the partition it runs so as to better set up the run.
-Of course, you could hard code the information in the test, but wouldn't be so portable.
+Of course, you could hard code the information in the test, but it wouldn't be so portable.
 ReFrame auto-detects the local host topology and it can also auto-detect the topology of remote hosts.
 It makes available this information to the test through the :attr:`current_partition`'s :attr:`~reframe.core.systems.SystemPartition.processor` attribute.
 
@@ -1390,7 +1390,7 @@ You can instruct the :option:`-l` to list the actual (concretized) test cases th
     - stream_build_test /6c084d40 @pseudo-cluster:compute+clang
     Concretized 4 test case(s)
 
-Notice the ``@pseudo-cluster:login+gnu`` notation that is append to each test case:
+Notice the ``@pseudo-cluster:login+gnu`` notation that is appended to each test case:
 this is the exact combination of partition and environment that the test will run for.
 
 You can also opt for a detailed listing with the :option:`-L` option, which also accepts the ``C`` argument for producing the concretized test cases.
@@ -1755,7 +1755,7 @@ By default, ReFrame generates a debug log file in the system's temporary directo
 This is quite a detailed log.
 Logging can be configured in the :attr:`~config.logging` section of the configuration file.
 Multiple logging handlers can be registered that will log messages to different sinks at different levels.
-Let's see an example on how to setup  ReFrame to save its output in a ``reframe_<timestamp>.out` and a detailed debug output in ``reframe_<timestamp>.log``:
+Let's see an example on how to setup ReFrame to save its output in a ``reframe_<timestamp>.out` and a detailed debug output in ``reframe_<timestamp>.log``:
 
 .. literalinclude:: ../examples/tutorial/config/cluster_logging.py
    :caption:
@@ -1822,7 +1822,7 @@ The ``filelog`` handler manages the writing of performance data to files per tes
 Let's walk briefly through the most important parts of its configuration:
 
 - The :attr:`~config.logging.handlers_perflog..filelog..prefix` is an additional directory prefix under the global prefix (see :option:`--prefix` option) where the perflogs will be saved.
-  The formatting placeholders are described below
+  The formatting placeholders are described below.
 - The :attr:`~config.logging.handlers_perflog.format` specifies how the log record will be formatted.
   Each placeholder of the form ``%(placeholder)s`` is replaced by the actual value during runtime.
   All placeholders starting with ``check_`` refer to test attributes.
