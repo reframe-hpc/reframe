@@ -75,7 +75,7 @@ Based on the selected build system, ReFrame will generate the appropriate build 
     make -j 1 CC="gcc" CXX="g++" FC="ftn" NVCC="nvcc" CFLAGS="-O3 -fopenmp" stream_c.exe
 
 
-Note that ReFrame passes sets several variables in the ``make`` command apart from those explicitly requested by the test, such as the ``CFLAGS``.
+Note that ReFrame passes several variables in the ``make`` command apart from those explicitly requested by the test, such as the ``CFLAGS``.
 The rest of the flags are implicitly requested by the selected test environment, in this case ``gnu``, and ReFrame is trying its best to make sure that the environment's definition will be respected.
 In the case of Autotools and CMake these variables will be set during the "configure" step.
 Users can still override this behaviour and request explicitly to ignore any flags coming from the environment by setting the build system's :attr:`~reframe.core.buildsystems.BuildSystem.flags_from_environ` to :obj:`False`.
