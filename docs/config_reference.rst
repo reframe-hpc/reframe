@@ -494,9 +494,14 @@ System Partition Configuration
 
    A list of job scheduler options that will be passed to the generated job script for gaining access to that logical partition.
 
- .. note::
-    For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` parameters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
-    The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
+.. note::
+   For the ``pbs`` and ``torque`` backends, options accepted in the :attr:`~config.systems.partitions.access` and :attr:`~config.systems.partitions.resources` parameters may either refer to actual ``qsub`` options or may just be resources specifications to be passed to the ``-l`` option.
+   The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
+
+.. note::
+   If constraints are specified in :attr:`~config.systems.partition.access` for the Slurm backends,
+   these will be AND'ed with any additional constraints passed either through the test job :attr:`~reframe.core.schedulers.Job.options` or the :option:`-J` command-line option.
+   In other words, any constraint passed in :attr:`~config.systems.partition.access` will always be present in the generated job script.
 
 
 .. py:attribute:: systems.partitions.environs

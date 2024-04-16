@@ -728,6 +728,9 @@ Flexible node allocation
 ReFrame can automatically set the number of tasks of a test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a value less than or equal to zero.
 This scheme is conveniently called *flexible node allocation* and is valid only for the Slurm backend.
 When allocating nodes automatically, ReFrame will take into account all node limiting factors, such as partition :attr:`~config.systems.partitions.access` options, and any job submission control options described above.
+Particularly for Slurm constraints, ReFrame will only recognize simple AND or OR constraints and any parenthesized expression of them.
+The full syntax of `Slurm constraints <https://slurm.schedmd.com/sbatch.html#OPT_constraint>`__ is not currently supported.
+
 Nodes from this pool are allocated according to different policies.
 If no node can be selected, the test will be marked as a failure with an appropriate message.
 
@@ -746,6 +749,8 @@ If no node can be selected, the test will be marked as a failure with an appropr
    .. versionchanged:: 4.6
       Align the state selection with the :option:`--distribute` option.
       See the :option:`--distribute` for more details.
+
+      Slurm OR constraints and parenthesized expressions are supported in flexible node allocation.
 
 ---------------------------------------
 Options controlling ReFrame environment
