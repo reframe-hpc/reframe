@@ -351,21 +351,6 @@
                                         "required": ["name"],
                                         "additionalProperties": false
                                     }
-                                },
-                                "env_resources": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object",
-                                        "properties": {
-                                            "name": {"type": "string"},
-                                            "options": {
-                                                "type": "array",
-                                                "items": {"type": "string"}
-                                            }
-                                        },
-                                        "required": ["name"],
-                                        "additionalProperties": false
-                                    }
                                 }
                             },
                             "required": ["name", "scheduler", "launcher"],
@@ -641,8 +626,6 @@
         "systems/partitions/features": [],
         "systems/partitions/resources": [],
         "systems/partitions/resources/options": [],
-        "systems/partitions/env_resources": [],
-        "systems/partitions/env_resources/options": [],
         "systems/partitions/modules": [],
         "systems/partitions/env_vars": [],
         "systems/partitions/variables": [],
