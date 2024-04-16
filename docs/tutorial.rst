@@ -484,7 +484,7 @@ There is also a pseudo-stage called *init* that denotes the instantiation/initia
 The :doc:`pipeline` page describes in detail every stage, but the most important stages in terms of the test's lifetime are the "init" and the "setup" stages.
 
 The "init" stage is where the test object is actually instantiated and for this reason you cannot define a pre-init hooks.
-At this stage, it is not yet determined the system partition and the environment where the test will run, therefore the :attr:`current_partition` and :attr:`current_environ` variables are not set.
+At this stage, the system partition and the environment where the test will run are not yet determined, therefore the :attr:`current_partition` and :attr:`current_environ` variables are not set.
 This happens during the "setup" stage, where also all the test's dependencies (if any) have been executed and their resources can be safely accessed (we will cover test dependencies later in this tutorial).
 Technically, all pipeline hooks could be attached to those two stages, but it's a good programming practice to attach them close to the phase that they manipulate as it makes clearer their intent.
 
@@ -732,7 +732,7 @@ Another thing to notice in the output is the following warning:
 
 When setting a variable as ``-S var=value``, ReFrame will try to set it on all the selected tests, including any fixtures.
 If the requested variable is not part of the test, the above warning will be issued.
-You can cope the variable assignment in the command line by prefixing the variable name with test's name as follows: ``-S stream_test.num_threads=2``.
+You can scope the variable assignment in the command line by prefixing the variable name with test's name as follows: ``-S stream_test.num_threads=2``.
 In this case, the :attr:`num_threads` variable will be set only in the :class:`stream_test` test.
 
 
@@ -1054,7 +1054,8 @@ To run only the GCC tests on the compute partition you could do the following:
 
 .. code-block:: bash
 
-   reframe --prefix=/scratch/rfm-stage/ -C config/cluster.py -c stream/stream_variables_fixtures.py --system=pseudo-cluster:compute -p gnu -r
+   reframe --prefix=/scratch/rfm-stage/ -C config/cluster.py -c stream/stream_variables_fixtures.py \
+           --system=pseudo-cluster:compute -p gnu -r
 
 
 Compiling remotely
