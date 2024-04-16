@@ -1863,9 +1863,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # build_job_opts. We want any user supplied options to be able to
         # override those set by the framework.
         resources_opts = self._map_resources_to_jobopts()
-        self._build_job.options = (
-            resources_opts + self._build_job.options
-        )
+        self._build_job.options = resources_opts + self._build_job.options
         with osext.change_dir(self._stagedir):
             # Prepare build job
             build_commands = [
@@ -2013,9 +2011,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # job_opts. We want any user supplied options to be able to
         # override those set by the framework.
         resources_opts = self._map_resources_to_jobopts()
-        self._job.options = (
-            resources_opts + self._job.options
-        )
+        self._job.options = resources_opts + self._job.options
         with osext.change_dir(self._stagedir):
             try:
                 self.logger.debug('Generating the run script')
@@ -2042,7 +2038,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         resources_opts = []
         # Combine all resources into one dictionary, where extra_resources
         # can overwrite _current_environ.resources
-        combined_resources = {**self._current_environ.resources, **self.extra_resources}
+        combined_resources = {
+            **self._current_environ.resources,
+            **self.extra_resources
+        }
         for r, v in combined_resources.items():
             resources_opts += self._current_partition.get_resource(r, **v)
 

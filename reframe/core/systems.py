@@ -577,7 +577,7 @@ class System(jsonext.JSONSerializable):
                     devices=site_config.get(f'{partid}/devices'),
                     extras=site_config.get(f'{partid}/extras'),
                     features=site_config.get(f'{partid}/features'),
-                    time_limit=site_config.get(f'{partid}/time_limit'),
+                    time_limit=site_config.get(f'{partid}/time_limit')
                 )
             )
 
