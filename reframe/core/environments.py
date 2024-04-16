@@ -331,7 +331,7 @@ class ProgEnvironment(Environment):
 
     @property
     def resources(self):
-        '''The resources associated with this environment.
+        '''The scheduler resources associated with this environment.
 
         .. versionadded:: 4.6.0
 
