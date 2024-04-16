@@ -1,44 +1,44 @@
 [ReFrame Setup]
   version:           4.6.0-dev.2
-  command:           '/usr/local/share/reframe/bin/reframe -c deps/deps_complex.py -r'
+  command:           '/usr/local/share/reframe/bin/reframe -c deps/deps_complex.py -r --nocolor'
   launched by:       user@myhost
   working directory: '/home/user/reframe-examples/tutorial'
   settings files:    '<builtin>'
   check search path: '/home/user/reframe-examples/tutorial/deps/deps_complex.py'
   stage directory:   '/home/user/reframe-examples/tutorial/stage'
   output directory:  '/home/user/reframe-examples/tutorial/output'
-  log files:         '/tmp/rfm-2p1arjex.log'
+  log files:         '/tmp/rfm-01gkxmq0.log'
 
 [==========] Running 10 check(s)
-[==========] Started on Wed Apr  3 20:50:07 2024+0000
+[==========] Started on Tue Apr 16 21:35:34 2024+0000
 
 [----------] start processing checks
-[ [32mRUN     [0m ] T0 /c9c2be9f @generic:default+builtin
-[ [32m      OK[0m ] ( 1/10) T0 /c9c2be9f @generic:default+builtin
-[ [32mRUN     [0m ] T4 /11ee5e9a @generic:default+builtin
-[ [32m      OK[0m ] ( 2/10) T4 /11ee5e9a @generic:default+builtin
-[ [32mRUN     [0m ] T5 /020d01e5 @generic:default+builtin
-[ [32m      OK[0m ] ( 3/10) T5 /020d01e5 @generic:default+builtin
-[ [32mRUN     [0m ] T1 /1f93603d @generic:default+builtin
-[ [32m      OK[0m ] ( 4/10) T1 /1f93603d @generic:default+builtin
-[ [32mRUN     [0m ] T8 /605fc1d6 @generic:default+builtin
-[ [31m    FAIL[0m ] ( 5/10) T8 /605fc1d6 @generic:default+builtin
+[ RUN      ] T0 /c9c2be9f @generic:default+builtin
+[       OK ] ( 1/10) T0 /c9c2be9f @generic:default+builtin
+[ RUN      ] T4 /11ee5e9a @generic:default+builtin
+[       OK ] ( 2/10) T4 /11ee5e9a @generic:default+builtin
+[ RUN      ] T5 /020d01e5 @generic:default+builtin
+[       OK ] ( 3/10) T5 /020d01e5 @generic:default+builtin
+[ RUN      ] T1 /1f93603d @generic:default+builtin
+[       OK ] ( 4/10) T1 /1f93603d @generic:default+builtin
+[ RUN      ] T8 /605fc1d6 @generic:default+builtin
+[     FAIL ] ( 5/10) T8 /605fc1d6 @generic:default+builtin
 ==> test failed during 'setup': test staged in '/home/user/reframe-examples/tutorial/stage/generic/default/builtin/T8'
-[ [31m    FAIL[0m ] ( 6/10) T9 /78a78a4e @generic:default+builtin
+[     FAIL ] ( 6/10) T9 /78a78a4e @generic:default+builtin
 ==> test failed during 'startup': test staged in None
-[ [32mRUN     [0m ] T6 /6dbdaf93 @generic:default+builtin
-[ [32m      OK[0m ] ( 7/10) T6 /6dbdaf93 @generic:default+builtin
-[ [32mRUN     [0m ] T2 /0f617ba9 @generic:default+builtin
-[ [32mRUN     [0m ] T3 /5dd67f7f @generic:default+builtin
-[ [31m    FAIL[0m ] ( 8/10) T2 /0f617ba9 @generic:default+builtin
+[ RUN      ] T6 /6dbdaf93 @generic:default+builtin
+[       OK ] ( 7/10) T6 /6dbdaf93 @generic:default+builtin
+[ RUN      ] T2 /0f617ba9 @generic:default+builtin
+[ RUN      ] T3 /5dd67f7f @generic:default+builtin
+[     FAIL ] ( 8/10) T2 /0f617ba9 @generic:default+builtin
 ==> test failed during 'sanity': test staged in '/home/user/reframe-examples/tutorial/stage/generic/default/builtin/T2'
-[ [31m    FAIL[0m ] ( 9/10) T7 /f005e93d @generic:default+builtin
+[     FAIL ] ( 9/10) T7 /f005e93d @generic:default+builtin
 ==> test failed during 'startup': test staged in None
-[ [32m      OK[0m ] (10/10) T3 /5dd67f7f @generic:default+builtin
+[       OK ] (10/10) T3 /5dd67f7f @generic:default+builtin
 [----------] all spawned checks have finished
 
-[ [31m FAILED [0m ] Ran 10/10 test case(s) from 10 check(s) (4 failure(s), 0 skipped, 0 aborted)
-[==========] Finished on Wed Apr  3 20:50:09 2024+0000
+[  FAILED  ] Ran 10/10 test case(s) from 10 check(s) (4 failure(s), 0 skipped, 0 aborted)
+[==========] Finished on Tue Apr 16 21:35:36 2024+0000
 ================================================================================
 SUMMARY OF FAILURES
 --------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ FAILURE INFO for T2 (run: 1/1)
   * Environment: builtin
   * Stage directory: /home/user/reframe-examples/tutorial/stage/generic/default/builtin/T2
   * Node list: myhost
-  * Job type: local (id=69)
+  * Job type: local (id=23)
   * Dependencies (conceptual): ['T6']
   * Dependencies (actual): [('T6', 'generic:default', 'builtin')]
   * Maintainers: []
@@ -113,4 +113,4 @@ FAILURE INFO for T7 (run: 1/1)
   * Rerun with '-n /f005e93d -p builtin --system generic:default -r'
   * Reason: task dependency error: dependencies failed
 --------------------------------------------------------------------------------
-Log file(s) saved in '/tmp/rfm-2p1arjex.log'
+Log file(s) saved in '/tmp/rfm-01gkxmq0.log'

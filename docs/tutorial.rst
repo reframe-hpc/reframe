@@ -602,7 +602,7 @@ A test fixture is defined with the :func:`~reframe.core.builtins.fixture` builti
 
 .. literalinclude:: ../examples/tutorial/stream/stream_fixtures.py
    :caption:
-   :lines: 29
+   :lines: 25
 
 The first argument is a standard ReFrame test which encompasses the fixture logic and will be executed before the current test.
 Note that there is no need to decorate a fixture with :func:`@simple_test <reframe.core.decorators.simple_test>` as it will run anyway as part of the test that is using it.
@@ -622,7 +622,8 @@ Any attribute of the target test can be accessed through the fixture handle and,
 
 .. note::
 
-   We add a dummy validation in the :class:`build_stream` fixture test, since it would fail anyway if the compilation fails.
+   Compile-only tests do not require a validation check, since the test will fail anyway if the compilation fails.
+   But if one is provided, it will be used.
 
 Before running the new test, let's try to list it first:
 
@@ -688,7 +689,7 @@ We define a new test variable with the following line:
 
 .. literalinclude:: ../examples/tutorial/stream/stream_variables.py
    :caption:
-   :lines: 30
+   :lines: 26
 
 Variables are typed and any attempt to assign them a value of different type will cause a :class:`TypeError`.
 Variables can also have a default value as in this case, which is set to ``0``.
@@ -703,7 +704,7 @@ In our example, we use the :attr:`num_threads` variable to set the ``OMP_NUM_THR
 
 .. literalinclude:: ../examples/tutorial/stream/stream_variables.py
    :caption:
-   :lines: 36-39
+   :lines: 32-35
 
 Variables can be set from the command-line using the :option:`-S` option as ``-S var=value``:
 
@@ -1101,7 +1102,7 @@ First, we need to define a `resource <config_reference.html#config.systems.parti
 
 .. literalinclude:: ../examples/tutorial/config/cluster_resources.py
    :caption:
-   :lines: 41-47
+   :lines: 41-46
 
 Each resource has a name and a list of scheduler options that will be emitted in the job script when this resource will be requested by the test.
 The scheduler options specification can contain placeholders that will be filled from the test.
@@ -1167,7 +1168,7 @@ However, you can use the :attr:`reframe.core.launcher.JobLauncher` API to emit t
 
 .. literalinclude:: ../examples/tutorial/stream/stream_multistep.py
    :caption:
-   :lines: 41-44
+   :lines: 37-40
 
 Here we invoke the job launcher's :func:`~reframe.core.launchers.JobLauncher.run_command` method, which is responsible for emitting the launcher prefix based on the current partition.
 
@@ -1211,7 +1212,7 @@ Let's use this feature to set the number of threads of our STREAM benchmark to t
 
 .. literalinclude:: ../examples/tutorial/stream/stream_cpuinfo.py
    :caption:
-   :lines: 36-40
+   :lines: 32-39
 
 Note also the use of the :func:`skip_if_no_procinfo()` function which will cause ReFrame to skip the test if there is no processor information available.
 
@@ -1519,8 +1520,8 @@ Let's run the whole test DAG:
    cd reframe-examples/tutorial/
    reframe -c deps/deps_complex.py -r
 
-.. literalinclude:: listings/deps_complex_run.txt
-   :language: console
+.. Literalinclude:: listings/deps_complex_run.txt
+   :Language: console
 
 You can restore the run session and run only the failed test cases as follows:
 
@@ -1760,7 +1761,7 @@ Let's see an example on how to setup ReFrame to save its output in a ``reframe_<
 
 .. literalinclude:: ../examples/tutorial/config/cluster_logging.py
    :caption:
-   :lines: 71-92
+   :lines: 71-93
 
 
 Controlling output verbosity
@@ -1857,7 +1858,7 @@ This is handled by the ``httpjson`` handler and an example configuration is the 
 
 .. literalinclude:: ../examples/tutorial/config/cluster_perflogs_httpjson.py
    :caption:
-   :lines: 106-118
+   :lines: 106-119
 
 The :attr:`~config.logging.handlers_perflog..httpjson..url` key refers to the service endpoint, the :attr:`~config.logging.handlers_perflog..httpjson..extra_headers` are additional headers to be included in the POST request, whereas the :attr:`~config.logging.handlers_perflog..httpjson..extras` and the :attr:`~config.logging.handlers_perflog..httpjson..ignore_keys` are additional keys to send or keys to exclude, respectively.
 Normally, ReFrame sends the whole log record, which contains all of the test's variables prefixed with ``check_``.

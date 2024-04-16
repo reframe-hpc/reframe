@@ -42,12 +42,6 @@ class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
         ]
         self.build_system.max_concurrency = 8
 
-    @sanity_function
-    def validate_build(self):
-        # If compilation fails, the test would fail in any case, so nothing to
-        # further validate here.
-        return True
-
 
 class osu_base_test(rfm.RunOnlyRegressionTest):
     '''Base class of OSU benchmarks runtime tests'''

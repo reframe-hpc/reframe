@@ -20,10 +20,6 @@ class build_stream(rfm.CompileOnlyRegressionTest):
         if self.array_size:
             self.build_system.cflags += [f'-DARRAY_SIZE={self.array_size}']
 
-    @sanity_function
-    def validate(self):
-        return True
-
 
 @rfm.simple_test
 class stream_test(rfm.RunOnlyRegressionTest):

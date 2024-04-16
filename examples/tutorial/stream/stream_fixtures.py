@@ -17,10 +17,6 @@ class build_stream(rfm.CompileOnlyRegressionTest):
         omp_flag = self.current_environ.extras.get('omp_flag')
         self.build_system.cflags = ['-O3', omp_flag]
 
-    @sanity_function
-    def validate(self):
-        return True
-
 
 @rfm.simple_test
 class stream_test(rfm.RunOnlyRegressionTest):

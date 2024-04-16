@@ -22,10 +22,6 @@ class build_stream(rfm.CompileOnlyRegressionTest):
             self.build_system.cppflags = [f'-DARRAY_SIZE={self.array_size}',
                                           f'-DELEM_TYPE={self.elem_type}']
 
-    @sanity_function
-    def validate(self):
-        return True
-
 
 @rfm.simple_test
 class stream_test(rfm.RunOnlyRegressionTest):

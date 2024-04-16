@@ -366,7 +366,7 @@ You can ask ReFrame to temporarily replace the ``gromacs`` module with another o
 
 .. code-block:: bash
 
-   ./bin/reframe -n GromacsTest -M 'gromacs:gromacs/2020.5' -r
+   reframe -n GromacsTest -M 'gromacs:gromacs/2020.5' -r
 
 
 Every time ReFrame tries to load the ``gromacs`` module, it will replace it with ``gromacs/2020.5``.
@@ -390,7 +390,7 @@ If you used an environment module to load ReFrame, e.g., ``reframe``, you can us
 
 .. code:: bash
 
-   ./bin/reframe -u reframe [...]
+   reframe -u reframe ...
 
 
 
@@ -716,7 +716,7 @@ Here is an example specification file for those tests:
 
 .. literalinclude:: ../examples/tutorial/stream/stream_config.yaml
    :caption:
-   :lines: 5-
+   :lines: 6-
 
 
 The :attr:`thread_scaling` configuration parameter for the last workflow will create a parameterised version of the test using different number of threads.
