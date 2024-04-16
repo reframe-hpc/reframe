@@ -2618,8 +2618,18 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     The standard output and standard error of the test will be set to those of
     the compilation stage.
 
+    Compile-only tests do not need to define a sanity checking function, since
+    the compile stage will always fail if the compilation fails.
+    However, if a sanity function is defined, it will be used to validate the
+    test.
+
     This class is also directly available under the top-level :mod:`reframe`
     module.
+
+    .. versionchanged:: 4.6
+
+       Compile-only tests do not require an explicit sanity checking function.
+
     '''
 
     _rfm_regression_class_kind = _RFM_TEST_KIND_COMPILE
@@ -2659,3 +2669,11 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
 
         Implemented as no-op
         '''
+
+    def check_sanity(self):
+        # If no sanity function is defined, then use an identity expression
+        if (not hasattr(self, '_rfm_sanity') and
+            not hasattr(self, 'sanity_patterns')):
+            self.sanity_patterns = sn.assert_true(1)
+
+        super().check_sanity()

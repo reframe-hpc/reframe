@@ -512,21 +512,22 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     def nodelist(self):
         '''The list of node names assigned to this job.
 
+        This attribute is supported by the ``local``, ``pbs``, ``slurm``,
+        ``squeue``, ``ssh``, and ``torque`` scheduler backends.
+
         This attribute is :class:`None` if no nodes are assigned to the job
         yet.
-        This attribute is set reliably only for the ``slurm`` backend, i.e.,
-        Slurm *with* accounting enabled.
+
         The ``squeue`` scheduler backend, i.e., Slurm *without* accounting,
         might not set this attribute for jobs that finish very quickly.
-        For the ``local`` scheduler backend, this returns an one-element list
+
+        For the ``local`` scheduler backend, this returns a one-element list
         containing the hostname of the current host.
 
         This attribute might be useful in a flexible regression test for
         determining the actual nodes that were assigned to the test.
         For more information on flexible node allocation, see the
         :option:`--flex-alloc-nodes` command-line option.
-
-        This attribute is *not* supported by the ``pbs`` scheduler backend.
 
         .. versionadded:: 2.17
 

@@ -32,10 +32,6 @@ class CompileOnlyHelloTest(rfm.CompileOnlyRegressionTest):
     valid_prog_environs = ['*']
     sourcepath = 'hello.c'
 
-    @sanity_function
-    def validate(self):
-        return sn.assert_not_found(r'(?i)error', self.stdout)
-
 
 @rfm.simple_test
 class SkipTest(rfm.RunOnlyRegressionTest):
