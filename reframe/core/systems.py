@@ -167,8 +167,7 @@ class SystemPartition(jsonext.JSONSerializable):
     def __init__(self, *, parent, name, sched_type, launcher_type,
                  descr, access, container_runtime, container_environs,
                  resources, local_env, environs, max_jobs, prepare_cmds,
-                 processor, devices, extras, features, time_limit,
-                 env_resources):
+                 processor, devices, extras, features, time_limit):
         getlogger().debug(f'Initializing system partition {name!r}')
         self._parent_system = parent
         self._name = name
@@ -184,7 +183,6 @@ class SystemPartition(jsonext.JSONSerializable):
         self._max_jobs = max_jobs
         self._prepare_cmds = prepare_cmds
         self._resources = {r['name']: r['options'] for r in resources}
-        self._env_resources = {r['name']: r['options'] for r in env_resources}
         self._processor = ProcessorInfo(processor)
         self._devices = [DeviceInfo(d) for d in devices]
         self._extras = extras
@@ -351,21 +349,6 @@ class SystemPartition(jsonext.JSONSerializable):
 
         return ret
 
-    def get_env_resource(self, name, **values):
-        '''Instantiate managed environment resource ``name`` with ``value``.
-
-        :meta private:
-        '''
-
-        ret = []
-        for r in self._env_resources.get(name, []):
-            try:
-                ret.append(r.format(**values))
-            except KeyError:
-                pass
-
-        return ret
-
     def environment(self, name):
         '''Return the partition environment named ``name``.'''
 
@@ -469,14 +452,7 @@ class SystemPartition(jsonext.JSONSerializable):
                     'options': options
                 }
                 for name, options in self._resources.items()
-            ],
-            'env_resources': [
-                {
-                    'name': name,
-                    'options': options
-                }
-                for name, options in self._env_resources.items()
-            ],
+            ]
         }
 
     def __str__(self):
@@ -602,7 +578,6 @@ class System(jsonext.JSONSerializable):
                     extras=site_config.get(f'{partid}/extras'),
                     features=site_config.get(f'{partid}/features'),
                     time_limit=site_config.get(f'{partid}/time_limit'),
-                    env_resources=site_config.get(f'{partid}/env_resources')
                 )
             )
 

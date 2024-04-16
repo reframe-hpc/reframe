@@ -293,7 +293,7 @@ def test_select_subconfig(site_config):
     assert (site_config.get('systems/0/partitions/0/environs') ==
             ['PrgEnv-gnu', 'builtin'])
     assert site_config.get('systems/0/partitions/0/descr') == 'GPU partition'
-    assert len(site_config.get('systems/0/partitions/0/resources')) == 2
+    assert len(site_config.get('systems/0/partitions/0/resources')) == 3
     assert (site_config.get('systems/0/partitions/0/resources/@gpu/name') ==
             'gpu')
     assert site_config.get('systems/0/partitions/0/modules') == [
@@ -461,7 +461,7 @@ def test_system_create(site_config):
     assert resources_spec == ['#DW jobdw capacity=100GB',
                               '#DW stage_in source=/foo']
 
-    env_resources_spec = partition.get_env_resource(
+    env_resources_spec = partition.get_resource(
         'uenv', mount='mount_point', file='file_path'
     )
     assert env_resources_spec == ['--mount=mount_point',

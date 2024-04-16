@@ -771,27 +771,6 @@ ReFrame allows you to define custom scheduler resources for each partition that 
     The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
-.. py:attribute:: systems.partitions.env_resources.name
-
-   :required: Yes
-
-  The name of this resources.
-  This name will be used to request this resource in a programming environment :attr:`~environments.resources`.
-
-   .. versionadded:: 4.6
-
-
-.. py:attribute:: systems.partitions.env_resources.options
-
-   :required: No
-   :default: ``[]``
-
-   A list of options to be passed to this partition’s job scheduler.
-   This is very similar to the :attr:`~config.systems.partitions.resources.options` parameter, but it is used to define resources that are specific to a programming environment.
-
-   .. versionadded:: 4.6
-
-
 Environment Configuration
 =========================
 
