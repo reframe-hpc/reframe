@@ -320,7 +320,10 @@ This is entirely up to the user on how to define the system partitions.
 An *environment* is an abstraction of the environment where a test will run and it is a collection of environment variables, environment modules and compiler definitions.
 The following picture depicts this architecture.
 
-<figure>
+.. figure:: _static/img/reframe-system-arch.svg
+   :align: center
+
+   :sub:`ReFrame's system architecture`
 
 Tests are associated with systems and environments through their :attr:`valid_systems` and :attr:`valid_prog_environs` variables.
 
