@@ -55,12 +55,6 @@ Once the Docker compose stack is up, you execute the following from a different 
 
    docker exec -it $(docker ps -f name=frontend -q) /bin/bash
 
-.. note::
-
-   The above command is tested with Docker 24.0.6.
-   On older Docker versions the ``jq`` command that parses the container ID may not be working as shown.
-   In this case you may fetch manually the container ID from the ``docker ps -f name=frontend`` output and pass it to the ``docker exec`` command.
-
 
 Once done, press Ctl-D in the frontend container and Ctl-C in the Docker compose console window.
 

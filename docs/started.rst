@@ -131,4 +131,4 @@ If you are new to ReFrame, the place to start is the :doc:`tutorial`, which will
 If you are looking for a particular topic that is not covered in the tutorial, you can refer to the :doc:`howto` or the :doc:`topics`.
 For detailed reference guides for the command line, the configuration and the programming API, refer to the :doc:`manuals`.
 
-Finally, if you are an existing ReFrame user of the 3.x versions, you should read the :doc:`whats_new_40` page, which explains what are the key new features of ReFrame 4.0 as well as all the breaking changes.
+Finally, if you are already a user of ReFrame 3.x version, you should read the :doc:`whats_new_40` page, which explains what are the key new features of ReFrame 4.0 as well as all the breaking changes.

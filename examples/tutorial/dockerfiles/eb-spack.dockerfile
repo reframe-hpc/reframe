@@ -24,7 +24,6 @@ ENV PATH=/usr/local/share/reframe/bin:$PATH
 # Install EasyBuild
 RUN pip3 install easybuild==${_EB_VER}
 
-
 # Add tutorial user
 RUN useradd -ms /bin/bash -G sudo user && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers

@@ -112,7 +112,8 @@ For running this test, we need the following Docker image:
 
 .. code-block:: bash
 
-   docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples --workdir=/home/user/reframe-examples/tutorial -it <IMAGE>  /bin/bash -l
+   docker build -t reframe-eb-spack:latest -f examples/tutorial/dockerfiles/eb-spack.dockerfile .
+   docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples --workdir=/home/user/reframe-examples/tutorial -it reframe-eb-spack:latest  /bin/bash -l
 
 
 EasyBuild requires a `modules system <#working-with-environment-modules>`__ to run, so we need a configuration file that sets the modules system of the current system:
@@ -220,7 +221,7 @@ To run this test, use the same container as with EasyBuild:
 
 .. code-block:: bash
 
-   docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples -it <IMAGE>  /bin/bash -l
+   docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples --workdir=/home/user/reframe-examples/tutorial -it reframe-eb-spack:tutorial  /bin/bash -l
 
 Conversely to EasyBuild, Spack does not require a modules systems to be configured, so you could simply run the test with ReFrame's builtin configuration:
 
@@ -381,17 +382,16 @@ In case of module mappings, it will also respect the module order of the replace
 Manipulating ReFrame's environment
 ----------------------------------
 
-ReFrame runs the selected tests in the same environment as the one that it executes.
+ReFrame runs the selected tests in the same environment as the one that it itself executes in.
 It does not unload any environment modules nor sets or unsets any environment variable.
 Nonetheless, it gives you the opportunity to modify the environment that the tests execute.
 You can either purge completely all environment modules by passing the :option:`--purge-env` option or ask ReFrame to load or unload some environment modules before starting running any tests by using the :option:`-m` and :option:`-u` options respectively.
 Of course you could manage the environment manually, but it's more convenient if you do that directly through ReFrame's command-line.
 If you used an environment module to load ReFrame, e.g., ``reframe``, you can use the :option:`-u` to have ReFrame unload it before running any tests, so that the tests start in a clean environment:
 
-.. code:: bash
+.. code-block:: bash
 
    reframe -u reframe ...
-
 
 
 Working with low-level dependencies
