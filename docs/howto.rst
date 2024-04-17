@@ -112,7 +112,7 @@ For running this test, we need the following Docker image:
 
 .. code-block:: bash
 
-   docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples -it <IMAGE>  /bin/bash -l
+   docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples --workdir=/home/user/reframe-examples/tutorial -it <IMAGE>  /bin/bash -l
 
 
 EasyBuild requires a `modules system <#working-with-environment-modules>`__ to run, so we need a configuration file that sets the modules system of the current system:
@@ -303,7 +303,7 @@ In this case, you could set the :attr:`build_system` to ``'CustomBuild'`` and su
 
 .. warning::
 
-    You should use  this build system with caution, because environment management, reproducibility and any potential side effects are all controlled by the custom build system.
+    You should use this build system with caution, because environment management, reproducibility and any potential side effects are all controlled by the custom build system.
 
 
 .. _working-with-environment-modules:
@@ -414,7 +414,7 @@ Remember that a test generates a test case for each combination of valid systems
 There are some shortcuts for defining common dependency patterns, such as the :obj:`udeps.fully` and :obj:`udeps.by_env`.
 The former defines that all the test cases of the current test depend on all the test cases of the target, whereas the latter defines that test cases depend by environment, i.e., a test case of the current test depends on a test case of the target test only when the environment is the same.
 In our example, the :obj:`build_osu_benchmarks` depends fully on the :obj:`fetch_osu_benchmarks` whereas the final benchmarks depend on the :obj:`build_os_benchmarks` by environment.
-This is similar to the session and environment scopes of fixtures, but you have to set the :attr:`valid_systems` and :attr:`valid_prog_environs` of the targets, whereas for fixtures these will automatically determined by the scope.
+This is similar to the session and environment scopes of fixtures, but you have to set the :attr:`valid_systems` and :attr:`valid_prog_environs` of the targets, whereas for fixtures these will be automatically determined by the scope.
 This makes the low-level dependencies less flexible.
 
 As with fixtures, you can still access fully the target test, but the way to do so is a bit more involved.

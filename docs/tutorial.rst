@@ -49,11 +49,11 @@ To run the multi-node examples you need first to launch a Slurm pseudo cluster u
    cd reframe
    docker compose --project-directory=$(pwd) -f examples/tutorial/dockerfiles/slurm-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend
 
-Once the Docker compose stack is up, you execute the following from a difference console window in order to "log in" in the frontend container:
+Once the Docker compose stack is up, you execute the following from a different terminal window in order to "log in" in the frontend container:
 
 .. code-block::
 
-   docker exec -it $(docker ps -f name=frontend --format=json | jq -r .ID) /bin/bash
+   docker exec -it $(docker ps -f name=frontend -q) /bin/bash
 
 .. note::
 

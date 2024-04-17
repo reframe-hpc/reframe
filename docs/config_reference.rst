@@ -591,7 +591,7 @@ System Partition Configuration
            This temporary directory prefix can be changed by setting the :envvar:`RFM_REMOTE_WORKDIR` environment variable.
         b. ReFrame changes to that directory and launches a job that will first bootstrap the fresh clone and then run that clone with ``{launcher} ./bin/reframe --detect-host-topology=topo.json``.
            The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host,
-           which in this case would be the remote compute nodes.
+           which in this case would be one of the remote compute nodes.
 
       In case of errors during auto-detection, ReFrame will simply issue a warning and continue.
 

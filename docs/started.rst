@@ -106,7 +106,7 @@ The ``./bootstrap.sh`` has two additional variant options:
       For previous ReFrame versions you should install its requirements using ``pip install -r requirements.txt`` in a Python virtual environment.
 
    .. versionchanged:: 4.5
-      ReFrame supports now multiarch builds and it will place all of its dependencies in an arch-specific directory under its prefix.
+      ReFrame now supports  multiarch builds and it will place all of its dependencies in an arch-specific directory under its prefix.
       Also, ``pip`` is no more required, as the bootstrap script will start a virtual environment without ``pip`` and will fetch a fresh ``pip``, which will be used to install the dependencies.
 
 
@@ -129,6 +129,6 @@ Where to Go from Here
 
 If you are new to ReFrame, the place to start is the :doc:`tutorial`, which will guide you through all the concepts of the framework and get you up and running.
 If you are looking for a particular topic that is not covered in the tutorial, you can refer to the :doc:`howto` or the :doc:`topics`.
-For detailed reference guides for the command line, the configuration and the programming API, refer to th :doc:`manuals`.
+For detailed reference guides for the command line, the configuration and the programming API, refer to the :doc:`manuals`.
 
 Finally, if you are an existing ReFrame user of the 3.x versions, you should read the :doc:`whats_new_40` page, which explains what are the key new features of ReFrame 4.0 as well as all the breaking changes.
