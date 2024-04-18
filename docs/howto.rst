@@ -55,6 +55,7 @@ In this case we set the CFLAGS and also pass Makefile target to the Make build s
 Based on the selected build system, ReFrame will generate the appropriate build script.
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
     reframe -C config/baseline_environs.py -c stream/stream_make.py -p gnu -r
     cat output/tutorialsys/default/gnu/build_stream_40af02af/rfm_build.sh
@@ -111,6 +112,7 @@ We also pass the ``-f`` option to EasyBuild's ``eb`` command through the :attr:`
 For running this test, we need the following Docker image:
 
 .. code-block:: bash
+   :caption: Run in the EasyBuild+Spack container.
 
    docker build -t reframe-eb-spack:latest -f examples/tutorial/dockerfiles/eb-spack.dockerfile .
    docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples --workdir=/home/user/reframe-examples/tutorial -it reframe-eb-spack:latest  /bin/bash -l
@@ -126,6 +128,7 @@ We talk about modules system and how ReFrame interacts with them in :ref:`workin
 For the moment, we will only use them for running the EasyBuild example:
 
 .. code-block:: bash
+   :caption: Run in the EasyBuild+Spack container.
 
    reframe -C config/baseline_modules.py -c easybuild/eb_test.py -r
 
@@ -133,6 +136,7 @@ For the moment, we will only use them for running the EasyBuild example:
 ReFrame generates the following commands to build and install the easyconfig:
 
 .. code-block:: bash
+   :caption: Run in the EasyBuild+Spack container.
 
    cat output/tutorialsys/default/builtin/BZip2EBCheck/rfm_build.sh
 
@@ -163,6 +167,7 @@ For this reason, we set the test's :attr:`modules` in a pre-run hook.
 This generated final run script is the following:
 
 .. code-block:: bash
+   :caption: Run in the EasyBuild+Spack container.
 
    cat output/tutorialsys/default/builtin/BZip2EBCheck/rfm_job.sh
 
@@ -220,12 +225,14 @@ In this case, ReFrame treats the environment as a *test resource* so it expects 
 To run this test, use the same container as with EasyBuild:
 
 .. code-block:: bash
+   :caption: Run in the EasyBuild+Spack container.
 
    docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples --workdir=/home/user/reframe-examples/tutorial -it reframe-eb-spack:tutorial  /bin/bash -l
 
 Conversely to EasyBuild, Spack does not require a modules systems to be configured, so you could simply run the test with ReFrame's builtin configuration:
 
 .. code-block:: bash
+   :caption: Run in the EasyBuild+Spack container.
 
    reframe -c spack/spack_test.py -r
 
@@ -451,6 +458,7 @@ For running and listing tests with dependencies the same principles apply as wit
 The only difference in listing is that there is no scope associated with the dependent tests as is with fixtures:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --prefix=/scratch/rfm-stage/ -C config/cluster_mpi.py -c mpi/osu_deps.py -n osu_allreduce_test -l
 
@@ -491,6 +499,7 @@ Using the :func:`variant_name` subsequently, we can get the actual name of the v
 
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -c deps/parameterized.py -l
 
@@ -589,6 +598,7 @@ Flexible tests are very useful for multi-node diagnostic tests.
 In this example, we demonstrate this feature by forcing flexible execution in the OSU allreduce benchmark.
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --prefix=/scratch/rfm-stage/ -C config/cluster_mpi.py -c mpi/osu.py -n osu_allreduce_test -S num_tasks=0 -r
 
@@ -651,6 +661,7 @@ Running the test, ReFrame will generate a script that will launch and run the co
 
 
 .. code-block:: bash
+   :caption: Run locally.
 
    reframe -C examples/tutorial/config/baseline_contplatf.py -c examples/tutorial/containers/container_test.py -r
 
@@ -766,6 +777,7 @@ The equivalent of our test generation for the third spec is exactly the followin
 And here is the listing of generated tests:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    STREAM_SPEC_FILE=stream_config.yaml reframe -C config/baseline_environs.py -c stream/stream_workflows.py -l
 
@@ -807,14 +819,14 @@ This is a how to that will show how-to use ReFrame with `Flux
 Framework <https://github.com/flux-framework/>`__. First, build the
 container here from the root of reframe.
 
-.. code:: bash
+.. code-block:: bash
 
    $ docker build -f examples/tutorial/dockerfiles/flux.dockerfile -t flux-reframe .
 
 Then shell inside, optionally binding the present working directory if
 you want to develop.
 
-.. code:: bash
+.. code-block:: bash
 
    $ docker run -it -v $PWD:/code flux-reframe
    $ docker run -it flux-reframe
@@ -822,13 +834,14 @@ you want to develop.
 Note that if you build the local repository, you’ll need to bootstrap
 and install again, as we have over-written the bin!
 
-.. code:: bash
-# In case of problems with pip, first clean the `external` directory with `rm -rf external`
+.. code-block:: bash
+
+   # In case of problems with pip, first clean the `external` directory with `rm -rf external`
    ./bootstrap.sh
 
 And then reframe will again be in the local ``bin`` directory:
 
-.. code:: bash
+.. code-block:: bash
 
    # which reframe
    /code/bin/reframe
@@ -836,13 +849,13 @@ And then reframe will again be in the local ``bin`` directory:
 Then we can run ReFrame with the custom config `config.py <config.py>`__
 for flux.
 
-.. code:: bash
+.. code-block:: bash
 
    # What tests are under tutorials/flux?
    $ cd tutorials/flux
    $ reframe -c . -C settings.py -l
 
-.. code:: console
+.. code-block:: console
 
    [ReFrame Setup]
      version:           4.0.0-dev.1
@@ -862,14 +875,16 @@ for flux.
 
 This also works
 
-.. code:: bash
+.. code-block:: bash
+   :caption: Run in the Flux container.
 
    $ reframe -c tutorials/flux -C tutorials/flux/settings.py -l
 
 And then to run tests, just replace ``-l`` (for list) with ``-r`` or
 ``--run`` (for run):
 
-.. code:: bash
+.. code-block:: bash
+   :caption: Run in the Flux container.
 
    $ reframe -c tutorials/flux -C tutorials/flux/settings.py --run
 
@@ -950,9 +965,9 @@ You can then specialize further the derived tests and add more constraints in th
 Let's try running both the library and the derived tests:
 
 .. code-block:: bash
-   :caption: Running the derived test
+   :caption: Running the derived test (in the single-node container)
 
-    reframe -c reframe-examples/howto/testlib_example.py -r
+    reframe -c testlib_example.py -r
 
 .. code-block:: console
 
@@ -964,7 +979,7 @@ Let's try running both the library and the derived tests:
     [----------] all spawned checks have finished
 
 .. code-block:: bash
-   :caption: Running the library test
+   :caption: Running the library test (in the single-node container)
 
     reframe -c reframe-examples/howto/testlib/simple.py -r
 
@@ -997,6 +1012,7 @@ If a test has errors and cannot be loaded, an error message will be printed and 
 In the following, we have inserted a small typo in the ``stream_variables.py`` tutorial example:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_variables.py -l
 
@@ -1068,7 +1084,8 @@ This can be due to ReFrame picking the wrong configuration entry or that your te
 If you try to load a test file and list its tests by increasing twice the verbosity level, you will get enough output to help you debug such issues.
 Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
 
-.. code:: bash
+.. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_variables.py -l -vv
 

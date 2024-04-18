@@ -59,6 +59,11 @@ Once the Docker compose stack is up, you execute the following from a different 
 Once done, press Ctl-D in the frontend container and Ctl-C in the Docker compose console window.
 
 
+.. note::
+
+   All examples use the single-node container unless it is otherwise noted.
+
+
 Modifying the examples
 ----------------------
 
@@ -111,6 +116,7 @@ Running a test
 Running our test is very straightforward:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    cd reframe-examples/tutorial
    reframe -c stream/stream_runonly.py -r
@@ -191,6 +197,7 @@ These can be changed with the :option:`-s` and :option:`-o` options or the more 
 The test artifacts of our first example can be found in the following location:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    ls output/generic/default/builtin/stream_test/
 
@@ -279,6 +286,7 @@ Tests can also modify their behaviour if run in dry-run mode by calling the :met
 Here is an example dry-run of our first version of the STREAM benchmark:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -c stream/stream_runonly.py --dry-run
 
@@ -332,8 +340,9 @@ This tells ReFrame that this test is valid only for environments that define the
 If we try to run the test now, nothing will be run:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
-   reframe -c stream/stream_build_run.py -r
+   reframe -c stream/stream_runonly.py -r
 
 
 .. code-block:: console
@@ -391,6 +400,7 @@ We will cover several of them as we go through the tutorial, but for the complet
 Let's try running the constrained version of our STREAM test with the configuration file that we have just created:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline.py -c stream/stream_build_run.py -r
 
@@ -398,11 +408,11 @@ Let's try running the constrained version of our STREAM test with the configurat
 
    [ReFrame Setup]
      version:           4.5.0-dev.1
-     command:           '/usr/local/share/reframe/bin/reframe -C config/baseline.py -c stream/stream_build_run.py -r'
+     command:           '/usr/local/share/reframe/bin/reframe -C config/baseline.py -c stream/stream_runonly.py -r'
      launched by:       user@myhost
      working directory: '/home/user'
      settings files:    '<builtin>', 'reframe-examples/tutorial/config/baseline.py'
-     check search path: '/home/user/reframe-examples/tutorial/stream/stream_build_run.py'
+     check search path: '/home/user/reframe-examples/tutorial/stream/stream_runonly.py'
      stage directory:   '/home/user/stage'
      output directory:  '/home/user/output'
      log files:         '/tmp/rfm-dz8m5nfz.log'
@@ -498,6 +508,7 @@ This can be useful to temporarily disable a functionality of the test, e.g., a w
 You can view the list of all the hooks of a test using the :option:`--describe` option:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_variables.py --describe | jq .[].pipeline_hooks
 
@@ -516,6 +527,7 @@ You can view the list of all the hooks of a test using the :option:`--describe` 
 We could disable the :obj:`set_num_threads` hook by passing ``--disable-hook=set_num_threads``:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_variables.py --disable-hook=set_num_threads --describe | jq .[].pipeline_hooks
 
@@ -559,6 +571,7 @@ However, this is problematic for our local benchmarks since ReFrame would schedu
 For this reason, we will force ReFrame to execute the tests serially with ``--exec-policy=serial``:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_build_run.py --exec-policy=serial -r
 
@@ -625,6 +638,7 @@ Any attribute of the target test can be accessed through the fixture handle and,
 Before running the new test, let's try to list it first:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_fixtures.py -l
 
@@ -642,6 +656,7 @@ Note also that due to the ``environment`` scope, a separate fixture is created f
 We can now run the benchmarks in parallel to demonstrate that the execution order of the fixtures is respected:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_fixtures.py -r
 
@@ -706,12 +721,14 @@ In our example, we use the :attr:`num_threads` variable to set the ``OMP_NUM_THR
 Variables can be set from the command-line using the :option:`-S` option as ``-S var=value``:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_variables.py -S num_threads=2 -r
 
 We will not list the command output here, but you could verify that the variable was set by inspecting the generated run script:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    cat output/tutorialsys/default/clang-14.0.0/stream_test/rfm_job.sh
 
@@ -752,12 +769,14 @@ We can set the :attr:`array_size` variable inside the build fixture of our final
 Here is an example:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_variables_fixtures.py --exec-policy=serial -S stream_test.stream_binary.array_size=50000000 -r
 
 If you check the generated build script, you will notice the emitted ``-D`` flag:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    cat output/tutorialsys/default/clang-14.0.0/build_stream_d19d2d86/rfm_build.sh
 
@@ -800,6 +819,7 @@ In our example, we expect 12 :class:`stream_test` variants.
 Given that we have two valid programming environments and a build fixture with an environment scope, we expect ReFrame to generate and run 26 tests in total (including the fixtures):
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_parameters.py --exec-policy=serial -r
 
@@ -831,6 +851,7 @@ We can also parameterize a test on any of its existing variables directly from t
 For example, we could parameterize the STREAM version in ``stream_variables_fixtures.py`` on :attr:`num_threads` as follows:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_variables_fixtures.py -P num_threads=1,2,4,8 --exec-policy=serial -r
 
@@ -850,6 +871,7 @@ As expected, parameters in fixtures are no different than parameters in normal t
 The difference is when you try to list/run the final :class:`stream_test`, where now we have twice as many variants:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -C config/baseline_environs.py -c stream/stream_parameters_fixtures.py -l
 
@@ -982,6 +1004,7 @@ In our example, it is redundant to define it as the ``all`` partition is the def
 Let's run our STREAM example with the new configuration:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --prefix=/scratch/rfm-stage/ -C config/cluster.py -c stream/stream_variables_fixtures.py -r
 
@@ -1021,6 +1044,7 @@ Note how the test runs every each partition and environment combination.
 For the ``login`` partition the generated script is the same as for the local execution, whereas for the ``compute`` partition ReFrame generates a job script, which submits with ``sbatch``:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    cat /scratch/rfm-stage/output/pseudo-cluster/compute/gnu/stream_test/rfm_job.sh
 
@@ -1051,6 +1075,7 @@ You could use the :option:`--system` and :option:`-p` options to restrict a test
 To run only the GCC tests on the compute partition you could do the following:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --prefix=/scratch/rfm-stage/ -C config/cluster.py -c stream/stream_variables_fixtures.py \
            --system=pseudo-cluster:compute -p gnu -r
@@ -1216,6 +1241,7 @@ Note also the use of the :func:`skip_if_no_procinfo()` function which will cause
 Let's try running the test on our pseudo-cluster:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --prefix=/scratch/rfm-stage/ -C config/cluster.py -c stream/stream_cpuinfo.py -p gnu -r
 
@@ -1243,6 +1269,7 @@ Let's try running the test on our pseudo-cluster:
 Indeed, for the ``login`` partition, the generated script contains the correct number of threads:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
     cat /scratch/rfm-stage/output/pseudo-cluster/login/gnu/stream_test/rfm_job.sh
 
@@ -1257,6 +1284,7 @@ ReFrame by default does not try to auto-detect remote partitions, because this c
 To enable remote host auto-detection, we should set the :envvar:`RFM_REMOTE_DETECT` or the equivalent :attr:`~config.general.remote_detect` configuration option.
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    RFM_REMOTE_WORKDIR=/scratch/rfm-stage RFM_REMOTE_DETECT=1 reframe --prefix=/scratch/rfm-stage/ -C config/cluster.py -c stream/stream_cpuinfo.py -p gnu -r
 
@@ -1314,6 +1342,7 @@ Here is how to execute the tests.
 Note that we are using another configuration file, which defines an MPI-enabled environment so that we can compile the OSU benchmarks:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --prefix=/scratch/rfm-stage/ -C config/cluster_mpi.py -c mpi/osu.py --exec-policy=serial -r
 
@@ -1361,6 +1390,7 @@ It is always a good practice to first list the tests to run before executing the
 By default, the :option:`-l` lists only the tests to be executed:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe -C config/cluster.py -c stream/stream_build_run.py -l
 
@@ -1376,6 +1406,7 @@ In ReFrame's terminology, these are called *test cases*.
 You can instruct the :option:`-l` to list the actual (concretized) test cases that will eventually run with ``-lC``:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe -C config/cluster.py -c stream/stream_build_run.py -lC
 
@@ -1395,6 +1426,7 @@ this is the exact combination of partition and environment that the test will ru
 You can also opt for a detailed listing with the :option:`-L` option, which also accepts the ``C`` argument for producing the concretized test cases.
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe -C config/cluster.py -c stream/stream_build_run.py -LC
 
@@ -1443,6 +1475,7 @@ Its argument can take different forms that help in different scenarios:
   For example, in order to select only the test variants that have the ``num_threads`` parameter set to ``1`` in the ``stream/stream_parameters_fixtures.py``, we can do the following:
 
   .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
      reframe -C config/cluster.py -c stream/stream_parameters_fixtures.py -l -n '%num_threads=1'
 
@@ -1459,6 +1492,7 @@ This allows you to filter tests by evaluating an expression over their variables
 For example, we could select all tests with 4 threads and a ``spread`` placement as follows:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe -C config/cluster.py -c stream/stream_parameters_fixtures.py -l -E 'num_threads==4 and thread_placement=="spread"'
 
@@ -1481,6 +1515,7 @@ Obviously, modes become more useful when we need to abbreviate many options.
 
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe -C config/cluster.py -c stream/stream_parameters_fixtures.py --mode=singlethread -l
 
@@ -1513,6 +1548,7 @@ Tests :class:`T2` and :class:`T8` are set to fail.
 Let's run the whole test DAG:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    cd reframe-examples/tutorial/
    reframe -c deps/deps_complex.py -r
@@ -1524,6 +1560,7 @@ You can restore the run session and run only the failed test cases as follows:
 
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe --restore-session --failed -r
 
@@ -1544,6 +1581,7 @@ Let's try to rerun the :class:`T6` test from the previous test dependency chain:
 
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -c deps/deps_complex.py --keep-stage-files -r
    reframe --restore-session --keep-stage-files -n T6 -r
@@ -1558,6 +1596,7 @@ Notice how only the :class:`T6` test was rerun and none of its dependencies, sin
 If we tried to run :class:`T6` without restoring the session, we would have to rerun also the whole dependency chain, i.e., also :class:`T5`, :class:`T1`, :class:`T4` and :class:`T0`.
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe -c deps/deps_complex.py -n T6 -r
 
@@ -1573,7 +1612,7 @@ These options will repeat the session once the first round of tests has finished
 For example, the following command will run the STREAM benchmark repeatedly for 30 minutes:
 
 .. code-block:: bash
-   :caption: NOTE: Use the single node container for this example.
+   :caption: Run in the single-node container.
 
     reframe -c stream_runonly.py --duration=30m -r
 
@@ -1593,6 +1632,7 @@ The following example will run our STREAM test on all the nodes of our pseudo-cl
 
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --prefix=/scratch/rfm-stage/ -C config/cluster.py -c stream/stream_fixtures.py -p gnu --system=pseudo-cluster:compute --distribute=all -r
 
@@ -1601,6 +1641,7 @@ Note that similarly to the :option:`-P` option, :option:`--distribute` parameter
 By inspecting the generated script files, you will notice that ReFrame emits the ``--nodelist`` to pin the tests to the cluster nodes:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    cat /scratch/rfm-stage/output/pseudo-cluster/compute/gnu/stream_test_pseudo-cluster_compute_8de19aca/rfm_job.sh
 
@@ -1661,6 +1702,7 @@ In the following, we have split the ``cluster_perflogs.py`` in three different c
 Since the configuration file names are normalized, we could use the :envvar:`RFM_CONFIG_PATH` environment variable instead of the :option:`-C` option:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    export RFM_CONFIG_PATH=$(pwd)/config/multifile/common:$(pwd)/config/multifile/environments:$(pwd)/config/multifile/pseudo-cluster
 
@@ -1672,6 +1714,7 @@ ReFrame offers the very convenient :option:`--show-config`, that allows you to i
 Indeed having set the environment variable :envvar:`RFM_CONFIG_PATH`, running
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --show-config
 
@@ -1680,6 +1723,7 @@ Note that the loaded configuration resolves to the auto-detected system.
 Even if we load a configuration file with multiple files, the :option:`--show-config` option will show the configuration of the current system:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe -C :config/baseline.py --show-config
 
@@ -1693,6 +1737,7 @@ Notice that the ``tutorialsys`` was not matched and therefore the current system
 The :option:`--show-config` option takes also an optional argument which will allows you to select a specific configuration parameter:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --show-config=systems/0/name
 
@@ -1703,6 +1748,7 @@ The :option:`--show-config` option takes also an optional argument which will al
 You can also use the :option:`--show-config` option to retrieve the default value of a configuration parameter, even if this is not defined in the configuration file:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --show-config=general/0/trap_job_errors
 
@@ -1728,6 +1774,7 @@ For example, if we wanted to set :attr:`~general.trap_job_errors` only for the `
     ]
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe -C :config/cluster.py --show-config=general/0/trap_job_errors
 
@@ -1793,6 +1840,7 @@ Every time that a variant of the test is run, a new line will be appended to thi
 Here is the performance log file for the ``stream_test`` on our ``pseudo-cluster:compute`` partition:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    cat /scratch/rfm-stage/perflogs/pseudo-cluster/compute/stream_test.log
 
@@ -1834,6 +1882,7 @@ Let's walk briefly through the most important parts of its configuration:
 Let's rerun our STREAM example using the new configuration:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --prefix=/scratch/rfm-stage/ -C config/cluster_perflogs.py -c stream/stream_fixtures.py -r
    cat /scratch/rfm-stage/perflogs/pseudo-cluster/compute/stream_test.log
@@ -1866,6 +1915,7 @@ Also, the :attr:`~config.logging.handlers_perflog..httpjson..json_formatter` Is 
 Let's rerun our STREAM benchmark:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    reframe --prefix=/scratch/rfm-stage/ -C config/cluster_perflogs_httpjson.py -c stream/stream_fixtures.py -r
 
@@ -1873,6 +1923,7 @@ Notice that that there is one JSON file produced per test run named as ``httpjso
 You can inspect it to see the exact JSON record that ReFrame would send to the HTTP endpoint:
 
 .. code-block:: bash
+   :caption: Run with the Docker compose setup.
 
    jq . httpjson_record_<timestamp>.json
 
