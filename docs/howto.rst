@@ -490,7 +490,7 @@ As we have seen earlier, tests define their dependencies by referencing the targ
 This is straightforward when referring to regular tests, where their name matches the class name, but it becomes cumbersome trying to refer to a parameterized tests, since no safe assumption should be made as of the variant number of the test or how the parameters are encoded in the name.
 In order to safely and reliably refer to a parameterized test, you should use the :func:`~reframe.core.pipeline.RegressionMixin.get_variant_nums` and :func:`~reframe.core.pipeline.RegressionMixin.variant_name` class methods as shown in the following example:
 
-.. literalinclude:: ../tutorials/deps/parameterized.py
+.. literalinclude:: ../examples/tutorial/deps/parameterized.py
    :lines: 6-
 
 In this example, :class:`TestB` depends only on selected variants of :class:`TestA`.
@@ -851,19 +851,19 @@ for flux.
 
 .. code-block:: bash
 
-   # What tests are under tutorials/flux?
-   $ cd tutorials/flux
+   # What tests are under examples/howto/flux?
+   $ cd examples/howto/flux
    $ reframe -c . -C settings.py -l
 
 .. code-block:: console
 
    [ReFrame Setup]
      version:           4.0.0-dev.1
-     command:           '/code/bin/reframe -c tutorials/flux -C tutorials/flux/settings.py -l'
+     command:           '/code/bin/reframe -c examples/howto/flux -C examples/howto/flux/settings.py -l'
      launched by:       root@b1f6650222bc
      working directory: '/code'
-     settings file:     'tutorials/flux/settings.py'
-     check search path: '/code/tutorials/flux'
+     settings file:     'examples/howto/flux/settings.py'
+     check search path: '/code/examples/howto/flux'
      stage directory:   '/code/stage'
      output directory:  '/code/output'
 
@@ -878,7 +878,7 @@ This also works
 .. code-block:: bash
    :caption: Run in the Flux container.
 
-   $ reframe -c tutorials/flux -C tutorials/flux/settings.py -l
+   $ reframe -c examples/howto/flux -C examples/howto/flux/settings.py -l
 
 And then to run tests, just replace ``-l`` (for list) with ``-r`` or
 ``--run`` (for run):
@@ -886,18 +886,18 @@ And then to run tests, just replace ``-l`` (for list) with ``-r`` or
 .. code-block:: bash
    :caption: Run in the Flux container.
 
-   $ reframe -c tutorials/flux -C tutorials/flux/settings.py --run
+   $ reframe -c examples/howto/flux -C examples/howto/flux/settings.py --run
 
 .. code:: console
 
-   root@b1f6650222bc:/code# reframe -c tutorials/flux -C tutorials/flux/settings.py --run
+   root@b1f6650222bc:/code# reframe -c examples/howto/flux -C examples/howto/flux/settings.py --run
    [ReFrame Setup]
      version:           4.0.0-dev.1
-     command:           '/code/bin/reframe -c tutorials/flux -C tutorials/flux/settings.py --run'
+     command:           '/code/bin/reframe -c examples/howto/flux -C examples/howto/flux/settings.py --run'
      launched by:       root@b1f6650222bc
      working directory: '/code'
-     settings file:     'tutorials/flux/settings.py'
-     check search path: '/code/tutorials/flux'
+     settings file:     'examples/howto/flux/settings.py'
+     check search path: '/code/examples/howto/flux'
      stage directory:   '/code/stage'
      output directory:  '/code/output'
 
@@ -921,7 +921,7 @@ Testing
 
 .. code-block:: console
 
-    ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py unittests/test_schedulers.py -xs
+    ./test_reframe.py --rfm-user-config=examples/howto/flux/settings.py unittests/test_schedulers.py -xs
 
 
 Building test libraries and utilities
@@ -1082,7 +1082,7 @@ Debugging test loading
 If you are new to ReFrame, you might wonder sometimes why your tests are not loading or why your tests are not running on the partition they were supposed to run.
 This can be due to ReFrame picking the wrong configuration entry or that your test is not written properly (not decorated, no :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` etc.).
 If you try to load a test file and list its tests by increasing twice the verbosity level, you will get enough output to help you debug such issues.
-Let's try loading the ``tutorials/basics/hello/hello2.py`` file:
+Let's try loading the ``stream_variables.py`` file:
 
 .. code-block:: bash
    :caption: Run in the single-node container.
