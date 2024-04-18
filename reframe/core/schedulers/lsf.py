@@ -27,6 +27,9 @@ class LsfJobScheduler(PbsJobScheduler):
     def __init__(self):
         self._prefix = '#BSUB'
         self._submit_timeout = self.get_option('job_submit_timeout')
+        self._sched_access_in_submit = self.get_option(
+            'sched_access_in_submit'
+        )
 
     def _format_option(self, var, option):
         if var is not None:

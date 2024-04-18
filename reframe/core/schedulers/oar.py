@@ -60,6 +60,9 @@ class OarJobScheduler(PbsJobScheduler):
     def __init__(self):
         self._prefix = '#OAR'
         self._submit_timeout = self.get_option('job_submit_timeout')
+        self._sched_access_in_submit = self.get_option(
+            'sched_access_in_submit'
+        )
 
     def emit_preamble(self, job):
         # host is de-facto nodes and core is number of cores requested per node
