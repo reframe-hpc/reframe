@@ -492,7 +492,7 @@ Using the :func:`variant_name` subsequently, we can get the actual name of the v
 
 .. code-block:: bash
 
-   reframe -c reframe-examples/tutorial/deps/parameterized.py -l
+   reframe -c deps/parameterized.py -l
 
 .. code-block:: console
 
@@ -803,13 +803,13 @@ And here is the listing of generated tests:
 Using the Flux framework scheduler
 ==================================
 
-This is a how to that will show how to use refame with `Flux
+This is a how to that will show how-to use ReFrame with `Flux
 Framework <https://github.com/flux-framework/>`__. First, build the
 container here from the root of reframe.
 
 .. code:: bash
 
-   $ docker build -f tutorials/flux/Dockerfile -t flux-reframe .
+   $ docker build -f examples/tutorial/dockerfiles/flux.dockerfile -t flux-reframe .
 
 Then shell inside, optionally binding the present working directory if
 you want to develop.
@@ -823,7 +823,7 @@ Note that if you build the local repository, you’ll need to bootstrap
 and install again, as we have over-written the bin!
 
 .. code:: bash
-
+# In case of problems with pip, first clean the `external` directory with `rm -rf external`
    ./bootstrap.sh
 
 And then reframe will again be in the local ``bin`` directory:

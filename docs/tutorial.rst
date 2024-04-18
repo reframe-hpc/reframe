@@ -153,7 +153,7 @@ The verbosity of the output can be increasing using the :option:`-v` option or d
 By default, a log file is generated in the system's temporary directory that contains detailed debug information.
 The :ref:`logging` section article describes how logging can be configured in more detail.
 Once a performance test finishes, its figures of merit are printed immediately using the ``P:`` prefix.
-This can be suppressed by increasing the level at which this information is logged using the :envvar:`RFM_PER_INFO_LEVEL` environment variable.
+This can be suppressed by increasing the level at which this information is logged using the :envvar:`RFM_PERF_INFO_LEVEL` environment variable.
 
 .. _run-reports-and-performance-logging:
 
@@ -185,7 +185,7 @@ Inspecting the test artifacts
 
 When ReFrame executes tests, it first copies over all of the test resources (if any) to a *stage directory*, from which it executes the test.
 Upon successful execution, the test artifacts will be copied over to the *output directory* for archiving.
-The default artifacts for every test is the generated test script as well as the test's standard output and standard error.
+The default artifacts for every test are the generated test script as well as the test's standard output and standard error.
 The default location for the stage and output directories are the ``./stage`` and ``./output`` directories.
 These can be changed with the :option:`-s` and :option:`-o` options or the more general :option:`--prefix` option.
 The test artifacts of our first example can be found in the following location:
@@ -345,10 +345,10 @@ This happens because ReFrame by default defines a generic system and environment
 You may have noticed in our first run the ``@generic:default+builtin`` notation printed after test name.
 This is the system partition name (``generic:default``) and the environment name (``builtin``) where the test is being run in.
 The ``generic`` system and the ``builtin`` partition come as predefined in ReFrame.
-The make the minimum possible assumption:
+They make the minimum possible assumptions:
 
 - The ``generic`` system defines a single partition, named ``default`` which launches test jobs locally.
-- The ``builtin`` environment assumes only that the ``cc`` compiler is available
+- The ``builtin`` environment assumes only that the ``cc`` compiler is available.
 
 .. note::
    ReFrame will not complain if a compiler is not installed until your test tries to build something.
@@ -360,7 +360,7 @@ Let's define our own system and baseline environment in a ReFrame configuration 
    :caption:
    :lines: 5-
 
-This configuration a system named ``tutorialsys`` with a single partition named ``default`` and an environment named ``baseline``.
+This configuration defines a system named ``tutorialsys`` with a single partition named ``default`` and an environment named ``baseline``.
 Let's look at some key elements of the configuration:
 
 * Each system, partition and environment require a unique name.
@@ -375,7 +375,7 @@ Let's look at some key elements of the configuration:
 * The :attr:`~config.systems.partitions.environs` partition option is a list of environments to test on this partition.
   Their definitions are resolved in the :attr:`~config.environments` section.
 * Every partition and environment can define a set of arbitrary features or key/value pairs in the :attr:`~config.environments.features` and :attr:`~config.environments.extras` options respectively.
-  ReFrame will try to match system partitions and environments to test based on the test's specification in :attr:`valid_systems` and :attr:`valid_prog_environs`.
+  ReFrame will try to match system partitions and environments to a test based on the test's specification in :attr:`valid_systems` and :attr:`valid_prog_environs`.
 
 There are many options that we can be define for systems, partitions and environments.
 We will cover several of them as we go through the tutorial, but for the complete reference you should refer to :doc:`config_reference`.
