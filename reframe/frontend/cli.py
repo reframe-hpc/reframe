@@ -577,9 +577,9 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
-        dest='access_on_submission_command',
-        envvar='RFM_ACCESS_ON_SUBMISSION_COMMAND',
-        configvar='systems*/sched_options/access_on_submission_command',
+        dest='sched_access_in_submit',
+        envvar='RFM_SCHED_ACCESS_IN_SUBMIT',
+        configvar='systems*/sched_options/sched_access_in_submit',
         action='store_true',
         help='Pass access options in the submission command (only for Slurm)'
     )

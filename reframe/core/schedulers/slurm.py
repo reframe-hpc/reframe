@@ -140,8 +140,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._submit_timeout = self.get_option('job_submit_timeout')
         self._use_nodes_opt = self.get_option('use_nodes_option')
         self._resubmit_on_errors = self.get_option('resubmit_on_errors')
-        self._access_on_submission_command = self.get_option(
-            'access_on_submission_command'
+        self._sched_access_in_submit = self.get_option(
+            'sched_access_in_submit'
         )
 
     def make_job(self, *args, **kwargs):
@@ -212,21 +212,22 @@ class SlurmJobScheduler(sched.JobScheduler):
                 )
             )
 
-        for opt in job.sched_access:
-            if not opt.strip().startswith(('-C', '--constraint')):
-                preamble.append('%s %s' % (self._prefix, opt))
-
-        # To avoid overriding a constraint that's passed into `sched_access`,
-        # we AND it with the `--constraint` option passed either in `options`
-        # or in `cli_options`
         constraints = []
         constraint_parser = ArgumentParser()
         constraint_parser.add_argument('-C', '--constraint')
-        parsed_options, _ = constraint_parser.parse_known_args(
-            job.sched_access
-        )
-        if parsed_options.constraint:
-            constraints.append(parsed_options.constraint.strip())
+        if not job._sched_access_in_submit:
+            for opt in job.sched_access:
+                if not opt.strip().startswith(('-C', '--constraint')):
+                    preamble.append('%s %s' % (self._prefix, opt))
+
+            # To avoid overriding a constraint that's passed into
+            # `sched_access`, we AND it with the `--constraint` option
+            # passed either in `options` or in `cli_options`
+            parsed_options, _ = constraint_parser.parse_known_args(
+                job.sched_access
+            )
+            if parsed_options.constraint:
+                constraints.append(parsed_options.constraint.strip())
 
         # NOTE: Here last of the passed --constraint job options is taken
         # into account in order to respect the behavior of slurm.
@@ -263,7 +264,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def submit(self, job):
         cmd_opts = (
-            ' '.join(job.sched_access) if self._access_on_submission_command
+            ' '.join(job.sched_access) if self._sched_access_in_submit
             else ''
         )
         cmd = f'sbatch {cmd_opts} {job.script_filename}'

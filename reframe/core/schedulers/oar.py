@@ -88,8 +88,11 @@ class OarJobScheduler(PbsJobScheduler):
             num_nodes=num_nodes, num_tasks_per_node=num_tasks_per_node,
         )]
 
+        if not self._sched_access_in_submit:
+            options += job.sched_access
+
         # Emit the rest of the options
-        options += job.sched_access + job.options + job.cli_options
+        options += job.options + job.cli_options
         for opt in options:
             if opt.startswith('#'):
                 preamble.append(opt)
@@ -101,9 +104,12 @@ class OarJobScheduler(PbsJobScheduler):
     def submit(self, job):
         # OAR batch submission mode needs full path to the job script
         job_script_fullpath = os.path.join(job.workdir, job.script_filename)
-
+        cmd_opts = (
+            ' '.join(job.sched_access) if self._sched_access_in_submit
+            else ''
+        )
         # OAR needs -S to submit job in batch mode
-        cmd = f'oarsub -S {job_script_fullpath}'
+        cmd = f'oarsub {cmd_opts} -S {job_script_fullpath}'
         completed = _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'.*OAR_JOB_ID=(?P<jobid>\S+)',
                                 completed.stdout)

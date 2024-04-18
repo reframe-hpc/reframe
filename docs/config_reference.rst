@@ -366,7 +366,7 @@ System Partition Configuration
       This option is broken in 4.0.
 
 
-.. py:attribute:: systems.partitions.sched_options.access_on_submission_command
+.. py:attribute:: systems.partitions.sched_options.sched_access_in_submit
 
    :required: No
    :default: ``false``

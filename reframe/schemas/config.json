@@ -109,7 +109,7 @@
         "sched_options": {
             "type": "object",
             "properties": {
-                "access_on_submission_command": {"type": "boolean"},
+                "sched_access_in_submit": {"type": "boolean"},
                 "hosts": {
                     "type": "array",
                     "items": {"type": "string"}
@@ -626,7 +626,7 @@
         "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
         "systems/partitions/extras": {},
-        "systems*/sched_options/access_on_submission_command": false,
+        "systems*/sched_options/sched_access_in_submit": false,
         "systems*/sched_options/ssh_hosts": [],
         "systems*/sched_options/ignore_reqnodenotavail": false,
         "systems*/sched_options/job_submit_timeout": 60,

@@ -57,8 +57,9 @@ class LsfJobScheduler(PbsJobScheduler):
                 f'{self._prefix} -W {int(job.time_limit // 60)}'
             )
 
-        for opt in job.sched_access:
-            preamble.append(f'{self._prefix} {opt}')
+        if not self._sched_access_in_submit:
+            for opt in job.sched_access:
+                preamble.append(f'{self._prefix} {opt}')
 
         # emit the rest of the options
         options = job.options + job.cli_options
@@ -76,7 +77,11 @@ class LsfJobScheduler(PbsJobScheduler):
 
     def submit(self, job):
         with open(job.script_filename, 'r') as fp:
-            completed = _run_strict('bsub', stdin=fp)
+            cmd_opts = (
+                ' '.join(job.sched_access) if self._sched_access_in_submit
+                else ''
+            )
+            completed = _run_strict('bsub {cmd_opts}', stdin=fp)
         jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
                                 completed.stdout)
         if not jobid_match:
