@@ -67,7 +67,7 @@ site_configuration = {
                             'options': [
                                 '--mount={mount}',
                                 '--file={file}'
-                            ],
+                            ]
                         }
                     ],
                     'features': ['cuda', 'mpi'],
