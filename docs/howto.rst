@@ -967,7 +967,7 @@ Let's try running both the library and the derived tests:
 .. code-block:: bash
    :caption: Running the derived test (in the single-node container)
 
-    reframe -c testlib_example.py -r
+    reframe -c reframe-examples/howto/testlib_example.py -r
 
 .. code-block:: console
 
