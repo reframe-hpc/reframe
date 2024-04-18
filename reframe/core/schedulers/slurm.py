@@ -215,7 +215,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         constraints = []
         constraint_parser = ArgumentParser()
         constraint_parser.add_argument('-C', '--constraint')
-        if not job._sched_access_in_submit:
+        if not self._sched_access_in_submit:
             for opt in job.sched_access:
                 if not opt.strip().startswith(('-C', '--constraint')):
                     preamble.append('%s %s' % (self._prefix, opt))
