@@ -1216,7 +1216,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
 .. envvar:: RFM_SCHED_ACCESS_IN_SUBMIT
 
-   Pass access options in the submission command (only for Slurm).
+   Pass access options in the submission command (relevant for LSF, OAR, PBS and Slurm).
 
    .. table::
       :align: left
