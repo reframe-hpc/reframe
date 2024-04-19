@@ -147,14 +147,14 @@ class PbsJobScheduler(sched.JobScheduler):
                                   'node filtering')
 
     def submit(self, job):
-        cmd_opts = (
-            ' '.join(job.sched_access) if self._sched_access_in_submit
-            else ''
-        )
+        cmd_parts = ['qsub']
+        if self._sched_access_in_submit:
+            cmd_parts += job.sched_access
+
         # `-o` and `-e` options are only recognized in command line by the PBS
         # Slurm wrappers.
-        cmd = (f'qsub {cmd_opts} -o {job.stdout} -e {job.stderr} '
-               f'{job.script_filename}')
+        cmd_parts += ['-o', job.stdout, '-e', job.stderr, job.script_filename]
+        cmd = ' '.join(cmd_parts)
         completed = _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
         if not jobid_match:

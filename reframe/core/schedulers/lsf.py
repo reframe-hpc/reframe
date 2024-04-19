@@ -83,8 +83,10 @@ class LsfJobScheduler(PbsJobScheduler):
             cmd_parts = ['bsub']
             if self._sched_access_in_submit:
                 cmd_parts += job.sched_access
-            
-            completed = _run_strict(' '.join(cmd_parts), stdin=fp)
+
+            cmd = ' '.join(cmd_parts)
+            completed = _run_strict(cmd, stdin=fp)
+
         jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
                                 completed.stdout)
         if not jobid_match:

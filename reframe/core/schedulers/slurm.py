@@ -263,11 +263,12 @@ class SlurmJobScheduler(sched.JobScheduler):
         return list(filter(None, preamble))
 
     def submit(self, job):
-        cmd_opts = (
-            ' '.join(job.sched_access) if self._sched_access_in_submit
-            else ''
-        )
-        cmd = f'sbatch {cmd_opts} {job.script_filename}'
+        cmd_parts = ['sbatch']
+        if self._sched_access_in_submit:
+            cmd_parts += job.sched_access
+
+        cmd_parts += [job.script_filename]
+        cmd = ' '.join(cmd_parts)
         intervals = itertools.cycle([1, 2, 3])
         while True:
             try:
