@@ -55,6 +55,8 @@ Once the Docker compose stack is up, you execute the following from a different 
 
    docker exec -it $(docker ps -f name=frontend -q) /bin/bash
 
+   # Inside the container
+   cd reframe-examples/tutorial/
 
 Once done, press Ctl-D in the frontend container and Ctl-C in the Docker compose console window.
 
@@ -402,7 +404,7 @@ Let's try running the constrained version of our STREAM test with the configurat
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe -C config/baseline.py -c stream/stream_build_run.py -r
+   reframe -C config/baseline.py -c stream/stream_runonly.py -r
 
 .. code-block:: console
 
