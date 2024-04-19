@@ -372,7 +372,7 @@ System Partition Configuration
    :default: ``false``
 
    Normally, ReFrame will pass the :attr:`~config.systems.partitions.access` options to the job script only.
-   When this attribute is ``true`` the options are passed verbatim also in the submission command.
+   When this attribute is ``true`` the options are passed in the submission command instead.
 
    This option is relevant for the LSF, OAR, PBS and Slurm backends.
 
