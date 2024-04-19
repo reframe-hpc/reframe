@@ -80,11 +80,11 @@ class LsfJobScheduler(PbsJobScheduler):
 
     def submit(self, job):
         with open(job.script_filename, 'r') as fp:
-            cmd_opts = (
-                ' '.join(job.sched_access) if self._sched_access_in_submit
-                else ''
-            )
-            completed = _run_strict('bsub {cmd_opts}', stdin=fp)
+            cmd_parts = ['bsub']
+            if self._sched_access_in_submit:
+                cmd_parts += job.sched_access
+            
+            completed = _run_strict(' '.join(cmd_parts), stdin=fp)
         jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
                                 completed.stdout)
         if not jobid_match:
