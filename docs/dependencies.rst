@@ -192,43 +192,6 @@ If you end up requiring such type of dependency in your tests, you might have to
    Technically, the framework could easily support such types of dependencies, but ReFrame's output would have to change substantially.
 
 
-
-Resolving dependencies
-----------------------
-
-As shown in the :doc:`tutorial_deps`, test dependencies would be of limited usage if you were not able to use the results or information of the target tests.
-Let's reiterate over the :func:`set_executable` function of the :class:`OSULatencyTest` that we presented previously:
-
-.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
-   :pyobject: OSULatencyTest.set_executable
-
-The ``@require_deps`` decorator does some magic -- we will unravel this shortly -- with the function arguments of the :func:`set_executable` function and binds them to the target test dependencies by their name.
-However, as discussed in this section, dependencies are defined at test case level, so the ``OSUBuildTest`` function argument is bound to a special function that allows you to retrieve an actual test case of the target dependency.
-This is why you need to "call" ``OSUBuildTest`` in order to retrieve the desired test case.
-When no arguments are passed, this will retrieve the test case corresponding to the current partition and the current programming environment.
-We could always retrieve the ``PrgEnv-gnu`` case by writing ``OSUBuildTest('PrgEnv-gnu')``.
-If a dependency cannot be resolved, because it is invalid, a runtime error will be thrown with an appropriate message.
-
-The low-level method for retrieving a dependency is the :func:`getdep() <reframe.core.pipeline.RegressionTest.getdep>` method of the :class:`RegressionTest`.
-In fact, you can rewrite :func:`set_executable` function as follows:
-
-.. code:: python
-
-   @run_after('setup')
-   def set_executable(self):
-       target = self.getdep('OSUBuildTest')
-       self.executable = os.path.join(
-           target.stagedir,
-           'osu-micro-benchmarks-5.6.2', 'mpi', 'pt2pt', 'osu_latency'
-       )
-       self.executable_opts = ['-x', '100', '-i', '1000']
-
-
-Now it's easier to understand what the ``@require_deps`` decorator does behind the scenes.
-It binds the function arguments to a partial realization of the :func:`getdep` function and attaches the decorated function as an after-setup hook.
-In fact, any ``@require_deps``-decorated function will be invoked before any other after-setup hook.
-
-
 .. _cleaning-up-stage-files:
 
 Cleaning up stage files

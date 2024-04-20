@@ -1,4 +1,0 @@
-job_completion_time,version,display_name,system,partition,environ,jobid,result,Copy_value,Copy_unit,Copy_ref,Copy_lower,Copy_upper,Scale_value,Scale_unit,Scale_ref,Scale_lower,Scale_upper,Add_value,Add_unit,Add_ref,Add_lower,Add_upper,Triad_value,Triad_unit,Triad_ref,Triad_lower,Triad_upper
-2022-10-18T21:41:25,4.0.0-dev.2+90fbd3ef,StreamWithRefTest,catalina,default,gnu,81351,pass,24235.6,MB/s,25200,-0.05,0.05,16044.2,MB/s,16800,-0.05,0.05,17733.7,MB/s,18500,-0.05,0.05,18232.0,MB/s,18800,-0.05,0.05
-2022-10-18T21:41:31,4.0.0-dev.2+90fbd3ef,StreamWithRefTest,catalina,default,gnu,81377,fail,23615.4,MB/s,25200,-0.05,0.05,16394.5,MB/s,16800,-0.05,0.05,17841.3,MB/s,18500,-0.05,0.05,18284.1,MB/s,18800,-0.05,0.05
-2022-10-18T21:46:06,4.0.0-dev.2+90fbd3ef,StreamWithRefTest,catalina,default,gnu,81480,fail,23736.4,MB/s,25200,-0.05,0.05,16242.8,MB/s,16800,-0.05,0.05,17699.1,MB/s,18500,-0.05,0.05,18077.3,MB/s,18800,-0.05,0.05

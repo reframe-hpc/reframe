@@ -733,9 +733,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionadded:: 4.0.0
     require_reference = variable(typ.Bool, value=False, loggable=False)
 
-    #:
-    #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
-    #: examples.
+    #: Patterns for checking the sanity of this test.
     #:
     #: If not set, a sanity error may be raised during sanity checking if no
     #: other sanity checking functions already exist.
@@ -749,7 +747,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       The default behaviour has changed and it is now considered a
     #:       sanity failure if this attribute is set to :class:`required`.
     #:
-    #:       If a test doesn't care about its output, this must be stated
+    #:       If a test does not care about its output, this must be stated
     #:       explicitly as follows:
     #:
     #:       ::
@@ -758,6 +756,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:    .. versionchanged:: 3.6
     #:       The default value has changed from ``None`` to ``required``.
+    #:
+    #: .. note::
+    #:
+    #:    You are advised to follow the new syntax for defining the sanity
+    #:    check of the test using the builtin :func:`@sanity_function
+    #:    <reframe.core.builtins.sanity_function>` decorator.
     sanity_patterns = variable(_DeferredExpression, loggable=False)
 
     #: Patterns for verifying the performance of this test.
@@ -770,13 +774,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
     #:
-    #: .. warning::
+    #: .. note::
     #:
     #:    You are advised to follow the new syntax for defining performance
     #:    variables in your tests using either the :func:`@performance_function
     #:    <reframe.core.builtins.performance_function>` builtin or the
-    #:    :attr:`perf_variables`, as :attr:`perf_patterns` will likely be
-    #:    deprecated in the future.
+    #:    :attr:`perf_variables`.
     perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None),
                              loggable=False)
 
@@ -800,9 +803,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: performance stage. To this end, deferred performance functions can be
     #: created inline using the utility
     #: :func:`~reframe.utility.sanity.make_performance_function`.
-    #:
-    #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
-    #: examples.
     #:
     #: :type: A dictionary with keys of type :class:`str` and deferred
     #:     performance expressions as values (see
@@ -2454,10 +2454,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def getdep(self, target, environ=None, part=None):
         '''Retrieve the test case of a target dependency.
-
-        This is a low-level method. The :func:`@require_deps
-        <reframe.core.decorators.require_deps>` decorators should be
-        preferred.
 
         :arg target: The name of the target dependency to be retrieved.
         :arg environ: The name of the programming environment that will be

@@ -38,6 +38,6 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           which reframe
-          flux start reframe -c tutorials/flux -C tutorials/flux/settings.py -l
-          flux start reframe -c tutorials/flux -C tutorials/flux/settings.py --run
-          flux start python3 ./test_reframe.py --rfm-user-config=tutorials/flux/settings.py -vvvv
+          flux start reframe -c examples/howto/flux -C examples/howto/flux/settings.py -l
+          flux start reframe -c examples/howto/flux -C examples/howto/flux/settings.py -r
+          flux start python3 ./test_reframe.py --rfm-user-config=examples/howto/flux/settings.py -vvvv

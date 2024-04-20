@@ -1,0 +1,108 @@
+Loading user configuration
+Loading the builtin configuration
+Loading configuration file: 'config/baseline_environs.py'
+Autodetecting system
+Trying autodetection method: 'py::socket.gethostname'
+Retrieved hostname: 'myhost'
+Looking for a matching configuration entry
+Configuration found: picking system 'tutorialsys'
+Initializing runtime
+Initializing system partition 'default'
+Initializing system 'tutorialsys'
+Initializing modules system 'nomod'
+detecting topology info for tutorialsys:default
+> found topology file '/home/user/.reframe/topology/tutorialsys-default/processor.json'; loading...
+> device auto-detection is not supported
+[ReFrame Environment]
+  RFM_AUTODETECT_FQDN=<not set>
+  RFM_AUTODETECT_METHOD=<not set>
+  RFM_AUTODETECT_METHODS=<not set>
+  RFM_AUTODETECT_XTHOSTNAME=<not set>
+  RFM_CHECK_SEARCH_PATH=<not set>
+  RFM_CHECK_SEARCH_RECURSIVE=<not set>
+  RFM_CLEAN_STAGEDIR=<not set>
+  RFM_COLORIZE=<not set>
+  RFM_COMPRESS_REPORT=<not set>
+  RFM_CONFIG_FILES=<not set>
+  RFM_CONFIG_PATH=<not set>
+  RFM_DUMP_PIPELINE_PROGRESS=<not set>
+  RFM_GIT_TIMEOUT=<not set>
+  RFM_HTTPJSON_URL=<not set>
+  RFM_IGNORE_REQNODENOTAVAIL=<not set>
+  RFM_INSTALL_PREFIX=/usr/local/share/reframe
+  RFM_KEEP_STAGE_FILES=<not set>
+  RFM_MODULE_MAPPINGS=<not set>
+  RFM_MODULE_MAP_FILE=<not set>
+  RFM_NON_DEFAULT_CRAYPE=<not set>
+  RFM_OUTPUT_DIR=<not set>
+  RFM_PERFLOG_DIR=<not set>
+  RFM_PERF_INFO_LEVEL=<not set>
+  RFM_PIPELINE_TIMEOUT=<not set>
+  RFM_PREFIX=<not set>
+  RFM_PURGE_ENVIRONMENT=<not set>
+  RFM_REMOTE_DETECT=<not set>
+  RFM_REMOTE_WORKDIR=<not set>
+  RFM_REPORT_FILE=<not set>
+  RFM_REPORT_JUNIT=<not set>
+  RFM_RESOLVE_MODULE_CONFLICTS=<not set>
+  RFM_SAVE_LOG_FILES=<not set>
+  RFM_STAGE_DIR=<not set>
+  RFM_SYSLOG_ADDRESS=<not set>
+  RFM_SYSTEM=<not set>
+  RFM_TIMESTAMP_DIRS=<not set>
+  RFM_TRAP_JOB_ERRORS=<not set>
+  RFM_UNLOAD_MODULES=<not set>
+  RFM_USER_MODULES=<not set>
+  RFM_USE_LOGIN_SHELL=<not set>
+  RFM_VERBOSE=<not set>
+[ReFrame Setup]
+  version:           4.6.0-dev.2
+  command:           '/usr/local/share/reframe/bin/reframe -C config/baseline_environs.py -c stream/stream_variables.py -l -vv'
+  launched by:       user@myhost
+  working directory: '/home/user/reframe-examples/tutorial'
+  settings files:    '<builtin>', 'config/baseline_environs.py'
+  check search path: '/home/user/reframe-examples/tutorial/stream/stream_variables.py'
+  stage directory:   '/home/user/reframe-examples/tutorial/stage'
+  output directory:  '/home/user/reframe-examples/tutorial/output'
+  log files:         '/tmp/rfm-f2v37wl4.log'
+
+Looking for tests in '/home/user/reframe-examples/tutorial/stream/stream_variables.py'
+Validating '/home/user/reframe-examples/tutorial/stream/stream_variables.py': OK
+  > Loaded 3 test(s)
+Loaded 3 test(s)
+Generated 4 test case(s)
+Filtering test cases(s) by name: 2 remaining
+Filtering test cases(s) by tags: 2 remaining
+Filtering test cases(s) by other attributes: 2 remaining
+Building and validating the full test DAG
+Full test DAG:
+  ('stream_test', 'tutorialsys:default', 'gnu') -> [('build_stream_32608d67', 'tutorialsys:default', 'gnu')]
+  ('stream_test', 'tutorialsys:default', 'clang') -> [('build_stream_de1600df', 'tutorialsys:default', 'clang')]
+  ('build_stream_de1600df', 'tutorialsys:default', 'clang') -> []
+  ('build_stream_32608d67', 'tutorialsys:default', 'gnu') -> []
+Pruned test DAG
+  ('stream_test', 'tutorialsys:default', 'gnu') -> [('build_stream_32608d67', 'tutorialsys:default', 'gnu')]
+  ('build_stream_32608d67', 'tutorialsys:default', 'gnu') -> []
+  ('stream_test', 'tutorialsys:default', 'clang') -> [('build_stream_de1600df', 'tutorialsys:default', 'clang')]
+  ('build_stream_de1600df', 'tutorialsys:default', 'clang') -> []
+Final number of test cases: 4
+[List of matched checks]
+- stream_test /2e15a047
+    ^build_stream ~tutorialsys:default+gnu 'stream_binary /40af02af
+    ^build_stream ~tutorialsys:default+clang 'stream_binary /8effd276
+Found 1 check(s)
+
+Log file(s) saved in '/tmp/rfm-f2v37wl4.log'
+>>> profiler report [start] <<<
+main: 0.118834 s
+    test processing: 0.037243 s
+        RegressionCheckLoader.load_all: 0.028813 s
+            TestRegistry.instantiate_all: 0.015122 s
+        generate_testcases: 0.000090 s
+        main.<locals>._sort_testcases: 0.000019 s
+        build_deps: 0.000259 s
+        validate_deps: 0.000097 s
+        prune_deps: 0.000199 s
+        toposort: 0.000200 s
+        list_checks: 0.002932 s
+>>> profiler report [ end ] <<<

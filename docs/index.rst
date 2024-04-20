@@ -44,12 +44,11 @@ Webinars and Tutorials
 
 .. toctree::
    :caption: Table of Contents
-   :maxdepth: 2
 
    started
-   whats_new_40
-   tutorials
-   configure
+   tutorial
+   howto
    topics
    manuals
+   whats_new_40
    hpctestlib

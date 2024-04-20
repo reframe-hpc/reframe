@@ -86,7 +86,7 @@ jobs:
       run: |
         docker run reframe-${{ matrix.modules-version }}:latest
 
-  tutorialtest:
+  eb-spack-howto:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -99,7 +99,7 @@ jobs:
     - name: Build Image for Tutorial Tests
       run: |
         echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
-        docker build -f ci-scripts/dockerfiles/tutorials.dockerfile -t reframe-tutorials:latest .
+        docker build -f ci-scripts/dockerfiles/eb-spack-howto.dockerfile -t reframe-tutorials:latest .
         docker logout
     - name: Run Tutorial Tests
       run: |

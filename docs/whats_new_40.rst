@@ -34,7 +34,7 @@ If you want to eliminate them, though, you should remove the conflicting definit
 
 Although ReFrame will not warn you for redefining other configuration sections, you are also advised to tidy up your configuration file and remove any parts that were copied unchanged from the builtin configuration.
 
-For more information on how ReFrame 4.0 builds and loads its configuration, please refer to the documentation of the :option:`--config-file` option, as well as the :ref:`building-the-final-config` section.
+For more information on how ReFrame 4.0 builds and loads its configuration, please refer to the documentation of the :option:`--config-file` option.
 
 
 Performance Reporting and Logging
@@ -77,14 +77,14 @@ Check the documentation of the :option:`-n` for more information.
 For the details of the new naming scheme, please refer to the :ref:`test_naming_scheme` section.
 
 Note that any tests that used the old naming scheme to depend on parameterized tests will break with this change.
-Check the tutorial :ref:`param_deps` on how to create dependencies on parameterized tests in a portable way.
+Check the article :ref:`param_deps` on how to create dependencies on parameterized tests in a portable way.
 
 
 Custom parallel launchers
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By relaxing the configuration schema, users can now define custom parallel launchers inside their Python configuration file.
-Check the tutorial :ref:`custom_launchers` to find out how this can be achieved.
+Check the article :ref:`custom-launchers` to find out how this can be achieved.
 
 
 Unique run reports
@@ -132,4 +132,4 @@ New Deprecations
 - All occurrences of the ``variables`` name are deprecated in favor of ``env_vars``.
   This includes the :attr:`~reframe.core.pipeline.RegressionTest.variables` test attribute and the homonym systems, partitions and environments configuration parameters as well as the :attr:`~reframe.core.environments.Environment.variables` of the :attr:`~reframe.core.environments.Environment` base class.
 - Although :attr:`~reframe.core.pipeline.RegressionTest.perf_patterns` attribute is not deprecated, users are recommended to migrate to using the new :attr:`@performance_function <reframe.core.builtins.performance_function>` builtin.
-  Please refer to :ref:`perftest-basics` tutorial for a starting point.
+  Please refer to :ref:`writing-your-first-test` of the tutorial for a starting point.

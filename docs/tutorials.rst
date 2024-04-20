@@ -1,15 +1,8 @@
-=================
+:orphan:
+
 ReFrame Tutorials
 =================
 
-
-.. toctree::
-
-   tutorial_basics
-   tutorial_advanced
-   tutorial_deps
-   tutorial_fixtures
-   tutorial_build_automation
-   tutorial_tips_tricks
-   tutorial_flux
-   tutorial_make_test
+.. attention::
+    This page has been replaced.
+    Check out the new :doc:`tutorial <tutorial>` and the :doc:`howto <howto>` pages.
