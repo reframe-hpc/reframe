@@ -61,6 +61,13 @@ site_configuration = {
                                 '#DW jobdw capacity={capacity}',
                                 '#DW stage_in source={stagein_src}'
                             ]
+                        },
+                        {
+                            'name': 'uenv',
+                            'options': [
+                                '--mount={mount}',
+                                '--file={file}'
+                            ]
                         }
                     ],
                     'features': ['cuda', 'mpi'],

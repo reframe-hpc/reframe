@@ -706,7 +706,7 @@ ReFrame can launch containerized applications, but you need to configure properl
 Custom Job Scheduler Resources
 ==============================
 
-ReFrame allows you to define custom scheduler resources for each partition that you can then transparently access through the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute of a regression test.
+ReFrame allows you to define custom scheduler resources for each partition that can then be transparently accessed through the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute of a test or from an environment.
 
 .. py:attribute:: systems.partitions.resources.name
 
@@ -968,6 +968,18 @@ They are associated with `system partitions <#system-partition-configuration>`__
    However, if the current system was ``daint:gpu``, the first definition would be selected, despite the fact that the second definition is relevant for another partition of the same system.
    To better understand this, ReFrame resolves definitions in a hierarchical way.
    It first looks for definitions for the current partition, then for the containing system and, finally, for global definitions (the ``*`` pseudo-system).
+
+
+.. py:attribute:: environments.resources
+
+   :required: No
+   :default: ``{}``
+
+   Scheduler resources associated with this environments.
+   
+   This is the equivalent of a test's :attr:`~reframe.core.pipeline.RegressionTest.extra_resources`.
+
+   .. versionadded:: 4.6
 
 
 .. _logging-config-reference:

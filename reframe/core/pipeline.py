@@ -2036,7 +2036,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def _map_resources_to_jobopts(self):
         resources_opts = []
-        for r, v in self.extra_resources.items():
+        # Combine all resources into one dictionary, where extra_resources
+        # can overwrite _current_environ.resources
+        combined_resources = {
+            **self._current_environ.resources,
+            **self.extra_resources
+        }
+        for r, v in combined_resources.items():
             resources_opts += self._current_partition.get_resource(r, **v)
 
         return resources_opts
