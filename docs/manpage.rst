@@ -752,6 +752,18 @@ If no node can be selected, the test will be marked as a failure with an appropr
 
       Slurm OR constraints and parenthesized expressions are supported in flexible node allocation.
 
+   .. versionchanged:: 4.7
+      The test is not failed if not enough nodes are available, but it is skipped instead.
+      To enforce a failure, use :option:`--flex-alloc-strict`
+
+.. option:: --flex-alloc-strict
+
+   Fail flexible tests if their minimum task requirement is not satisfied.
+   Otherwise the tests will be skipped.
+
+   .. versionadded:: 4.7
+
+
 ---------------------------------------
 Options controlling ReFrame environment
 ---------------------------------------
@@ -1408,6 +1420,21 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
    .. versionadded:: 4.0.0
+
+
+.. envvar:: RFM_FLEX_ALLOC_STRICT
+
+   Fail flexible tests if their minimum task requirement is not satisfied.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--flex-alloc-strict`
+      Associated configuration parameter :attr:`~config.general.flex_alloc_strict`
+      ================================== ==================
+
+   .. versionadded:: 4.7
 
 
 .. envvar:: RFM_GIT_TIMEOUT
