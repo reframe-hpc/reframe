@@ -753,7 +753,7 @@ If no node can be selected, the test will be marked as a failure with an appropr
       Slurm OR constraints and parenthesized expressions are supported in flexible node allocation.
 
    .. versionchanged:: 4.7
-      The test is not failed if not enough nodes are available, but it is skipped instead.
+      The test is not marked as a failure if not enough nodes are available, but it is skipped instead.
       To enforce a failure, use :option:`--flex-alloc-strict`
 
 .. option:: --flex-alloc-strict
