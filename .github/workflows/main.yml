@@ -27,11 +27,6 @@ jobs:
         python -m pip install coverage
         coverage run --source=reframe ./test_reframe.py
         coverage report -m
-    - name: Upload Coverage to Codecov
-      if:  matrix.python-version == '3.8'
-      uses: codecov/codecov-action@v4
-      with:
-        fail_ci_if_error: true
 
   unittest-py36:
     runs-on: ubuntu-20.04
