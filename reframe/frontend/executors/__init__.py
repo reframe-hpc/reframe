@@ -165,7 +165,7 @@ class RegressionTask:
         self._aborted = False
 
         # Performance logging
-        self._perflogger = logging.null_logger
+        self._perflogger = logging.getperflogger(self.check)
         self._perflog_compat = runtime.runtime().get_option(
             'logging/0/perflog_compat'
         )
@@ -376,7 +376,6 @@ class RegressionTask:
 
     @logging.time_function
     def performance(self):
-        self._perflogger = logging.getperflogger(self.check)
         self._safe_call(self.check.performance)
 
     @logging.time_function
