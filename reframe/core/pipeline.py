@@ -2018,6 +2018,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self._job.prepare(
                     commands, environs,
                     self._current_partition.prepare_cmds,
+                    rt.runtime().get_option('general/flex_alloc_strict'),
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=rt.runtime().get_option(
                         'general/0/trap_job_errors'
