@@ -15,7 +15,7 @@ import reframe.core.runtime as runtime
 import reframe.core.shell as shell
 import reframe.utility.jsonext as jsonext
 import reframe.utility.typecheck as typ
-from reframe.core.exceptions import JobError, JobNotStartedError
+from reframe.core.exceptions import JobError, JobNotStartedError, SkipTestError
 from reframe.core.launchers import JobLauncher
 from reframe.core.logging import getlogger, DEBUG2
 from reframe.core.meta import RegressionTestMeta
@@ -550,7 +550,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         '''
         return self._submit_time
 
-    def prepare(self, commands, environs=None, prepare_cmds=None, **gen_opts):
+    def prepare(self, commands, environs=None, prepare_cmds=None,
+                strict_flex=False, **gen_opts):
         environs = environs or []
         if self.num_tasks is not None and self.num_tasks <= 0:
             getlogger().debug(f'[F] Flexible node allocation requested')
@@ -565,11 +566,12 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
                                'this scheduler backend') from e
 
             if guessed_num_tasks < min_num_tasks:
-                raise JobError(
-                    'could not satisfy the minimum task requirement: '
-                    'required %s, found %s' %
-                    (min_num_tasks, guessed_num_tasks)
-                )
+                msg = (f'could not satisfy the minimum task requirement: '
+                       f'required {min_num_tasks}, found {guessed_num_tasks}')
+                if strict_flex:
+                    raise JobError(msg)
+                else:
+                    raise SkipTestError(msg)
 
             self.num_tasks = guessed_num_tasks
             getlogger().debug(f'[F] Setting num_tasks to {self.num_tasks}')

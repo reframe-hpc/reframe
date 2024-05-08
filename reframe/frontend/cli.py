@@ -423,6 +423,12 @@ def main():
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
     run_options.add_argument(
+        '--flex-alloc-strict', action='store_true',
+        envvar='RFM_FLEX_ALLOC_STRICT',
+        configvar='general/flex_alloc_strict',
+        help='Fail the flexible tests if not enough nodes can be found'
+    )
+    run_options.add_argument(
         '-J', '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
         help='Pass option OPT to job scheduler'
