@@ -976,7 +976,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    :default: ``{}``
 
    Scheduler resources associated with this environments.
-   
+
    This is the equivalent of a test's :attr:`~reframe.core.pipeline.RegressionTest.extra_resources`.
 
    .. versionadded:: 4.6
@@ -1632,14 +1632,6 @@ General Configuration
    .. versionadded:: 3.12.0
 
 
-.. py:attribute:: general.git_timeout
-
-  :required: No
-  :default: 5
-
-  Timeout value in seconds used when checking if a git repository exists.
-
-
 .. py:attribute:: general.dump_pipeline_progress
 
    Dump pipeline progress for the asynchronous execution policy in ``pipeline-progress.json``.
@@ -1649,6 +1641,24 @@ General Configuration
    :default: ``False``
 
    .. versionadded:: 3.10.0
+
+
+.. py:attribute:: general.flex_alloc_strict
+
+   :required: No
+   :default: ``False``
+
+   Fail flexible tests if their minimum task requirement is not satisfied.
+
+   .. versionadded:: 4.7
+
+
+.. py:attribute:: general.git_timeout
+
+   :required: No
+   :default: 5
+
+   Timeout value in seconds used when checking if a git repository exists.
 
 
 .. py:attribute:: general.pipeline_timeout
