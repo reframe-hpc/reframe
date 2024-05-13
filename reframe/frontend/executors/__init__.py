@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
+import contextlib
 import copy
 import os
 import signal
@@ -139,6 +140,17 @@ def clone_testcases(cases):
     new_cases = [tc.clone() for tc in cases]
     return dependencies.toposort(dependencies.build_deps(new_cases)[0])
 
+
+class _temp_dry_run:
+    def __init__(self, check):
+        self._check = check
+        self._dry_run_save = check._rfm_dry_run
+
+    def __enter__(self):
+        self._check._rfm_dry_run = True
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._check._rfm_dry_run = self._dry_run_save
 
 class RegressionTask:
     '''A class representing a :class:`RegressionTest` through the regression
@@ -328,6 +340,27 @@ class RegressionTask:
             self.fail()
             raise TaskExit from e
 
+    def _dry_run_call(self, fn, *args, **kwargs):
+        '''Call check's fn method in dry-run mode.'''
+
+        @contextlib.contextmanager
+        def temp_dry_run(check):
+            dry_run_save = check._rfm_dry_run
+            try:
+                check._rfm_dry_run = True
+                yield check
+            except ABORT_REASONS:
+                raise
+            except BaseException:
+                pass
+            finally:
+                check._rfm_dry_run = dry_run_save
+
+        with runtime.temp_config(self.testcase.partition.fullname):
+            with temp_dry_run(self.check):
+                return fn(*args, **kwargs)
+
+
     @logging.time_function
     def setup(self, *args, **kwargs):
         self.testcase.prepare()
@@ -372,12 +405,15 @@ class RegressionTask:
 
     @logging.time_function
     def sanity(self):
+        self._perflogger = logging.getperflogger(self.check)
         self._safe_call(self.check.sanity)
 
     @logging.time_function
-    def performance(self):
-        self._perflogger = logging.getperflogger(self.check)
-        self._safe_call(self.check.performance)
+    def performance(self, dry_run=False):
+        if dry_run:
+            self._dry_run_call(self.check.performance)
+        else:
+            self._safe_call(self.check.performance)
 
     @logging.time_function
     def finalize(self):

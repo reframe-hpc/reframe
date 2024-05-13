@@ -128,14 +128,6 @@ def handleError(func):
 logging.Handler.handleError = handleError(logging.Handler.handleError)
 
 
-def _expand_params(check):
-    cls = type(check)
-    return {
-        name: getattr(check, name) for name, param in cls.param_space.items
-        if param.is_loggable()
-    }
-
-
 def _guess_delim(s):
     '''Guess the delimiter in the given logging format string'''
     delims = set()
