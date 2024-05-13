@@ -141,17 +141,6 @@ def clone_testcases(cases):
     return dependencies.toposort(dependencies.build_deps(new_cases)[0])
 
 
-class _temp_dry_run:
-    def __init__(self, check):
-        self._check = check
-        self._dry_run_save = check._rfm_dry_run
-
-    def __enter__(self):
-        self._check._rfm_dry_run = True
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._check._rfm_dry_run = self._dry_run_save
-
 class RegressionTask:
     '''A class representing a :class:`RegressionTest` through the regression
     pipeline.'''

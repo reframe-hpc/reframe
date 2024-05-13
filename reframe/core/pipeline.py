@@ -2299,7 +2299,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     sn.assert_reference(
                         val, ref, low_thres, high_thres,
                         msg=('failed to meet reference: %s={0}, '
-                                'expected {1} (l={2}, u={3})' % tag))
+                             'expected {1} (l={2}, u={3})' % tag))
                 )
             except SanityError as e:
                 raise PerformanceError(e) from None
