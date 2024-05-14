@@ -5,14 +5,17 @@
 
 import decimal
 import functools
+import glob
 import json
 import jsonschema
 import lxml.etree as etree
 import os
 import re
+import sqlite3
 
 import reframe as rfm
 import reframe.core.exceptions as errors
+import reframe.core.runtime as runtime
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.logging import getlogger
@@ -190,26 +193,41 @@ def write_report(report, filename, compress=False, link_to_last=False):
             jsonext.dump(report, fp, indent=2)
             fp.write('\n')
 
-        if not link_to_last:
-            return
+    # Try to save the report in the database
+    try:
+        site_config = runtime.runtime().site_config
+        database_file = osext.expandvars(
+            site_config.get('general/0/report_database_file')
+        )
+        con, cur = initialize_db(database_file)
+        add_report_in_db(report, cur, filename)
+        con.commit()
+        con.close()
+    except Exception as e:
+        getlogger().error(
+            f"Could not save report {filename} in the database: {e}"
+        )
 
-        # Add a symlink to the latest report
-        basedir = os.path.dirname(filename)
-        with osext.change_dir(basedir):
-            link_name = 'latest.json'
-            create_symlink = functools.partial(
-                os.symlink, os.path.basename(filename), link_name
-            )
-            if not os.path.exists(link_name):
+    if not link_to_last:
+        return
+
+    # Add a symlink to the latest report
+    basedir = os.path.dirname(filename)
+    with osext.change_dir(basedir):
+        link_name = 'latest.json'
+        create_symlink = functools.partial(
+            os.symlink, os.path.basename(filename), link_name
+        )
+        if not os.path.exists(link_name):
+            create_symlink()
+        else:
+            if os.path.islink(link_name):
+                os.remove(link_name)
                 create_symlink()
             else:
-                if os.path.islink(link_name):
-                    os.remove(link_name)
-                    create_symlink()
-                else:
-                    getlogger().warning('could not create a symlink '
-                                        'to the latest report file: '
-                                        'path exists and is not a symlink')
+                getlogger().warning('could not create a symlink '
+                                    'to the latest report file: '
+                                    'path exists and is not a symlink')
 
 
 def junit_xml_report(json_report):
@@ -270,3 +288,127 @@ def junit_dump(xml, fp):
         etree.tostring(xml, encoding='utf8', pretty_print=True,
                        method='xml', xml_declaration=True).decode()
     )
+
+
+def get_reports_files(directory):
+    return [f for f in glob.glob(f"{directory}/*")
+            if os.path.isfile(f) and not f.endswith('/latest.json')]
+
+
+def initialize_db(database_file):
+    con = sqlite3.connect(database_file)
+    cur = con.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS testcases(
+        name TEXT,
+        hash TEXT,
+        system TEXT,
+        partition TEXT,
+        environment TEXT,
+        time_start TEXT,
+        time_end TEXT,
+        run_index INTEGER,
+        test_index INTEGER,
+        json_file TEXT
+    )
+    """)
+    con.commit()
+    return (con, cur)
+
+
+def reindex_db():
+    site_config = runtime.runtime().site_config
+    database_file = osext.expandvars(
+        site_config.get('general/0/report_database_file')
+    )
+    # Check if the database file exists and remove it
+    if os.path.exists(database_file):
+        os.remove(database_file)
+
+    con, cur = initialize_db(database_file)
+
+    # Populate the database with old reports
+    reports_directory = os.path.dirname(
+        osext.expandvars(site_config.get('general/0/report_file'))
+    )
+    for f_path in get_reports_files(reports_directory):
+        with open(f_path, 'r') as file:
+            report = json.load(file)
+            #TODO: Validate report with schema
+
+        add_report_in_db(report, cur, f_path)
+        con.commit()
+
+    con.close()
+
+
+def add_report_in_db(report, cursor, report_file_path):
+    time_start = report['session_info']['time_start']
+    time_end = report['session_info']['time_end']
+    for run_index, run in enumerate(report['runs']):
+        for test_index, test in enumerate(run['testcases']):
+            name = test['name']
+            hash = test['hash']
+            system = test['system'].split(':')[0]
+            partition = test['system'].split(':')[1]
+            environment = test['environment']
+            run_index = run_index
+            test_index = test_index
+            json_file = report_file_path
+
+            cursor.execute(
+                (
+                    "INSERT INTO testcases VALUES(?, ?, ?, ?, ?, ?, ?, ?, "
+                    "?, ?)"
+                ),
+                (
+                    name,
+                    hash,
+                    system,
+                    partition,
+                    environment,
+                    time_start,
+                    time_end,
+                    run_index,
+                    test_index,
+                    json_file
+                )
+            )
+
+
+def search_db(name=None, hash=None, system=None, partition=None,
+              environment=None, time_start=None, time_end=None,
+              run_index=None, test_index=None):
+    site_config = runtime.runtime().site_config
+    database_file = osext.expandvars(
+        site_config.get('general/0/report_database_file')
+    )
+    con = sqlite3.connect(database_file)
+    cur = con.cursor()
+
+    query = "SELECT test_index, run_index, json_file FROM testcases"
+    first_condition = False
+    for condition in ['name', 'hash', 'system', 'partition', 'environment',
+                      'time_start', 'time_end', 'run_index', 'test_index']:
+        value = eval(condition)
+        if value:
+            if not first_condition:
+                query += " WHERE "
+                first_condition = True
+            else:
+                query += " AND "
+            query += f"{condition}='{eval(condition)}'"
+
+    res = cur.execute(query)
+    results = res.fetchall()
+    con.close()
+
+    # Retrieve files
+    testcases = []
+    for test_index, run_index, json_file in results:
+        with open(json_file, 'r') as file:
+            report = json.load(file)
+
+        testcases.append(report['runs'][run_index]['testcases'][test_index])
+
+    return testcases
