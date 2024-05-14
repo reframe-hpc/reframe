@@ -565,6 +565,10 @@ def main():
         help='Print the value of configuration parameter PARAM and exit'
     )
     misc_options.add_argument(
+        '--index-db', action='store_true',
+        help='Index old job reports in the database',
+    )
+    misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
         envvar='RFM_SYSTEM'
     )
@@ -899,11 +903,20 @@ def main():
                 with open(topofile, 'w') as fp:
                     json.dump(s_cpuinfo, fp, indent=2)
                     fp.write('\n')
-            except OSError as e:
-                getlogger().error(
+            except OSError:
+                logging.getlogger().error(
                     f'could not write topology file: {topofile!r}'
                 )
                 sys.exit(1)
+
+        sys.exit(0)
+
+    if options.index_db:
+        try:
+            runreport.reindex_db()
+        except Exception as e:
+            printer.error(f'could not index old job reports: {e}')
+            sys.exit(1)
 
         sys.exit(0)
 
