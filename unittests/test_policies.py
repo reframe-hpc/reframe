@@ -1407,10 +1407,12 @@ def test_perf_logging_sanity_failure(make_runner, make_exec_ctx,
     class _X(_MyPerfTest):
         @sanity_function
         def validate(self):
-            return False
+            return sn.assert_true(0, msg='no way')
 
-    make_exec_ctx(config_perflog(fmt='%(check_result)s|%(check_perfvalues)s',
-                                 perffmt='%(check_perf_value)s|'))
+    make_exec_ctx(config_perflog(
+        fmt='%(check_result)s|%(check_fail_reason)s|%(check_perfvalues)s',
+        perffmt='%(check_perf_value)s|'
+    ))
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases([_X()])
@@ -1422,4 +1424,4 @@ def test_perf_logging_sanity_failure(make_runner, make_exec_ctx,
         lines = fp.readlines()
 
     assert len(lines) == 2
-    assert lines[1] == 'fail|None|None\n'
+    assert lines[1] == 'fail|sanity error: no way|None|None\n'

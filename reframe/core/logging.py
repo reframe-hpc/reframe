@@ -19,7 +19,7 @@ import urllib
 import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
-from reframe.core.exceptions import ConfigError, LoggingError
+from reframe.core.exceptions import ConfigError, LoggingError, what
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import is_trivially_callable
 from reframe.utility.profile import TimeProfiler
@@ -855,6 +855,8 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.extra['check_partition'] = task.testcase.partition.name
         self.extra['check_environ'] = task.testcase.environ.name
         self.extra['check_result'] = 'pass' if task.succeeded else 'fail'
+        fail_reason = what(*task.exc_info) if not task.succeeded else None
+        self.extra['check_fail_reason'] = fail_reason
         if msg is None:
             msg = 'sent by ' + self.extra['osuser']
 
