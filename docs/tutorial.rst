@@ -97,11 +97,11 @@ We will describe the system and environments abstractions later in this tutorial
 For this first example, the ``*`` symbol denotes that this test is valid for any system or environment.
 A :class:`~reframe.core.pipeline.RunOnlyRegressionTest` must also define an :attr:`executable` to run.
 
-A test must also define a validation function which is decorated with the :func:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` decorator.
+A test must also define a validation function which is decorated with the :func:`@sanity_function<reframe.core.builtins.sanity_function>` decorator.
 This function will be used to validate the test's output after it is finished.
 ReFrame, by default, makes no assumption about whether a test is successful or not;
 it is the test's responsibility to define its validation.
-The framework provides a rich set of `utility functions <deferrable_functions_reference>`__ that help matching patterns and extract values from the test's output.
+The framework provides a rich set of :doc:`utility functions <deferrable_functions_reference>` that help matching patterns and extract values from the test's output.
 The :attr:`stdout` here refers to the name of the file where the test's standard output is stored.
 
 Finally, a test may optionally define a set of *performance functions* that will extract *figures of merit* for the test.
@@ -379,10 +379,10 @@ Let's look at some key elements of the configuration:
 * The :attr:`~config.systems.hostnames` option defines a set of hostname patterns which ReFrame will try to match against the current system's hostname.
   The first matching system will become the current system and ReFrame will load the corresponding configuration.
 * The :attr:`~config.systems.partitions.scheduler` partition option defines the job scheduler backend to use on this partition.
-  ReFrame supports many `job schedulers <config_reference.html#config.systems.partitions.scheduler>`__.
+  ReFrame supports many :class:`job schedulers <config.systems.partitions.scheduler>`.
   The ``local`` scheduler that we use here is the simplest one and it practically spawns a process executing the generated test script.
 * The :attr:`~config.systems.partitions.launcher` partition option defines the parallel launcher to use for spawning parallel programs.
-  ReFrame supports all the major `parallel launchers <config_reference.html#config.systems.partitions.launcher>`__.
+  ReFrame supports all the major :attr:`parallel launchers <config.systems.partitions.launcher>`.
 * The :attr:`~config.systems.partitions.environs` partition option is a list of environments to test on this partition.
   Their definitions are resolved in the :attr:`~config.environments` section.
 * Every partition and environment can define a set of arbitrary features or key/value pairs in the :attr:`~config.environments.features` and :attr:`~config.environments.extras` options respectively.
@@ -437,6 +437,8 @@ Note that ReFrame has loaded two configuration files: first the ``<builtin>`` an
 Note also that the system and environment specification in the test run output is now ``@tutorialsys:default+baseline``.
 ReFrame has determined that the ``default`` partition and the ``baseline`` environment satisfy the test constraints and thus it has run the test with this partition/environment combination.
 
+
+.. _compiling-the-test-code:
 
 Compiling the test code
 =======================
@@ -592,6 +594,8 @@ For this reason, we will force ReFrame to execute the tests serially with ``--ex
 
    [  PASSED  ] Ran 2/2 test case(s) from 1 check(s) (0 failure(s), 0 skipped, 0 aborted)
 
+
+.. _test-fixtures:
 
 Test fixtures
 =============
@@ -980,13 +984,13 @@ Interacting with workload managers
 ==================================
 
 ReFrame integrates with many HPC workload managers (batch job schedulers), including Slurm, PBS Pro, Torque and others.
-The complete list of scheduler backend can be found `here <config_reference.html#config.systems.partitions.scheduler>`__.
+The complete list of scheduler backend can be found :attr:`here <config.systems.partitions.scheduler>`.
 Tests in ReFrame are scheduler-agnostic in that they do not need to include any scheduler-specific information.
 Instead, schedulers are associated to system partitions.
 Each system partition in the configuration file defines the scheduler backend to use along with any scheduler-specific options that are needed to grant access to the desired nodes.
 
 HPC systems also come with parallel program launchers which are responsible for launching parallel programs onto multiple nodes.
-ReFrame supports all major `parallel launchers <config_reference.html#config.systems.partitions.launcher>`__ and allows users to easily define their own custom ones.
+ReFrame supports all major :attr:`launchers <config.systems.partitions.launcher>` and allows users to easily define their own custom ones.
 Similarly to the batch job schedulers, each system partition is associated to a parallel launcher, which will be used to launch the test's :attr:`executable`.
 
 In the following, we define a configuration for the Slurm-based pseudo cluster of the tutorial.
@@ -1122,7 +1126,7 @@ Defining extra scheduler resources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This method comprises two steps.
-First, we need to define a `resource <config_reference.html#config.systems.partitions.resources>`__ in the partition configuration:
+First, we need to define a :attr:`resource <config.systems.partitions.resources>` in the partition configuration:
 
 .. literalinclude:: ../examples/tutorial/config/cluster_resources.py
    :caption:
@@ -1177,7 +1181,7 @@ You can do that with the following hook:
        self.job.launcher = getlauncher('local')()
 
 The :func:`~reframe.core.backends.getlauncher` utility function returns the type the implements the launcher with the given name.
-The supported launcher names are those registered with the framework, i.e., all the names listed `here <config_reference.html#systems.partitions.launcher>`__ as well as any `user-registered <custom-launchers>`__ launcher.
+The supported launcher names are those registered with the framework, i.e., all the names listed :attr:`here <config.systems.partitions.launcher>` as well as any :ref:`user-registered <custom-launchers>` launcher.
 Once we have the launcher type, we instantiate it and replace the job's launcher.
 
 
@@ -1213,7 +1217,7 @@ The ``job_scheduler_preamble`` contains the backend job scheduler directives tha
 The ``prepare_cmds`` are commands that can be emitted before the test environment commands.
 These can be specified with the :attr:`~config.systems.partitions.prepare_cmds` partition configuration option.
 The ``env_load_cmds`` are the necessary commands for setting up the environment of the test.
-These include any modules or environment variables set at the `system partition level <config_reference.html#system-partition-configuration>`__ or any `modules <regression_test_api.html#reframe.core.pipeline.RegressionTest.modules>`__ or `environment variables <regression_test_api.html#reframe.core.pipeline.RegressionTest.variables>`__ set at the test level.
+These include any modules or environment variables set at the :ref:`system partition level <system-partition-configuration>` or any :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` or :attr:`environment variables <reframe.core.pipeline.RegressionTest.variables>` set at the test level.
 Then the commands specified in :attr:`prerun_cmds` follow, while those specified in the :attr:`postrun_cmds` come after the launch of the parallel job.
 The parallel launch itself consists of three parts:
 
@@ -1316,6 +1320,8 @@ ReFrame cannot auto-detect at the moment device information, such as attached ac
 You can however add manually in the configuration any interesting device and this will be accessible from inside the test through the :attr:`current_partition`.
 For more information check the documentation of the :attr:`~config.systems.partitions.devices` configuration parameter.
 
+
+.. _multi-node-tests:
 
 Multi-node tests
 ================
@@ -1875,7 +1881,7 @@ Let's walk briefly through the most important parts of its configuration:
 - The :attr:`~config.logging.handlers_perflog.format` specifies how the log record will be formatted.
   Each placeholder of the form ``%(placeholder)s`` is replaced by the actual value during runtime.
   All placeholders starting with ``check_`` refer to test attributes.
-  You can check the complete list of supported placeholders in the configuration `reference guide <config_reference.html#config.logging.handlers.format>`__.
+  You can check the complete list of supported placeholders in the configuration :attr:`reference guide <config.logging.handlers.format>`.
   In this particular example, we will log only the test result, the (formatted) completion time, the list of nodes where the test was run and the obtained values of the test's performance variables.
 - The :attr:`~config.logging.handlers_perflog.format_perfvars` specifies how the performance values (the ``%(check_perfvalues)s`` placeholder) will be formatted.
   In this case, we will only log the obtained value and its unit.

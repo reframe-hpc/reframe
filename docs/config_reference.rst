@@ -115,7 +115,6 @@ System Configuration
    :required: Yes
 
    A list of hostname regular expression patterns in Python `syntax <https://docs.python.org/3.8/library/re.html>`__, which will be used by the framework in order to automatically select a system configuration.
-   For the auto-selection process, see `here <configure.html#picking-a-system-configuration>`__.
 
 .. py:attribute:: systems.max_local_jobs
 
@@ -243,6 +242,8 @@ System Configuration
    .. warning::
       This option is broken in 4.0.
 
+
+.. _system-partition-configuration:
 
 System Partition Configuration
 ==============================
@@ -470,7 +471,7 @@ System Partition Configuration
       .. versionadded:: 4.0.0
 
         ReFrame also allows you to register your own custom launchers simply by defining them in the configuration.
-        You can follow a small tutorial `here <tutorial_advanced.html#adding-a-custom-launcher-to-a-partition>`__.
+        You can follow a small tutorial :ref:`here <custom-launchers>`.
 
 
 .. py:attribute:: systems.partitions.access
@@ -550,7 +551,7 @@ System Partition Configuration
    :default: ``8``
 
    The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
-   This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
+   This option is relevant only when ReFrame executes with the :ref:`asynchronous execution policy <execution-policies>`.
 
 
 .. py:attribute:: systems.partitions.prepare_cmds
@@ -568,7 +569,7 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   A list of job scheduler `resource specification <config_reference.html#custom-job-scheduler-resources>`__ objects.
+   A list of job scheduler `resource specification <#custom-job-scheduler-resources>`__ objects.
 
 
 .. py:attribute:: systems.partitions.processor
@@ -1230,6 +1231,8 @@ All logging handlers share the following set of common attributes:
    There are two timestamp fields available: ``%(asctime)s`` and ``%(check_job_completion_time)s``.
    In addition to the format directives supported by the standard library's `time.strftime() <https://docs.python.org/3.8/library/time.html#time.strftime>`__ function, ReFrame allows you to use the ``%:z`` directive -- a GNU ``date`` extension --  that will print the time zone difference in a RFC3339 compliant way, i.e., ``+/-HH:MM`` instead of ``+/-HHMM``.
 
+
+.. _log-handler:
 
 The ``file`` log handler
 ------------------------

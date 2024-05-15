@@ -14,7 +14,7 @@ The following figure explains in more detail the process:
 
 When ReFrame loads a test from the disk it unconditionally constructs it executing its :func:`__init__` method.
 The practical implication of this is that your test will be instantiated even if it will not run on the current system.
-After all the tests are loaded, they are filtered based on the current system and any other criteria (such as programming environment, test attributes etc.) specified by the user (see `Test Filtering <manpage.html#test-filtering>`__ for more details).
+After all the tests are loaded, they are filtered based on the current system and any other criteria (such as programming environment, test attributes etc.) specified by the user (see :ref:`Test Filtering <test-filtering>` for more details).
 After the tests are filtered, ReFrame creates the actual `test cases` to be run. A test case is essentially a tuple consisting of the test, the system partition and the programming environment to try.
 The test that goes into a test case is essentially a `clone` of the original test that was instantiated upon loading.
 This ensures that the test case's state is not shared and may not be reused in any case.
@@ -45,7 +45,7 @@ The Setup Phase
 
 During this phase the test will be set up for the currently selected system partition and programming environment.
 The :attr:`current_partition` and :attr:`current_environ` test attributes will be set and the paths associated to this test case (stage, output and performance log directories) will be created.
-A `job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ will also be created for the test case containing information about the job to be submitted later in the pipeline.
+A :attr:`job descriptor <reframe.core.pipeline.RegressionTest.job>` will also be created for the test case containing information about the job to be submitted later in the pipeline.
 
 
 -----------------
@@ -54,9 +54,9 @@ The Compile Phase
 
 During this phase a job script for the compilation of the test will be created and it will be submitted for execution.
 The source code associated with the test is compiled using the current programming environment.
-If the test is `"run-only," <regression_test_api.html#reframe.core.pipeline.RunOnlyRegressionTest>`__ this phase is a no-op.
+If the test is ":attr:`run-only<reframe.core.pipeline.RunOnlyRegressionTest>`," this phase is a no-op.
 
-Before building the test, all the `resources <regression_test_api.html#reframe.core.pipeline.RegressionTest.sourcesdir>`__ associated with it are copied to the test case's stage directory.
+Before building the test, all the :attr:`resources <reframe.core.pipeline.RegressionTest.sourcesdir>` associated with it are copied to the test case's stage directory.
 ReFrame then temporarily switches to that directory and builds the test.
 
 -------------
@@ -64,9 +64,9 @@ The Run Phase
 -------------
 
 During this phase a job script associated with the test case will be created and it will be submitted for execution.
-If the test is `"run-only," <regression_test_api.html#reframe.core.pipeline.RunOnlyRegressionTest>`__ its `resources <regression_test_api.html#reframe.core.pipeline.RegressionTest.sourcesdir>`__ will be first copied to the test case's stage directory.
+If the test is ":attr:`run-only <reframe.core.pipeline.RunOnlyRegressionTest>`," its :attr:`resources <reframe.core.pipeline.RegressionTest.sourcesdir>` will be first copied to the test case's stage directory.
 ReFrame will temporarily switch to that directory and spawn the test's job from there.
-This phase is executed asynchronously (either a batch job is spawned or a local process is started) and it is up to the selected `execution policy <#execution-policies>`__ to block or not until the associated job finishes.
+This phase is executed asynchronously (either a batch job is spawned or a local process is started) and it is up to the selected :ref:`execution policy <execution-policies>` to block or not until the associated job finishes.
 
 
 ----------------
@@ -95,6 +95,7 @@ More specifically, if the test has finished successfully, all interesting test f
 .. note::
    This phase might be deferred in case a test has dependents (see :ref:`cleaning-up-stage-files` for more details).
 
+.. _execution-policies:
 
 Execution Policies
 ------------------
@@ -130,7 +131,7 @@ The following figure shows how the asynchronous execution policy works.
 
 
 ReFrame tries to keep concurrency high by maintaining as many test cases as possible simultaneously active.
-When the `concurrency limit <config_reference.html#.systems[].partitions[].max_jobs>`__ is reached, ReFrame will first try to free up execution slots by checking if any of the spawned jobs have finished, and it will fill that slots first before throttling execution.
+When the :attr:`concurrency limit <systems.partitions.max_jobs>` is reached, ReFrame will first try to free up execution slots by checking if any of the spawned jobs have finished, and it will fill that slots first before throttling execution.
 
 ReFrame uses polling to check the status of the spawned jobs, but it does so in a dynamic way, in order to ensure both responsiveness and avoid overloading the system job scheduler with excessive polling.
 
