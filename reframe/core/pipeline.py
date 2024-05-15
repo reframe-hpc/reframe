@@ -2235,14 +2235,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self.perf_variables[var] = sn.make_performance_function(expr,
                                                                         unit)
 
-        if self.is_dry_run():
-            return
-
         # Evaluate the performance function and retrieve the metrics
         with osext.change_dir(self._stagedir):
             for tag, expr in self.perf_variables.items():
                 try:
-                    value = expr.evaluate()
+                    value = expr.evaluate() if not self.is_dry_run() else None
                     unit = expr.unit
                 except Exception as e:
                     logging.getlogger().warning(
@@ -2282,27 +2279,30 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
                 self._perfvalues[key] = (value, *ref, unit)
 
-            # Check the performance variables against their references.
-            for key, values in self._perfvalues.items():
-                val, ref, low_thres, high_thres, *_ = values
+        if self.is_dry_run():
+            return
 
-                # Verify that val is a number
-                if not isinstance(val, numbers.Number):
-                    raise SanityError(
-                        f'the value extracted for performance variable '
-                        f'{key!r} is not a number: {val}'
-                    )
+        # Check the performance variables against their references.
+        for key, values in self._perfvalues.items():
+            val, ref, low_thres, high_thres, *_ = values
 
-                tag = key.split(':')[-1]
-                try:
-                    sn.evaluate(
-                        sn.assert_reference(
-                            val, ref, low_thres, high_thres,
-                            msg=('failed to meet reference: %s={0}, '
-                                 'expected {1} (l={2}, u={3})' % tag))
-                    )
-                except SanityError as e:
-                    raise PerformanceError(e) from None
+            # Verify that val is a number
+            if not isinstance(val, numbers.Number):
+                raise SanityError(
+                    f'the value extracted for performance variable '
+                    f'{key!r} is not a number: {val}'
+                )
+
+            tag = key.split(':')[-1]
+            try:
+                sn.evaluate(
+                    sn.assert_reference(
+                        val, ref, low_thres, high_thres,
+                        msg=('failed to meet reference: %s={0}, '
+                             'expected {1} (l={2}, u={3})' % tag))
+                )
+            except SanityError as e:
+                raise PerformanceError(e) from None
 
     def _copy_job_files(self, job, dst):
         if job is None:

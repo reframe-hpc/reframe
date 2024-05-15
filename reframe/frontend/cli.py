@@ -1432,7 +1432,7 @@ def main():
                         printer, options.duration or options.reruns
                     )
 
-            if options.performance_report:
+            if options.performance_report and not options.dry_run:
                 printer.info(runner.stats.performance_report())
 
             # Generate the report for this session

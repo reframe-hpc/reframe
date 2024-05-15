@@ -1400,3 +1400,28 @@ def test_perf_logging_param_test(make_runner, make_exec_ctx, perf_param_tests,
                'default' / '_MyPerfParamTest.log')
     assert os.path.exists(logfile)
     assert _count_lines(logfile) == 3
+
+
+def test_perf_logging_sanity_failure(make_runner, make_exec_ctx,
+                                     config_perflog, tmp_path):
+    class _X(_MyPerfTest):
+        @sanity_function
+        def validate(self):
+            return sn.assert_true(0, msg='no way')
+
+    make_exec_ctx(config_perflog(
+        fmt='%(check_result)s|%(check_fail_reason)s|%(check_perfvalues)s',
+        perffmt='%(check_perf_value)s|'
+    ))
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([_X()])
+    _assert_no_logging_error(runner.runall, testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_X.log'
+    assert os.path.exists(logfile)
+    with open(logfile) as fp:
+        lines = fp.readlines()
+
+    assert len(lines) == 2
+    assert lines[1] == 'fail|sanity error: no way|None|None\n'
