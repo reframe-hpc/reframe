@@ -621,6 +621,9 @@ class SqueueJobScheduler(SlurmJobScheduler):
 
             # Join the states with ',' in case of job arrays
             job._state = ','.join(s.group('state') for s in job_match)
+
+            # Use ',' to join nodes to be consistent with Slurm syntax
+            job._nodespec = ','.join(m.group('nodespec') for m in job_match)
             self._cancel_if_blocked(
                 job, [s.group('reason') for s in state_match]
             )
