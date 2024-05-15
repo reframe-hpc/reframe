@@ -199,6 +199,10 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self.printer.status('FAIL', msg, just='right')
 
         _print_perf(task)
+        if task.failed_stage == 'sanity':
+            # Dry-run the performance stage to trigger performance logging
+            task.performance(dry_run=True)
+
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -617,6 +621,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self.printer.status('FAIL', msg, just='right')
 
         _print_perf(task)
+        if task.failed_stage == 'sanity':
+            # Dry-run the performance stage to trigger performance logging
+            task.performance(dry_run=True)
+
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',

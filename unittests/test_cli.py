@@ -423,7 +423,8 @@ def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
 def test_performance_report(run_reframe, run_action):
     returncode, stdout, _ = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-n', 'PerformanceFailureCheck', '--performance-report'],
+        more_options=['-n', '^PerformanceFailureCheck',
+                      '--performance-report'],
         action=run_action
     )
     if run_action == 'run':
