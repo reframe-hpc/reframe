@@ -1418,7 +1418,7 @@ def test_perf_logging_sanity_failure(make_runner, make_exec_ctx,
     testcases = executors.generate_testcases([_X()])
     _assert_no_logging_error(runner.runall, testcases)
 
-    logfile = (tmp_path / 'perflogs' / 'generic' / 'default' / '_X.log')
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_X.log'
     assert os.path.exists(logfile)
     with open(logfile) as fp:
         lines = fp.readlines()
