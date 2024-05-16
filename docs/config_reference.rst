@@ -115,6 +115,7 @@ System Configuration
    :required: Yes
 
    A list of hostname regular expression patterns in Python `syntax <https://docs.python.org/3.8/library/re.html>`__, which will be used by the framework in order to automatically select a system configuration.
+   For the auto-selection process, check the configuration of the :attr:`~config.autodetect_methods` option.
 
 .. py:attribute:: systems.max_local_jobs
 
@@ -977,7 +978,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
    :default: ``{}``
 
    Scheduler resources associated with this environments.
-   
+
    This is the equivalent of a test's :attr:`~reframe.core.pipeline.RegressionTest.extra_resources`.
 
    .. versionadded:: 4.6
@@ -1232,7 +1233,7 @@ All logging handlers share the following set of common attributes:
    In addition to the format directives supported by the standard library's `time.strftime() <https://docs.python.org/3.8/library/time.html#time.strftime>`__ function, ReFrame allows you to use the ``%:z`` directive -- a GNU ``date`` extension --  that will print the time zone difference in a RFC3339 compliant way, i.e., ``+/-HH:MM`` instead of ``+/-HHMM``.
 
 
-.. _log-handler:
+.. _file-handler:
 
 The ``file`` log handler
 ------------------------

@@ -560,7 +560,7 @@ The following is an example of ``.gitlab-ci.yml`` file that does exactly that:
 
 It defines two stages.
 The first one, called ``generate``, will call ReFrame to generate the pipeline specification for the desired tests.
-All the usual `test selection options <manpage:test-filtering>` can be used to select specific tests.
+All the usual :ref:`test selection options <test-filtering>` can be used to select specific tests.
 ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps for running each test individually as a Gitlab job in a child pipeline.
 The generated ReFrame command that will run each individual test reuses the :option:`-C`, :option:`-R`, :option:`-v` and :option:`--mode` options passed to the initial invocation of ReFrame that was used to generate the pipeline.
 Users can define CI-specific execution modes in their configuration in order to pass arbitrary options to the ReFrame invocation in the child pipeline.
@@ -1124,7 +1124,7 @@ The following is the actual implementation of the ``mpirun`` launcher in ReFrame
 
 Each launcher must derive from the abstract base class :class:`~reframe.core.launchers.JobLauncher` ands needs to implement the :func:`~reframe.core.launchers.JobLauncher.command` method and, optionally, change the default :func:`~reframe.core.launchers.JobLauncher.run_command` method.
 
-The :func:`~reframe.core.launchers.JobLauncher.command` returns a list of command tokens that will be combined with any user-supplied `options <regression_test_api:reframe.core.launchers.JobLauncher.options>` by the :func:`~reframe.core.launchers.JobLauncher.run_command` method to generate the actual launcher command line.
+The :func:`~reframe.core.launchers.JobLauncher.command` returns a list of command tokens that will be combined with any user-supplied job launcher :attr:`~reframe.core.launchers.JobLauncher.options` by the :func:`~reframe.core.launchers.JobLauncher.run_command` method to generate the actual launcher command line.
 Notice you can use the ``job`` argument to get job-specific information that will allow you to construct the correct launcher invocation.
 
 If you use a Python-based configuration file, you can define your custom launcher directly inside your config as follows:
