@@ -284,7 +284,7 @@ def cpuinfo():
     ret = {
         'arch': archspec.cpu.host().name,
         'vendor': archspec.cpu.host().vendor,
-        'model': archspec.cpu.brand_string(),
+        'model': archspec.cpu.brand_string() or 'N/A',
         'platform': platform.machine()
     }
 
