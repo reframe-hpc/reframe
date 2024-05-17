@@ -85,7 +85,7 @@ Here is the full ReFrame test:
 
 .. literalinclude:: ../examples/tutorial/stream/stream_runonly.py
    :caption:
-   :pyobject: stream_test
+   :lines: 5-
 
 ReFrame tests are specially decorated classes that ultimately derive from the :class:`~reframe.core.pipeline.RegressionTest` class.
 Since we only want to run an executable in this first test, we derive from the :class:`~reframe.core.pipeline.RunOnlyRegressionTest` class, which essentially short-circuits the "compile" stage of the test.
