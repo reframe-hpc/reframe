@@ -195,7 +195,7 @@ When ReFrame executes tests, it first copies over all of the test resources (if 
 Upon successful execution, the test artifacts will be copied over to the *output directory* for archiving.
 The default artifacts for every test are the generated test script as well as the test's standard output and standard error.
 The default location for the stage and output directories are the ``./stage`` and ``./output`` directories.
-These can be changed with the :option:`-s` and :option:`-o` options or the more general :option:`--prefix` option.
+These can be changed with the :option:`--stage` and :option:`--output` options or the more general :option:`--prefix` option.
 The test artifacts of our first example can be found in the following location:
 
 .. code-block:: bash
