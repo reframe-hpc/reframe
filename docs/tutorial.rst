@@ -379,10 +379,10 @@ Let's look at some key elements of the configuration:
 * The :attr:`~config.systems.hostnames` option defines a set of hostname patterns which ReFrame will try to match against the current system's hostname.
   The first matching system will become the current system and ReFrame will load the corresponding configuration.
 * The :attr:`~config.systems.partitions.scheduler` partition option defines the job scheduler backend to use on this partition.
-  ReFrame supports many :class:`job schedulers <config.systems.partitions.scheduler>`.
+  ReFrame supports many `job schedulers <config_reference.html#config.systems.partitions.scheduler>`__.
   The ``local`` scheduler that we use here is the simplest one and it practically spawns a process executing the generated test script.
 * The :attr:`~config.systems.partitions.launcher` partition option defines the parallel launcher to use for spawning parallel programs.
-  ReFrame supports all the major :attr:`parallel launchers <config.systems.partitions.launcher>`.
+  ReFrame supports all the major `parallel launchers <config_reference.html#config.systems.partitions.launcher>`__.
 * The :attr:`~config.systems.partitions.environs` partition option is a list of environments to test on this partition.
   Their definitions are resolved in the :attr:`~config.environments` section.
 * Every partition and environment can define a set of arbitrary features or key/value pairs in the :attr:`~config.environments.features` and :attr:`~config.environments.extras` options respectively.
@@ -984,13 +984,13 @@ Interacting with workload managers
 ==================================
 
 ReFrame integrates with many HPC workload managers (batch job schedulers), including Slurm, PBS Pro, Torque and others.
-The complete list of scheduler backend can be found :attr:`here <config.systems.partitions.scheduler>`.
+The complete list of scheduler backend can be found `here <config_reference.html#config.systems.partitions.scheduler>`__.
 Tests in ReFrame are scheduler-agnostic in that they do not need to include any scheduler-specific information.
 Instead, schedulers are associated to system partitions.
 Each system partition in the configuration file defines the scheduler backend to use along with any scheduler-specific options that are needed to grant access to the desired nodes.
 
 HPC systems also come with parallel program launchers which are responsible for launching parallel programs onto multiple nodes.
-ReFrame supports all major :attr:`launchers <config.systems.partitions.launcher>` and allows users to easily define their own custom ones.
+ReFrame supports all major `parallel launchers <config_reference.html#config.systems.partitions.launcher>`__ and allows users to easily define their own custom ones.
 Similarly to the batch job schedulers, each system partition is associated to a parallel launcher, which will be used to launch the test's :attr:`executable`.
 
 In the following, we define a configuration for the Slurm-based pseudo cluster of the tutorial.
@@ -1126,7 +1126,7 @@ Defining extra scheduler resources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This method comprises two steps.
-First, we need to define a :attr:`resource <config.systems.partitions.resources>` in the partition configuration:
+First, we need to define a `resource <config_reference.html#config.systems.partitions.resources>`__ in the partition configuration:
 
 .. literalinclude:: ../examples/tutorial/config/cluster_resources.py
    :caption:
@@ -1181,7 +1181,8 @@ You can do that with the following hook:
        self.job.launcher = getlauncher('local')()
 
 The :func:`~reframe.core.backends.getlauncher` utility function returns the type the implements the launcher with the given name.
-The supported launcher names are those registered with the framework, i.e., all the names listed :attr:`here <config.systems.partitions.launcher>` as well as any :ref:`user-registered <custom-launchers>` launcher.
+The supported launcher names are those registered with the framework, i.e., all the names listed
+`here <config_reference.html#systems.partitions.launcher>`__ as well as any :ref:`user-registered <custom-launchers>` launcher.
 Once we have the launcher type, we instantiate it and replace the job's launcher.
 
 
@@ -1217,7 +1218,7 @@ The ``job_scheduler_preamble`` contains the backend job scheduler directives tha
 The ``prepare_cmds`` are commands that can be emitted before the test environment commands.
 These can be specified with the :attr:`~config.systems.partitions.prepare_cmds` partition configuration option.
 The ``env_load_cmds`` are the necessary commands for setting up the environment of the test.
-These include any modules or environment variables set at the :ref:`system partition level <system-partition-configuration>` or any :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` or :attr:`environment variables <reframe.core.pipeline.RegressionTest.variables>` set at the test level.
+These include any modules or environment variables set at the `system partition level <config_reference.html#system-partition-configuration>`__ or any `modules <regression_test_api.html#reframe.core.pipeline.RegressionTest.modules>`__ or `environment variables <regression_test_api.html#reframe.core.pipeline.RegressionTest.variables>`__ set at the test level.
 Then the commands specified in :attr:`prerun_cmds` follow, while those specified in the :attr:`postrun_cmds` come after the launch of the parallel job.
 The parallel launch itself consists of three parts:
 
