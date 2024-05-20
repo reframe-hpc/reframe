@@ -14,7 +14,7 @@ The following figure explains in more detail the process:
 
 When ReFrame loads a test from the disk it unconditionally constructs it executing its :func:`__init__` method.
 The practical implication of this is that your test will be instantiated even if it will not run on the current system.
-After all the tests are loaded, they are filtered based on the current system and any other criteria (such as programming environment, test attributes etc.) specified by the user (see `Test Filtering <manpage.html#test-filtering>`__ for more details).
+After all the tests are loaded, they are filtered based on the current system and any other criteria (such as programming environment, test attributes etc.) specified by the user (see :ref:`Test Filtering <test-filtering>` for more details).
 After the tests are filtered, ReFrame creates the actual `test cases` to be run. A test case is essentially a tuple consisting of the test, the system partition and the programming environment to try.
 The test that goes into a test case is essentially a `clone` of the original test that was instantiated upon loading.
 This ensures that the test case's state is not shared and may not be reused in any case.
@@ -66,7 +66,7 @@ The Run Phase
 During this phase a job script associated with the test case will be created and it will be submitted for execution.
 If the test is `"run-only," <regression_test_api.html#reframe.core.pipeline.RunOnlyRegressionTest>`__ its `resources <regression_test_api.html#reframe.core.pipeline.RegressionTest.sourcesdir>`__ will be first copied to the test case's stage directory.
 ReFrame will temporarily switch to that directory and spawn the test's job from there.
-This phase is executed asynchronously (either a batch job is spawned or a local process is started) and it is up to the selected `execution policy <#execution-policies>`__ to block or not until the associated job finishes.
+This phase is executed asynchronously (either a batch job is spawned or a local process is started) and it is up to the selected :ref:`execution policy <execution-policies>` to block or not until the associated job finishes.
 
 
 ----------------
@@ -95,6 +95,8 @@ More specifically, if the test has finished successfully, all interesting test f
 .. note::
    This phase might be deferred in case a test has dependents (see :ref:`cleaning-up-stage-files` for more details).
 
+
+.. _execution-policies:
 
 Execution Policies
 ------------------

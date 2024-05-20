@@ -25,10 +25,10 @@ Finally, if none of the above build systems fits, users are allowed to use their
 Using Make, CMake or Autotools
 ------------------------------
 
-We have seen already in the `tutorial <tutorial.html#compiling-the-test-code>`__ how to build a test with a single source file.
+We have seen already in the :ref:`tutorial <compiling-the-test-code>` how to build a test with a single source file.
 ReFrame can also build test code using common build systems, such as `Make <https://www.gnu.org/software/make/>`__, `CMake <https://cmake.org/>`__ or `Autotools <https://www.gnu.org/software/automake/>`__.
 The build system to be used is selected by the :attr:`build_system` test attribute.
-This is a "magic" attribute where you assign it a string and ReFrame will create the appropriate `build system object <regression_test_api.html#build-systems>`__.
+This is a "magic" attribute where you assign it a string and ReFrame will create the appropriate :ref:`build system object <build-systems>`.
 Each build system can define its own properties, but some build systems have a common set of properties that are interpreted accordingly.
 Let's see a version of the STREAM benchmark that uses ``make``:
 
@@ -84,7 +84,7 @@ In this case, only the flags requested by the test will be emitted.
 
 The Autotools and CMake build systems are quite similar.
 For passing ``configure`` options, the :attr:`~reframe.core.buildsystems.ConfigureBasedBuildSystem.config_opts` build system attribute should be set, whereas for ``make`` options the :attr:`~reframe.core.buildsystems.ConfigureBasedBuildSystem.make_opts` should be used.
-The `OSU benchmarks <tutorial.html#multi-node-tests>`__ in the main tutorial use the Autotools build system.
+The :ref:`OSU benchmarks <multi-node-tests>` in the main tutorial use the Autotools build system.
 
 Finally, in all three build systems, the :attr:`~reframe.core.buildsystems.Make.max_concurrency` can be set to control the number of parallel make jobs.
 
@@ -118,7 +118,7 @@ For running this test, we need the following Docker image:
    docker run -h myhost --mount type=bind,source=$(pwd)/examples/,target=/home/user/reframe-examples --workdir=/home/user/reframe-examples/tutorial -it reframe-eb-spack:latest  /bin/bash -l
 
 
-EasyBuild requires a `modules system <#working-with-environment-modules>`__ to run, so we need a configuration file that sets the modules system of the current system:
+EasyBuild requires a :ref:`modules system <working-with-environment-modules>` to run, so we need a configuration file that sets the modules system of the current system:
 
 .. literalinclude:: ../examples/tutorial/config/baseline_modules.py
    :caption:
@@ -404,10 +404,10 @@ If you used an environment module to load ReFrame, e.g., ``reframe``, you can us
 Working with low-level dependencies
 ===================================
 
-We have seen that `test fixtures <tutorial.html#test-fixtures>`__ fixtures introduce dependencies between tests along with a scope.
+We have seen that :ref:`test fixtures <test-fixtures>` fixtures introduce dependencies between tests along with a scope.
 It is possible to define test dependencies without a scope using the low-level test dependency API.
 In fact, test fixtures translate to that low-level API.
-In this how-to, we will rewrite the `OSU benchmarks example <tutorial.html#multi-node-tests>`__ of the main tutorial to use the low-level dependency API.
+In this how-to, we will rewrite the :ref:`OSU benchmarks example <multi-node-tests>` of the main tutorial to use the low-level dependency API.
 
 Here is the full code:
 
@@ -560,7 +560,7 @@ The following is an example of ``.gitlab-ci.yml`` file that does exactly that:
 
 It defines two stages.
 The first one, called ``generate``, will call ReFrame to generate the pipeline specification for the desired tests.
-All the usual `test selection options <manpage.html#test-filtering>`__ can be used to select specific tests.
+All the usual :ref:`test selection options <test-filtering>` can be used to select specific tests.
 ReFrame will process them as usual, but instead of running the selected tests, it will generate the correct steps for running each test individually as a Gitlab job in a child pipeline.
 The generated ReFrame command that will run each individual test reuses the :option:`-C`, :option:`-R`, :option:`-v` and :option:`--mode` options passed to the initial invocation of ReFrame that was used to generate the pipeline.
 Users can define CI-specific execution modes in their configuration in order to pass arbitrary options to the ReFrame invocation in the child pipeline.
@@ -569,7 +569,7 @@ Finally, we pass the generated CI pipeline file to the second phase as an artifa
 If ``image`` keyword is defined in ``.gitlab-ci.yml``, the emitted pipeline will use the same image as the one defined in the parent pipeline.
 Besides, each job in the generated pipeline will output a separate junit report which can be used to create GitLab badges.
 
-The following figure shows one part of the automatically generated pipeline for the test graph depicted `above <#fig-deps-complex>`__.
+The following figure shows one part of an automatically generated pipeline.
 
 .. figure:: _static/img/gitlab-ci.png
    :align: center
@@ -1036,7 +1036,7 @@ Rerunning with increased verbosity as the message suggests will give a full trac
 Debugging sanity and performance patterns
 -----------------------------------------
 
-When creating a new test that requires a complex output parsing for the sanity checking or for extracting the figures of merit, tuning the functions decorated by :attr:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` or :attr:`@performance_function<reframe.core.pipeline.RegressionMixin.performance_function>` may involve some trial and error to debug the complex regular expressions required.
+When creating a new test that requires a complex output parsing for the sanity checking or for extracting the figures of merit, tuning the functions decorated by :attr:`@sanity_function<reframe.core.builtins.sanity_function>` or :attr:`@performance_function<reframe.core.builtins.performance_function>` may involve some trial and error to debug the complex regular expressions required.
 For lightweight tests which execute in few seconds, this trial and error may not be an issue at all.
 However, when dealing with tests which take longer to run, this method can quickly become tedious and inefficient.
 
@@ -1097,7 +1097,7 @@ After loading the configuration, ReFrame will print out its relevant environment
 Before attempting to load a file, it will validate it and check if it looks like a ReFrame test.
 If it does, it will load that file by importing it.
 This is where any ReFrame tests are instantiated and initialized (see ``Loaded 3 test(s)``), as well as the actual test cases (combination of tests, system partitions and environments) are generated.
-Then the test cases are filtered based on the various `filtering command line options <manpage.html#test-filtering>`__ as well as the programming environments that are defined for the currently selected system.
+Then the test cases are filtered based on the various :ref:`filtering command line options <test-filtering>` as well as the programming environments that are defined for the currently selected system.
 Finally, the test case dependency graph is built and everything is ready for running (or listing).
 
 Try passing a specific system or partition with the :option:`--system` option or modify the test (e.g., removing the decorator that registers it) and see how the logs change.
@@ -1124,7 +1124,7 @@ The following is the actual implementation of the ``mpirun`` launcher in ReFrame
 
 Each launcher must derive from the abstract base class :class:`~reframe.core.launchers.JobLauncher` ands needs to implement the :func:`~reframe.core.launchers.JobLauncher.command` method and, optionally, change the default :func:`~reframe.core.launchers.JobLauncher.run_command` method.
 
-The :func:`~reframe.core.launchers.JobLauncher.command` returns a list of command tokens that will be combined with any user-supplied `options <regression_test_api.html#reframe.core.launchers.JobLauncher.options>`__ by the :func:`~reframe.core.launchers.JobLauncher.run_command` method to generate the actual launcher command line.
+The :func:`~reframe.core.launchers.JobLauncher.command` returns a list of command tokens that will be combined with any user-supplied job launcher :attr:`~reframe.core.launchers.JobLauncher.options` by the :func:`~reframe.core.launchers.JobLauncher.run_command` method to generate the actual launcher command line.
 Notice you can use the ``job`` argument to get job-specific information that will allow you to construct the correct launcher invocation.
 
 If you use a Python-based configuration file, you can define your custom launcher directly inside your config as follows:
