@@ -110,6 +110,7 @@ class TestStats:
                 check = t.check
                 partition = check.current_partition
                 entry = {
+                    'build_jobid': None,
                     'build_stderr': None,
                     'build_stdout': None,
                     'dependencies_actual': [
@@ -120,35 +121,20 @@ class TestStats:
                     'dependencies_conceptual': [
                         d[0] for d in t.check.user_deps()
                     ],
-                    'description': check.descr,
-                    'display_name': check.display_name,
-                    'environment': None,
                     'fail_phase': None,
                     'fail_reason': None,
                     'filename': inspect.getfile(type(check)),
                     'fixture': check.is_fixture(),
-                    'hash': check.hashcode,
-                    'jobid': None,
                     'job_stderr': None,
                     'job_stdout': None,
-                    'maintainers': check.maintainers,
-                    'name': check.name,
-                    'nodelist': [],
-                    'outputdir': None,
-                    'perfvars': None,
-                    'prefix': check.prefix,
                     'result': None,
-                    'stagedir': check.stagedir,
                     'scheduler': None,
-                    'system': check.current_system.name,
-                    'tags': list(check.tags),
                     'time_compile': t.duration('compile_complete'),
                     'time_performance': t.duration('performance'),
                     'time_run': t.duration('run_complete'),
                     'time_sanity': t.duration('sanity'),
                     'time_setup': t.duration('setup'),
-                    'time_total': t.duration('total'),
-                    'unique_name': check.unique_name
+                    'time_total': t.duration('total')
                 }
 
                 # We take partition and environment from the test case and not
@@ -156,25 +142,24 @@ class TestStats:
                 # these are not set inside the check.
                 partition = t.testcase.partition
                 environ = t.testcase.environ
-                entry['system'] = partition.fullname
+                entry['partition'] = partition.name
+                entry['environ'] = environ.name
                 entry['scheduler'] = partition.scheduler.registered_name
-                entry['environment'] = environ.name
                 if check.job:
-                    entry['jobid'] = str(check.job.jobid)
                     entry['job_stderr'] = check.stderr.evaluate()
                     entry['job_stdout'] = check.stdout.evaluate()
-                    entry['nodelist'] = check.job.nodelist or []
 
                 if check.build_job:
                     entry['build_stderr'] = check.build_stderr.evaluate()
                     entry['build_stdout'] = check.build_stdout.evaluate()
 
+                entry['result'] = t.result
                 if t.failed:
                     num_failures += 1
-                    entry['result'] = 'failure'
                 elif t.aborted:
-                    entry['result'] = 'aborted'
                     num_aborted += 1
+                elif t.skipped:
+                    num_skipped += 1
 
                 if t.failed or t.aborted:
                     entry['fail_phase'] = t.failed_stage
@@ -186,43 +171,17 @@ class TestStats:
                             'traceback': t.exc_info[2]
                         }
                         entry['fail_severe'] = errors.is_severe(*t.exc_info)
-                elif t.skipped:
-                    entry['result'] = 'skipped'
-                    num_skipped += 1
-                else:
-                    entry['result'] = 'success'
+                elif t.succeeded:
                     entry['outputdir'] = check.outputdir
 
-                if check.perfvalues:
-                    # Record performance variables
-                    entry['perfvars'] = []
-                    for key, ref in check.perfvalues.items():
-                        var = key.split(':')[-1]
-                        val, ref, lower, upper, unit = ref
-                        entry['perfvars'].append({
-                            'name': var,
-                            'reference': ref,
-                            'thres_lower': lower,
-                            'thres_upper': upper,
-                            'unit': unit,
-                            'value': val
-                        })
-
                 # Add any loggable variables and parameters
-                entry['check_vars'] = {}
                 test_cls = type(check)
-                for name, var in test_cls.var_space.items():
-                    if var.is_loggable():
-                        try:
-                            entry['check_vars'][name] = _getattr(check, name)
-                        except AttributeError:
-                            entry['check_vars'][name] = '<undefined>'
-
-                entry['check_params'] = {}
-                test_cls = type(check)
-                for name, param in test_cls.param_space.items():
-                    if param.is_loggable():
-                        entry['check_params'][name] = _getattr(check, name)
+                for name, alt_name in test_cls.loggable_attrs():
+                    key = alt_name if alt_name else name
+                    try:
+                        entry[key] = _getattr(check, name)
+                    except AttributeError:
+                        entry[key] = '<undefined>'
 
                 testcases.append(entry)
 
@@ -264,12 +223,12 @@ class TestStats:
             printer.info(line_width * '-')
             printer.info(f"FAILURE INFO for {rec['display_name']} "
                          f"(run: {runid}/{total_runs})")
-            printer.info(f"  * Description: {rec['description']}")
+            printer.info(f"  * Description: {rec['descr']}")
             printer.info(f"  * System partition: {rec['system']}")
-            printer.info(f"  * Environment: {rec['environment']}")
+            printer.info(f"  * Environment: {rec['environ']}")
             printer.info(f"  * Stage directory: {rec['stagedir']}")
             printer.info(
-                f"  * Node list: {util.nodelist_abbrev(rec['nodelist'])}"
+                f"  * Node list: {util.nodelist_abbrev(rec['job_nodelist'])}"
             )
             job_type = 'local' if rec['scheduler'] == 'local' else 'batch job'
             printer.info(f"  * Job type: {job_type} (id={rec['jobid']})")
@@ -280,8 +239,8 @@ class TestStats:
             printer.info(f"  * Maintainers: {rec['maintainers']}")
             printer.info(f"  * Failing phase: {rec['fail_phase']}")
             if rerun_info and not rec['fixture']:
-                printer.info(f"  * Rerun with '-n /{rec['hash']}"
-                             f" -p {rec['environment']} --system "
+                printer.info(f"  * Rerun with '-n /{rec['hashcode']}"
+                             f" -p {rec['environ']} --system "
                              f"{rec['system']} -r'")
 
             msg = rec['fail_reason']

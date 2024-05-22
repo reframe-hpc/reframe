@@ -24,7 +24,7 @@ from reframe.core.warnings import suppress_deprecations
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
 
-DATA_VERSION = '3.1'
+DATA_VERSION = '4.0'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
 
 
@@ -169,7 +169,7 @@ def _load_report(filename):
         raise errors.ReframeError(
             f'invalid report {filename!r} '
             f'(required data version: {DATA_VERSION}), found: {found_ver})'
-        ) from e
+        )
 
     return _RunReport(report)
 
@@ -185,7 +185,7 @@ def load_report(*filenames):
     return rpt
 
 
-def write_report(report, filename, compress=False, link_to_last=False):
+def save_report(report, filename, compress=False):
     with open(filename, 'w') as fp:
         if compress:
             jsonext.dump(report, fp)
@@ -193,31 +193,10 @@ def write_report(report, filename, compress=False, link_to_last=False):
             jsonext.dump(report, fp, indent=2)
             fp.write('\n')
 
-    # Try to save the report in the database
-    try:
-        site_config = runtime.runtime().site_config
-        database_file = osext.expandvars(
-            site_config.get('general/0/report_database_file')
-        )
-        con, cur = initialize_db(database_file)
-        add_report_in_db(report, cur, filename)
-        con.commit()
-        con.close()
-    except Exception as e:
-        getlogger().error(
-            f"Could not save report {filename} in the database: {e}"
-        )
-
-    if not link_to_last:
-        return
-
-    # Add a symlink to the latest report
-    basedir = os.path.dirname(filename)
-    with osext.change_dir(basedir):
-        link_name = 'latest.json'
-        create_symlink = functools.partial(
-            os.symlink, os.path.basename(filename), link_name
-        )
+def link_latest_report(filename, link_name):
+    prefix, target_name = os.path.split(filename)
+    with osext.change_dir(prefix):
+        create_symlink = functools.partial(os.symlink, target_name, link_name)
         if not os.path.exists(link_name):
             create_symlink()
         else:
@@ -225,9 +204,7 @@ def write_report(report, filename, compress=False, link_to_last=False):
                 os.remove(link_name)
                 create_symlink()
             else:
-                getlogger().warning('could not create a symlink '
-                                    'to the latest report file: '
-                                    'path exists and is not a symlink')
+                raise errors.ReframeError('path exists and is not a symlink')
 
 
 def junit_xml_report(json_report):
@@ -251,11 +228,8 @@ def junit_xml_report(json_report):
                 'timestamp': json_report['session_info']['time_start'][:-5],
             }
         )
-        testsuite_properties = etree.SubElement(xml_testsuite, 'properties')
         for tc in rfm_run['testcases']:
-            casename = (
-                f"{tc['unique_name']}[{tc['system']}, {tc['environment']}]"
-            )
+            casename = f"{tc['name']} @{tc['system']}+{tc['environ']}"
             testcase = etree.SubElement(
                 xml_testsuite, 'testcase',
                 attrib={
@@ -268,10 +242,10 @@ def junit_xml_report(json_report):
                     'time': str(decimal.Decimal(tc['time_total'] or 0)),
                 }
             )
-            if tc['result'] == 'failure':
+            if tc['result'] == 'fail':
                 testcase_msg = etree.SubElement(
-                    testcase, 'failure', attrib={'type': 'failure',
-                                                 'message': tc['fail_phase']}
+                    testcase, 'fail', attrib={'type': 'fail',
+                                              'message': tc['fail_phase']}
                 )
                 testcase_msg.text = f"{tc['fail_phase']}: {tc['fail_reason']}"
 
@@ -295,113 +269,77 @@ def get_reports_files(directory):
             if os.path.isfile(f) and not f.endswith('/latest.json')]
 
 
-def initialize_db(database_file):
-    con = sqlite3.connect(database_file)
-    cur = con.cursor()
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS testcases(
+def index_report(report, filename):
+    prefix = os.path.dirname(filename)
+    index_file = os.path.join(prefix, 'index.db')
+    if not os.path.exists(index_file):
+        getlogger().info('Re-building the report index...')
+        _build_index(index_file)
+
+    with sqlite3.connect(index_file) as conn:
+        _index_report(conn, report, filename)
+
+
+def _build_index(filename):
+    with sqlite3.connect(filename) as conn:
+        conn.execute(
+'''CREATE TABLE IF NOT EXISTS testcases(
         name TEXT,
-        hash TEXT,
         system TEXT,
         partition TEXT,
-        environment TEXT,
+        environ TEXT,
         time_start TEXT,
         time_end TEXT,
         run_index INTEGER,
         test_index INTEGER,
-        json_file TEXT
-    )
-    """)
-    con.commit()
-    return (con, cur)
+        report_file TEXT
+)'''
+        )
+        prefix = os.path.dirname(filename)
+        for report_file in glob.iglob(f'{prefix}/*'):
+            if not os.path.islink(report_file):
+                try:
+                    report = load_report(report_file)
+                # except errors.ReframeError as e:
+                except Exception as e:
+                    getlogger().info(f'ignoring report file {report_file!r}: {e}')
+                else:
+                    _index_report(conn, report, report_file)
 
 
-def reindex_db():
-    site_config = runtime.runtime().site_config
-    database_file = osext.expandvars(
-        site_config.get('general/0/report_database_file')
-    )
-    # Check if the database file exists and remove it
-    if os.path.exists(database_file):
-        os.remove(database_file)
-
-    con, cur = initialize_db(database_file)
-
-    # Populate the database with old reports
-    reports_directory = os.path.dirname(
-        osext.expandvars(site_config.get('general/0/report_file'))
-    )
-    for f_path in get_reports_files(reports_directory):
-        with open(f_path, 'r') as file:
-            report = json.load(file)
-            #TODO: Validate report with schema
-
-        add_report_in_db(report, cur, f_path)
-        con.commit()
-
-    con.close()
-
-
-def add_report_in_db(report, cursor, report_file_path):
+def _index_report(conn, report, report_file_path):
     time_start = report['session_info']['time_start']
     time_end = report['session_info']['time_end']
-    for run_index, run in enumerate(report['runs']):
-        for test_index, test in enumerate(run['testcases']):
-            name = test['name']
-            hash = test['hash']
-            system = test['system'].split(':')[0]
-            partition = test['system'].split(':')[1]
-            environment = test['environment']
-            run_index = run_index
-            test_index = test_index
-            json_file = report_file_path
-
-            cursor.execute(
-                (
-                    "INSERT INTO testcases VALUES(?, ?, ?, ?, ?, ?, ?, ?, "
-                    "?, ?)"
-                ),
-                (
-                    name,
-                    hash,
-                    system,
-                    partition,
-                    environment,
-                    time_start,
-                    time_end,
-                    run_index,
-                    test_index,
-                    json_file
-                )
+    for run_idx, run in enumerate(report['runs']):
+        for test_idx, testcase in enumerate(run['testcases']):
+            sys, part = testcase['system'], testcase['partition']
+            conn.execute(
+'''INSERT INTO testcases VALUES(:name, :system, :partition,
+                                :environ, :time_start, :time_end,
+                                :run_index, :test_index, :report_file)''',
+                {
+                    'name': testcase['name'],
+                    'system': sys,
+                    'partition': part,
+                    'environ': testcase['environ'],
+                    'run_index': run_idx,
+                    'time_start': time_start,
+                    'time_end': time_end,
+                    'test_index': test_idx,
+                    'report_file': report_file_path
+                }
             )
 
 
-def search_db(name=None, hash=None, system=None, partition=None,
-              environment=None, time_start=None, time_end=None,
-              run_index=None, test_index=None):
+def fetch_cases_raw(condition):
     site_config = runtime.runtime().site_config
-    database_file = osext.expandvars(
-        site_config.get('general/0/report_database_file')
-    )
-    con = sqlite3.connect(database_file)
-    cur = con.cursor()
-
-    query = "SELECT test_index, run_index, json_file FROM testcases"
-    first_condition = False
-    for condition in ['name', 'hash', 'system', 'partition', 'environment',
-                      'time_start', 'time_end', 'run_index', 'test_index']:
-        value = eval(condition)
-        if value:
-            if not first_condition:
-                query += " WHERE "
-                first_condition = True
-            else:
-                query += " AND "
-            query += f"{condition}='{eval(condition)}'"
-
-    res = cur.execute(query)
-    results = res.fetchall()
-    con.close()
+    prefix = os.path.dirname(osext.expandvars(
+        site_config.get('general/0/report_file')
+    ))
+    with sqlite3.connect(os.path.join(prefix, 'index.db')) as conn:
+        query = f'SELECT test_index, run_index, report_file FROM testcases where {condition}'
+        getlogger().debug(query)
+        results = conn.execute(query).fetchall()
 
     # Retrieve files
     testcases = []
