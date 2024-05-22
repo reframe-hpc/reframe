@@ -2,7 +2,7 @@
 How Test Dependencies Work In ReFrame
 =====================================
 
-Dependencies in ReFrame are defined at the test level using the :func:`depends_on` function, but are projected to the `test cases <pipeline.html>`__ space.
+Dependencies in ReFrame are defined at the test level using the :func:`depends_on` function, but are projected to the :doc:`test cases <pipeline>` space.
 We will see the rules of that projection in a while.
 The dependency graph construction and the subsequent dependency analysis happen also at the level of the test cases.
 
