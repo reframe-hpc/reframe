@@ -584,6 +584,10 @@ def main():
         '-q', '--quiet', action='count', default=0,
         help='Decrease verbosity level of output',
     )
+    misc_options.add_argument(
+        '--fetch-cases', action='store',
+        help='Experimental: query report'
+    )
 
     # Options not associated with command-line arguments
     argparser.add_argument(
@@ -720,7 +724,7 @@ def main():
 
         '''
 
-        if (options.show_config or
+        if (options.show_config or options.fetch_cases or
             options.detect_host_topology or options.describe):
             logging.getlogger().setLevel(logging.ERROR)
             return True
@@ -911,17 +915,13 @@ def main():
 
         sys.exit(0)
 
-    if options.index_db:
-        try:
-            runreport.reindex_db()
-        except Exception as e:
-            printer.error(f'could not index old job reports: {e}')
-            sys.exit(1)
-
-        sys.exit(0)
-
     autodetect.detect_topology()
     printer.debug(format_env(options.env_vars))
+
+    if options.fetch_cases:
+        testcases = runreport.fetch_cases_raw(options.fetch_cases)
+        print(jsonext.dumps(testcases, indent=2))
+        sys.exit(0)
 
     # Setup the check loader
     if options.restore_session is not None:
@@ -1471,19 +1471,35 @@ def main():
                 for c in restored_cases:
                     json_report['restored_cases'].append(report.case(*c))
 
+            # Save the report file
             report_file = runreport.next_report_filename(report_file)
-            default_loc = os.path.dirname(
-                osext.expandvars(rt.get_default('general/report_file'))
-            )
             try:
-                runreport.write_report(json_report, report_file,
-                                       rt.get_option(
-                                           'general/0/compress_report'),
-                                       os.path.dirname(report_file) == default_loc)
+                runreport.save_report(
+                    json_report, report_file,
+                    rt.get_option('general/0/compress_report')
+                )
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
                 )
+            else:
+                default_loc = os.path.dirname(
+                    osext.expandvars(rt.get_default('general/report_file'))
+                )
+                if default_loc == os.path.dirname(report_file):
+                    try:
+                        runreport.link_latest_report(report_file, 'latest.json')
+                    except Exception as e:
+                        printer.warning(
+                            f'failed to create symlink to latest report: {e}'
+                        )
+
+            # Index the generated report
+            try:
+                runreport.index_report(json_report, report_file)
+            except Exception as e:
+                printer.warning(f'failed to index the report: {e}')
+                raise
 
             # Generate the junit xml report for this session
             junit_report_file = rt.get_option('general/0/report_junit')
