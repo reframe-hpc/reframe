@@ -282,6 +282,19 @@ class RegressionTask:
     def skipped(self):
         return self._skipped
 
+    @property
+    def result(self):
+        if self.succeeded:
+            return 'pass'
+        elif self.failed:
+            return 'fail'
+        elif self.aborted:
+            return 'abort'
+        elif self.skipped:
+            return 'skip'
+        else:
+            return '<unknown>'
+
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
             callback = getattr(l, callback_name)

@@ -6,10 +6,9 @@
         "testcase_type": {
             "type": "object",
             "properties": {
+                "build_jobid": {"type": ["string", "null"]},
                 "build_stderr": {"type": ["string", "null"]},
                 "build_stdout": {"type": ["string", "null"]},
-                "check_params": {"type": "object"},
-                "check_vars": {"type": "object"},
                 "dependencies_actual": {
                     "type": "array",
                     "items": {
@@ -23,9 +22,6 @@
                     "type": "array",
                     "items": {"type": "string"}
                 },
-                "description": {"type": "string"},
-                "display_name": {"type": "string"},
-                "environment": {"type": ["string", "null"]},
                 "fail_info": {
                     "type": ["object", "null"],
                     "properties": {
@@ -43,65 +39,18 @@
                 "fail_severe": {"type": "boolean"},
                 "filename": {"type": "string"},
                 "fixture": {"type": "boolean"},
-                "jobid": {"type": ["string", "null"]},
                 "job_stderr": {"type": ["string", "null"]},
                 "job_stdout": {"type": ["string", "null"]},
-                "maintainers": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
-                "name": {"type": "string"},
-                "nodelist": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
-                "outputdir": {"type": ["string", "null"]},
-                "perfvars": {
-                    "type": ["array", "null"],
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string"},
-                            "reference": {
-                                "type": ["number", "null"]
-                            },
-                            "thres_lower": {
-                                "type": ["number", "null"]
-                            },
-                            "thres_upper": {
-                                "type": ["number", "null"]
-                            },
-                            "unit": {"type": ["string", "null"]},
-                            "value": {"type": "number"}
-                        },
-                        "required": [
-                            "name", "reference",
-                            "thres_lower", "thres_upper",
-                            "unit", "value"
-                        ]
-                    }
-                },
-                "prefix": {"type": "string"},
-                "result": {
-                    "type": "string",
-                    "enum": ["success", "failure", "aborted", "skipped"]
-                },
-                "scheduler": {"type": ["string", "null"]},
-                "stagedir": {"type": ["string", "null"]},
-                "system": {"type": "string"},
-                "tags": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
+                "result": {"type": "string"},
                 "time_compile": {"type": ["number", "null"]},
                 "time_performance": {"type": ["number", "null"]},
                 "time_run": {"type": ["number", "null"]},
                 "time_sanity": {"type": ["number", "null"]},
                 "time_setup": {"type": ["number", "null"]},
-                "time_total": {"type": ["number", "null"]},
-                "unique_name": {"type": "string"}
+                "time_total": {"type": ["number", "null"]}
             },
-            "required": ["environment", "stagedir", "system", "unique_name"]
+            "required": ["name", "system", "partition", "environ",
+                         "perfvalues", "result", "fail_reason", "file"]
         }
     },
     "type": "object",
