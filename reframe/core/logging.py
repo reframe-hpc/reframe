@@ -301,7 +301,11 @@ class CheckFieldFormatter(logging.Formatter):
     # NOTE: This formatter will work only for the '%' style
     def __init__(self, fmt=None, datefmt=None, perffmt=None,
                  ignore_keys=None, style='%'):
-        super().__init__(fmt, datefmt, style)
+        if sys.version_info[:2] <= (3, 7):
+            super().__init__(fmt, datefmt, style)
+        else:
+            super().__init__(fmt, datefmt, style,
+                             validate=(fmt != '%(check_#ALL)s'))
 
         self.__fmt = fmt
         self.__fmtperf = perffmt[:-1] if perffmt else ''
