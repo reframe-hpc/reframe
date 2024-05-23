@@ -1353,9 +1353,14 @@ def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
     assert os.path.exists(logfile)
 
 
+@pytest.fixture(params=['%(check_result)s|%(check_#ALL)s', '%(check_#ALL)s'])
+def perflog_fmt(request):
+    return request.param
+
+
 def test_perf_logging_all_attrs(make_runner, make_exec_ctx, perf_test,
-                                config_perflog, tmp_path):
-    make_exec_ctx(config_perflog(fmt='%(check_result)s|%(check_#ALL)s'))
+                                config_perflog, tmp_path, perflog_fmt):
+    make_exec_ctx(config_perflog(fmt=perflog_fmt))
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases([perf_test])
@@ -1367,7 +1372,8 @@ def test_perf_logging_all_attrs(make_runner, make_exec_ctx, perf_test,
         header = fp.readline()
 
     loggable_attrs = type(perf_test).loggable_attrs()
-    assert len(header.split('|')) == len(loggable_attrs) + 1
+    assert (len(header.split('|')) ==
+            len(loggable_attrs) + (perflog_fmt != '%(check_#ALL)s'))
 
 
 def test_perf_logging_custom_vars(make_runner, make_exec_ctx,
