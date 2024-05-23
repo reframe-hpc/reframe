@@ -692,7 +692,7 @@ def git_repo_exists(url, timeout=5):
         return True
 
 
-def git_repo_hash(commit='HEAD', short=True, wd=None):
+def git_repo_hash(commit='HEAD', short=True, wd='.'):
     '''Return the SHA1 hash of a Git commit.
 
     :arg commit: The commit to look at.
@@ -700,19 +700,18 @@ def git_repo_hash(commit='HEAD', short=True, wd=None):
         characters of the long hash. We don't rely on Git for the short hash,
         since depending on the version it might return either 7 or 8
         characters.
-    :arg wd: Change to this directory before retrieving the hash. If ``None``,
-        ReFrame's install prefix will be used.
+    :arg wd: Change to this directory before retrieving the hash.
     :returns: The Git commit hash or ``None`` if the hash could not be
         retrieved.
+
+    .. versionchanged:: 4.6.1
+       Default working directory is now ``.``.
     '''
     try:
-        wd = wd or reframe.INSTALL_PREFIX
-        with change_dir(wd):
-            # Do not log this command, since we need to call this function
-            # from the logger
-            completed = run_command(f'git rev-parse {commit}',
-                                    check=True, log=False)
-
+        # Do not log this command, since we need to call this function
+        # from the logger
+        completed = run_command(f'git -C {wd} rev-parse {commit}',
+                                check=True, log=False)
     except (SpawnedProcessError, FileNotFoundError):
         return None
 
@@ -730,13 +729,14 @@ def reframe_version():
     If ReFrame's installation contains the repository metadata and the current
     version is a pre-release version, the repository's hash will be appended
     to the actual version.
-
     '''
-    repo_hash = git_repo_hash()
-    if repo_hash and semver.VersionInfo.parse(reframe.VERSION).prerelease:
-        return f'{reframe.VERSION}+{repo_hash}'
-    else:
-        return reframe.VERSION
+    if (semver.VersionInfo.parse(reframe.VERSION).prerelease and
+        os.path.exists(os.path.join(reframe.INSTALL_PREFIX, '.git'))):
+        repo_hash = git_repo_hash(wd=reframe.INSTALL_PREFIX)
+        if repo_hash:
+            return f'{reframe.VERSION}+{repo_hash}'
+
+    return reframe.VERSION
 
 
 def expandvars(s):
