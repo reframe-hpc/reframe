@@ -169,7 +169,7 @@ class MultiFileHandler(logging.FileHandler):
         # Format specifiers
         self.__fmt = fmt
         self.__perffmt = perffmt
-        self.__attr_patt = re.compile(r'\%\((.*?)\)s(.)?')
+        self.__attr_patt = re.compile(r'\%\((.*?)\)s(.*?(?=%|$))?')
         self.__ignore_keys = set(ignore_keys) if ignore_keys else set()
 
     def __generate_header(self, record):
