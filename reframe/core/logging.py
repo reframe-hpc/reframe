@@ -860,8 +860,9 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check is None or not self.check.is_performance_check():
             return
 
-        self.extra['check_partition'] = task.testcase.partition.name
-        self.extra['check_environ'] = task.testcase.environ.name
+        _, part, env = task.testcase
+        self.extra['check_partition'] = part.name
+        self.extra['check_environ'] = env.name
         self.extra['check_result'] = task.result
         fail_reason = what(*task.exc_info) if not task.succeeded else None
         self.extra['check_fail_reason'] = fail_reason

@@ -3,29 +3,44 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import abc
 import decimal
 import functools
 import glob
 import json
 import jsonschema
 import lxml.etree as etree
+import math
 import os
 import re
 import sqlite3
+import statistics
+import types
+from collections.abc import Hashable
+from datetime import datetime, timedelta
 
 import reframe as rfm
-import reframe.core.exceptions as errors
 import reframe.core.runtime as runtime
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
+from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger
 from reframe.core.warnings import suppress_deprecations
+from reframe.utility import nodelist_abbrev
+
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
 
 DATA_VERSION = '4.0'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
+
+def _tc_info(tc_entry, name='unique_name'):
+    name = tc_entry[name]
+    system = tc_entry['system']
+    partition = tc_entry['partition']
+    environ = tc_entry['environ']
+    return f'{name}@{system}:{partition}+{environ}'
 
 
 class _RunReport:
@@ -40,13 +55,11 @@ class _RunReport:
         self._cases_index = {}
         for run in self._report['runs']:
             for tc in run['testcases']:
-                c, p, e = tc['unique_name'], tc['system'], tc['environment']
-                self._cases_index[c, p, e] = tc
+                self._cases_index[_tc_info(tc)] = tc
 
         # Index also the restored cases
         for tc in self._report['restored_cases']:
-            c, p, e = tc['unique_name'], tc['system'], tc['environment']
-            self._cases_index[c, p, e] = tc
+            self._cases_index[_tc_info(tc)] = tc
 
     def __getitem__(self, key):
         return self._report[key]
@@ -81,12 +94,12 @@ class _RunReport:
                 yield val
 
     def case(self, check, part, env):
-        c, p, e = check.unique_name, part.fullname, env.name
-        ret = self._cases_index.get((c, p, e))
+        key = f'{check.unique_name}@{part.fullname}+{env.name}'
+        ret = self._cases_index.get(key)
         if ret is None:
             # Look up the case in the fallback reports
             for rpt in self._fallbacks:
-                ret = rpt._cases_index.get((c, p, e))
+                ret = rpt._cases_index.get(key)
                 if ret is not None:
                     break
 
@@ -110,7 +123,7 @@ class _RunReport:
     def _do_restore(self, testcase):
         tc = self.case(*testcase)
         if tc is None:
-            raise errors.ReframeError(
+            raise ReframeError(
                 f'could not restore testcase {testcase!r}: '
                 f'not found in the report files'
             )
@@ -120,7 +133,7 @@ class _RunReport:
             with open(dump_file) as fp:
                 testcase._check = jsonext.load(fp)
         except (OSError, json.JSONDecodeError) as e:
-            raise errors.ReframeError(
+            raise ReframeError(
                 f'could not restore testcase {testcase!r}') from e
 
 
@@ -148,10 +161,10 @@ def _load_report(filename):
         with open(filename) as fp:
             report = json.load(fp)
     except OSError as e:
-        raise errors.ReframeError(
+        raise ReframeError(
             f'failed to load report file {filename!r}') from e
     except json.JSONDecodeError as e:
-        raise errors.ReframeError(
+        raise ReframeError(
             f'report file {filename!r} is not a valid JSON file') from e
 
     # Validate the report
@@ -166,10 +179,12 @@ def _load_report(filename):
         except KeyError:
             found_ver = 'n/a'
 
-        raise errors.ReframeError(
-            f'invalid report {filename!r} '
-            f'(required data version: {DATA_VERSION}), found: {found_ver})'
-        )
+        getlogger().verbose(f'JSON validation error: {e}')
+        raise ReframeError(
+            f'failed to validate report {filename!r}: {e.args[0]} '
+            f'(check report data version: required {DATA_VERSION}, '
+            f'found: {found_ver})'
+        ) from None
 
     return _RunReport(report)
 
@@ -204,7 +219,7 @@ def link_latest_report(filename, link_name):
                 os.remove(link_name)
                 create_symlink()
             else:
-                raise errors.ReframeError('path exists and is not a symlink')
+                raise ReframeError('path exists and is not a symlink')
 
 
 def junit_xml_report(json_report):
@@ -223,13 +238,13 @@ def junit_xml_report(json_report):
                 'package': 'reframe',
                 'tests': str(rfm_run['num_cases']),
                 'time': str(json_report['session_info']['time_elapsed']),
-
                 # XSD schema does not like the timezone format, so we remove it
                 'timestamp': json_report['session_info']['time_start'][:-5],
             }
         )
+        etree.SubElement(xml_testsuite, 'properties')
         for tc in rfm_run['testcases']:
-            casename = f"{tc['name']} @{tc['system']}+{tc['environ']}"
+            casename = f'{_tc_info(tc, name="name")}'
             testcase = etree.SubElement(
                 xml_testsuite, 'testcase',
                 attrib={
@@ -244,8 +259,8 @@ def junit_xml_report(json_report):
             )
             if tc['result'] == 'fail':
                 testcase_msg = etree.SubElement(
-                    testcase, 'fail', attrib={'type': 'fail',
-                                              'message': tc['fail_phase']}
+                    testcase, 'failure', attrib={'type': 'failure',
+                                                 'message': tc['fail_phase']}
                 )
                 testcase_msg.text = f"{tc['fail_phase']}: {tc['fail_reason']}"
 
@@ -269,84 +284,320 @@ def get_reports_files(directory):
             if os.path.isfile(f) and not f.endswith('/latest.json')]
 
 
-def index_report(report, filename):
-    prefix = os.path.dirname(filename)
-    index_file = os.path.join(prefix, 'index.db')
-    if not os.path.exists(index_file):
-        getlogger().info('Re-building the report index...')
-        _build_index(index_file)
+def _db_file():
+    site_config = runtime.runtime().site_config
+    prefix = os.path.dirname(osext.expandvars(
+        site_config.get('general/0/report_file')
+    ))
+    filename = os.path.join(prefix, 'results.db')
+    if not os.path.exists(filename):
+        # Create subdirs if needed
+        if prefix:
+            os.makedirs(prefix, exist_ok=True)
 
-    with sqlite3.connect(index_file) as conn:
-        _index_report(conn, report, filename)
+        getlogger().debug(f'Creating the results database in {filename}...')
+        _db_create(filename)
+
+    return filename
 
 
-def _build_index(filename):
+def store_results(report, report_file):
+    with sqlite3.connect(_db_file()) as conn:
+        _db_store_report(conn, report, report_file)
+
+
+def _db_create(filename):
     with sqlite3.connect(filename) as conn:
+        conn.execute(
+'''CREATE TABLE IF NOT EXISTS sessions(
+        id INTEGER PRIMARY KEY,
+        json_blob TEXT,
+        report_file TEXT
+)'''
+        )
         conn.execute(
 '''CREATE TABLE IF NOT EXISTS testcases(
         name TEXT,
         system TEXT,
         partition TEXT,
         environ TEXT,
-        time_start TEXT,
-        time_end TEXT,
+        job_completion_time_unix REAL,
+        session_id INTEGER,
         run_index INTEGER,
         test_index INTEGER,
-        report_file TEXT
+        FOREIGN KEY(session_id) REFERENCES sessions(session_id)
 )'''
         )
-        prefix = os.path.dirname(filename)
-        for report_file in glob.iglob(f'{prefix}/*'):
-            if not os.path.islink(report_file):
-                try:
-                    report = load_report(report_file)
-                # except errors.ReframeError as e:
-                except Exception as e:
-                    getlogger().info(f'ignoring report file {report_file!r}: {e}')
-                else:
-                    _index_report(conn, report, report_file)
 
 
-def _index_report(conn, report, report_file_path):
-    time_start = report['session_info']['time_start']
-    time_end = report['session_info']['time_end']
+def _db_store_report(conn, report, report_file_path):
+    session_start = report['session_info']['time_start']
     for run_idx, run in enumerate(report['runs']):
         for test_idx, testcase in enumerate(run['testcases']):
             sys, part = testcase['system'], testcase['partition']
+            cursor = conn.execute(
+'''INSERT INTO sessions VALUES(:session_id, :json_blob, :report_file)''',
+                         {'session_id': None,
+                          'json_blob': jsonext.dumps(report),
+                          'report_file': report_file_path})
             conn.execute(
-'''INSERT INTO testcases VALUES(:name, :system, :partition,
-                                :environ, :time_start, :time_end,
-                                :run_index, :test_index, :report_file)''',
+'''INSERT INTO testcases VALUES(:name, :system, :partition, :environ,
+                                :job_completion_time_unix,
+                                :session_id, :run_index, :test_index)''',
                 {
                     'name': testcase['name'],
                     'system': sys,
                     'partition': part,
                     'environ': testcase['environ'],
+                    'job_completion_time_unix': testcase[
+                        'job_completion_time_unix'
+                    ],
+                    'session_id': cursor.lastrowid,
                     'run_index': run_idx,
-                    'time_start': time_start,
-                    'time_end': time_end,
-                    'test_index': test_idx,
-                    'report_file': report_file_path
+                    'test_index': test_idx
                 }
             )
 
 
-def fetch_cases_raw(condition):
-    site_config = runtime.runtime().site_config
-    prefix = os.path.dirname(osext.expandvars(
-        site_config.get('general/0/report_file')
-    ))
-    with sqlite3.connect(os.path.join(prefix, 'index.db')) as conn:
-        query = f'SELECT test_index, run_index, report_file FROM testcases where {condition}'
+def _fetch_cases_raw(condition):
+    with sqlite3.connect(_db_file()) as conn:
+        query = (f'SELECT session_id, run_index, test_index, json_blob FROM '
+                 f'testcases JOIN sessions ON session_id==id '
+                 f'WHERE {condition}')
         getlogger().debug(query)
         results = conn.execute(query).fetchall()
 
     # Retrieve files
     testcases = []
-    for test_index, run_index, json_file in results:
-        with open(json_file, 'r') as file:
-            report = json.load(file)
-
+    sessions = {}
+    for session_id, run_index, test_index, json_blob in results:
+        report = json.loads(sessions.setdefault(session_id, json_blob))
         testcases.append(report['runs'][run_index]['testcases'][test_index])
 
     return testcases
+
+
+def _fetch_cases_time_period(ts_start, ts_end):
+    return _fetch_cases_raw(
+        f'(job_completion_time_unix >= {ts_start} AND '
+        f'job_completion_time_unix < {ts_end}) '
+        'ORDER BY job_completion_time_unix'
+    )
+
+
+def _group_key(groups, testcase):
+    key = []
+    for grp in groups:
+        val = testcase[grp]
+        if grp == 'job_nodelist':
+            # Fold nodelist before adding as a key element
+            key.append(nodelist_abbrev(val))
+        elif not isinstance(val, Hashable):
+            key.append(str(val))
+        else:
+            key.append(val)
+
+    return tuple(key)
+
+
+def parse_timestamp(s):
+    now = datetime.now()
+    def _do_parse(s):
+        if s == 'now':
+            return now
+
+        formats = [r'%Y%m%d', r'%Y%m%dT%H%M',
+                   r'%Y%m%dT%H%M%S', r'%Y%m%dT%H%M%S%z']
+        for fmt in formats:
+            try:
+                return datetime.strptime(s, fmt)
+            except ValueError:
+                continue
+
+        raise ValueError(f'invalid timestamp: {s}')
+
+
+    try:
+        ts = _do_parse(s)
+    except ValueError as err:
+        # Try the relative timestamps
+        match = re.match(r'(?P<ts>.*)(?P<amount>[\+|-]\d+)(?P<unit>[hdms])', s)
+        if not match:
+            raise err
+
+        ts = _do_parse(match.group('ts'))
+        amount = int(match.group('amount'))
+        unit = match.group('unit')
+        if unit == 'd':
+            ts += timedelta(days=amount)
+        elif unit == 'm':
+            ts += timedelta(minutes=amount)
+        elif unit == 'h':
+            ts += timedelta(hours=amount)
+        elif unit == 's':
+            ts += timedelta(seconds=amount)
+
+    return ts.timestamp()
+
+
+def _group_testcases(testcases, group_by, extra_cols):
+    grouped = {}
+    for tc in testcases:
+        for pvar, reftuple in tc['perfvalues'].items():
+            pvar = pvar.split(':')[-1]
+            pval, pref, plower, pupper, punit = reftuple
+            plower = pref * (1 + plower) if plower is not None else -math.inf
+            pupper = pref * (1 + pupper) if pupper is not None else math.inf
+            record = {
+                'pvar': pvar,
+                'pval': pval,
+                'plower': plower,
+                'pupper': pupper,
+                'punit': punit,
+                **{k: tc[k] for k in group_by + extra_cols if k in tc}
+            }
+            key = _group_key(group_by, record)
+            grouped.setdefault(key, [])
+            grouped[key].append(record)
+
+    return grouped
+
+def _aggregate_perf(grouped_testcases, aggr_fn, cols):
+    other_aggr = _JoinUniqueValues('|')
+    aggr_data = {}
+    for key, seq in grouped_testcases.items():
+        aggr_data.setdefault(key, {})
+        aggr_data[key]['pval'] = aggr_fn(tc['pval'] for tc in seq)
+        for c in cols:
+            aggr_data[key][c] = other_aggr(
+                nodelist_abbrev(tc[c]) if c == 'job_nodelist' else tc[c]
+                for tc in seq
+            )
+
+    return aggr_data
+
+def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
+                          extra_group_by=None, extra_cols=None):
+    extra_group_by = extra_group_by or []
+    extra_cols = extra_cols or []
+    group_by = ['name', 'pvar', 'punit'] + extra_group_by
+
+    grouped_base = _group_testcases(base_testcases, group_by, extra_cols)
+    grouped_target = _group_testcases(target_testcases, group_by, extra_cols)
+    pbase = _aggregate_perf(grouped_base, base_fn, extra_cols)
+    ptarget = _aggregate_perf(grouped_target, target_fn, [])
+
+    # Build the final table data
+    data = []
+    for key, aggr_data in pbase.items():
+        pval = aggr_data['pval']
+        try:
+            target_pval = ptarget[key]['pval']
+        except KeyError:
+            pdiff = 'n/a'
+        else:
+            pdiff = (pval - target_pval) / target_pval
+            pdiff = '{:+7.2%}'.format(pdiff)
+
+        name, pvar, punit, *extras = key
+        line = [name, pvar, pval, punit, pdiff, *extras]
+        # Add the extra columns
+        line += [aggr_data[c] for c in extra_cols]
+        data.append(line)
+
+    return (data, ['name', 'pvar', 'pval', 'punit', 'pdiff'] + extra_group_by + extra_cols)
+
+class _Aggregator:
+    @classmethod
+    def create(cls, name):
+        if name == 'first':
+            return _First()
+        elif name == 'last':
+            return _Last()
+        elif name == 'mean':
+            return _Mean()
+        elif name == 'median':
+            return _Median()
+        elif name == 'min':
+            return _Min()
+        elif name == 'max':
+            return _Max()
+        else:
+            raise ValueError(f'unknown aggregation function: {name!r}')
+
+
+    @abc.abstractmethod
+    def __call__(self, iterable):
+        pass
+
+class _First(_Aggregator):
+    def __call__(self, iterable):
+        for i, elem in enumerate(iterable):
+            if i == 0:
+                return elem
+
+class _Last(_Aggregator):
+    def __call__(self, iterable):
+        if not isinstance(iterable, types.GeneratorType):
+            return iterable[-1]
+
+        for elem in iterable:
+            pass
+
+        return elem
+
+
+class _Mean(_Aggregator):
+    def __call__(self, iterable):
+        return statistics.mean(iterable)
+
+
+class _Median(_Aggregator):
+    def __call__(self, iterable):
+        return statistics.median(iterable)
+
+
+class _Min(_Aggregator):
+    def __call__(self, iterable):
+        return min(iterable)
+
+
+class _Max(_Aggregator):
+    def __call__(self, iterable):
+        return max(iterable)
+
+class _JoinUniqueValues(_Aggregator):
+    def __init__(self, delim):
+        self.__delim = delim
+
+    def __call__(self, iterable):
+        unique_vals = {str(elem) for elem in iterable}
+        return self.__delim.join(unique_vals)
+
+def performance_report_data(run_stats, report_spec):
+    period, aggr, cols = report_spec.split('/')
+    ts_start, ts_end = [parse_timestamp(ts) for ts in period.split(':')]
+    op, extra_groups = aggr.split(':')
+    aggr_fn = _Aggregator.create(op)
+    extra_groups = extra_groups.split('+')[1:]
+    extra_cols = cols.split('+')[1:]
+    testcases = run_stats[0]['testcases']
+    target_testcases = _fetch_cases_time_period(ts_start, ts_end)
+    return compare_testcase_data(testcases, target_testcases, _First(),
+                                 aggr_fn, extra_groups, extra_cols)
+
+
+def performance_compare_data(spec):
+    period_base, period_target, aggr, cols = spec.split('/')
+    base_testcases = _fetch_cases_time_period(
+        *(parse_timestamp(ts) for ts in period_base.split(':'))
+    )
+    target_testcases = _fetch_cases_time_period(
+        *(parse_timestamp(ts) for ts in period_target.split(':'))
+    )
+    op, extra_groups = aggr.split(':')
+    aggr_fn = _Aggregator.create(op)
+    extra_groups = extra_groups.split('+')[1:]
+    extra_cols = cols.split('+')[1:]
+    return compare_testcase_data(base_testcases, target_testcases, aggr_fn,
+                                 aggr_fn, extra_groups, extra_cols)

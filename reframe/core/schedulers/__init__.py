@@ -180,8 +180,6 @@ def filter_nodes_by_state(nodelist, state):
             }
 
     return nodelist
-    nodes[part.fullname] = [n.name for n in nodelist]
-
 
 
 class Job(jsonext.JSONSerializable, metaclass=JobMeta):
@@ -377,7 +375,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         self._jobid = None
         self._exitcode = None
         self._state = None
-        self._nodelist = None
+        self._nodelist = []
         self._submit_time = None
         self._completion_time = None
 
@@ -515,7 +513,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         This attribute is supported by the ``local``, ``pbs``, ``slurm``,
         ``squeue``, ``ssh``, and ``torque`` scheduler backends.
 
-        This attribute is :class:`None` if no nodes are assigned to the job
+        This attribute is an empty list if no nodes are assigned to the job
         yet.
 
         The ``squeue`` scheduler backend, i.e., Slurm *without* accounting,
@@ -531,7 +529,10 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
 
         .. versionadded:: 2.17
 
-        :type: :class:`List[str]` or :class:`None`
+        .. versionchanged:: 4.7
+           Default value is the empty list.
+
+        :type: :class:`List[str]`
         '''
         return self._nodelist
 

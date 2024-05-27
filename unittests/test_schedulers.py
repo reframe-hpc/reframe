@@ -476,9 +476,9 @@ def test_prepare_nodes_option_minimal(make_exec_ctx, make_job, slurm_only):
 def test_submit(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job)
-    assert minimal_job.nodelist is None
+    assert minimal_job.nodelist == []
     submit_job(minimal_job)
-    assert minimal_job.jobid is not None
+    assert minimal_job.jobid != []
     minimal_job.wait()
 
     # Additional scheduler-specific checks
