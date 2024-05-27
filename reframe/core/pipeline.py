@@ -1517,8 +1517,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @loggable_as('job_nodelist')
     @property
     def _job_nodelist(self):
-        if self.job:
-            return self.job.nodelist
+        return self.job.nodelist if self.job else []
 
     def info(self):
         '''Provide live information for this test.

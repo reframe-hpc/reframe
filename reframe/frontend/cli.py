@@ -13,6 +13,7 @@ import socket
 import sys
 import time
 import traceback
+from tabulate import tabulate
 
 import reframe.core.config as config
 import reframe.core.exceptions as errors
@@ -28,7 +29,6 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
-
 from reframe.frontend.testgenerators import (distribute_tests,
                                              getallnodes, repeat_tests,
                                              parameterize_tests)
@@ -556,7 +556,12 @@ def main():
         envvar='RFM_COLORIZE', configvar='general/colorize'
     )
     misc_options.add_argument(
-        '--performance-report', action='store_true',
+        '--performance-compare', metavar='CMPSPEC', action='store',
+        help='Compare past performance results'
+    )
+    misc_options.add_argument(
+        '--performance-report', action='store', nargs='?',
+        const='19700101T0000Z:now/last:+job_nodelist/+result',
         help='Print a report for performance tests'
     )
     misc_options.add_argument(
@@ -583,10 +588,6 @@ def main():
     misc_options.add_argument(
         '-q', '--quiet', action='count', default=0,
         help='Decrease verbosity level of output',
-    )
-    misc_options.add_argument(
-        '--fetch-cases', action='store',
-        help='Experimental: query report'
     )
 
     # Options not associated with command-line arguments
@@ -731,7 +732,7 @@ def main():
 
         '''
 
-        if (options.show_config or options.fetch_cases or
+        if (options.show_config or
             options.detect_host_topology or options.describe):
             logging.getlogger().setLevel(logging.ERROR)
             return True
@@ -925,11 +926,6 @@ def main():
     autodetect.detect_topology()
     printer.debug(format_env(options.env_vars))
 
-    if options.fetch_cases:
-        testcases = runreport.fetch_cases_raw(options.fetch_cases)
-        print(jsonext.dumps(testcases, indent=2))
-        sys.exit(0)
-
     # Setup the check loader
     if options.restore_session is not None:
         # We need to load the failed checks only from a list of reports
@@ -941,7 +937,12 @@ def main():
                 new=False
             )]
 
-        report = runreport.load_report(*filenames)
+        try:
+            report = runreport.load_report(*filenames)
+        except errors.ReframeError as err:
+            printer.error(f'failed to load restore session: {err}')
+            sys.exit(1)
+
         check_search_path = list(report.slice('filename', unique=True))
         check_search_recursive = False
 
@@ -1137,12 +1138,11 @@ def main():
                 if not rec:
                     return False
 
-                return (rec['result'] == 'failure' or
-                        rec['result'] == 'aborted')
+                return rec['result'] == 'fail' or rec['result'] == 'abort'
 
             testcases = list(filter(_case_failed, testcases))
             printer.verbose(
-                f'Filtering successful test case(s): '
+                f'Filtering out successful test case(s): '
                 f'{len(testcases)} remaining'
             )
 
@@ -1288,6 +1288,13 @@ def main():
                 f'  Gitlab pipeline generated successfully '
                 f'in {options.ci_generate!r}.\n'
             )
+            sys.exit(0)
+
+        if options.performance_compare:
+            data, header = runreport.performance_compare_data(
+                options.performance_compare
+            )
+            print(tabulate(data, headers=header, tablefmt='mixed_grid'))
             sys.exit(0)
 
         if not options.run and not options.dry_run:
@@ -1453,7 +1460,20 @@ def main():
                     )
 
             if options.performance_report and not options.dry_run:
-                printer.info(runner.stats.performance_report())
+                try:
+                    data, header = runreport.performance_report_data(
+                        runner.stats.json(),
+                        options.performance_report
+                    )
+                except errors.ReframeError as err:
+                    printer.warning(
+                        f'failed to generate performance report: {err}'
+                    )
+                else:
+                    print(
+                        tabulate(data, headers=header, tablefmt='mixed_grid')
+                    )
+                # printer.info(runner.stats.performance_report())
 
             # Generate the report for this session
             report_file = os.path.normpath(
@@ -1467,7 +1487,9 @@ def main():
             run_stats = runner.stats.json()
             session_info.update({
                 'num_cases': run_stats[0]['num_cases'],
-                'num_failures': run_stats[-1]['num_failures']
+                'num_failures': run_stats[-1]['num_failures'],
+                'num_aborted': run_stats[-1]['num_aborted'],
+                'num_skipped': run_stats[-1]['num_skipped']
             })
             json_report = {
                 'session_info': session_info,
@@ -1503,9 +1525,9 @@ def main():
 
             # Index the generated report
             try:
-                runreport.index_report(json_report, report_file)
+                runreport.store_results(json_report, report_file)
             except Exception as e:
-                printer.warning(f'failed to index the report: {e}')
+                printer.warning(f'failed to store results in the database: {e}')
                 raise
 
             # Generate the junit xml report for this session

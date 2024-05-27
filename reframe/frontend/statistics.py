@@ -7,11 +7,13 @@ import inspect
 import itertools
 import os
 import shutil
+import time
 import traceback
 
 import reframe.core.runtime as rt
 import reframe.core.exceptions as errors
 import reframe.utility as util
+from reframe.core.logging import _format_time_rfc3339
 from reframe.core.warnings import suppress_deprecations
 
 
@@ -107,8 +109,10 @@ class TestStats:
             num_aborted = 0
             num_skipped = 0
             for t in run:
-                check = t.check
-                partition = check.current_partition
+                # We take partition and environment from the test case and not
+                # from the check, since if the test fails before `setup()`,
+                # these are not set inside the check.
+                check, partition, environ = t.testcase
                 entry = {
                     'build_jobid': None,
                     'build_stderr': None,
@@ -121,14 +125,18 @@ class TestStats:
                     'dependencies_conceptual': [
                         d[0] for d in t.check.user_deps()
                     ],
+                    'environ': environ.name,
                     'fail_phase': None,
                     'fail_reason': None,
                     'filename': inspect.getfile(type(check)),
                     'fixture': check.is_fixture(),
+                    'job_completion_time': None,
+                    'job_completion_time_unix': None,
                     'job_stderr': None,
                     'job_stdout': None,
-                    'result': None,
-                    'scheduler': None,
+                    'partition': partition.name,
+                    'result': t.result,
+                    'scheduler': partition.scheduler.registered_name,
                     'time_compile': t.duration('compile_complete'),
                     'time_performance': t.duration('performance'),
                     'time_run': t.duration('run_complete'),
@@ -136,15 +144,6 @@ class TestStats:
                     'time_setup': t.duration('setup'),
                     'time_total': t.duration('total')
                 }
-
-                # We take partition and environment from the test case and not
-                # from the check, since if the test fails before `setup()`,
-                # these are not set inside the check.
-                partition = t.testcase.partition
-                environ = t.testcase.environ
-                entry['partition'] = partition.name
-                entry['environ'] = environ.name
-                entry['scheduler'] = partition.scheduler.registered_name
                 if check.job:
                     entry['job_stderr'] = check.stderr.evaluate()
                     entry['job_stdout'] = check.stdout.evaluate()
@@ -153,7 +152,6 @@ class TestStats:
                     entry['build_stderr'] = check.build_stderr.evaluate()
                     entry['build_stdout'] = check.build_stdout.evaluate()
 
-                entry['result'] = t.result
                 if t.failed:
                     num_failures += 1
                 elif t.aborted:
@@ -177,11 +175,21 @@ class TestStats:
                 # Add any loggable variables and parameters
                 test_cls = type(check)
                 for name, alt_name in test_cls.loggable_attrs():
+                    if alt_name == 'partition' or alt_name == 'environ':
+                        # We set those from the testcase
+                        continue
+
                     key = alt_name if alt_name else name
                     try:
                         entry[key] = _getattr(check, name)
                     except AttributeError:
                         entry[key] = '<undefined>'
+
+                if entry['job_completion_time_unix']:
+                    entry['job_completion_time'] = _format_time_rfc3339(
+                        time.localtime(entry['job_completion_time_unix']),
+                        '%FT%T%:z'
+                    )
 
                 testcases.append(entry)
 
@@ -221,15 +229,14 @@ class TestStats:
 
         def _print_failure_info(rec, runid, total_runs):
             printer.info(line_width * '-')
-            printer.info(f"FAILURE INFO for {rec['display_name']} "
+            printer.info(f"FAILURE INFO for {rec['name']} "
                          f"(run: {runid}/{total_runs})")
             printer.info(f"  * Description: {rec['descr']}")
             printer.info(f"  * System partition: {rec['system']}")
             printer.info(f"  * Environment: {rec['environ']}")
             printer.info(f"  * Stage directory: {rec['stagedir']}")
-            printer.info(
-                f"  * Node list: {util.nodelist_abbrev(rec['job_nodelist'])}"
-            )
+            printer.info(f"  * Node list: "
+                         f"{util.nodelist_abbrev(rec['job_nodelist'])}")
             job_type = 'local' if rec['scheduler'] == 'local' else 'batch job'
             printer.info(f"  * Job type: {job_type} (id={rec['jobid']})")
             printer.info(f"  * Dependencies (conceptual): "
@@ -269,7 +276,7 @@ class TestStats:
                 continue
 
             for r in run_info['testcases']:
-                if r['result'] in {'success', 'aborted', 'skipped'}:
+                if r['result'] in {'pass', 'abort', 'skip'}:
                     continue
 
                 _print_failure_info(r, run_no, len(run_report))
@@ -353,11 +360,12 @@ class TestStats:
 
         for testcases in perf_records.values():
             for tc in testcases:
-                name = tc['display_name']
-                hash = tc['hash']
-                env  = tc['environment']
-                part = tc['system']
-                lines.append(f'[{name} /{hash} @{part}:{env}]')
+                name = tc['name']
+                hash = tc['hashcode']
+                env  = tc['environ']
+                system = tc['system']
+                part = tc['partition']
+                lines.append(f'[{name} /{hash} @{system}:{part}+{env}]')
                 for v in interesting_vars:
                     val = tc['check_vars'][v]
                     if val is not None:

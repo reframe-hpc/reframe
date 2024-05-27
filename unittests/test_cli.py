@@ -421,17 +421,20 @@ def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
 
 
 def test_performance_report(run_reframe, run_action):
-    returncode, stdout, _ = run_reframe(
+    returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         more_options=['-n', '^PerformanceFailureCheck',
                       '--performance-report'],
         action=run_action
     )
+
     if run_action == 'run':
-        assert r'PERFORMANCE REPORT' in stdout
-        assert r'perf: 10 Gflop/s' in stdout
+        assert returncode == 1
     else:
-        assert r'PERFORMANCE REPORT' not in stdout
+        assert returncode == 0
+
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
 
 
 def test_skip_system_check_option(run_reframe, run_action):

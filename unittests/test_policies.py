@@ -291,7 +291,7 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
         jsonext.dump(report, fp)
 
     with pytest.raises(ReframeError,
-                       match=r'invalid report'):
+                       match=r'failed to validate report'):
         runreport.load_report(tmp_path / 'invalid-version.json')
 
 
@@ -391,7 +391,7 @@ def test_runall_skip_tests(make_runner, make_cases,
 
         num_reported = 0
         for tc in report[0]['testcases']:
-            if tc['result'] == 'skipped':
+            if tc['result'] == 'skip':
                 num_reported += 1
 
         assert num_reported == num_skipped
