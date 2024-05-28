@@ -85,7 +85,7 @@ Here is the full ReFrame test:
 
 .. literalinclude:: ../examples/tutorial/stream/stream_runonly.py
    :caption:
-   :pyobject: stream_test
+   :lines: 5-
 
 ReFrame tests are specially decorated classes that ultimately derive from the :class:`~reframe.core.pipeline.RegressionTest` class.
 Since we only want to run an executable in this first test, we derive from the :class:`~reframe.core.pipeline.RunOnlyRegressionTest` class, which essentially short-circuits the "compile" stage of the test.
@@ -97,11 +97,11 @@ We will describe the system and environments abstractions later in this tutorial
 For this first example, the ``*`` symbol denotes that this test is valid for any system or environment.
 A :class:`~reframe.core.pipeline.RunOnlyRegressionTest` must also define an :attr:`executable` to run.
 
-A test must also define a validation function which is decorated with the :func:`@sanity_function<reframe.core.pipeline.RegressionMixin.sanity_function>` decorator.
+A test must also define a validation function which is decorated with the :func:`@sanity_function<reframe.core.builtins.sanity_function>` decorator.
 This function will be used to validate the test's output after it is finished.
 ReFrame, by default, makes no assumption about whether a test is successful or not;
 it is the test's responsibility to define its validation.
-The framework provides a rich set of `utility functions <deferrable_functions_reference>`__ that help matching patterns and extract values from the test's output.
+The framework provides a rich set of :doc:`utility functions <deferrable_functions_reference>` that help matching patterns and extract values from the test's output.
 The :attr:`stdout` here refers to the name of the file where the test's standard output is stored.
 
 Finally, a test may optionally define a set of *performance functions* that will extract *figures of merit* for the test.
@@ -195,7 +195,7 @@ When ReFrame executes tests, it first copies over all of the test resources (if 
 Upon successful execution, the test artifacts will be copied over to the *output directory* for archiving.
 The default artifacts for every test are the generated test script as well as the test's standard output and standard error.
 The default location for the stage and output directories are the ``./stage`` and ``./output`` directories.
-These can be changed with the :option:`-s` and :option:`-o` options or the more general :option:`--prefix` option.
+These can be changed with the :option:`--stage` and :option:`--output` options or the more general :option:`--prefix` option.
 The test artifacts of our first example can be found in the following location:
 
 .. code-block:: bash
@@ -438,6 +438,8 @@ Note also that the system and environment specification in the test run output i
 ReFrame has determined that the ``default`` partition and the ``baseline`` environment satisfy the test constraints and thus it has run the test with this partition/environment combination.
 
 
+.. _compiling-the-test-code:
+
 Compiling the test code
 =======================
 
@@ -592,6 +594,8 @@ For this reason, we will force ReFrame to execute the tests serially with ``--ex
 
    [  PASSED  ] Ran 2/2 test case(s) from 1 check(s) (0 failure(s), 0 skipped, 0 aborted)
 
+
+.. _test-fixtures:
 
 Test fixtures
 =============
@@ -1177,7 +1181,8 @@ You can do that with the following hook:
        self.job.launcher = getlauncher('local')()
 
 The :func:`~reframe.core.backends.getlauncher` utility function returns the type the implements the launcher with the given name.
-The supported launcher names are those registered with the framework, i.e., all the names listed `here <config_reference.html#systems.partitions.launcher>`__ as well as any `user-registered <custom-launchers>`__ launcher.
+The supported launcher names are those registered with the framework, i.e., all the names listed
+`here <config_reference.html#systems.partitions.launcher>`__ as well as any :ref:`user-registered <custom-launchers>` launcher.
 Once we have the launcher type, we instantiate it and replace the job's launcher.
 
 
@@ -1316,6 +1321,8 @@ ReFrame cannot auto-detect at the moment device information, such as attached ac
 You can however add manually in the configuration any interesting device and this will be accessible from inside the test through the :attr:`current_partition`.
 For more information check the documentation of the :attr:`~config.systems.partitions.devices` configuration parameter.
 
+
+.. _multi-node-tests:
 
 Multi-node tests
 ================
@@ -1875,7 +1882,7 @@ Let's walk briefly through the most important parts of its configuration:
 - The :attr:`~config.logging.handlers_perflog.format` specifies how the log record will be formatted.
   Each placeholder of the form ``%(placeholder)s`` is replaced by the actual value during runtime.
   All placeholders starting with ``check_`` refer to test attributes.
-  You can check the complete list of supported placeholders in the configuration `reference guide <config_reference.html#config.logging.handlers.format>`__.
+  You can check the complete list of supported placeholders in the configuration :attr:`reference guide <config.logging.handlers.format>`.
   In this particular example, we will log only the test result, the (formatted) completion time, the list of nodes where the test was run and the obtained values of the test's performance variables.
 - The :attr:`~config.logging.handlers_perflog.format_perfvars` specifies how the performance values (the ``%(check_perfvalues)s`` placeholder) will be formatted.
   In this case, we will only log the obtained value and its unit.
