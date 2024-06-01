@@ -262,9 +262,9 @@ Here is an example for our STREAM benchmark:
 
     @rfm.simple_test
     class stream_test(rfm.RunOnlyRegressionTest):
-        ...
+        # ...
         reference = {
-            'myhost:baseline': {
+            'generic:default': {
                 'copy_bw': (23_890, -0.10, 0.30, 'MB/s'),
                 'triad_bw': (17_064, -0.05, 0.50, 'MB/s'),
             }
