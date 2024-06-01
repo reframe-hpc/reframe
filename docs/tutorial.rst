@@ -262,7 +262,7 @@ Here is an example for our STREAM benchmark:
 
     @rfm.simple_test
     class stream_test(rfm.RunOnlyRegressionTest):
-        # ...
+        ...
         reference = {
             'generic:default': {
                 'copy_bw': (23_890, -0.10, 0.30, 'MB/s'),
@@ -270,7 +270,8 @@ Here is an example for our STREAM benchmark:
             }
         }
 
-The :attr:`reference` test variable is a multi-level dictionary that defines the expected performance for each of the test's performance variables on all supported systems (here, ``generic``) and partitions (here, ``default``). We explain more about this pre-defined system later in :ref:`systems-and-environments`.
+The :attr:`reference` test variable is a multi-level dictionary that defines the expected performance for each of the test's performance variables on all supported systems (here, ``generic``) and partitions (here, ``default``).
+We explain more about this pre-defined system later in :ref:`systems-and-environments`.
 It is not necessary that all performance variables and all systems have a reference.
 If a reference value is not found, then the obtained performance will be logged, but no performance validation will be performed.
 The reference value is essentially a three or four element tuple of the form: ``(target_perf, lower_thres, upper_thres, unit)``. The ``unit`` is optional as it is already defined in the :func:`@performance_function <reframe.core.builtins.performance_function>` definitions.
@@ -340,7 +341,8 @@ We could do that simply by setting the :attr:`valid_prog_environs` as follows:
 
    self.valid_prog_environs = ['+stream']
 
-This tells ReFrame that this test is valid only for environments that define the ``stream`` feature; the ``+`` prefix requests a feature. The syntax defined in :attr:`valid_prog_environs` allows for other requirements.
+This tells ReFrame that this test is valid only for environments that define the ``stream`` feature; (the ``+`` prefix requests a feature, we will explain the syntax later in this section).
+The syntax defined in :attr:`valid_prog_environs` allows for other requirements.
 If we try to run the test now, nothing will be run:
 
 .. code-block:: bash
