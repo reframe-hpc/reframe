@@ -270,7 +270,7 @@ Here is an example for our STREAM benchmark:
             }
         }
 
-The :attr:`reference` test variable is a multi-level dictionary that defines the expected performance for each of the test's performance variables on all supported systems.
+The :attr:`reference` test variable is a multi-level dictionary that defines the expected performance for each of the test's performance variables on all supported systems (here, ``generic``) and partitions (here, ``default``). We explain more about this pre-defined system later in :ref:`systems-and-environments`.
 It is not necessary that all performance variables and all systems have a reference.
 If a reference value is not found, then the obtained performance will be logged, but no performance validation will be performed.
 The reference value is essentially a three or four element tuple of the form: ``(target_perf, lower_thres, upper_thres, unit)``. The ``unit`` is optional as it is already defined in the :func:`@performance_function <reframe.core.builtins.performance_function>` definitions.
@@ -310,6 +310,8 @@ Note that the ``RUN`` message is replaced by ``DRY`` in the dry-run mode.
 You can also check the generated test script in ``stage/generic/default/builtin/stream_test/rfm_job.sh``.
 
 
+.. _systems-and-environments:
+
 Systems and environments
 ========================
 
@@ -338,7 +340,7 @@ We could do that simply by setting the :attr:`valid_prog_environs` as follows:
 
    self.valid_prog_environs = ['+stream']
 
-This tells ReFrame that this test is valid only for environments that define the ``stream`` feature.
+This tells ReFrame that this test is valid only for environments that define the ``stream`` feature; the ``+`` prefix requests a feature. The syntax defined in :attr:`valid_prog_environs` allows for other requirements.
 If we try to run the test now, nothing will be run:
 
 .. code-block:: bash
@@ -355,7 +357,7 @@ If we try to run the test now, nothing will be run:
 This happens because ReFrame by default defines a generic system and environment.
 You may have noticed in our first run the ``@generic:default+builtin`` notation printed after test name.
 This is the system partition name (``generic:default``) and the environment name (``builtin``) where the test is being run in.
-The ``generic`` system and the ``builtin`` partition come as predefined in ReFrame.
+The ``generic`` system and the ``builtin`` environment come as predefined in ReFrame.
 They make the minimum possible assumptions:
 
 - The ``generic`` system defines a single partition, named ``default`` which launches test jobs locally.
