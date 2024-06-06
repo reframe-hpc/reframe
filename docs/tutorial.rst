@@ -264,13 +264,14 @@ Here is an example for our STREAM benchmark:
     class stream_test(rfm.RunOnlyRegressionTest):
         ...
         reference = {
-            'myhost:baseline': {
+            'generic:default': {
                 'copy_bw': (23_890, -0.10, 0.30, 'MB/s'),
                 'triad_bw': (17_064, -0.05, 0.50, 'MB/s'),
             }
         }
 
-The :attr:`reference` test variable is a multi-level dictionary that defines the expected performance for each of the test's performance variables on all supported systems.
+The :attr:`reference` test variable is a multi-level dictionary that defines the expected performance for each of the test's performance variables on all supported systems (here, ``generic``) and partitions (here, ``default``).
+We explain more about this pre-defined system later in :ref:`systems-and-environments`.
 It is not necessary that all performance variables and all systems have a reference.
 If a reference value is not found, then the obtained performance will be logged, but no performance validation will be performed.
 The reference value is essentially a three or four element tuple of the form: ``(target_perf, lower_thres, upper_thres, unit)``. The ``unit`` is optional as it is already defined in the :func:`@performance_function <reframe.core.builtins.performance_function>` definitions.
@@ -310,6 +311,8 @@ Note that the ``RUN`` message is replaced by ``DRY`` in the dry-run mode.
 You can also check the generated test script in ``stage/generic/default/builtin/stream_test/rfm_job.sh``.
 
 
+.. _systems-and-environments:
+
 Systems and environments
 ========================
 
@@ -338,7 +341,7 @@ We could do that simply by setting the :attr:`valid_prog_environs` as follows:
 
    self.valid_prog_environs = ['+stream']
 
-This tells ReFrame that this test is valid only for environments that define the ``stream`` feature.
+This tells ReFrame that this test is valid only for environments that define the ``stream`` feature (the ``+`` prefix requests a feature; we will explain the syntax later in this section).
 If we try to run the test now, nothing will be run:
 
 .. code-block:: bash
@@ -355,7 +358,7 @@ If we try to run the test now, nothing will be run:
 This happens because ReFrame by default defines a generic system and environment.
 You may have noticed in our first run the ``@generic:default+builtin`` notation printed after test name.
 This is the system partition name (``generic:default``) and the environment name (``builtin``) where the test is being run in.
-The ``generic`` system and the ``builtin`` partition come as predefined in ReFrame.
+The ``generic`` system and the ``builtin`` environment come as predefined in ReFrame.
 They make the minimum possible assumptions:
 
 - The ``generic`` system defines a single partition, named ``default`` which launches test jobs locally.
@@ -387,6 +390,19 @@ Let's look at some key elements of the configuration:
   Their definitions are resolved in the :attr:`~config.environments` section.
 * Every partition and environment can define a set of arbitrary features or key/value pairs in the :attr:`~config.environments.features` and :attr:`~config.environments.extras` options respectively.
   ReFrame will try to match system partitions and environments to a test based on the test's specification in :attr:`valid_systems` and :attr:`valid_prog_environs`.
+  More specifically, a feature is requested with the ``+feat`` and excluded with ``-feat``, whereas an extra is requested with ``%key=val``.
+  Multiple features or extras can be ANDed if specified in the same :attr:`valid_systems` or :attr:`valid_prog_environs` elements or otherwise ORed if specified in different elements:
+
+  .. code-block:: python
+
+     # Valid only for system partitions that define `feat0` and `key0=val` but not `feat1`
+     valid_systems = [r'+feat0 -feat1 %key0=val']
+
+     # Valid only for environments with either feature `A` or `B`
+     valid_prog_environs = ['+A', '+B']
+
+  Finally, a system or system partition name can be specified in :attr:`valid_systems` and similarly an environment name in :attr:`valid_prog_environs`, in which case the test is bound to those specific system partitions and/or environments.
+
 
 There are many options that we can be define for systems, partitions and environments.
 We will cover several of them as we go through the tutorial, but for the complete reference you should refer to :doc:`config_reference`.
