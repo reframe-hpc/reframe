@@ -341,8 +341,7 @@ We could do that simply by setting the :attr:`valid_prog_environs` as follows:
 
    self.valid_prog_environs = ['+stream']
 
-This tells ReFrame that this test is valid only for environments that define the ``stream`` feature; (the ``+`` prefix requests a feature, we will explain the syntax later in this section).
-The syntax defined in :attr:`valid_prog_environs` allows for other requirements.
+This tells ReFrame that this test is valid only for environments that define the ``stream`` feature (the ``+`` prefix requests a feature; we will explain the syntax later in this section).
 If we try to run the test now, nothing will be run:
 
 .. code-block:: bash
@@ -391,6 +390,19 @@ Let's look at some key elements of the configuration:
   Their definitions are resolved in the :attr:`~config.environments` section.
 * Every partition and environment can define a set of arbitrary features or key/value pairs in the :attr:`~config.environments.features` and :attr:`~config.environments.extras` options respectively.
   ReFrame will try to match system partitions and environments to a test based on the test's specification in :attr:`valid_systems` and :attr:`valid_prog_environs`.
+  More specifically, a feature is requested with the ``+feat`` and excluded with ``-feat``, whereas an extra is requested with ``%key=val``.
+  Multiple features or extras can be ANDed if specified in the same :attr:`valid_systems` or :attr:`valid_prog_environs` elements or otherwise ORed if specified in different elements:
+
+  .. code-block:: python
+
+     # Valid only for system partitions that define `feat0` and `key0=val` but not `feat1`
+     valid_systems = [r'+feat0 -feat1 %key0=val']
+
+     # Valid only for environments with either feature `A` or `B`
+     valid_prog_environs = ['+A', '+B']
+
+  Finally, a system or system partition name can be specified in :attr:`valid_systems` and similarly an environment name in :attr:`valid_prog_environs`, in which case the test is bound to those specific system partitions and/or environments.
+
 
 There are many options that we can be define for systems, partitions and environments.
 We will cover several of them as we go through the tutorial, but for the complete reference you should refer to :doc:`config_reference`.
