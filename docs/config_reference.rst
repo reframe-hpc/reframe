@@ -378,7 +378,7 @@ System Partition Configuration
 
    This option is relevant for the LSF, OAR, PBS and Slurm backends.
 
-   .. versionadded:: 4.6.0
+   .. versionadded:: 4.7
 
 
 .. py:attribute:: systems.partitions.sched_options.ssh_hosts

@@ -1238,7 +1238,7 @@ Whenever an environment variable is associated with a configuration option, its 
       Associated configuration parameter :attr::attr:`~config.systems.partitions.sched_options.sched_access_in_submit`
       ================================== ==================
 
-.. versionadded:: 4.6.0
+.. versionadded:: 4.7
 
 
 .. envvar:: RFM_AUTODETECT_FQDN
