@@ -617,6 +617,7 @@ def test_combined_access_constraint(make_job, slurm_only):
     with open(job.script_filename) as fp:
         script_content = fp.read()
 
+    print(script_content)
     assert re.search(r'(?m)--constraint=\(c1\)&\(c2&c3\)$', script_content)
     assert re.search(r'(?m)--constraint=(c1|c2&c3)$', script_content) is None
 
@@ -642,6 +643,28 @@ def test_combined_access_verbatim_constraint(make_job, slurm_only):
     assert re.search(r'(?m)--constraint=c1$', script_content)
     assert re.search(r'(?m)^#SBATCH --constraint=c2$', script_content)
     assert re.search(r'(?m)^#SBATCH -C c3$', script_content)
+
+
+def test_sched_access_in_submit(make_job):
+    job = make_job(sched_access=['--constraint=c1', '--foo=bar'])
+    job.options = ['--constraint=c2', '--xyz']
+    job.scheduler._sched_access_in_submit = True
+
+    if job.scheduler.registered_name in ('local', 'ssh'):
+        pytest.skip(f'not relevant for this scheduler backend')
+
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        script_content = fp.read()
+
+    print(script_content)
+    assert '--xyz' in script_content
+    assert '--foo=bar' not in script_content
+    if job.scheduler.registered_name in ('slurm', 'squeue'):
+        # Constraints are combined in `sched_access` for Slurm backends
+        assert '--constraint' not in script_content
+    else:
+        assert '--constraint=c1' not in script_content
 
 
 def test_guess_num_tasks(minimal_job, scheduler):

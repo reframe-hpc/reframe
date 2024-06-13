@@ -212,40 +212,33 @@ class SlurmJobScheduler(sched.JobScheduler):
                 )
             )
 
-        constraints = []
-        constraint_parser = ArgumentParser()
-        constraint_parser.add_argument('-C', '--constraint')
+        # Combine constraints in `sched_access`
+        #
+        # We AND the constraints defined in `sched_access` with those in
+        # either the `job.options` or `job.cli_options`. We essentially "move"
+        # the option from the source option list to `sched_access` as if the
+        # user has specified all the constraint in `sched_access`. We can then
+        # move with the preamble generation or the submission normally.
+        c_parser = ArgumentParser()
+        c_parser.add_argument('-C', '--constraint')
+        access, access_other = c_parser.parse_known_args(job.sched_access)
+        job_opts, other_job_opts = c_parser.parse_known_args(job.options)
+        cli_opts, other_cli_opts = c_parser.parse_known_args(job.cli_options)
+        if access.constraint and (job_opts.constraint or cli_opts.constraint):
+            constraints = [access.constraint]
+            if job_opts.constraint:
+                constraints.append(job_opts.constraint)
+                job.options = other_job_opts
+            else:
+                constraints.append(cli_opts.constraint)
+                job._cli_options = other_cli_opts
+
+            arg = '&'.join(f'({c.strip()})' for c in constraints)
+            job._sched_access = [f'--constraint={arg}']
+
         if not self._sched_access_in_submit:
             for opt in job.sched_access:
-                if not opt.strip().startswith(('-C', '--constraint')):
-                    preamble.append('%s %s' % (self._prefix, opt))
-
-            # To avoid overriding a constraint that's passed into
-            # `sched_access`, we AND it with the `--constraint` option
-            # passed either in `options` or in `cli_options`
-            parsed_options, _ = constraint_parser.parse_known_args(
-                job.sched_access
-            )
-            if parsed_options.constraint:
-                constraints.append(parsed_options.constraint.strip())
-
-        # NOTE: Here last of the passed --constraint job options is taken
-        # into account in order to respect the behavior of slurm.
-        parsed_options, _ = constraint_parser.parse_known_args(
-            job.options + job.cli_options
-        )
-        if parsed_options.constraint:
-            constraints.append(parsed_options.constraint.strip())
-
-        if constraints:
-            if len(constraints) == 1:
-                constr = constraints[0]
-            else:
-                # Parenthesize the constraints prior to joining them with `&`
-                # to make sure that precedence is respected.
-                constr = '&'.join(f'({c})' for c in constraints)
-
-            preamble.append(self._format_option(constr, '--constraint={0}'))
+                preamble.append(f'{self._prefix} {opt}')
 
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
