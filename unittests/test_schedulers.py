@@ -651,7 +651,7 @@ def test_sched_access_in_submit(make_job):
     job.options = ['--constraint=c2', '--xyz']
     job.scheduler._sched_access_in_submit = True
 
-    if job.scheduler.registered_name in ('local', 'ssh'):
+    if job.scheduler.registered_name in ('flux', 'local', 'ssh'):
         pytest.skip(f'not relevant for this scheduler backend')
 
     prepare_job(job)
