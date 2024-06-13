@@ -15,7 +15,7 @@ import unittests.utility as test_util
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import Environment
 from reframe.core.exceptions import (
-    ConfigError, JobError, JobNotStartedError, JobSchedulerError
+    ConfigError, JobError, JobNotStartedError, JobSchedulerError, SkipTestError
 )
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
@@ -124,7 +124,7 @@ def fake_job(make_job):
 
 def prepare_job(job, command='hostname',
                 pre_run=None, post_run=None,
-                prepare_cmds=None):
+                prepare_cmds=None, strict_flex=True):
     environs = [Environment(name='foo', modules=['testmod_foo'])]
     pre_run = pre_run or ['echo prerun']
     post_run = post_run or ['echo postrun']
@@ -137,7 +137,8 @@ def prepare_job(job, command='hostname',
                 post_run
             ],
             environs,
-            prepare_cmds
+            prepare_cmds,
+            strict_flex,
         )
 
 
@@ -1169,11 +1170,16 @@ def test_flex_alloc_no_num_tasks_per_node(make_flexible_job):
     assert job.num_tasks == 1
 
 
-def test_flex_alloc_not_enough_idle_nodes(make_flexible_job):
+@pytest.fixture(params=['skip', 'error'])
+def strict_flex(request):
+    return request.param == 'error'
+
+
+def test_flex_alloc_not_enough_idle_nodes(make_flexible_job, strict_flex):
     job = make_flexible_job('idle')
     job.num_tasks = -12
-    with pytest.raises(JobError):
-        prepare_job(job)
+    with pytest.raises(JobError if strict_flex else SkipTestError):
+        prepare_job(job, strict_flex=strict_flex)
 
 
 def test_flex_alloc_maintenance_nodes(make_flexible_job):

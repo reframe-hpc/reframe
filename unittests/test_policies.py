@@ -1291,13 +1291,10 @@ def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
                                 config_perflog, tmp_path):
     make_exec_ctx(
         config_perflog(
-            fmt=(
-                '%(check_job_completion_time)s,%(version)s,'
-                '%(check_display_name)s,%(check_system)s,'
-                '%(check_partition)s,%(check_environ)s,'
-                '%(check_jobid)s,%(check_result)s,'
-                '%(check_perf_var)s=%(check_perf_value)s,%(check_perf_unit)s'
-            ),
+            fmt=('%(check_job_completion_time)s|reframe %(version)s|'
+                 '%(check_name)s|%(check_perf_var)s=%(check_perf_value)s|'
+                 'ref=%(check_perf_ref)s (l=%(check_perf_lower_thres)s, '
+                 'u=%(check_perf_upper_thres)s)|%(check_perf_unit)s'),
             logging_opts={'perflog_compat': True}
         )
     )
@@ -1315,8 +1312,19 @@ def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
     # assert that the emitted lines are correct
     with open(logfile) as fp:
         lines = fp.readlines()
-        assert ',perf0=100.0,unit0' in lines[1]
-        assert ',perf1=50.0,unit1'  in lines[2]
+
+    version = osext.reframe_version()
+    assert lines[0] == ('job_completion_time|reframe version|name|'
+                        'perf_var=perf_value|ref=perf_ref '
+                        '(l=perf_lower_thres, u=perf_upper_thres)|perf_unit\n')
+    assert lines[1].endswith(
+        f'|reframe {version}|_MyPerfTest|'
+        f'perf0=100.0|ref=0 (l=null, u=null)|unit0\n'
+    )
+    assert lines[2].endswith(
+        f'|reframe {version}|_MyPerfTest|'
+        f'perf1=50.0|ref=0 (l=null, u=null)|unit1\n'
+    )
 
 
 def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
@@ -1345,9 +1353,14 @@ def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
     assert os.path.exists(logfile)
 
 
+@pytest.fixture(params=['%(check_result)s|%(check_#ALL)s', '%(check_#ALL)s'])
+def perflog_fmt(request):
+    return request.param
+
+
 def test_perf_logging_all_attrs(make_runner, make_exec_ctx, perf_test,
-                                config_perflog, tmp_path):
-    make_exec_ctx(config_perflog(fmt='%(check_result)s|%(check_#ALL)s'))
+                                config_perflog, tmp_path, perflog_fmt):
+    make_exec_ctx(config_perflog(fmt=perflog_fmt))
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases([perf_test])
@@ -1359,7 +1372,8 @@ def test_perf_logging_all_attrs(make_runner, make_exec_ctx, perf_test,
         header = fp.readline()
 
     loggable_attrs = type(perf_test).loggable_attrs()
-    assert len(header.split('|')) == len(loggable_attrs) + 1
+    assert (len(header.split('|')) ==
+            len(loggable_attrs) + (perflog_fmt != '%(check_#ALL)s'))
 
 
 def test_perf_logging_custom_vars(make_runner, make_exec_ctx,
@@ -1400,3 +1414,28 @@ def test_perf_logging_param_test(make_runner, make_exec_ctx, perf_param_tests,
                'default' / '_MyPerfParamTest.log')
     assert os.path.exists(logfile)
     assert _count_lines(logfile) == 3
+
+
+def test_perf_logging_sanity_failure(make_runner, make_exec_ctx,
+                                     config_perflog, tmp_path):
+    class _X(_MyPerfTest):
+        @sanity_function
+        def validate(self):
+            return sn.assert_true(0, msg='no way')
+
+    make_exec_ctx(config_perflog(
+        fmt='%(check_result)s|%(check_fail_reason)s|%(check_perfvalues)s',
+        perffmt='%(check_perf_value)s|'
+    ))
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([_X()])
+    _assert_no_logging_error(runner.runall, testcases)
+
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_X.log'
+    assert os.path.exists(logfile)
+    with open(logfile) as fp:
+        lines = fp.readlines()
+
+    assert len(lines) == 2
+    assert lines[1] == 'fail|sanity error: no way|None|None\n'

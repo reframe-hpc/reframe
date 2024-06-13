@@ -105,6 +105,10 @@ The ``./bootstrap.sh`` has two additional variant options:
       The bootstrap script for ReFrame was added.
       For previous ReFrame versions you should install its requirements using ``pip install -r requirements.txt`` in a Python virtual environment.
 
+   .. versionchanged:: 4.5
+      ReFrame now supports  multiarch builds and it will place all of its dependencies in an arch-specific directory under its prefix.
+      Also, ``pip`` is no more required, as the bootstrap script will start a virtual environment without ``pip`` and will fetch a fresh ``pip``, which will be used to install the dependencies.
+
 
 Enabling auto-completion
 ------------------------
@@ -123,10 +127,8 @@ Auto-completion is supported for Bash, Tcsh and Fish shells.
 Where to Go from Here
 ---------------------
 
-If you are new to ReFrame, the place to start is the first tutorial :doc:`tutorial_basics`, which will guide you step-by-step in both writing your first tests and in configuring ReFrame.
-The rest of the tutorials explore additional capabilities of the framework and cover several topics that you will likely come across when writing your own tests.
+If you are new to ReFrame, the place to start is the :doc:`tutorial`, which will guide you through all the concepts of the framework and get you up and running.
+If you are looking for a particular topic that is not covered in the tutorial, you can refer to the :doc:`howto` or the :doc:`topics`.
+For detailed reference guides for the command line, the configuration and the programming API, refer to the :doc:`manuals`.
 
-The :doc:`configure` page provides more details on how a configuration file is structured and the :doc:`topics` explain some more advanced concepts as well as some implementation details.
-The :doc:`manuals` provide complete reference guides for the command line interface, the configuration parameters and the programming APIs for writing tests.
-
-Finally, if you are not new to ReFrame and you have been using the 3.x versions, you should read the :doc:`whats_new_40` page, which explains what are the key new features of ReFrame 4.0 as well as all the breaking changes.
+Finally, if you are already a user of ReFrame 3.x version, you should read the :doc:`whats_new_40` page, which explains what are the key new features of ReFrame 4.0 as well as all the breaking changes.

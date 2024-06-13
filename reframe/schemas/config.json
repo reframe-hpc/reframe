@@ -411,6 +411,16 @@
                         "type": "array",
                         "items": {"$ref": "#/defs/alphanum_string"}
                     },
+                    "resources": {
+                        "type": "object",
+                        "propertyNames": {
+                            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+                        },
+                        "additionalProperties": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
                 "required": ["name"],

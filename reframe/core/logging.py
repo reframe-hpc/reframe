@@ -19,7 +19,7 @@ import urllib
 import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
-from reframe.core.exceptions import ConfigError, LoggingError
+from reframe.core.exceptions import ConfigError, LoggingError, what
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import is_trivially_callable
 from reframe.utility.profile import TimeProfiler
@@ -128,14 +128,6 @@ def handleError(func):
 logging.Handler.handleError = handleError(logging.Handler.handleError)
 
 
-def _expand_params(check):
-    cls = type(check)
-    return {
-        name: getattr(check, name) for name, param in cls.param_space.items
-        if param.is_loggable()
-    }
-
-
 def _guess_delim(s):
     '''Guess the delimiter in the given logging format string'''
     delims = set()
@@ -169,7 +161,7 @@ class MultiFileHandler(logging.FileHandler):
         # Format specifiers
         self.__fmt = fmt
         self.__perffmt = perffmt
-        self.__attr_patt = re.compile(r'\%\((.*?)\)s(.)?')
+        self.__attr_patt = re.compile(r'\%\((.*?)\)s(.*?(?=%|$))?')
         self.__ignore_keys = set(ignore_keys) if ignore_keys else set()
 
     def __generate_header(self, record):
@@ -301,7 +293,11 @@ class CheckFieldFormatter(logging.Formatter):
     # NOTE: This formatter will work only for the '%' style
     def __init__(self, fmt=None, datefmt=None, perffmt=None,
                  ignore_keys=None, style='%'):
-        super().__init__(fmt, datefmt, style)
+        if sys.version_info[:2] <= (3, 7):
+            super().__init__(fmt, datefmt, style)
+        else:
+            super().__init__(fmt, datefmt, style,
+                             validate=(fmt != '%(check_#ALL)s'))
 
         self.__fmt = fmt
         self.__fmtperf = perffmt[:-1] if perffmt else ''
@@ -863,6 +859,8 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.extra['check_partition'] = task.testcase.partition.name
         self.extra['check_environ'] = task.testcase.environ.name
         self.extra['check_result'] = 'pass' if task.succeeded else 'fail'
+        fail_reason = what(*task.exc_info) if not task.succeeded else None
+        self.extra['check_fail_reason'] = fail_reason
         if msg is None:
             msg = 'sent by ' + self.extra['osuser']
 

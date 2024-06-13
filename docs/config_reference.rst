@@ -2,7 +2,7 @@
 Configuration Reference
 ***********************
 
-ReFrame's behavior can be configured through its configuration file (see :doc:`configure`), environment variables and command-line options.
+ReFrame's behavior can be configured through its configuration file, environment variables and command-line options.
 An option can be specified via multiple paths (e.g., a configuration file parameter and an environment variable), in which case command-line options precede environment variables, which in turn precede configuration file options.
 This section provides a complete reference guide of the configuration options of ReFrame that can be set in its configuration file or specified using environment variables.
 
@@ -115,7 +115,7 @@ System Configuration
    :required: Yes
 
    A list of hostname regular expression patterns in Python `syntax <https://docs.python.org/3.8/library/re.html>`__, which will be used by the framework in order to automatically select a system configuration.
-   For the auto-selection process, see `here <configure.html#picking-a-system-configuration>`__.
+   For the auto-selection process, check the configuration of the :attr:`~config.autodetect_methods` option.
 
 .. py:attribute:: systems.max_local_jobs
 
@@ -243,6 +243,8 @@ System Configuration
    .. warning::
       This option is broken in 4.0.
 
+
+.. _system-partition-configuration:
 
 System Partition Configuration
 ==============================
@@ -484,7 +486,7 @@ System Partition Configuration
       .. versionadded:: 4.0.0
 
         ReFrame also allows you to register your own custom launchers simply by defining them in the configuration.
-        You can follow a small tutorial `here <tutorial_advanced.html#adding-a-custom-launcher-to-a-partition>`__.
+        You can follow a small tutorial :ref:`here <custom-launchers>`.
 
 
 .. py:attribute:: systems.partitions.access
@@ -564,7 +566,7 @@ System Partition Configuration
    :default: ``8``
 
    The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
-   This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
+   This option is relevant only when ReFrame executes with the :ref:`asynchronous execution policy <execution-policies>`.
 
 
 .. py:attribute:: systems.partitions.prepare_cmds
@@ -582,7 +584,7 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   A list of job scheduler `resource specification <config_reference.html#custom-job-scheduler-resources>`__ objects.
+   A list of job scheduler `resource specification <#custom-job-scheduler-resources>`__ objects.
 
 
 .. py:attribute:: systems.partitions.processor
@@ -591,7 +593,24 @@ System Partition Configuration
    :default: ``{}``
 
    Processor information for this partition stored in a `processor info object <#processor-info>`__.
-   If not set, ReFrame will try to auto-detect this information (see :ref:`proc-autodetection` for more information).
+   If not set, ReFrame will try to determine this information as follows:
+
+   #. If the processor configuration metadata file in ``~/.reframe/topology/{system}-{part}/processor.json`` exists, the topology information is loaded from there.
+      These files are generated automatically by ReFrame from previous runs.
+
+   #. If the corresponding metadata files are not found, the processor information will be auto-detected.
+      If the system partition is local (i.e., ``local`` scheduler + ``local`` launcher), the processor information is auto-detected unconditionally and stored in the corresponding metadata file for this partition.
+      If the partition is remote, ReFrame will not try to auto-detect it unless the :envvar:`RFM_REMOTE_DETECT` or the :attr:`general.remote_detect` configuration option is set.
+      In that case, the steps to auto-detect the remote processor information are the following:
+
+        a. ReFrame creates a fresh clone of itself in a temporary directory created under ``.`` by default.
+           This temporary directory prefix can be changed by setting the :envvar:`RFM_REMOTE_WORKDIR` environment variable.
+        b. ReFrame changes to that directory and launches a job that will first bootstrap the fresh clone and then run that clone with ``{launcher} ./bin/reframe --detect-host-topology=topo.json``.
+           The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host,
+           which in this case would be one of the remote compute nodes.
+
+      In case of errors during auto-detection, ReFrame will simply issue a warning and continue.
+
 
    .. versionadded:: 3.5.0
 
@@ -703,7 +722,7 @@ ReFrame can launch containerized applications, but you need to configure properl
 Custom Job Scheduler Resources
 ==============================
 
-ReFrame allows you to define custom scheduler resources for each partition that you can then transparently access through the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute of a regression test.
+ReFrame allows you to define custom scheduler resources for each partition that can then be transparently accessed through the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute of a test or from an environment.
 
 .. py:attribute:: systems.partitions.resources.name
 
@@ -967,6 +986,18 @@ They are associated with `system partitions <#system-partition-configuration>`__
    It first looks for definitions for the current partition, then for the containing system and, finally, for global definitions (the ``*`` pseudo-system).
 
 
+.. py:attribute:: environments.resources
+
+   :required: No
+   :default: ``{}``
+
+   Scheduler resources associated with this environments.
+
+   This is the equivalent of a test's :attr:`~reframe.core.pipeline.RegressionTest.extra_resources`.
+
+   .. versionadded:: 4.6
+
+
 .. _logging-config-reference:
 
 Logging Configuration
@@ -1097,6 +1128,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_executable)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable` attribute.
       ``%(check_executable_opts)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attribute.
       ``%(check_extra_resources)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute.
+      ``%(check_fail_reason)s``, The failure reason if the test has failed.
       ``%(check_hashcode)s``, The unique hash associated with this test.
       ``%(check_info)s``, Various information about this test; essentially the return value of the test's :func:`~reframe.core.pipeline.RegressionTest.info` function.
       ``%(check_job_completion_time)s``, Same as the ``(check_job_completion_time_unix)s`` but formatted according to ``datefmt``.
@@ -1169,6 +1201,9 @@ All logging handlers share the following set of common attributes:
 .. versionadded:: 4.3
    The ``%(check_#ALL)s`` special specifier is added.
 
+.. versionadded:: 4.7
+   The ``%(check_fail_reason)s`` specifier is added.
+
 
 .. py:attribute:: logging.handlers.format_perfvars
 .. py:attribute:: logging.handlers_perflog.format_perfvars
@@ -1215,6 +1250,8 @@ All logging handlers share the following set of common attributes:
    There are two timestamp fields available: ``%(asctime)s`` and ``%(check_job_completion_time)s``.
    In addition to the format directives supported by the standard library's `time.strftime() <https://docs.python.org/3.8/library/time.html#time.strftime>`__ function, ReFrame allows you to use the ``%:z`` directive -- a GNU ``date`` extension --  that will print the time zone difference in a RFC3339 compliant way, i.e., ``+/-HH:MM`` instead of ``+/-HHMM``.
 
+
+.. _file-handler:
 
 The ``file`` log handler
 ------------------------
@@ -1617,14 +1654,6 @@ General Configuration
    .. versionadded:: 3.12.0
 
 
-.. py:attribute:: general.git_timeout
-
-  :required: No
-  :default: 5
-
-  Timeout value in seconds used when checking if a git repository exists.
-
-
 .. py:attribute:: general.dump_pipeline_progress
 
    Dump pipeline progress for the asynchronous execution policy in ``pipeline-progress.json``.
@@ -1634,6 +1663,24 @@ General Configuration
    :default: ``False``
 
    .. versionadded:: 3.10.0
+
+
+.. py:attribute:: general.flex_alloc_strict
+
+   :required: No
+   :default: ``False``
+
+   Fail flexible tests if their minimum task requirement is not satisfied.
+
+   .. versionadded:: 4.7
+
+
+.. py:attribute:: general.git_timeout
+
+   :required: No
+   :default: 5
+
+   Timeout value in seconds used when checking if a git repository exists.
 
 
 .. py:attribute:: general.pipeline_timeout
@@ -1672,7 +1719,6 @@ General Configuration
 
    Try to auto-detect processor information of remote partitions as well.
    This may slow down the initialization of the framework, since it involves submitting auto-detection jobs to the remote partitions.
-   For more information on how ReFrame auto-detects processor information, you may refer to :ref:`proc-autodetection`.
 
    .. versionadded:: 3.7.0
 

@@ -285,7 +285,7 @@ def main():
         envvar='RFM_STAGE_DIR', configvar='systems/stagedir'
     )
     output_options.add_argument(
-        '--save-log-files', action='store_true', default=False,
+        '--save-log-files', action='store_true',
         help='Save ReFrame log files to the output directory',
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
     )
@@ -423,6 +423,12 @@ def main():
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
     run_options.add_argument(
+        '--flex-alloc-strict', action='store_true',
+        envvar='RFM_FLEX_ALLOC_STRICT',
+        configvar='general/flex_alloc_strict',
+        help='Fail the flexible tests if not enough nodes can be found'
+    )
+    run_options.add_argument(
         '-J', '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
         help='Pass option OPT to job scheduler'
@@ -474,12 +480,12 @@ def main():
     # Environment options
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
-        dest='module_mappings', default=[],
+        dest='module_mappings',
         help='Add a module mapping',
         envvar='RFM_MODULE_MAPPINGS ,', configvar='general/module_mappings'
     )
     env_options.add_argument(
-        '-m', '--module', action='append', default=[],
+        '-m', '--module', action='append',
         metavar='MOD', dest='user_modules',
         help='Load module MOD before running any regression check',
         envvar='RFM_USER_MODULES ,', configvar='general/user_modules'
@@ -501,13 +507,13 @@ def main():
         envvar='RFM_NON_DEFAULT_CRAYPE', configvar='general/non_default_craype'
     )
     env_options.add_argument(
-        '--purge-env', action='store_true', dest='purge_env', default=False,
+        '--purge-env', action='store_true', dest='purge_env',
         help='Unload all modules before running any regression check',
         envvar='RFM_PURGE_ENVIRONMENT', configvar='general/purge_environment'
     )
     env_options.add_argument(
         '-u', '--unload-module', action='append', metavar='MOD',
-        dest='unload_modules', default=[],
+        dest='unload_modules',
         help='Unload module MOD before running any regression check',
         envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
     )
@@ -1433,7 +1439,7 @@ def main():
                         printer, options.duration or options.reruns
                     )
 
-            if options.performance_report:
+            if options.performance_report and not options.dry_run:
                 printer.info(runner.stats.performance_report())
 
             # Generate the report for this session

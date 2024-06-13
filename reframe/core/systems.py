@@ -549,7 +549,8 @@ class System(jsonext.JSONSerializable):
                     cflags=site_config.get(f'environments/@{e}/cflags'),
                     cxxflags=site_config.get(f'environments/@{e}/cxxflags'),
                     fflags=site_config.get(f'environments/@{e}/fflags'),
-                    ldflags=site_config.get(f'environments/@{e}/ldflags')
+                    ldflags=site_config.get(f'environments/@{e}/ldflags'),
+                    resources=site_config.get(f'environments/@{e}/resources')
                 ) for e in site_config.get(f'{partid}/environs')
                 if any(re.match(pattern, e) for pattern in env_patt)
             ]

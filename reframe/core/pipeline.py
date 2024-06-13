@@ -733,9 +733,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionadded:: 4.0.0
     require_reference = variable(typ.Bool, value=False, loggable=False)
 
-    #:
-    #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
-    #: examples.
+    #: Patterns for checking the sanity of this test.
     #:
     #: If not set, a sanity error may be raised during sanity checking if no
     #: other sanity checking functions already exist.
@@ -749,7 +747,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:       The default behaviour has changed and it is now considered a
     #:       sanity failure if this attribute is set to :class:`required`.
     #:
-    #:       If a test doesn't care about its output, this must be stated
+    #:       If a test does not care about its output, this must be stated
     #:       explicitly as follows:
     #:
     #:       ::
@@ -758,6 +756,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:    .. versionchanged:: 3.6
     #:       The default value has changed from ``None`` to ``required``.
+    #:
+    #: .. note::
+    #:
+    #:    You are advised to follow the new syntax for defining the sanity
+    #:    check of the test using the builtin :func:`@sanity_function
+    #:    <reframe.core.builtins.sanity_function>` decorator.
     sanity_patterns = variable(_DeferredExpression, loggable=False)
 
     #: Patterns for verifying the performance of this test.
@@ -770,13 +774,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
     #:
-    #: .. warning::
+    #: .. note::
     #:
     #:    You are advised to follow the new syntax for defining performance
     #:    variables in your tests using either the :func:`@performance_function
     #:    <reframe.core.builtins.performance_function>` builtin or the
-    #:    :attr:`perf_variables`, as :attr:`perf_patterns` will likely be
-    #:    deprecated in the future.
+    #:    :attr:`perf_variables`.
     perf_patterns = variable(typ.Dict[str, _DeferredExpression], type(None),
                              loggable=False)
 
@@ -800,9 +803,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: performance stage. To this end, deferred performance functions can be
     #: created inline using the utility
     #: :func:`~reframe.utility.sanity.make_performance_function`.
-    #:
-    #: Refer to the :doc:`ReFrame Tutorials </tutorials>` for concrete usage
-    #: examples.
     #:
     #: :type: A dictionary with keys of type :class:`str` and deferred
     #:     performance expressions as values (see
@@ -2018,6 +2018,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self._job.prepare(
                     commands, environs,
                     self._current_partition.prepare_cmds,
+                    rt.runtime().get_option('general/flex_alloc_strict'),
                     login=rt.runtime().get_option('general/0/use_login_shell'),
                     trap_errors=rt.runtime().get_option(
                         'general/0/trap_job_errors'
@@ -2036,7 +2037,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def _map_resources_to_jobopts(self):
         resources_opts = []
-        for r, v in self.extra_resources.items():
+        # Combine all resources into one dictionary, where extra_resources
+        # can overwrite _current_environ.resources
+        combined_resources = {
+            **self._current_environ.resources,
+            **self.extra_resources
+        }
+        for r, v in combined_resources.items():
             resources_opts += self._current_partition.get_resource(r, **v)
 
         return resources_opts
@@ -2228,14 +2235,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self.perf_variables[var] = sn.make_performance_function(expr,
                                                                         unit)
 
-        if self.is_dry_run():
-            return
-
         # Evaluate the performance function and retrieve the metrics
         with osext.change_dir(self._stagedir):
             for tag, expr in self.perf_variables.items():
                 try:
-                    value = expr.evaluate()
+                    value = expr.evaluate() if not self.is_dry_run() else None
                     unit = expr.unit
                 except Exception as e:
                     logging.getlogger().warning(
@@ -2275,27 +2279,30 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
                 self._perfvalues[key] = (value, *ref, unit)
 
-            # Check the performance variables against their references.
-            for key, values in self._perfvalues.items():
-                val, ref, low_thres, high_thres, *_ = values
+        if self.is_dry_run():
+            return
 
-                # Verify that val is a number
-                if not isinstance(val, numbers.Number):
-                    raise SanityError(
-                        f'the value extracted for performance variable '
-                        f'{key!r} is not a number: {val}'
-                    )
+        # Check the performance variables against their references.
+        for key, values in self._perfvalues.items():
+            val, ref, low_thres, high_thres, *_ = values
 
-                tag = key.split(':')[-1]
-                try:
-                    sn.evaluate(
-                        sn.assert_reference(
-                            val, ref, low_thres, high_thres,
-                            msg=('failed to meet reference: %s={0}, '
-                                 'expected {1} (l={2}, u={3})' % tag))
-                    )
-                except SanityError as e:
-                    raise PerformanceError(e) from None
+            # Verify that val is a number
+            if not isinstance(val, numbers.Number):
+                raise SanityError(
+                    f'the value extracted for performance variable '
+                    f'{key!r} is not a number: {val}'
+                )
+
+            tag = key.split(':')[-1]
+            try:
+                sn.evaluate(
+                    sn.assert_reference(
+                        val, ref, low_thres, high_thres,
+                        msg=('failed to meet reference: %s={0}, '
+                             'expected {1} (l={2}, u={3})' % tag))
+                )
+            except SanityError as e:
+                raise PerformanceError(e) from None
 
     def _copy_job_files(self, job, dst):
         if job is None:
@@ -2448,10 +2455,6 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
     def getdep(self, target, environ=None, part=None):
         '''Retrieve the test case of a target dependency.
-
-        This is a low-level method. The :func:`@require_deps
-        <reframe.core.decorators.require_deps>` decorators should be
-        preferred.
 
         :arg target: The name of the target dependency to be retrieved.
         :arg environ: The name of the programming environment that will be

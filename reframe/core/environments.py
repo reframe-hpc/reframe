@@ -242,6 +242,7 @@ class ProgEnvironment(Environment):
                  cxxflags=None,
                  fflags=None,
                  ldflags=None,
+                 resources=None,
                  **kwargs):
         super().__init__(name, modules, env_vars, extras, features,
                          prepare_cmds)
@@ -254,6 +255,7 @@ class ProgEnvironment(Environment):
         self._cxxflags = cxxflags or []
         self._fflags   = fflags   or []
         self._ldflags  = ldflags  or []
+        self._resources = resources or {}
 
     @property
     def cc(self):
@@ -326,3 +328,13 @@ class ProgEnvironment(Environment):
         :type: :class:`str`
         '''
         return self._nvcc
+
+    @property
+    def resources(self):
+        '''The scheduler resources associated with this environment.
+
+        .. versionadded:: 4.6.0
+
+        :type: :class:`Dict[str, object]`
+        '''
+        return self._resources
