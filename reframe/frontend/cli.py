@@ -583,6 +583,13 @@ def main():
 
     # Options not associated with command-line arguments
     argparser.add_argument(
+        dest='sched_access_in_submit',
+        envvar='RFM_SCHED_ACCESS_IN_SUBMIT',
+        configvar='systems*/sched_options/sched_access_in_submit',
+        action='store_true',
+        help='Pass access options in the submission command (only for Slurm)'
+    )
+    argparser.add_argument(
         dest='autodetect_fqdn',
         envvar='RFM_AUTODETECT_FQDN',
         action='store',

@@ -76,6 +76,9 @@ class PbsJobScheduler(sched.JobScheduler):
     def __init__(self):
         self._prefix = '#PBS'
         self._submit_timeout = self.get_option('job_submit_timeout')
+        self._sched_access_in_submit = self.get_option(
+            'sched_access_in_submit'
+        )
 
     def _emit_lselect_option(self, job):
         num_tasks = job.num_tasks or 1
@@ -92,7 +95,12 @@ class PbsJobScheduler(sched.JobScheduler):
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
         verb_opts = []
-        for opt in (*job.sched_access, *job.options, *job.cli_options):
+        if self._sched_access_in_submit:
+            all_opts = (*job.options, *job.cli_options)
+        else:
+            all_opts = (*job.sched_access, *job.options, *job.cli_options)
+
+        for opt in all_opts:
             if opt.startswith('-'):
                 rem_opts.append(opt)
             elif opt.startswith('#'):
@@ -139,9 +147,14 @@ class PbsJobScheduler(sched.JobScheduler):
                                   'node filtering')
 
     def submit(self, job):
+        cmd_parts = ['qsub']
+        if self._sched_access_in_submit:
+            cmd_parts += job.sched_access
+
         # `-o` and `-e` options are only recognized in command line by the PBS
         # Slurm wrappers.
-        cmd = f'qsub -o {job.stdout} -e {job.stderr} {job.script_filename}'
+        cmd_parts += ['-o', job.stdout, '-e', job.stderr, job.script_filename]
+        cmd = ' '.join(cmd_parts)
         completed = _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
         if not jobid_match:

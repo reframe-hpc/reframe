@@ -60,6 +60,9 @@ class OarJobScheduler(PbsJobScheduler):
     def __init__(self):
         self._prefix = '#OAR'
         self._submit_timeout = self.get_option('job_submit_timeout')
+        self._sched_access_in_submit = self.get_option(
+            'sched_access_in_submit'
+        )
 
     def emit_preamble(self, job):
         # host is de-facto nodes and core is number of cores requested per node
@@ -88,8 +91,11 @@ class OarJobScheduler(PbsJobScheduler):
             num_nodes=num_nodes, num_tasks_per_node=num_tasks_per_node,
         )]
 
+        if not self._sched_access_in_submit:
+            options += job.sched_access
+
         # Emit the rest of the options
-        options += job.sched_access + job.options + job.cli_options
+        options += job.options + job.cli_options
         for opt in options:
             if opt.startswith('#'):
                 preamble.append(opt)
@@ -101,9 +107,13 @@ class OarJobScheduler(PbsJobScheduler):
     def submit(self, job):
         # OAR batch submission mode needs full path to the job script
         job_script_fullpath = os.path.join(job.workdir, job.script_filename)
+        cmd_parts = ['oarsub']
+        if self._sched_access_in_submit:
+            cmd_parts += job.sched_access
 
         # OAR needs -S to submit job in batch mode
-        cmd = f'oarsub -S {job_script_fullpath}'
+        cmd_parts += ['-S', job_script_fullpath]
+        cmd = ' '.join(cmd_parts)
         completed = _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'.*OAR_JOB_ID=(?P<jobid>\S+)',
                                 completed.stdout)
