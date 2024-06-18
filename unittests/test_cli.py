@@ -17,7 +17,7 @@ import time
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
-import reframe.frontend.runreport as runreport
+import reframe.frontend.reporting as reporting
 import reframe.utility.osext as osext
 import unittests.utility as test_util
 from reframe import INSTALL_PREFIX
@@ -168,7 +168,7 @@ def test_check_restore_session_failed(run_reframe, tmp_path):
         checkpath=[],
         more_options=['--restore-session', '--failed']
     )
-    report = runreport.load_report(f'{tmp_path}/.reframe/reports/latest.json')
+    report = reporting.restore_session(f'{tmp_path}/.reframe/reports/latest.json')
     assert set(report.slice('name', when=('fail_phase', 'sanity'))) == {'T2'}
     assert set(report.slice('name',
                             when=('fail_phase', 'startup'))) == {'T7', 'T9'}
@@ -188,7 +188,7 @@ def test_check_restore_session_succeeded_test(run_reframe, tmp_path):
         checkpath=[],
         more_options=['--restore-session', '-n', 'T1']
     )
-    report = runreport.load_report(f'{tmp_path}/.reframe/reports/latest.json')
+    report = reporting.restore_session(f'{tmp_path}/.reframe/reports/latest.json')
     assert report['runs'][-1]['num_cases'] == 1
     assert report['runs'][-1]['testcases'][0]['name'] == 'T1'
 
@@ -926,7 +926,7 @@ def test_failure_stats(run_reframe, run_action):
     else:
         assert returncode != 0
         assert r'FAILURE STATISTICS' in stdout
-        assert r'sanity        1     [SanityFailureCheck' in stdout
+        assert r'sanity        1     SanityFailureCheck' in stdout
 
 
 def test_maxfail_option(run_reframe):
