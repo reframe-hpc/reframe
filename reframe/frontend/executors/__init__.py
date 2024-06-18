@@ -6,6 +6,7 @@
 import abc
 import contextlib
 import copy
+import itertools
 import os
 import signal
 import sys
@@ -24,13 +25,60 @@ from reframe.core.exceptions import (AbortTaskError,
                                      ForceExitError,
                                      RunSessionTimeout,
                                      SkipTestError,
+                                     StatisticsError,
                                      TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.statistics import TestStats
 
 ABORT_REASONS = (AssertionError, FailureLimitError,
                  KeyboardInterrupt, ForceExitError, RunSessionTimeout)
+
+
+class TestStats:
+    '''Stores test case statistics.'''
+
+    def __init__(self):
+        # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
+        self._alltasks = [[]]
+
+    def add_task(self, task):
+        current_run = runtime.runtime().current_run
+        if current_run == len(self._alltasks):
+            self._alltasks.append([])
+
+        self._alltasks[current_run].append(task)
+
+    def runs(self):
+        for runid, tasks in enumerate(self._alltasks):
+            yield runid, tasks
+
+    def tasks(self, run=-1):
+        if run is None:
+            yield from itertools.chain(*self._alltasks)
+        else:
+            try:
+                yield from self._alltasks[run]
+            except IndexError:
+                raise StatisticsError(f'no such run: {run}') from None
+
+    def failed(self, run=-1):
+        return [t for t in self.tasks(run) if t.failed]
+
+    def skipped(self, run=-1):
+        return [t for t in self.tasks(run) if t.skipped]
+
+    def aborted(self, run=-1):
+        return [t for t in self.tasks(run) if t.aborted]
+
+    def completed(self, run=-1):
+        return [t for t in self.tasks(run) if t.completed]
+
+    def num_cases(self, run=-1):
+        return sum(1 for _ in self.tasks(run))
+
+    @property
+    def num_runs(self):
+        return len(self._alltasks)
 
 
 class TestCase:

@@ -19,7 +19,7 @@ import reframe.core.runtime as rt
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
-import reframe.frontend.runreport as runreport
+import reframe.frontend.reporting as reporting
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
@@ -33,6 +33,7 @@ from reframe.core.exceptions import (AbortTaskError,
                                      RunSessionTimeout,
                                      TaskDependencyError)
 from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.reporting import RunReport
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
     BadSetupCheck,
@@ -214,31 +215,33 @@ def _validate_junit_report(report):
     schema.assert_(report)
 
 
-def _generate_runreport(run_stats, time_start, time_end):
-    return {
-        'session_info': {
-            'cmdline': ' '.join(sys.argv),
-            'config_files': rt.runtime().site_config.sources,
-            'data_version': runreport.DATA_VERSION,
-            'hostname': socket.gethostname(),
-            'num_cases': run_stats[0]['num_cases'],
-            'num_failures': run_stats[-1]['num_failures'],
-            'prefix_output': rt.runtime().output_prefix,
-            'prefix_stage': rt.runtime().stage_prefix,
-            'time_elapsed': time_end - time_start,
-            'time_end': time.strftime(
-                '%FT%T%z', time.localtime(time_end),
-            ),
-            'time_start': time.strftime(
-                '%FT%T%z', time.localtime(time_start),
-            ),
-            'user': osext.osuser(),
-            'version': osext.reframe_version(),
-            'workdir': os.getcwd()
-        },
-        'restored_cases': [],
-        'runs': run_stats
-    }
+def _generate_runreport(run_stats, time_start=None, time_end=None):
+    report = RunReport()
+    report.update_session_info({
+        'cmdline': ' '.join(sys.argv),
+        'config_files': rt.runtime().site_config.sources,
+        'data_version': reporting.DATA_VERSION,
+        'hostname': socket.gethostname(),
+        'prefix_output': rt.runtime().output_prefix,
+        'prefix_stage': rt.runtime().stage_prefix,
+        'user': osext.osuser(),
+        'version': osext.reframe_version(),
+        'workdir': os.getcwd()
+    })
+    if time_start and time_end:
+        time_elapsed = time_end - time_start
+        time_start = time.strftime(r'%FT%T%z', time.localtime(time_start))
+        time_end = time.strftime(r'%FT%T%z', time.localtime(time_end))
+        report.update_session_info({
+            'time_elapsed': time_elapsed,
+            'time_end': time_end,
+            'time_start': time_start
+        })
+
+    if run_stats:
+        report.update_run_stats(run_stats)
+
+    return report
 
 
 def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
@@ -254,28 +257,23 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
     assert 1 == num_failures_stage(runner, 'performance')
     assert 1 == num_failures_stage(runner, 'cleanup')
 
-    # Create a run report and validate it
-    report = _generate_runreport(runner.stats.json(), *tm.timestamps())
-
     # We dump the report first, in order to get any object conversions right
-    report_file = tmp_path / 'report.json'
-    with open(report_file, 'w') as fp:
-        jsonext.dump(report, fp)
+    report = _generate_runreport(runner.stats, *tm.timestamps())
+    report.save(tmp_path / 'report.json')
 
     # We explicitly set `time_total` to `None` in the last test case, in order
-    # to test the proper handling of `None`.`
+    # to test the proper handling of `None`.
     report['runs'][0]['testcases'][-1]['time_total'] = None
 
     # Validate the junit report
-    xml_report = runreport.junit_xml_report(report)
-    _validate_junit_report(xml_report)
+    _validate_junit_report(report.generate_xml_report())
 
-    # Read and validate the report using the runreport module
-    runreport.load_report(report_file)
+    # Read and validate the report using the `reporting` module
+    reporting.restore_session(tmp_path / 'report.json')
 
     # Try to load a non-existent report
     with pytest.raises(ReframeError, match='failed to load report file'):
-        runreport.load_report(tmp_path / 'does_not_exist.json')
+        reporting.restore_session(tmp_path / 'does_not_exist.json')
 
     # Generate an invalid JSON
     with open(tmp_path / 'invalid.json', 'w') as fp:
@@ -283,16 +281,14 @@ def test_runall(make_runner, make_cases, common_exec_ctx, tmp_path):
         fp.write('invalid')
 
     with pytest.raises(ReframeError, match=r'is not a valid JSON file'):
-        runreport.load_report(tmp_path / 'invalid.json')
+        reporting.restore_session(tmp_path / 'invalid.json')
 
     # Generate a report that does not comply to the schema
     del report['session_info']['data_version']
-    with open(tmp_path / 'invalid-version.json', 'w') as fp:
-        jsonext.dump(report, fp)
-
+    report.save(tmp_path / 'invalid-version.json')
     with pytest.raises(ReframeError,
                        match=r'failed to validate report'):
-        runreport.load_report(tmp_path / 'invalid-version.json')
+        reporting.restore_session(tmp_path / 'invalid-version.json')
 
 
 def test_runall_skip_system_check(make_runner, make_cases, common_exec_ctx):
@@ -386,11 +382,11 @@ def test_runall_skip_tests(make_runner, make_cases,
     runner.runall(cases)
 
     def assert_reported_skipped(num_skipped):
-        report = runner.stats.json()
-        assert report[0]['num_skipped'] == num_skipped
+        run_report = _generate_runreport(runner.stats)['runs']
+        assert run_report[0]['num_skipped'] == num_skipped
 
         num_reported = 0
-        for tc in report[0]['testcases']:
+        for tc in run_report[0]['testcases']:
             if tc['result'] == 'skip':
                 num_reported += 1
 
@@ -455,9 +451,6 @@ def test_retries_bad_check(make_runner, make_cases, common_exec_ctx):
     assert_runall(runner)
     assert runner.max_retries == rt.runtime().current_run
     assert 2 == len(runner.stats.failed())
-
-    # Ensure that the report does not raise any exception
-    runner.stats.retry_report()
 
 
 def test_retries_good_check(make_runner, make_cases, common_exec_ctx):
@@ -911,11 +904,9 @@ def report_file(make_runner, dep_cases, common_exec_ctx, tmp_path):
     with timer() as tm:
         runner.runall(dep_cases)
 
-    report = _generate_runreport(runner.stats.json(), *tm.timestamps())
     filename = tmp_path / 'report.json'
-    with open(filename, 'w') as fp:
-        jsonext.dump(report, fp)
-
+    report = _generate_runreport(runner.stats, *tm.timestamps())
+    report.save(filename)
     return filename
 
 
@@ -928,7 +919,7 @@ def test_restore_session(report_file, make_runner,
     )
 
     # Restore the required test cases
-    report = runreport.load_report(report_file)
+    report = reporting.restore_session(report_file)
     testgraph, restored_cases = report.restore_dangling(testgraph)
 
     assert {tc.check.name for tc in restored_cases} == {'T4', 'T5'}
@@ -938,29 +929,18 @@ def test_restore_session(report_file, make_runner,
     with timer() as tm:
         runner.runall(selected, restored_cases)
 
-    new_report = _generate_runreport(runner.stats.json(), *tm.timestamps())
+    new_report = _generate_runreport(runner.stats, *tm.timestamps())
     assert new_report['runs'][0]['num_cases'] == 1
     assert new_report['runs'][0]['testcases'][0]['name'] == 'T1'
 
     # Generate an empty report and load it as primary with the original report
     # as a fallback, in order to test if the dependencies are still resolved
     # correctly
-    empty_report = tmp_path / 'empty.json'
+    empty_report = _generate_runreport(None, *tm.timestamps())
+    empty_report_file = tmp_path / 'empty.json'
+    empty_report.save(empty_report_file)
 
-    with open(empty_report, 'w') as fp:
-        empty_run = [
-            {
-                'num_cases': 0,
-                'num_failures': 0,
-                'num_aborted': 0,
-                'num_skipped': 0,
-                'runid': 0,
-                'testcases': []
-            }
-        ]
-        jsonext.dump(_generate_runreport(empty_run, *tm.timestamps()), fp)
-
-    report2 = runreport.load_report(empty_report, report_file)
+    report2 = reporting.restore_session(empty_report_file, report_file)
     restored_cases = report2.restore_dangling(testgraph)[1]
     assert {tc.check.name for tc in restored_cases} == {'T4', 'T5'}
 

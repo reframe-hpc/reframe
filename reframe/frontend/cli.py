@@ -24,7 +24,8 @@ import reframe.frontend.autodetect as autodetect
 import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
-import reframe.frontend.runreport as runreport
+import reframe.frontend.reporting as reporting
+import reframe.frontend.reporting.analytics as analytics
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
@@ -932,18 +933,18 @@ def main():
         if options.restore_session:
             filenames = options.restore_session.split(',')
         else:
-            filenames = [runreport.next_report_filename(
-                osext.expandvars(site_config.get('general/0/report_file')),
-                new=False
-            )]
+            filenames = [
+                osext.expandvars(site_config.get('general/0/report_file'))
+            ]
 
         try:
-            report = runreport.load_report(*filenames)
+            restored_session = reporting.restore_session(*filenames)
         except errors.ReframeError as err:
             printer.error(f'failed to load restore session: {err}')
             sys.exit(1)
 
-        check_search_path = list(report.slice('filename', unique=True))
+        check_search_path = list(restored_session.slice('filename',
+                                                        unique=True))
         check_search_recursive = False
 
         # If `-c` or `-R` are passed explicitly outside the configuration
@@ -954,9 +955,7 @@ def main():
                 'search path set explicitly in the command-line or '
                 'the environment'
             )
-            check_search_path = site_config.get(
-                'general/0/check_search_path'
-            )
+            check_search_path = site_config.get('general/0/check_search_path')
 
         if site_config.is_sticky_option('general/check_search_recursive'):
             printer.warning(
@@ -998,20 +997,20 @@ def main():
         param = param + ':'
         printer.info(f"  {param.ljust(18)} {value}")
 
-    session_info = {
+    report = reporting.RunReport()
+    report.update_session_info({
         'cmdline': ' '.join(shlex.quote(arg) for arg in sys.argv),
         'config_files': rt.site_config.sources,
-        'data_version': runreport.DATA_VERSION,
-        'hostname': socket.gethostname(),
         'log_files': logging.log_files(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
         'version': osext.reframe_version(),
         'workdir': os.getcwd(),
-    }
+    })
 
     # Print command line
+    session_info = report['session_info']
     printer.info(f"[ReFrame Setup]")
     print_infoline('version', session_info['version'])
     print_infoline('command', repr(session_info['cmdline']))
@@ -1134,7 +1133,7 @@ def main():
                 sys.exit(1)
 
             def _case_failed(t):
-                rec = report.case(*t)
+                rec = restored_session.case(*t)
                 if not rec:
                     return False
 
@@ -1233,7 +1232,7 @@ def main():
             printer.debug('Pruned test DAG')
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
-                testgraph, restored_cases = report.restore_dangling(testgraph)
+                testgraph, restored_cases = restored_session.restore_dangling(testgraph)
 
         testcases = dependencies.toposort(
             testgraph,
@@ -1291,10 +1290,10 @@ def main():
             sys.exit(0)
 
         if options.performance_compare:
-            data, header = runreport.performance_compare_data(
+            data, header = reporting.performance_compare(
                 options.performance_compare
             )
-            print(tabulate(data, headers=header, tablefmt='mixed_grid'))
+            printer(tabulate(data, headers=header, tablefmt='mixed_grid'))
             sys.exit(0)
 
         if not options.run and not options.dry_run:
@@ -1436,34 +1435,39 @@ def main():
             )
             runner.runall(testcases, restored_cases)
         finally:
+            # Build final JSON report
             time_end = time.time()
-            session_info['time_end'] = time.strftime(
-                '%FT%T%z', time.localtime(time_end)
-            )
-            session_info['time_elapsed'] = time_end - time_start
+            report.update_session_info({
+                'time_end': time.strftime(r'%FT%T%z',
+                                          time.localtime(time_end)),
+                'time_elapsed': time_end - time_start
+            })
+            report.update_run_stats(runner.stats)
+            if options.restore_session is not None:
+                report.update_restored_cases(restored_cases, restored_session)
 
             # Print a retry report if we did any retries
             if options.max_retries and runner.stats.failed(run=0):
-                printer.info(runner.stats.retry_report())
+                printer.retry_report(report)
 
             # Print a failure report if we had failures in the last run
             success = True
             if runner.stats.failed():
                 success = False
-                runner.stats.print_failure_report(
-                    printer, not options.distribute,
-                    options.duration or options.reruns
+                printer.failure_report(
+                    report,
+                    rerun_info=not options.distribute,
+                    global_stats=options.duration or options.reruns
                 )
                 if options.failure_stats:
-                    runner.stats.print_failure_stats(
-                        printer, options.duration or options.reruns
+                    printer.failure_stats(
+                        report, global_stats=options.duration or options.reruns
                     )
 
             if options.performance_report and not options.dry_run:
                 try:
-                    data, header = runreport.performance_report_data(
-                        runner.stats.json(),
-                        options.performance_report
+                    data, header = reporting.performance_compare(
+                        options.performance_report, report
                     )
                 except errors.ReframeError as err:
                     printer.warning(
@@ -1483,49 +1487,28 @@ def main():
             if basedir:
                 os.makedirs(basedir, exist_ok=True)
 
-            # Build final JSON report
-            run_stats = runner.stats.json()
-            session_info.update({
-                'num_cases': run_stats[0]['num_cases'],
-                'num_failures': run_stats[-1]['num_failures'],
-                'num_aborted': run_stats[-1]['num_aborted'],
-                'num_skipped': run_stats[-1]['num_skipped']
-            })
-            json_report = {
-                'session_info': session_info,
-                'runs': run_stats,
-                'restored_cases': []
-            }
-            if options.restore_session is not None:
-                for c in restored_cases:
-                    json_report['restored_cases'].append(report.case(*c))
-
             # Save the report file
-            report_file = runreport.next_report_filename(report_file)
             try:
-                runreport.save_report(
-                    json_report, report_file,
-                    rt.get_option('general/0/compress_report')
+                default_loc = os.path.dirname(
+                    osext.expandvars(rt.get_default('general/report_file'))
                 )
+                report.save(
+                    report_file,
+                    compress=rt.get_option('general/0/compress_report'),
+                    link_to_last=(default_loc == os.path.dirname(report_file))
+            )
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
                 )
-            else:
-                default_loc = os.path.dirname(
-                    osext.expandvars(rt.get_default('general/report_file'))
+            except errors.ReframeError as e:
+                printer.warning(
+                    f'failed to create symlink to latest report: {e}'
                 )
-                if default_loc == os.path.dirname(report_file):
-                    try:
-                        runreport.link_latest_report(report_file, 'latest.json')
-                    except Exception as e:
-                        printer.warning(
-                            f'failed to create symlink to latest report: {e}'
-                        )
 
-            # Index the generated report
+            # Store the generated report for analytics
             try:
-                runreport.store_results(json_report, report_file)
+                analytics.store_report(report, report.filename)
             except Exception as e:
                 printer.warning(f'failed to store results in the database: {e}')
                 raise
@@ -1535,10 +1518,8 @@ def main():
             if junit_report_file:
                 # Expand variables in filename
                 junit_report_file = osext.expandvars(junit_report_file)
-                junit_xml = runreport.junit_xml_report(json_report)
                 try:
-                    with open(junit_report_file, 'w') as fp:
-                        runreport.junit_dump(junit_xml, fp)
+                    report.save_junit(junit_report_file)
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {junit_report_file!r}: '
