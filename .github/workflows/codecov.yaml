@@ -1,0 +1,21 @@
+name: Code coverage
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Test python API
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'
+    - name: Bootstrap reframe
+      run: ./bootstrap.sh
+    - name: Run tests and collect coverage
+      run: ./test_reframe.py --cov=reframe --cov-report=xml
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4.2.0
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
