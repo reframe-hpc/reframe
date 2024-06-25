@@ -99,10 +99,13 @@ trap _destroy_venv EXIT
 py_pkg_prefix=external/$(uname -m)
 
 # Install a fresh pip in the current environment
-if $python -c 'import sys; sys.exit(sys.version_info[:2] == (3, 6))'; then
-    get_pip_url="https://bootstrap.pypa.io/get-pip.py"
-else
+pyver=$(python3 -c 'import sys; print(".".join(str(s) for s in sys.version_info[:2]))')
+if [ "$pyver" == "3.6" ]; then
     get_pip_url="https://bootstrap.pypa.io/pip/3.6/get-pip.py"
+elif [ "$pyver" == "3.7" ]; then
+    get_pip_url="https://bootstrap.pypa.io/pip/3.7/get-pip.py"
+else
+    get_pip_url="https://bootstrap.pypa.io/get-pip.py"
 fi
 
 if ! type "curl" > /dev/null 2>&1; then
