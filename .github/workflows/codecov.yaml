@@ -1,11 +1,11 @@
-name: Code coverage
+name: ReFrame CI
 
 on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Test python API
+    name: Code coverage
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v2
