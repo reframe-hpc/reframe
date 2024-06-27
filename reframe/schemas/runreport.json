@@ -84,7 +84,7 @@
                 "prefix": {"type": "string"},
                 "result": {
                     "type": "string",
-                    "enum": ["success", "failure", "aborted"]
+                    "enum": ["success", "failure", "aborted", "skipped"]
                 },
                 "scheduler": {"type": ["string", "null"]},
                 "stagedir": {"type": ["string", "null"]},
