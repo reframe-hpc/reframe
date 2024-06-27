@@ -18,15 +18,8 @@ jobs:
       run: |
         ./bootstrap.sh
     - name: Generic Unittests
-      if: matrix.python-version != '3.8'
       run: |
         ./test_reframe.py
-    - name: Generic Unittests and Coverage Report
-      if:  matrix.python-version == '3.8'
-      run: |
-        python -m pip install coverage
-        coverage run --source=reframe ./test_reframe.py
-        coverage report -m
 
   unittest-py36:
     runs-on: ubuntu-20.04
