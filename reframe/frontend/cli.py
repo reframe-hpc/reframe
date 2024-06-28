@@ -233,6 +233,9 @@ def main():
     testgen_options = argparser.add_argument_group(
         'Options for generating tests dynamically'
     )
+    reporting_options = argparser.add_argument_group(
+        'Options related to results reporting'
+    )
     misc_options = argparser.add_argument_group('Miscellaneous options')
 
     # Output directory options
@@ -535,6 +538,17 @@ def main():
         help='Repeat selected tests N times'
     )
 
+    # Reporting options
+    reporting_options.add_argument(
+        '--performance-compare', metavar='CMPSPEC', action='store',
+        help='Compare past performance results'
+    )
+    reporting_options.add_argument(
+        '--performance-report', action='store', nargs='?',
+        const='19700101T0000Z:now/last:+job_nodelist/+result',
+        help='Print a report for performance tests'
+    )
+
     # Miscellaneous options
     misc_options.add_argument(
         '-C', '--config-file', action='append', metavar='FILE',
@@ -555,15 +569,6 @@ def main():
         '--nocolor', action='store_false', dest='colorize',
         help='Disable coloring of output',
         envvar='RFM_COLORIZE', configvar='general/colorize'
-    )
-    misc_options.add_argument(
-        '--performance-compare', metavar='CMPSPEC', action='store',
-        help='Compare past performance results'
-    )
-    misc_options.add_argument(
-        '--performance-report', action='store', nargs='?',
-        const='19700101T0000Z:now/last:+job_nodelist/+result',
-        help='Print a report for performance tests'
     )
     misc_options.add_argument(
         '--show-config', action='store', nargs='?', const='all',
@@ -1430,18 +1435,11 @@ def main():
                         options.maxfail, options.reruns, options.duration)
         try:
             time_start = time.time()
-            session_info['time_start'] = time.strftime(
-                '%FT%T%z', time.localtime(time_start),
-            )
             runner.runall(testcases, restored_cases)
         finally:
             # Build final JSON report
             time_end = time.time()
-            report.update_session_info({
-                'time_end': time.strftime(r'%FT%T%z',
-                                          time.localtime(time_end)),
-                'time_elapsed': time_end - time_start
-            })
+            report.update_timestamps(time_start, time_end)
             report.update_run_stats(runner.stats)
             if options.restore_session is not None:
                 report.update_restored_cases(restored_cases, restored_session)
@@ -1508,10 +1506,12 @@ def main():
 
             # Store the generated report for analytics
             try:
-                analytics.store_report(report, report.filename)
+                sess_uuid = analytics.store_report(report, report.filename)
             except Exception as e:
                 printer.warning(f'failed to store results in the database: {e}')
                 raise
+            else:
+                printer.info(f'Current session stored with UUID: {sess_uuid}')
 
             # Generate the junit xml report for this session
             junit_report_file = rt.get_option('general/0/report_junit')

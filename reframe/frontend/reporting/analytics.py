@@ -13,6 +13,7 @@ import types
 from collections import namedtuple
 from collections.abc import Hashable
 from datetime import datetime, timedelta
+from numbers import Number
 
 import reframe.core.runtime as runtime
 import reframe.utility.jsonext as jsonext
@@ -43,6 +44,9 @@ def _db_create(filename):
         conn.execute(
 '''CREATE TABLE IF NOT EXISTS sessions(
         id INTEGER PRIMARY KEY,
+        session_uuid TEXT,
+        session_start_unix REAL,
+        session_end_unix REAL,
         json_blob TEXT,
         report_file TEXT
 )'''
@@ -63,12 +67,22 @@ def _db_create(filename):
 
 
 def _db_store_report(conn, report, report_file_path):
+    session_start_unix = report['session_info']['time_start_unix']
+    session_end_unix = report['session_info']['time_end_unix']
+    session_uuid = datetime.fromtimestamp(session_start_unix).strftime(
+        r'%Y%m%dT%H%M%S%z'
+    )
     for run_idx, run in enumerate(report['runs']):
         for test_idx, testcase in enumerate(run['testcases']):
             sys, part = testcase['system'], testcase['partition']
             cursor = conn.execute(
-'''INSERT INTO sessions VALUES(:session_id, :json_blob, :report_file)''',
+'''INSERT INTO sessions VALUES(:session_id, :session_uuid,
+                               :session_start_unix, :session_end_unix,
+                               :json_blob, :report_file)''',
                          {'session_id': None,
+                          'session_uuid': session_uuid,
+                          'session_start_unix': session_start_unix,
+                          'session_end_unix': session_end_unix,
                           'json_blob': jsonext.dumps(report),
                           'report_file': report_file_path})
             conn.execute(
@@ -89,10 +103,12 @@ def _db_store_report(conn, report, report_file_path):
                 }
             )
 
+    return session_uuid
+
 
 def store_report(report, report_file):
     with sqlite3.connect(_db_file()) as conn:
-        _db_store_report(conn, report, report_file)
+        return _db_store_report(conn, report, report_file)
 
 
 def _fetch_testcases_raw(condition):
@@ -113,10 +129,22 @@ def _fetch_testcases_raw(condition):
     return testcases
 
 
+def _fetch_session_time_period(condition):
+    with sqlite3.connect(_db_file()) as conn:
+        query = (f'SELECT session_start_unix, session_end_unix FROM sessions '
+                 f'WHERE {condition} LIMIT 1')
+        getlogger().debug(query)
+        results = conn.execute(query).fetchall()
+        if results:
+            return results[0]
+
+        return None, None
+
+
 def fetch_testcases_time_period(ts_start, ts_end):
     return _fetch_testcases_raw(
         f'(job_completion_time_unix >= {ts_start} AND '
-        f'job_completion_time_unix < {ts_end}) '
+        f'job_completion_time_unix <= {ts_end}) '
         'ORDER BY job_completion_time_unix'
     )
 
@@ -203,6 +231,7 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
 
     return (data, ['name', 'pvar', 'pval', 'punit', 'pdiff'] + extra_group_by + extra_cols)
 
+
 class _Aggregator:
     @classmethod
     def create(cls, name):
@@ -271,6 +300,9 @@ class _JoinUniqueValues(_Aggregator):
 
 
 def _parse_timestamp(s):
+    if isinstance(s, Number):
+        return s
+
     now = datetime.now()
     def _do_parse(s):
         if s == 'now':
@@ -309,10 +341,23 @@ def _parse_timestamp(s):
     return ts.timestamp()
 
 def _parse_time_period(s):
-    try:
-        ts_start, ts_end = s.split(':')
-    except ValueError:
-        raise ValueError(f'invalid time period spec: {s}') from None
+    if s.startswith('^'):
+        # Retrieve the period of a full session
+        try:
+            session_uuid = s[1:]
+        except IndexError:
+            raise ValueError(f'invalid session uuid: {s}') from None
+        else:
+            ts_start, ts_end = _fetch_session_time_period(
+                f'session_uuid == "{session_uuid}"'
+            )
+            if not ts_start or not ts_end:
+                raise ValueError(f'no such session: {session_uuid}')
+    else:
+        try:
+            ts_start, ts_end = s.split(':')
+        except ValueError:
+            raise ValueError(f'invalid time period spec: {s}') from None
 
     return _parse_timestamp(ts_start), _parse_timestamp(ts_end)
 
@@ -354,33 +399,3 @@ def parse_cmp_spec(spec):
     extra_cols = _parse_extra_cols(cols)
     return _Match(period_base, period_target,
                   aggr_fn, extra_groups, extra_cols)
-
-
-def performance_report_data(run_stats, report_spec):
-    period, aggr, cols = report_spec.split('/')
-    ts_start, ts_end = [_parse_timestamp(ts) for ts in period.split(':')]
-    op, extra_groups = aggr.split(':')
-    aggr_fn = _Aggregator.create(op)
-    extra_groups = extra_groups.split('+')[1:]
-    extra_cols = cols.split('+')[1:]
-    testcases = run_stats[0]['testcases']
-    target_testcases = fetch_testcases_time_period(ts_start, ts_end)
-    return compare_testcase_data(testcases, target_testcases,
-                                 _Aggregator.create('first'),
-                                 aggr_fn, extra_groups, extra_cols)
-
-
-def performance_compare_data(spec):
-    period_base, period_target, aggr, cols = spec.split('/')
-    base_testcases = fetch_testcases_time_period(
-        *(_parse_timestamp(ts) for ts in period_base.split(':'))
-    )
-    target_testcases = fetch_testcases_time_period(
-        *(_parse_timestamp(ts) for ts in period_target.split(':'))
-    )
-    op, extra_groups = aggr.split(':')
-    aggr_fn = _Aggregator.create(op)
-    extra_groups = extra_groups.split('+')[1:]
-    extra_cols = cols.split('+')[1:]
-    return compare_testcase_data(base_testcases, target_testcases, aggr_fn,
-                                 aggr_fn, extra_groups, extra_cols)

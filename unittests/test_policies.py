@@ -229,14 +229,7 @@ def _generate_runreport(run_stats, time_start=None, time_end=None):
         'workdir': os.getcwd()
     })
     if time_start and time_end:
-        time_elapsed = time_end - time_start
-        time_start = time.strftime(r'%FT%T%z', time.localtime(time_start))
-        time_end = time.strftime(r'%FT%T%z', time.localtime(time_end))
-        report.update_session_info({
-            'time_elapsed': time_elapsed,
-            'time_end': time_end,
-            'time_start': time_start
-        })
+        report.update_timestamps(time_start, time_end)
 
     if run_stats:
         report.update_run_stats(run_stats)

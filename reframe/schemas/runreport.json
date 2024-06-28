@@ -89,7 +89,9 @@
                 "prefix_stage": {"type": "string"},
                 "time_elapsed": {"type": "number"},
                 "time_end": {"type": "string"},
+                "time_end_unix": {"type": "number"},
                 "time_start": {"type": "string"},
+                "time_start_unix": {"type": "number"},
                 "user": {"type": "string"},
                 "version": {"type": "string"},
                 "workdir": {"type": "string"}

@@ -13,7 +13,6 @@ import os
 import re
 import socket
 import time
-from datetime import datetime
 
 import reframe as rfm
 import reframe.utility.jsonext as jsonext
@@ -208,19 +207,17 @@ class RunReport:
     '''
     def __init__(self):
         # Initialize the report with the required fields
-        now = datetime.now().strftime(r'%FT%T%z')
+        self.__filename = None
         self.__report = {
             'session_info': {
                 'data_version': DATA_VERSION,
-                'hostname': socket.gethostname(),
-                'time_start': now,
-                'time_end': now,
-                'time_elapsed': 0.0
+                'hostname': socket.gethostname()
             },
             'runs': [],
             'restored_cases': []
         }
-        self.__filename = None
+        now = time.time()
+        self.update_timestamps(now, now)
 
     @property
     def filename(self):
@@ -236,11 +233,25 @@ class RunReport:
         return self.__report
 
     def update_session_info(self, session_info):
-        self.__report['session_info'].update(session_info)
+        # Remove timestamps
+        for key, val in session_info.items():
+            if not key.startswith('time_'):
+                self.__report['session_info'][key] = val
 
     def update_restored_cases(self, restored_cases, restored_session):
         self.__report['restored_cases'] = [restored_session.case(*c)
                                            for c in restored_cases]
+
+    def update_timestamps(self, ts_start, ts_end):
+        fmt = r'%FT%T%z'
+        self.__report['session_info'].update({
+            'time_start': time.strftime(fmt, time.localtime(ts_start)),
+            'time_start_unix': ts_start,
+            'time_end': time.strftime(fmt, time.localtime(ts_end)),
+            'time_end_unix': ts_end,
+            'time_elapsed': ts_end - ts_start
+        })
+        print(self.__report['session_info'])
 
     def update_run_stats(self, stats):
         for runid, tasks in stats.runs():
