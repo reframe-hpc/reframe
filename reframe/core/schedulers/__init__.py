@@ -555,7 +555,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
                 strict_flex=False, **gen_opts):
         environs = environs or []
         if self.num_tasks is not None and self.num_tasks <= 0:
-            getlogger().debug(f'[F] Flexible node allocation requested')
+            getlogger().debug('[F] Flexible node allocation requested')
             num_tasks_per_node = self.num_tasks_per_node or 1
             min_num_tasks = (-self.num_tasks if self.num_tasks else
                              num_tasks_per_node)
@@ -636,7 +636,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         return done
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.jobid == other.jobid
+        return type(self) is type(other) and self.jobid == other.jobid
 
     def __hash__(self):
         return hash(self.jobid)

@@ -1322,7 +1322,8 @@ def test_perf_logging_lazy(make_runner, make_exec_ctx, lazy_perf_test,
     testcases = executors.generate_testcases([lazy_perf_test])
     _assert_no_logging_error(runner.runall, testcases)
 
-    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_LazyPerfTest.log'
+    logfile = (tmp_path / 'perflogs' / 'generic' / 'default' /
+               '_LazyPerfTest.log')
     assert os.path.exists(logfile)
 
 

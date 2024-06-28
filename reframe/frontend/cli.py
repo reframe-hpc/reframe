@@ -9,7 +9,6 @@ import json
 import os
 import random
 import shlex
-import socket
 import sys
 import time
 import traceback
@@ -90,7 +89,8 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
             else:
                 fmt_fixt_vars = ''
 
-            name_info = f'{u.check.display_name}{fmt_fixt_vars} /{u.check.hashcode}'
+            name_info = (f'{u.check.display_name}{fmt_fixt_vars} '
+                         f'/{u.check.hashcode}')
             tc_info = ''
             details = ''
             if concretized:
@@ -98,7 +98,8 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
             location = inspect.getfile(type(u.check))
             if detailed:
-                details = f' [variant: {u.check.variant_num}, file: {location!r}]'
+                details = (f' [variant: {u.check.variant_num}, '
+                           f'file: {location!r}]')
 
             lines.append(f'{prefix}^{name_info}{tc_info}{details}')
 
@@ -1016,12 +1017,12 @@ def main():
 
     # Print command line
     session_info = report['session_info']
-    printer.info(f"[ReFrame Setup]")
+    printer.info('[ReFrame Setup]')
     print_infoline('version', session_info['version'])
     print_infoline('command', repr(session_info['cmdline']))
     print_infoline(
-        f"launched by",
-        f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
+        'launched by',
+        f'{session_info["user"] or "<unknown>"}@{session_info["hostname"]}'
     )
     print_infoline('working directory', repr(session_info['workdir']))
     print_infoline(
@@ -1237,7 +1238,9 @@ def main():
             printer.debug('Pruned test DAG')
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
-                testgraph, restored_cases = restored_session.restore_dangling(testgraph)
+                testgraph, restored_cases = restored_session.restore_dangling(
+                    testgraph
+                )
 
         testcases = dependencies.toposort(
             testgraph,
@@ -1320,7 +1323,7 @@ def main():
 
         # Load the environment for the current system
         try:
-            printer.debug(f'Loading environment for current system')
+            printer.debug('Loading environment for current system')
             runtime.loadenv(rt.system.preload_environ)
         except errors.EnvironError as e:
             printer.error("failed to load current system's environment; "
@@ -1332,14 +1335,14 @@ def main():
             try:
                 rt.modules_system.searchpath_add(*paths)
             except errors.EnvironError as e:
-                printer.warning(f'could not add module paths correctly')
+                printer.warning('could not add module paths correctly')
                 printer.debug(str(e))
 
         def module_unuse(*paths):
             try:
                 rt.modules_system.searchpath_remove(*paths)
             except errors.EnvironError as e:
-                printer.warning(f'could not remove module paths correctly')
+                printer.warning('could not remove module paths correctly')
                 printer.debug(str(e))
 
         printer.debug('(Un)using module paths from command line')
@@ -1417,18 +1420,19 @@ def main():
         exec_policy.sched_options = parsed_job_options
         if options.maxfail < 0:
             raise errors.CommandLineError(
-                f'--maxfail should be a non-negative integer: '
+                '--maxfail should be a non-negative integer: '
                 f'{options.maxfail}'
             )
 
         if options.reruns and options.duration:
             raise errors.CommandLineError(
-                f"'--reruns' option cannot be combined with '--duration'"
+                "'--reruns' option cannot be combined with '--duration'"
             )
 
         if options.reruns < 0:
             raise errors.CommandLineError(
-                f"'--reruns' should be a non-negative integer: {options.reruns}"
+                "'--reruns' should be a non-negative integer: "
+                f"{options.reruns}"
             )
 
         runner = Runner(exec_policy, printer, options.max_retries,
@@ -1494,7 +1498,7 @@ def main():
                     report_file,
                     compress=rt.get_option('general/0/compress_report'),
                     link_to_last=(default_loc == os.path.dirname(report_file))
-            )
+                )
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
@@ -1508,8 +1512,9 @@ def main():
             try:
                 sess_uuid = analytics.store_report(report, report.filename)
             except Exception as e:
-                printer.warning(f'failed to store results in the database: {e}')
-                raise
+                printer.warning(
+                    f'failed to store results in the database: {e}'
+                )
             else:
                 printer.info(f'Current session stored with UUID: {sess_uuid}')
 
@@ -1551,9 +1556,8 @@ def main():
     finally:
         try:
             logging.getprofiler().exit_region()     # region: 'test processing'
-            log_files = logging.log_files()
             if site_config.get('general/0/save_log_files'):
-                log_files = logging.save_log_files(rt.output_prefix)
+                logging.save_log_files(rt.output_prefix)
         except OSError as e:
             printer.error(f'could not save log file: {e}')
             sys.exit(1)

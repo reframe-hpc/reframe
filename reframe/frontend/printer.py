@@ -121,25 +121,25 @@ class PrettyPrinter:
         def _print_failure_info(rec, runid, total_runs):
             self.info(line_width * '-')
             self.info(f"FAILURE INFO for {rec['name']} "
-                         f"(run: {runid}/{total_runs})")
+                      f"(run: {runid}/{total_runs})")
             self.info(f"  * Description: {rec['descr']}")
             self.info(f"  * System partition: {rec['system']}")
             self.info(f"  * Environment: {rec['environ']}")
             self.info(f"  * Stage directory: {rec['stagedir']}")
             self.info(f"  * Node list: "
-                         f"{nodelist_abbrev(rec['job_nodelist'])}")
+                      f"{nodelist_abbrev(rec['job_nodelist'])}")
             job_type = 'local' if rec['scheduler'] == 'local' else 'batch job'
             self.info(f"  * Job type: {job_type} (id={rec['jobid']})")
             self.info(f"  * Dependencies (conceptual): "
-                         f"{rec['dependencies_conceptual']}")
+                      f"{rec['dependencies_conceptual']}")
             self.info(f"  * Dependencies (actual): "
-                         f"{rec['dependencies_actual']}")
+                      f"{rec['dependencies_actual']}")
             self.info(f"  * Maintainers: {rec['maintainers']}")
             self.info(f"  * Failing phase: {rec['fail_phase']}")
             if rerun_info and not rec['fixture']:
                 self.info(f"  * Rerun with '-n /{rec['hashcode']}"
-                             f" -p {rec['environ']} --system "
-                             f"{rec['system']} -r'")
+                          f" -p {rec['environ']} --system "
+                          f"{rec['system']} -r'")
 
             msg = rec['fail_reason']
             if isinstance(rec['fail_info']['exc_value'], SanityError):
