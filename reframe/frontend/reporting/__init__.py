@@ -251,7 +251,6 @@ class RunReport:
             'time_end_unix': ts_end,
             'time_elapsed': ts_end - ts_start
         })
-        print(self.__report['session_info'])
 
     def update_run_stats(self, stats):
         for runid, tasks in stats.runs():
@@ -427,11 +426,13 @@ class RunReport:
                     }
                 )
                 if tc['result'] == 'fail':
+                    fail_phase = tc['fail_phase']
+                    fail_reason = tc['fail_reason']
                     testcase_msg = etree.SubElement(
                         testcase, 'failure', attrib={'type': 'failure',
-                                                    'message': tc['fail_phase']}
+                                                     'message': fail_phase}
                     )
-                    testcase_msg.text = f"{tc['fail_phase']}: {tc['fail_reason']}"
+                    testcase_msg.text = f"{tc['fail_phase']}: {fail_reason}"
 
             testsuite_stdout = etree.SubElement(xml_testsuite, 'system-out')
             testsuite_stdout.text = ''
@@ -447,6 +448,7 @@ class RunReport:
                 etree.tostring(xml, encoding='utf8', pretty_print=True,
                                method='xml', xml_declaration=True).decode()
             )
+
 
 def performance_compare(cmp, report=None):
     match = parse_cmp_spec(cmp)
