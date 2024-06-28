@@ -433,7 +433,7 @@ def _create_file_handler(site_config, config_prefix):
 
 def _create_filelog_handler(site_config, config_prefix):
     basedir = os.path.abspath(os.path.join(
-        site_config.get(f'systems/0/prefix'),
+        site_config.get('systems/0/prefix'),
         osext.expandvars(site_config.get(f'{config_prefix}/basedir'))
     ))
     prefix  = osext.expandvars(site_config.get(f'{config_prefix}/prefix'))
@@ -581,7 +581,7 @@ def _create_httpjson_handler(site_config, config_prefix):
 
 def _record_to_json(record, extras, ignore_keys):
     def _can_send(key):
-        return not key.startswith('_') and not key in ignore_keys
+        return not key.startswith('_') and key not in ignore_keys
 
     def _sanitize(s):
         return re.sub(r'\W', '_', s)

@@ -168,7 +168,9 @@ def test_check_restore_session_failed(run_reframe, tmp_path):
         checkpath=[],
         more_options=['--restore-session', '--failed']
     )
-    report = reporting.restore_session(f'{tmp_path}/.reframe/reports/latest.json')
+    report = reporting.restore_session(
+        f'{tmp_path}/.reframe/reports/latest.json'
+    )
     assert set(report.slice('name', when=('fail_phase', 'sanity'))) == {'T2'}
     assert set(report.slice('name',
                             when=('fail_phase', 'startup'))) == {'T7', 'T9'}
@@ -188,7 +190,9 @@ def test_check_restore_session_succeeded_test(run_reframe, tmp_path):
         checkpath=[],
         more_options=['--restore-session', '-n', 'T1']
     )
-    report = reporting.restore_session(f'{tmp_path}/.reframe/reports/latest.json')
+    report = reporting.restore_session(
+        f'{tmp_path}/.reframe/reports/latest.json'
+    )
     assert report['runs'][-1]['num_cases'] == 1
     assert report['runs'][-1]['testcases'][0]['name'] == 'T1'
 
@@ -201,7 +205,7 @@ def test_check_restore_session_check_search_path(run_reframe, tmp_path):
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py']
     )
     returncode, stdout, _ = run_reframe(
-        checkpath=[f'foo/'],
+        checkpath=['foo/'],
         more_options=['--restore-session', '-n', 'T1', '-R'],
         action='list'
     )

@@ -163,12 +163,10 @@ def generate_testcases(checks, prepare=False):
     '''Generate concrete test cases from checks.
 
     If `prepare` is true then each of the cases will also be prepared for
-    being sent to the test pipeline. Note that setting this to true may slow down
-    the test case generation.
-
+    being sent to the test pipeline. Note that setting this to true may slow
+    down the test case generation.
     '''
 
-    rt = runtime.runtime()
     cases = []
     for c in checks:
         valid_comb = runtime.valid_sysenv_comb(c.valid_systems,
@@ -410,7 +408,6 @@ class RegressionTask:
             with temp_dry_run(self.check):
                 return fn(*args, **kwargs)
 
-
     @logging.time_function
     def setup(self, *args, **kwargs):
         self.testcase.prepare()
@@ -647,9 +644,6 @@ class Runner:
             runid = None if self._global_stats else -1
             num_aborted = len(self._stats.aborted(runid))
             num_failures = len(self._stats.failed(runid))
-            num_completed = len(self._stats.completed(runid))
-            num_skipped = len(self._stats.skipped(runid))
-            num_tasks = self._stats.num_cases(runid)
             if num_failures > 0:
                 status = 'FAILED'
             elif num_aborted > 0:

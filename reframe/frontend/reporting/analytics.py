@@ -41,29 +41,24 @@ def _db_file():
 
 def _db_create(filename):
     with sqlite3.connect(filename) as conn:
-        conn.execute(
-'''CREATE TABLE IF NOT EXISTS sessions(
-        id INTEGER PRIMARY KEY,
-        session_uuid TEXT,
-        session_start_unix REAL,
-        session_end_unix REAL,
-        json_blob TEXT,
-        report_file TEXT
-)'''
-        )
-        conn.execute(
-'''CREATE TABLE IF NOT EXISTS testcases(
-        name TEXT,
-        system TEXT,
-        partition TEXT,
-        environ TEXT,
-        job_completion_time_unix REAL,
-        session_id INTEGER,
-        run_index INTEGER,
-        test_index INTEGER,
-        FOREIGN KEY(session_id) REFERENCES sessions(session_id)
-)'''
-        )
+        conn.execute('CREATE TABLE IF NOT EXISTS sessions('
+                     'id INTEGER PRIMARY KEY, '
+                     'session_uuid TEXT, '
+                     'session_start_unix REAL, '
+                     'session_end_unix REAL, '
+                     'json_blob TEXT, '
+                     'report_file TEXT)')
+        conn.execute('CREATE TABLE IF NOT EXISTS testcases('
+                     'name TEXT,'
+                     'system TEXT,'
+                     'partition TEXT,'
+                     'environ TEXT,'
+                     'job_completion_time_unix REAL,'
+                     'session_id INTEGER,'
+                     'run_index INTEGER,'
+                     'test_index INTEGER,'
+                     'FOREIGN KEY(session_id) '
+                     'REFERENCES sessions(session_id))')
 
 
 def _db_store_report(conn, report, report_file_path):
@@ -76,19 +71,24 @@ def _db_store_report(conn, report, report_file_path):
         for test_idx, testcase in enumerate(run['testcases']):
             sys, part = testcase['system'], testcase['partition']
             cursor = conn.execute(
-'''INSERT INTO sessions VALUES(:session_id, :session_uuid,
-                               :session_start_unix, :session_end_unix,
-                               :json_blob, :report_file)''',
-                         {'session_id': None,
-                          'session_uuid': session_uuid,
-                          'session_start_unix': session_start_unix,
-                          'session_end_unix': session_end_unix,
-                          'json_blob': jsonext.dumps(report),
-                          'report_file': report_file_path})
+                'INSERT INTO sessions VALUES('
+                ':session_id, :session_uuid, '
+                ':session_start_unix, :session_end_unix, '
+                ':json_blob, :report_file)',
+                {
+                    'session_id': None,
+                    'session_uuid': session_uuid,
+                    'session_start_unix': session_start_unix,
+                    'session_end_unix': session_end_unix,
+                    'json_blob': jsonext.dumps(report),
+                    'report_file': report_file_path
+                }
+            )
             conn.execute(
-'''INSERT INTO testcases VALUES(:name, :system, :partition, :environ,
-                                :job_completion_time_unix,
-                                :session_id, :run_index, :test_index)''',
+                'INSERT INTO testcases VALUES('
+                ':name, :system, :partition, :environ, '
+                ':job_completion_time_unix, '
+                ':session_id, :run_index, :test_index)',
                 {
                     'name': testcase['name'],
                     'system': sys,
@@ -186,6 +186,7 @@ def _group_testcases(testcases, group_by, extra_cols):
 
     return grouped
 
+
 def _aggregate_perf(grouped_testcases, aggr_fn, cols):
     other_aggr = _JoinUniqueValues('|')
     aggr_data = {}
@@ -199,6 +200,7 @@ def _aggregate_perf(grouped_testcases, aggr_fn, cols):
             )
 
     return aggr_data
+
 
 def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
                           extra_group_by=None, extra_cols=None):
@@ -229,7 +231,8 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
         line += [aggr_data[c] for c in extra_cols]
         data.append(line)
 
-    return (data, ['name', 'pvar', 'pval', 'punit', 'pdiff'] + extra_group_by + extra_cols)
+    return (data, (['name', 'pvar', 'pval', 'punit', 'pdiff'] +
+                   extra_group_by + extra_cols))
 
 
 class _Aggregator:
@@ -254,11 +257,13 @@ class _Aggregator:
     def __call__(self, iterable):
         pass
 
+
 class _First(_Aggregator):
     def __call__(self, iterable):
         for i, elem in enumerate(iterable):
             if i == 0:
                 return elem
+
 
 class _Last(_Aggregator):
     def __call__(self, iterable):
@@ -290,6 +295,7 @@ class _Max(_Aggregator):
     def __call__(self, iterable):
         return max(iterable)
 
+
 class _JoinUniqueValues(_Aggregator):
     def __init__(self, delim):
         self.__delim = delim
@@ -304,6 +310,7 @@ def _parse_timestamp(s):
         return s
 
     now = datetime.now()
+
     def _do_parse(s):
         if s == 'now':
             return now
@@ -340,6 +347,7 @@ def _parse_timestamp(s):
 
     return ts.timestamp()
 
+
 def _parse_time_period(s):
     if s.startswith('^'):
         # Retrieve the period of a full session
@@ -361,6 +369,7 @@ def _parse_time_period(s):
 
     return _parse_timestamp(ts_start), _parse_timestamp(ts_end)
 
+
 def _parse_extra_cols(s):
     try:
         extra_cols = s.split('+')[1:]
@@ -381,6 +390,7 @@ def _parse_aggregation(s):
 
 _Match = namedtuple('_Match', ['period_base', 'period_target',
                                'aggregator', 'extra_groups', 'extra_cols'])
+
 
 def parse_cmp_spec(spec):
     parts = spec.split('/')
