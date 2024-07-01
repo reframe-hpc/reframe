@@ -12,7 +12,6 @@ import shlex
 import sys
 import time
 import traceback
-from tabulate import tabulate
 
 import reframe.core.config as config
 import reframe.core.exceptions as errors
@@ -1297,10 +1296,9 @@ def main():
             sys.exit(0)
 
         if options.performance_compare:
-            data, header = reporting.performance_compare(
-                options.performance_compare
+            printer.table(
+                *reporting.performance_compare(options.performance_compare)
             )
-            printer(tabulate(data, headers=header, tablefmt='mixed_grid'))
             sys.exit(0)
 
         if not options.run and not options.dry_run:
@@ -1475,9 +1473,8 @@ def main():
                         f'failed to generate performance report: {err}'
                     )
                 else:
-                    print(
-                        tabulate(data, headers=header, tablefmt='mixed_grid')
-                    )
+                    printer.table(data, header)
+
                 # printer.info(runner.stats.performance_report())
 
             # Generate the report for this session
