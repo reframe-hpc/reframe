@@ -7,6 +7,8 @@ import os
 import shutil
 import time
 import traceback
+from tabulate import tabulate
+
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility.color as color
@@ -245,3 +247,8 @@ class PrettyPrinter:
             lines.append(msg)
 
         self.info('\n'.join(lines))
+
+    def table(self, data, header):
+        '''Print a table'''
+
+        self.info(tabulate(data, headers=header, tablefmt='mixed_grid'))
