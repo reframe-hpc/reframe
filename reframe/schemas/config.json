@@ -568,7 +568,7 @@
         "general/module_mappings": [],
         "general/non_default_craype": false,
         "general/perf_info_level": "info",
-        "general/perf_report_spec": "19700101T0000Z:now/last:+job_nodelist/+result",
+        "general/perf_report_spec": "19700101T0000+0000:now/last:+job_nodelist/+result",
         "general/purge_environment": false,
         "general/remote_detect": false,
         "general/remote_workdir": ".",
