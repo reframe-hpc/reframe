@@ -544,7 +544,11 @@ def main():
     )
     reporting_options.add_argument(
         '--performance-report', action='store', nargs='?',
-        const='19700101T0000Z:now/last:+job_nodelist/+result',
+        # a non-empty (unused) token to ensure that option will be set
+        # even if no argument is passed
+        const='<token>',
+        configvar='general/0/perf_report_spec',
+        envvar='RFM_PERF_REPORT_SPEC',
         help='Print a report for performance tests'
     )
 
@@ -1466,7 +1470,7 @@ def main():
             if options.performance_report and not options.dry_run:
                 try:
                     data, header = reporting.performance_compare(
-                        options.performance_report, report
+                        rt.get_option('general/0/perf_report_spec'), report
                     )
                 except errors.ReframeError as err:
                     printer.warning(
