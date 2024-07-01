@@ -24,7 +24,6 @@ import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
 import reframe.frontend.reporting as reporting
-import reframe.frontend.reporting.analytics as analytics
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
@@ -1510,7 +1509,7 @@ def main():
 
             # Store the generated report for analytics
             try:
-                sess_uuid = analytics.store_report(report, report.filename)
+                sess_uuid = report.store()
             except Exception as e:
                 printer.warning(
                     f'failed to store results in the database: {e}'
