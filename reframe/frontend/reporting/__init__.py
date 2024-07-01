@@ -14,13 +14,8 @@ import math
 import os
 import re
 import socket
-import statistics
 import time
-import types
-from collections import namedtuple
 from collections.abc import Hashable
-from datetime import datetime, timedelta
-from numbers import Number
 
 import reframe as rfm
 import reframe.utility.jsonext as jsonext
@@ -30,6 +25,7 @@ from reframe.core.logging import getlogger, _format_time_rfc3339
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev
 from .storage import StorageBackend
+from .utility import Aggregator, parse_cmp_spec
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
@@ -503,7 +499,7 @@ def _group_testcases(testcases, group_by, extra_cols):
 
 
 def _aggregate_perf(grouped_testcases, aggr_fn, cols):
-    other_aggr = _JoinUniqueValues('|')
+    other_aggr = Aggregator.create('join_uniq', '|')
     aggr_data = {}
     for key, seq in grouped_testcases.items():
         aggr_data.setdefault(key, {})
@@ -548,182 +544,6 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
 
     return (data, (['name', 'pvar', 'pval', 'punit', 'pdiff'] +
                    extra_group_by + extra_cols))
-
-
-class _Aggregator:
-    @classmethod
-    def create(cls, name):
-        if name == 'first':
-            return _First()
-        elif name == 'last':
-            return _Last()
-        elif name == 'mean':
-            return _Mean()
-        elif name == 'median':
-            return _Median()
-        elif name == 'min':
-            return _Min()
-        elif name == 'max':
-            return _Max()
-        else:
-            raise ValueError(f'unknown aggregation function: {name!r}')
-
-    @abc.abstractmethod
-    def __call__(self, iterable):
-        pass
-
-
-class _First(_Aggregator):
-    def __call__(self, iterable):
-        for i, elem in enumerate(iterable):
-            if i == 0:
-                return elem
-
-
-class _Last(_Aggregator):
-    def __call__(self, iterable):
-        if not isinstance(iterable, types.GeneratorType):
-            return iterable[-1]
-
-        for elem in iterable:
-            pass
-
-        return elem
-
-
-class _Mean(_Aggregator):
-    def __call__(self, iterable):
-        return statistics.mean(iterable)
-
-
-class _Median(_Aggregator):
-    def __call__(self, iterable):
-        return statistics.median(iterable)
-
-
-class _Min(_Aggregator):
-    def __call__(self, iterable):
-        return min(iterable)
-
-
-class _Max(_Aggregator):
-    def __call__(self, iterable):
-        return max(iterable)
-
-
-class _JoinUniqueValues(_Aggregator):
-    def __init__(self, delim):
-        self.__delim = delim
-
-    def __call__(self, iterable):
-        unique_vals = {str(elem) for elem in iterable}
-        return self.__delim.join(unique_vals)
-
-
-def _parse_timestamp(s):
-    if isinstance(s, Number):
-        return s
-
-    now = datetime.now()
-
-    def _do_parse(s):
-        if s == 'now':
-            return now
-
-        formats = [r'%Y%m%d', r'%Y%m%dT%H%M',
-                   r'%Y%m%dT%H%M%S', r'%Y%m%dT%H%M%S%z']
-        for fmt in formats:
-            try:
-                return datetime.strptime(s, fmt)
-            except ValueError:
-                continue
-
-        raise ValueError(f'invalid timestamp: {s}')
-
-    try:
-        ts = _do_parse(s)
-    except ValueError as err:
-        # Try the relative timestamps
-        match = re.match(r'(?P<ts>.*)(?P<amount>[\+|-]\d+)(?P<unit>[hdms])', s)
-        if not match:
-            raise err
-
-        ts = _do_parse(match.group('ts'))
-        amount = int(match.group('amount'))
-        unit = match.group('unit')
-        if unit == 'd':
-            ts += timedelta(days=amount)
-        elif unit == 'm':
-            ts += timedelta(minutes=amount)
-        elif unit == 'h':
-            ts += timedelta(hours=amount)
-        elif unit == 's':
-            ts += timedelta(seconds=amount)
-
-    return ts.timestamp()
-
-
-def _parse_time_period(s):
-    if s.startswith('^'):
-        # Retrieve the period of a full session
-        try:
-            session_uuid = s[1:]
-        except IndexError:
-            raise ValueError(f'invalid session uuid: {s}') from None
-        else:
-            ts_start, ts_end = _ReportStorage().fetch_session_time_period(
-                session_uuid
-            )
-            if not ts_start or not ts_end:
-                raise ValueError(f'no such session: {session_uuid}')
-    else:
-        try:
-            ts_start, ts_end = s.split(':')
-        except ValueError:
-            raise ValueError(f'invalid time period spec: {s}') from None
-
-    return _parse_timestamp(ts_start), _parse_timestamp(ts_end)
-
-
-def _parse_extra_cols(s):
-    try:
-        extra_cols = s.split('+')[1:]
-    except (ValueError, IndexError):
-        raise ValueError(f'invalid extra groups spec: {s}') from None
-
-    return extra_cols
-
-
-def _parse_aggregation(s):
-    try:
-        op, extra_groups = s.split(':')
-    except ValueError:
-        raise ValueError(f'invalid aggregate function spec: {s}') from None
-
-    return _Aggregator.create(op), _parse_extra_cols(extra_groups)
-
-
-_Match = namedtuple('_Match', ['period_base', 'period_target',
-                               'aggregator', 'extra_groups', 'extra_cols'])
-
-
-def parse_cmp_spec(spec):
-    parts = spec.split('/')
-    if len(parts) == 3:
-        period_base, period_target, aggr, cols = None, *parts
-    elif len(parts) == 4:
-        period_base, period_target, aggr, cols = parts
-    else:
-        raise ValueError(f'invalid cmp spec: {spec}')
-
-    if period_base is not None:
-        period_base = _parse_time_period(period_base)
-
-    period_target = _parse_time_period(period_target)
-    aggr_fn, extra_groups = _parse_aggregation(aggr)
-    extra_cols = _parse_extra_cols(cols)
-    return _Match(period_base, period_target,
-                  aggr_fn, extra_groups, extra_cols)
 
 
 def performance_compare(cmp, report=None):
