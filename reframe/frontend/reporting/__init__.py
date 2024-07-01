@@ -3,16 +3,24 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import abc
 import decimal
 import functools
 import inspect
 import json
 import jsonschema
 import lxml.etree as etree
+import math
 import os
 import re
 import socket
+import statistics
 import time
+import types
+from collections import namedtuple
+from collections.abc import Hashable
+from datetime import datetime, timedelta
+from numbers import Number
 
 import reframe as rfm
 import reframe.utility.jsonext as jsonext
@@ -20,10 +28,8 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeError, what, is_severe
 from reframe.core.logging import getlogger, _format_time_rfc3339
 from reframe.core.warnings import suppress_deprecations
-from .analytics import (parse_cmp_spec,
-                        fetch_testcases_time_period,
-                        compare_testcase_data)
-
+from reframe.utility import nodelist_abbrev
+from .storage import StorageBackend
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
@@ -39,6 +45,9 @@ def format_testcase(json, name='unique_name'):
     partition = json['partition']
     environ = json['environ']
     return f'{name}@{system}:{partition}+{environ}'
+
+
+_ReportStorage = StorageBackend.create('sqlite')
 
 
 class _RestoredSessionInfo:
@@ -388,6 +397,11 @@ class RunReport:
                 else:
                     raise ReframeError('path exists and is not a symlink')
 
+    def store(self):
+        '''Store the report in the results storage.'''
+
+        return _ReportStorage.store(self, self.filename)
+
     def generate_xml_report(self):
         '''Generate a JUnit report from a standard ReFrame JSON report.'''
 
@@ -450,6 +464,268 @@ class RunReport:
             )
 
 
+def _group_key(groups, testcase):
+    key = []
+    for grp in groups:
+        val = testcase[grp]
+        if grp == 'job_nodelist':
+            # Fold nodelist before adding as a key element
+            key.append(nodelist_abbrev(val))
+        elif not isinstance(val, Hashable):
+            key.append(str(val))
+        else:
+            key.append(val)
+
+    return tuple(key)
+
+
+def _group_testcases(testcases, group_by, extra_cols):
+    grouped = {}
+    for tc in testcases:
+        for pvar, reftuple in tc['perfvalues'].items():
+            pvar = pvar.split(':')[-1]
+            pval, pref, plower, pupper, punit = reftuple
+            plower = pref * (1 + plower) if plower is not None else -math.inf
+            pupper = pref * (1 + pupper) if pupper is not None else math.inf
+            record = {
+                'pvar': pvar,
+                'pval': pval,
+                'plower': plower,
+                'pupper': pupper,
+                'punit': punit,
+                **{k: tc[k] for k in group_by + extra_cols if k in tc}
+            }
+            key = _group_key(group_by, record)
+            grouped.setdefault(key, [])
+            grouped[key].append(record)
+
+    return grouped
+
+
+def _aggregate_perf(grouped_testcases, aggr_fn, cols):
+    other_aggr = _JoinUniqueValues('|')
+    aggr_data = {}
+    for key, seq in grouped_testcases.items():
+        aggr_data.setdefault(key, {})
+        aggr_data[key]['pval'] = aggr_fn(tc['pval'] for tc in seq)
+        for c in cols:
+            aggr_data[key][c] = other_aggr(
+                nodelist_abbrev(tc[c]) if c == 'job_nodelist' else tc[c]
+                for tc in seq
+            )
+
+    return aggr_data
+
+
+def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
+                          extra_group_by=None, extra_cols=None):
+    extra_group_by = extra_group_by or []
+    extra_cols = extra_cols or []
+    group_by = ['name', 'pvar', 'punit'] + extra_group_by
+
+    grouped_base = _group_testcases(base_testcases, group_by, extra_cols)
+    grouped_target = _group_testcases(target_testcases, group_by, extra_cols)
+    pbase = _aggregate_perf(grouped_base, base_fn, extra_cols)
+    ptarget = _aggregate_perf(grouped_target, target_fn, [])
+
+    # Build the final table data
+    data = []
+    for key, aggr_data in pbase.items():
+        pval = aggr_data['pval']
+        try:
+            target_pval = ptarget[key]['pval']
+        except KeyError:
+            pdiff = 'n/a'
+        else:
+            pdiff = (pval - target_pval) / target_pval
+            pdiff = '{:+7.2%}'.format(pdiff)
+
+        name, pvar, punit, *extras = key
+        line = [name, pvar, pval, punit, pdiff, *extras]
+        # Add the extra columns
+        line += [aggr_data[c] for c in extra_cols]
+        data.append(line)
+
+    return (data, (['name', 'pvar', 'pval', 'punit', 'pdiff'] +
+                   extra_group_by + extra_cols))
+
+
+class _Aggregator:
+    @classmethod
+    def create(cls, name):
+        if name == 'first':
+            return _First()
+        elif name == 'last':
+            return _Last()
+        elif name == 'mean':
+            return _Mean()
+        elif name == 'median':
+            return _Median()
+        elif name == 'min':
+            return _Min()
+        elif name == 'max':
+            return _Max()
+        else:
+            raise ValueError(f'unknown aggregation function: {name!r}')
+
+    @abc.abstractmethod
+    def __call__(self, iterable):
+        pass
+
+
+class _First(_Aggregator):
+    def __call__(self, iterable):
+        for i, elem in enumerate(iterable):
+            if i == 0:
+                return elem
+
+
+class _Last(_Aggregator):
+    def __call__(self, iterable):
+        if not isinstance(iterable, types.GeneratorType):
+            return iterable[-1]
+
+        for elem in iterable:
+            pass
+
+        return elem
+
+
+class _Mean(_Aggregator):
+    def __call__(self, iterable):
+        return statistics.mean(iterable)
+
+
+class _Median(_Aggregator):
+    def __call__(self, iterable):
+        return statistics.median(iterable)
+
+
+class _Min(_Aggregator):
+    def __call__(self, iterable):
+        return min(iterable)
+
+
+class _Max(_Aggregator):
+    def __call__(self, iterable):
+        return max(iterable)
+
+
+class _JoinUniqueValues(_Aggregator):
+    def __init__(self, delim):
+        self.__delim = delim
+
+    def __call__(self, iterable):
+        unique_vals = {str(elem) for elem in iterable}
+        return self.__delim.join(unique_vals)
+
+
+def _parse_timestamp(s):
+    if isinstance(s, Number):
+        return s
+
+    now = datetime.now()
+
+    def _do_parse(s):
+        if s == 'now':
+            return now
+
+        formats = [r'%Y%m%d', r'%Y%m%dT%H%M',
+                   r'%Y%m%dT%H%M%S', r'%Y%m%dT%H%M%S%z']
+        for fmt in formats:
+            try:
+                return datetime.strptime(s, fmt)
+            except ValueError:
+                continue
+
+        raise ValueError(f'invalid timestamp: {s}')
+
+    try:
+        ts = _do_parse(s)
+    except ValueError as err:
+        # Try the relative timestamps
+        match = re.match(r'(?P<ts>.*)(?P<amount>[\+|-]\d+)(?P<unit>[hdms])', s)
+        if not match:
+            raise err
+
+        ts = _do_parse(match.group('ts'))
+        amount = int(match.group('amount'))
+        unit = match.group('unit')
+        if unit == 'd':
+            ts += timedelta(days=amount)
+        elif unit == 'm':
+            ts += timedelta(minutes=amount)
+        elif unit == 'h':
+            ts += timedelta(hours=amount)
+        elif unit == 's':
+            ts += timedelta(seconds=amount)
+
+    return ts.timestamp()
+
+
+def _parse_time_period(s):
+    if s.startswith('^'):
+        # Retrieve the period of a full session
+        try:
+            session_uuid = s[1:]
+        except IndexError:
+            raise ValueError(f'invalid session uuid: {s}') from None
+        else:
+            ts_start, ts_end = _ReportStorage.fetch_session_time_period(
+                f'session_uuid == "{session_uuid}"'
+            )
+            if not ts_start or not ts_end:
+                raise ValueError(f'no such session: {session_uuid}')
+    else:
+        try:
+            ts_start, ts_end = s.split(':')
+        except ValueError:
+            raise ValueError(f'invalid time period spec: {s}') from None
+
+    return _parse_timestamp(ts_start), _parse_timestamp(ts_end)
+
+
+def _parse_extra_cols(s):
+    try:
+        extra_cols = s.split('+')[1:]
+    except (ValueError, IndexError):
+        raise ValueError(f'invalid extra groups spec: {s}') from None
+
+    return extra_cols
+
+
+def _parse_aggregation(s):
+    try:
+        op, extra_groups = s.split(':')
+    except ValueError:
+        raise ValueError(f'invalid aggregate function spec: {s}') from None
+
+    return _Aggregator.create(op), _parse_extra_cols(extra_groups)
+
+
+_Match = namedtuple('_Match', ['period_base', 'period_target',
+                               'aggregator', 'extra_groups', 'extra_cols'])
+
+
+def parse_cmp_spec(spec):
+    parts = spec.split('/')
+    if len(parts) == 3:
+        period_base, period_target, aggr, cols = None, *parts
+    elif len(parts) == 4:
+        period_base, period_target, aggr, cols = parts
+    else:
+        raise ValueError(f'invalid cmp spec: {spec}')
+
+    if period_base is not None:
+        period_base = _parse_time_period(period_base)
+
+    period_target = _parse_time_period(period_target)
+    aggr_fn, extra_groups = _parse_aggregation(aggr)
+    extra_cols = _parse_extra_cols(cols)
+    return _Match(period_base, period_target,
+                  aggr_fn, extra_groups, extra_cols)
+
+
 def performance_compare(cmp, report=None):
     match = parse_cmp_spec(cmp)
     if match.period_base is None:
@@ -462,9 +738,13 @@ def performance_compare(cmp, report=None):
             tcs_base = []
 
     else:
-        tcs_base = fetch_testcases_time_period(*match.period_base)
+        tcs_base = _ReportStorage.fetch_testcases_time_period(
+            *match.period_base
+        )
 
-    tcs_target = fetch_testcases_time_period(*match.period_target)
+    tcs_target = _ReportStorage.fetch_testcases_time_period(
+        *match.period_target
+    )
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,
                                  match.aggregator, match.extra_groups,
                                  match.extra_cols)
