@@ -43,9 +43,6 @@ def format_testcase(json, name='unique_name'):
     return f'{name}@{system}:{partition}+{environ}'
 
 
-_ReportStorage = functools.partial(StorageBackend.create, backend='sqlite')
-
-
 class _RestoredSessionInfo:
     '''A restored session with some additional functionality.'''
 
@@ -396,7 +393,7 @@ class RunReport:
     def store(self):
         '''Store the report in the results storage.'''
 
-        return _ReportStorage().store(self, self.filename)
+        return StorageBackend.default().store(self, self.filename)
 
     def generate_xml_report(self):
         '''Generate a JUnit report from a standard ReFrame JSON report.'''
@@ -558,11 +555,11 @@ def performance_compare(cmp, report=None):
             tcs_base = []
 
     else:
-        tcs_base = _ReportStorage().fetch_testcases_time_period(
+        tcs_base = StorageBackend.default().fetch_testcases_time_period(
             *match.period_base
         )
 
-    tcs_target = _ReportStorage().fetch_testcases_time_period(
+    tcs_target = StorageBackend.default().fetch_testcases_time_period(
         *match.period_target
     )
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,

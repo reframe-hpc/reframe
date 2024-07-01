@@ -135,7 +135,7 @@ def _parse_time_period(s):
         except IndexError:
             raise ValueError(f'invalid session uuid: {s}') from None
         else:
-            backend = StorageBackend('sqlite')
+            backend = StorageBackend.default()
             ts_start, ts_end = backend.fetch_session_time_period(
                 session_uuid
             )
