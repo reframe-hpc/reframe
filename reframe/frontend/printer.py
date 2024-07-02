@@ -159,9 +159,8 @@ class PrettyPrinter:
             else:
                 self.verbose(tb)
 
-        line_width = shutil.get_terminal_size()[0]
-        self.info(line_width * '=')
-        self.info('SUMMARY OF FAILURES')
+        line_width = min(80, shutil.get_terminal_size()[0])
+        self.info(' SUMMARY OF FAILURES '.center(line_width, '='))
 
         for run_no, run_info in enumerate(report['runs'], start=1):
             if not global_stats and run_no != len(report['runs']):
@@ -247,6 +246,14 @@ class PrettyPrinter:
             lines.append(msg)
 
         self.info('\n'.join(lines))
+
+    def performance_report(self, data, header):
+        width = min(80, shutil.get_terminal_size()[0])
+        self.info('')
+        self.info(' PERFORMANCE REPORT '.center(width, '='))
+        self.info('')
+        self.table(data, header)
+        self.info('')
 
     def table(self, data, header):
         '''Print a table'''

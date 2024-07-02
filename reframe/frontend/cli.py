@@ -1477,9 +1477,7 @@ def main():
                         f'failed to generate performance report: {err}'
                     )
                 else:
-                    printer.table(data, header)
-
-                # printer.info(runner.stats.performance_report())
+                    printer.performance_report(data, header)
 
             # Generate the report for this session
             report_file = os.path.normpath(
