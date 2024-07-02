@@ -9,7 +9,6 @@ import json
 import os
 import random
 import shlex
-import socket
 import sys
 import time
 import traceback
@@ -23,12 +22,11 @@ import reframe.frontend.autodetect as autodetect
 import reframe.frontend.ci as ci
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.filters as filters
-import reframe.frontend.runreport as runreport
+import reframe.frontend.reporting as reporting
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
-
 from reframe.frontend.testgenerators import (distribute_tests,
                                              getallnodes, repeat_tests,
                                              parameterize_tests)
@@ -89,7 +87,8 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
             else:
                 fmt_fixt_vars = ''
 
-            name_info = f'{u.check.display_name}{fmt_fixt_vars} /{u.check.hashcode}'
+            name_info = (f'{u.check.display_name}{fmt_fixt_vars} '
+                         f'/{u.check.hashcode}')
             tc_info = ''
             details = ''
             if concretized:
@@ -97,7 +96,8 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
             location = inspect.getfile(type(u.check))
             if detailed:
-                details = f' [variant: {u.check.variant_num}, file: {location!r}]'
+                details = (f' [variant: {u.check.variant_num}, '
+                           f'file: {location!r}]')
 
             lines.append(f'{prefix}^{name_info}{tc_info}{details}')
 
@@ -231,6 +231,9 @@ def main():
     )
     testgen_options = argparser.add_argument_group(
         'Options for generating tests dynamically'
+    )
+    reporting_options = argparser.add_argument_group(
+        'Options related to results reporting'
     )
     misc_options = argparser.add_argument_group('Miscellaneous options')
 
@@ -534,6 +537,21 @@ def main():
         help='Repeat selected tests N times'
     )
 
+    # Reporting options
+    reporting_options.add_argument(
+        '--performance-compare', metavar='CMPSPEC', action='store',
+        help='Compare past performance results'
+    )
+    reporting_options.add_argument(
+        '--performance-report', action='store', nargs='?',
+        # a non-empty (unused) token to ensure that option will be set
+        # even if no argument is passed
+        const='<token>',
+        configvar='general/0/perf_report_spec',
+        envvar='RFM_PERF_REPORT_SPEC',
+        help='Print a report for performance tests'
+    )
+
     # Miscellaneous options
     misc_options.add_argument(
         '-C', '--config-file', action='append', metavar='FILE',
@@ -556,13 +574,13 @@ def main():
         envvar='RFM_COLORIZE', configvar='general/colorize'
     )
     misc_options.add_argument(
-        '--performance-report', action='store_true',
-        help='Print a report for performance tests'
-    )
-    misc_options.add_argument(
         '--show-config', action='store', nargs='?', const='all',
         metavar='PARAM',
         help='Print the value of configuration parameter PARAM and exit'
+    )
+    misc_options.add_argument(
+        '--index-db', action='store_true',
+        help='Index old job reports in the database',
     )
     misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
@@ -906,8 +924,8 @@ def main():
                 with open(topofile, 'w') as fp:
                     json.dump(s_cpuinfo, fp, indent=2)
                     fp.write('\n')
-            except OSError as e:
-                getlogger().error(
+            except OSError:
+                logging.getlogger().error(
                     f'could not write topology file: {topofile!r}'
                 )
                 sys.exit(1)
@@ -923,13 +941,18 @@ def main():
         if options.restore_session:
             filenames = options.restore_session.split(',')
         else:
-            filenames = [runreport.next_report_filename(
-                osext.expandvars(site_config.get('general/0/report_file')),
-                new=False
-            )]
+            filenames = [
+                osext.expandvars(site_config.get('general/0/report_file'))
+            ]
 
-        report = runreport.load_report(*filenames)
-        check_search_path = list(report.slice('filename', unique=True))
+        try:
+            restored_session = reporting.restore_session(*filenames)
+        except errors.ReframeError as err:
+            printer.error(f'failed to load restore session: {err}')
+            sys.exit(1)
+
+        check_search_path = list(restored_session.slice('filename',
+                                                        unique=True))
         check_search_recursive = False
 
         # If `-c` or `-R` are passed explicitly outside the configuration
@@ -940,9 +963,7 @@ def main():
                 'search path set explicitly in the command-line or '
                 'the environment'
             )
-            check_search_path = site_config.get(
-                'general/0/check_search_path'
-            )
+            check_search_path = site_config.get('general/0/check_search_path')
 
         if site_config.is_sticky_option('general/check_search_recursive'):
             printer.warning(
@@ -984,26 +1005,26 @@ def main():
         param = param + ':'
         printer.info(f"  {param.ljust(18)} {value}")
 
-    session_info = {
+    report = reporting.RunReport()
+    report.update_session_info({
         'cmdline': ' '.join(shlex.quote(arg) for arg in sys.argv),
         'config_files': rt.site_config.sources,
-        'data_version': runreport.DATA_VERSION,
-        'hostname': socket.gethostname(),
         'log_files': logging.log_files(),
         'prefix_output': rt.output_prefix,
         'prefix_stage': rt.stage_prefix,
         'user': osext.osuser(),
         'version': osext.reframe_version(),
         'workdir': os.getcwd(),
-    }
+    })
 
     # Print command line
-    printer.info(f"[ReFrame Setup]")
+    session_info = report['session_info']
+    printer.info('[ReFrame Setup]')
     print_infoline('version', session_info['version'])
     print_infoline('command', repr(session_info['cmdline']))
     print_infoline(
-        f"launched by",
-        f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
+        'launched by',
+        f'{session_info["user"] or "<unknown>"}@{session_info["hostname"]}'
     )
     print_infoline('working directory', repr(session_info['workdir']))
     print_infoline(
@@ -1120,16 +1141,15 @@ def main():
                 sys.exit(1)
 
             def _case_failed(t):
-                rec = report.case(*t)
+                rec = restored_session.case(*t)
                 if not rec:
                     return False
 
-                return (rec['result'] == 'failure' or
-                        rec['result'] == 'aborted')
+                return rec['result'] == 'fail' or rec['result'] == 'abort'
 
             testcases = list(filter(_case_failed, testcases))
             printer.verbose(
-                f'Filtering successful test case(s): '
+                f'Filtering out successful test case(s): '
                 f'{len(testcases)} remaining'
             )
 
@@ -1220,7 +1240,9 @@ def main():
             printer.debug('Pruned test DAG')
             printer.debug(dependencies.format_deps(testgraph))
             if options.restore_session is not None:
-                testgraph, restored_cases = report.restore_dangling(testgraph)
+                testgraph, restored_cases = restored_session.restore_dangling(
+                    testgraph
+                )
 
         testcases = dependencies.toposort(
             testgraph,
@@ -1277,6 +1299,12 @@ def main():
             )
             sys.exit(0)
 
+        if options.performance_compare:
+            printer.table(
+                *reporting.performance_compare(options.performance_compare)
+            )
+            sys.exit(0)
+
         if not options.run and not options.dry_run:
             printer.error("No action option specified. Available options:\n"
                           "  - `-l'/`-L' for listing\n"
@@ -1296,7 +1324,7 @@ def main():
 
         # Load the environment for the current system
         try:
-            printer.debug(f'Loading environment for current system')
+            printer.debug('Loading environment for current system')
             runtime.loadenv(rt.system.preload_environ)
         except errors.EnvironError as e:
             printer.error("failed to load current system's environment; "
@@ -1308,14 +1336,14 @@ def main():
             try:
                 rt.modules_system.searchpath_add(*paths)
             except errors.EnvironError as e:
-                printer.warning(f'could not add module paths correctly')
+                printer.warning('could not add module paths correctly')
                 printer.debug(str(e))
 
         def module_unuse(*paths):
             try:
                 rt.modules_system.searchpath_remove(*paths)
             except errors.EnvironError as e:
-                printer.warning(f'could not remove module paths correctly')
+                printer.warning('could not remove module paths correctly')
                 printer.debug(str(e))
 
         printer.debug('(Un)using module paths from command line')
@@ -1393,54 +1421,65 @@ def main():
         exec_policy.sched_options = parsed_job_options
         if options.maxfail < 0:
             raise errors.CommandLineError(
-                f'--maxfail should be a non-negative integer: '
+                '--maxfail should be a non-negative integer: '
                 f'{options.maxfail}'
             )
 
         if options.reruns and options.duration:
             raise errors.CommandLineError(
-                f"'--reruns' option cannot be combined with '--duration'"
+                "'--reruns' option cannot be combined with '--duration'"
             )
 
         if options.reruns < 0:
             raise errors.CommandLineError(
-                f"'--reruns' should be a non-negative integer: {options.reruns}"
+                "'--reruns' should be a non-negative integer: "
+                f"{options.reruns}"
             )
 
         runner = Runner(exec_policy, printer, options.max_retries,
                         options.maxfail, options.reruns, options.duration)
         try:
             time_start = time.time()
-            session_info['time_start'] = time.strftime(
-                '%FT%T%z', time.localtime(time_start),
-            )
             runner.runall(testcases, restored_cases)
         finally:
+            # Build final JSON report
             time_end = time.time()
-            session_info['time_end'] = time.strftime(
-                '%FT%T%z', time.localtime(time_end)
-            )
-            session_info['time_elapsed'] = time_end - time_start
+            report.update_timestamps(time_start, time_end)
+            report.update_run_stats(runner.stats)
+            if options.restore_session is not None:
+                report.update_restored_cases(restored_cases, restored_session)
 
             # Print a retry report if we did any retries
             if options.max_retries and runner.stats.failed(run=0):
-                printer.info(runner.stats.retry_report())
+                printer.retry_report(report)
 
             # Print a failure report if we had failures in the last run
             success = True
             if runner.stats.failed():
                 success = False
-                runner.stats.print_failure_report(
-                    printer, not options.distribute,
-                    options.duration or options.reruns
+                printer.failure_report(
+                    report,
+                    rerun_info=not options.distribute,
+                    global_stats=options.duration or options.reruns
                 )
                 if options.failure_stats:
-                    runner.stats.print_failure_stats(
-                        printer, options.duration or options.reruns
+                    printer.failure_stats(
+                        report, global_stats=options.duration or options.reruns
                     )
 
             if options.performance_report and not options.dry_run:
-                printer.info(runner.stats.performance_report())
+                try:
+                    data, header = reporting.performance_compare(
+                        rt.get_option('general/0/perf_report_spec'), report
+                    )
+                except errors.ReframeError as err:
+                    printer.warning(
+                        f'failed to generate performance report: {err}'
+                    )
+                else:
+                    printer.table(data, header)
+
+                # printer.info(runner.stats.performance_report())
 
             # Generate the report for this session
             report_file = os.path.normpath(
@@ -1450,44 +1489,42 @@ def main():
             if basedir:
                 os.makedirs(basedir, exist_ok=True)
 
-            # Build final JSON report
-            run_stats = runner.stats.json()
-            session_info.update({
-                'num_cases': run_stats[0]['num_cases'],
-                'num_failures': run_stats[-1]['num_failures']
-            })
-            json_report = {
-                'session_info': session_info,
-                'runs': run_stats,
-                'restored_cases': []
-            }
-            if options.restore_session is not None:
-                for c in restored_cases:
-                    json_report['restored_cases'].append(report.case(*c))
-
-            report_file = runreport.next_report_filename(report_file)
-            default_loc = os.path.dirname(
-                osext.expandvars(rt.get_default('general/report_file'))
-            )
+            # Save the report file
             try:
-                runreport.write_report(json_report, report_file,
-                                       rt.get_option(
-                                           'general/0/compress_report'),
-                                       os.path.dirname(report_file) == default_loc)
+                default_loc = os.path.dirname(
+                    osext.expandvars(rt.get_default('general/report_file'))
+                )
+                report.save(
+                    report_file,
+                    compress=rt.get_option('general/0/compress_report'),
+                    link_to_last=(default_loc == os.path.dirname(report_file))
+                )
             except OSError as e:
                 printer.warning(
                     f'failed to generate report in {report_file!r}: {e}'
                 )
+            except errors.ReframeError as e:
+                printer.warning(
+                    f'failed to create symlink to latest report: {e}'
+                )
+
+            # Store the generated report for analytics
+            try:
+                sess_uuid = report.store()
+            except Exception as e:
+                printer.warning(
+                    f'failed to store results in the database: {e}'
+                )
+            else:
+                printer.info(f'Current session stored with UUID: {sess_uuid}')
 
             # Generate the junit xml report for this session
             junit_report_file = rt.get_option('general/0/report_junit')
             if junit_report_file:
                 # Expand variables in filename
                 junit_report_file = osext.expandvars(junit_report_file)
-                junit_xml = runreport.junit_xml_report(json_report)
                 try:
-                    with open(junit_report_file, 'w') as fp:
-                        runreport.junit_dump(junit_xml, fp)
+                    report.save_junit(junit_report_file)
                 except OSError as e:
                     printer.warning(
                         f'failed to generate report in {junit_report_file!r}: '
@@ -1519,9 +1556,8 @@ def main():
     finally:
         try:
             logging.getprofiler().exit_region()     # region: 'test processing'
-            log_files = logging.log_files()
             if site_config.get('general/0/save_log_files'):
-                log_files = logging.save_log_files(rt.output_prefix)
+                logging.save_log_files(rt.output_prefix)
         except OSError as e:
             printer.error(f'could not save log file: {e}')
             sys.exit(1)

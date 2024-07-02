@@ -17,7 +17,7 @@ import time
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
-import reframe.frontend.runreport as runreport
+import reframe.frontend.reporting as reporting
 import reframe.utility.osext as osext
 import unittests.utility as test_util
 from reframe import INSTALL_PREFIX
@@ -168,7 +168,9 @@ def test_check_restore_session_failed(run_reframe, tmp_path):
         checkpath=[],
         more_options=['--restore-session', '--failed']
     )
-    report = runreport.load_report(f'{tmp_path}/.reframe/reports/latest.json')
+    report = reporting.restore_session(
+        f'{tmp_path}/.reframe/reports/latest.json'
+    )
     assert set(report.slice('name', when=('fail_phase', 'sanity'))) == {'T2'}
     assert set(report.slice('name',
                             when=('fail_phase', 'startup'))) == {'T7', 'T9'}
@@ -188,7 +190,9 @@ def test_check_restore_session_succeeded_test(run_reframe, tmp_path):
         checkpath=[],
         more_options=['--restore-session', '-n', 'T1']
     )
-    report = runreport.load_report(f'{tmp_path}/.reframe/reports/latest.json')
+    report = reporting.restore_session(
+        f'{tmp_path}/.reframe/reports/latest.json'
+    )
     assert report['runs'][-1]['num_cases'] == 1
     assert report['runs'][-1]['testcases'][0]['name'] == 'T1'
 
@@ -201,7 +205,7 @@ def test_check_restore_session_check_search_path(run_reframe, tmp_path):
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py']
     )
     returncode, stdout, _ = run_reframe(
-        checkpath=[f'foo/'],
+        checkpath=['foo/'],
         more_options=['--restore-session', '-n', 'T1', '-R'],
         action='list'
     )
@@ -421,17 +425,20 @@ def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
 
 
 def test_performance_report(run_reframe, run_action):
-    returncode, stdout, _ = run_reframe(
+    returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         more_options=['-n', '^PerformanceFailureCheck',
                       '--performance-report'],
         action=run_action
     )
+
     if run_action == 'run':
-        assert r'PERFORMANCE REPORT' in stdout
-        assert r'perf: 10 Gflop/s' in stdout
+        assert returncode == 1
     else:
-        assert r'PERFORMANCE REPORT' not in stdout
+        assert returncode == 0
+
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
 
 
 def test_skip_system_check_option(run_reframe, run_action):
@@ -923,7 +930,7 @@ def test_failure_stats(run_reframe, run_action):
     else:
         assert returncode != 0
         assert r'FAILURE STATISTICS' in stdout
-        assert r'sanity        1     [SanityFailureCheck' in stdout
+        assert r'sanity        1     SanityFailureCheck' in stdout
 
 
 def test_maxfail_option(run_reframe):
