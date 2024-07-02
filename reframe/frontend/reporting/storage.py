@@ -69,23 +69,23 @@ class _SqliteStorage(StorageBackend):
         )
         with sqlite3.connect(self.__db_file) as conn:
             conn.execute('CREATE TABLE IF NOT EXISTS sessions('
-                        'id INTEGER PRIMARY KEY, '
-                        'session_uuid TEXT, '
-                        'session_start_unix REAL, '
-                        'session_end_unix REAL, '
-                        'json_blob TEXT, '
-                        'report_file TEXT)')
+                         'id INTEGER PRIMARY KEY, '
+                         'session_uuid TEXT, '
+                         'session_start_unix REAL, '
+                         'session_end_unix REAL, '
+                         'json_blob TEXT, '
+                         'report_file TEXT)')
             conn.execute('CREATE TABLE IF NOT EXISTS testcases('
-                        'name TEXT,'
-                        'system TEXT,'
-                        'partition TEXT,'
-                        'environ TEXT,'
-                        'job_completion_time_unix REAL,'
-                        'session_id INTEGER,'
-                        'run_index INTEGER,'
-                        'test_index INTEGER,'
-                        'FOREIGN KEY(session_id) '
-                        'REFERENCES sessions(session_id))')
+                         'name TEXT,'
+                         'system TEXT,'
+                         'partition TEXT,'
+                         'environ TEXT,'
+                         'job_completion_time_unix REAL,'
+                         'session_id INTEGER,'
+                         'run_index INTEGER,'
+                         'test_index INTEGER,'
+                         'FOREIGN KEY(session_id) '
+                         'REFERENCES sessions(session_id))')
 
     def _db_store_report(self, conn, report, report_file_path):
         session_start_unix = report['session_info']['time_start_unix']
@@ -131,15 +131,15 @@ class _SqliteStorage(StorageBackend):
 
         return session_uuid
 
-    def store(self,report, report_file):
+    def store(self, report, report_file):
         with sqlite3.connect(self._db_file()) as conn:
             return self._db_store_report(conn, report, report_file)
 
     def _fetch_testcases_raw(self, condition):
         with sqlite3.connect(self._db_file()) as conn:
-            query = (f'SELECT session_id, run_index, test_index, json_blob FROM '
-                    f'testcases JOIN sessions ON session_id==id '
-                    f'WHERE {condition}')
+            query = ('SELECT session_id, run_index, test_index, json_blob '
+                     'FROM testcases JOIN sessions ON session_id==id '
+                     f'WHERE {condition}')
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
@@ -148,7 +148,9 @@ class _SqliteStorage(StorageBackend):
         sessions = {}
         for session_id, run_index, test_index, json_blob in results:
             report = jsonext.loads(sessions.setdefault(session_id, json_blob))
-            testcases.append(report['runs'][run_index]['testcases'][test_index])
+            testcases.append(
+                report['runs'][run_index]['testcases'][test_index]
+            )
 
         return testcases
 
@@ -170,5 +172,3 @@ class _SqliteStorage(StorageBackend):
             f'job_completion_time_unix <= {ts_end}) '
             'ORDER BY job_completion_time_unix'
         )
-
-

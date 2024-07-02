@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from numbers import Number
 from .storage import StorageBackend
 
+
 class Aggregator:
     @classmethod
     def create(cls, name, *args, **kwargs):
@@ -189,4 +190,3 @@ def parse_cmp_spec(spec):
     extra_cols = _parse_extra_cols(cols)
     return _Match(period_base, period_target,
                   aggr_fn, extra_groups, extra_cols)
-
