@@ -27,11 +27,12 @@ class RuntimeContext:
     .. versionadded:: 2.13
     '''
 
-    def __init__(self, site_config):
+    def __init__(self, site_config, *, use_timestamps=False):
         self._site_config = site_config
         self._system = System.create(site_config)
         self._current_run = 0
         self._timestamp = time.localtime()
+        self._use_timestamps = use_timestamps
 
     def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)
@@ -110,7 +111,11 @@ class RuntimeContext:
 
     @property
     def timestamp(self):
-        timefmt = self.site_config.get('general/0/timestamp_dirs')
+        if self._use_timestamps:
+            timefmt = self.site_config.get('general/0/timestamp_dirs')
+        else:
+            timefmt = ''
+
         return time.strftime(timefmt, self._timestamp)
 
     @property
@@ -192,11 +197,11 @@ class RuntimeContext:
 _runtime_context = None
 
 
-def init_runtime(site_config):
+def init_runtime(site_config, **kwargs):
     global _runtime_context
 
     if _runtime_context is None:
-        _runtime_context = RuntimeContext(site_config)
+        _runtime_context = RuntimeContext(site_config, **kwargs)
 
 
 def runtime():

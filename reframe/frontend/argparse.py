@@ -40,6 +40,24 @@ import reframe.utility.typecheck as typ
 # that essentially associate environment variables with configuration
 # arguments, without having to define a corresponding command line option.
 
+class _Undefined:
+    pass
+
+
+# We use a special value for denoting const values that are to be set from the
+# configuration default. This placeholder must be used as the `const` argument
+#  for options with `nargs='?'`. The underlying `ArugmentParser` will use the
+# `const` value as if it were supplied from the command-line thus fooling our
+# machinery of environment variables and configuration options overriding any
+# defaults. For this reason, we use a unique placeholder so that we can
+# distinguish whether this value is a default or actually supplied from the
+# command-line.
+CONST_DEFAULT = _Undefined()
+
+
+def _undefined(val):
+    return val is None or val is CONST_DEFAULT
+
 
 class _Namespace:
     def __init__(self, namespace, option_map):
@@ -76,7 +94,10 @@ class _Namespace:
             return ret
 
         envvar, _, action, arg_type, default = self.__option_map[name]
-        if ret is None and envvar is not None:
+        if ret is CONST_DEFAULT:
+            default = CONST_DEFAULT
+
+        if _undefined(ret) and envvar is not None:
             # Try the environment variable
             envvar, *delim = envvar.split(maxsplit=2)
             delim = delim[0] if delim else ','
@@ -120,7 +141,7 @@ class _Namespace:
                 errors.append(e)
                 continue
 
-            if value is not None:
+            if not _undefined(value):
                 site_config.add_sticky_option(confvar, value)
 
         return errors

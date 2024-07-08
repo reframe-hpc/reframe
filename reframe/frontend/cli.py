@@ -294,8 +294,9 @@ def main():
     )
     output_options.add_argument(
         '--timestamp', action='store', nargs='?', metavar='TIMEFMT',
+        const=argparse.CONST_DEFAULT,
         help=('Append a timestamp to the output and stage directory prefixes '
-              r'(default: "%y%m%dT%H%M%S%z")'),
+              '(default: "%%y%%m%%dT%%H%%M%%S%%z")'),
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
 
@@ -543,6 +544,7 @@ def main():
     )
     reporting_options.add_argument(
         '--performance-report', action='store', nargs='?',
+        const=argparse.CONST_DEFAULT,
         configvar='general/perf_report_spec',
         envvar='RFM_PERF_REPORT_SPEC',
         help=('Print a report for performance tests '
@@ -856,7 +858,8 @@ def main():
 
     try:
         printer.debug('Initializing runtime')
-        runtime.init_runtime(site_config)
+        runtime.init_runtime(site_config,
+                             use_timestamps=options.timestamp is not None)
     except errors.ConfigError as e:
         printer.error(f'failed to initialize runtime: {e}')
         printer.info(logfiles_message())
