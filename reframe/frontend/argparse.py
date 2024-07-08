@@ -127,7 +127,7 @@ class _Namespace:
 
     def __repr__(self):
         return (f'{type(self).__name__}({self.__namespace!r}, '
-                '{self.__option_map})')
+                f'{self.__option_map})')
 
 
 class _ArgumentHolder:

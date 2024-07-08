@@ -293,10 +293,9 @@ def main():
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
     )
     output_options.add_argument(
-        '--timestamp', action='store', nargs='?', const='%y%m%dT%H%M%S%z',
-        metavar='TIMEFMT',
+        '--timestamp', action='store', nargs='?', metavar='TIMEFMT',
         help=('Append a timestamp to the output and stage directory prefixes '
-              '(default: "%%FT%%T")'),
+              r'(default: "%y%m%dT%H%M%S%z")'),
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
 
@@ -544,12 +543,10 @@ def main():
     )
     reporting_options.add_argument(
         '--performance-report', action='store', nargs='?',
-        # a non-empty (unused) token to ensure that option will be set
-        # even if no argument is passed
-        const='<token>',
-        configvar='general/0/perf_report_spec',
+        configvar='general/perf_report_spec',
         envvar='RFM_PERF_REPORT_SPEC',
-        help='Print a report for performance tests'
+        help=('Print a report for performance tests '
+              '(default: "19700101T0000+0000:now/last:+job_nodelist/+result")')
     )
 
     # Miscellaneous options
@@ -1300,10 +1297,15 @@ def main():
             sys.exit(0)
 
         if options.performance_compare:
-            printer.table(
-                *reporting.performance_compare(options.performance_compare)
-            )
-            sys.exit(0)
+            try:
+                printer.table(
+                    *reporting.performance_compare(options.performance_compare)
+                )
+            except (errors.ReframeError, ValueError) as err:
+                printer.error(f'failed to generate performance report: {err}')
+                sys.exit(1)
+            else:
+                sys.exit(0)
 
         if not options.run and not options.dry_run:
             printer.error("No action option specified. Available options:\n"
@@ -1472,7 +1474,7 @@ def main():
                     data, header = reporting.performance_compare(
                         rt.get_option('general/0/perf_report_spec'), report
                     )
-                except errors.ReframeError as err:
+                except (errors.ReframeError, ValueError) as err:
                     printer.warning(
                         f'failed to generate performance report: {err}'
                     )

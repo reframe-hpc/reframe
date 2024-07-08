@@ -529,8 +529,11 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
         except KeyError:
             pdiff = 'n/a'
         else:
-            pdiff = (pval - target_pval) / target_pval
-            pdiff = '{:+7.2%}'.format(pdiff)
+            if pval is None or target_pval is None:
+                pdiff = 'n/a'
+            else:
+                pdiff = (pval - target_pval) / target_pval
+                pdiff = '{:+7.2%}'.format(pdiff)
 
         name, pvar, punit, *extras = key
         line = [name, pvar, pval, punit, pdiff, *extras]
