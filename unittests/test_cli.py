@@ -1116,7 +1116,8 @@ def test_detect_host_topology(run_reframe):
     from reframe.utility.cpuinfo import cpuinfo
 
     returncode, stdout, stderr = run_reframe(
-        more_options=['--detect-host-topology']
+        more_options=['--detect-host-topology'],
+        action=None
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -1129,7 +1130,8 @@ def test_detect_host_topology_file(run_reframe, tmp_path):
 
     topo_file = tmp_path / 'topo.json'
     returncode, stdout, stderr = run_reframe(
-        more_options=[f'--detect-host-topology={topo_file}']
+        more_options=[f'--detect-host-topology={topo_file}'],
+        action=None
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
