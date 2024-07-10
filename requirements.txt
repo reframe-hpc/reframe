@@ -6,7 +6,7 @@ jsonschema==3.2.0
 lxml==5.2.0; python_version < '3.8' and platform_machine == 'aarch64'
 lxml==5.2.2; python_version >= '3.8' or platform_machine != 'aarch64'
 pytest==7.0.1; python_version < '3.8'
-pytest==8.2.1; python_version >= '3.8'
+pytest==8.2.2; python_version >= '3.8'
 pytest-forked==1.4.0; python_version == '3.6'
 pytest-forked==1.6.0; python_version >= '3.7'
 pytest-parallel==0.1.1
