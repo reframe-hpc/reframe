@@ -377,6 +377,16 @@ def main():
         help='Give full details on the selected tests'
     )
     action_options.add_argument(
+        '--detect-host-topology', metavar='FILE', action='store',
+        nargs='?', const='-',
+        help=('Detect the local host topology and exit, '
+              'optionally saving it in FILE')
+    )
+    action_options.add_argument(
+        '--dry-run', action='store_true',
+        help='Dry run the tests without submitting them for execution'
+    )
+    action_options.add_argument(
         '-L', '--list-detailed', nargs='?', const='T', choices=['C', 'T'],
         help=('List the selected tests (T) or the concretized test cases (C) '
               'providing more details')
@@ -390,16 +400,12 @@ def main():
         help='List the unique tags found in the selected tests and exit'
     )
     action_options.add_argument(
-        '-r', '--run', action='store_true',
-        help='Run the selected checks'
-    )
-    action_options.add_argument(
-        '--dry-run', action='store_true',
-        help='Dry run the tests without submitting them for execution'
-    )
-    action_options.add_argument(
         '--performance-compare', metavar='CMPSPEC', action='store',
         help='Compare past performance results'
+    )
+    action_options.add_argument(
+        '-r', '--run', action='store_true',
+        help='Run the selected checks'
     )
     action_options.add_argument(
         '--show-config', action='store', nargs='?', const='all',
@@ -562,12 +568,6 @@ def main():
         dest='config_files',
         help='Set configuration file',
         envvar='RFM_CONFIG_FILES :'
-    )
-    misc_options.add_argument(
-        '--detect-host-topology', metavar='FILE', action='store',
-        nargs='?', const='-',
-        help=('Detect the local host topology and exit, '
-              'optionally saving it in FILE')
     )
     misc_options.add_argument(
         '--failure-stats', action='store_true', help='Print failure statistics'
