@@ -6,7 +6,6 @@
 import abc
 import os
 import sqlite3
-from datetime import datetime
 
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
