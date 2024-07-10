@@ -1515,6 +1515,13 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 
+.. envvar:: RFM_INSTALL_PREFIX
+
+   The framework's installation prefix.
+   Users cannot set this variable.
+   ReFrame will set it always upon startup.
+
+
 .. envvar:: RFM_KEEP_STAGE_FILES
 
    Keep test stage directories even for tests that finish successfully.
@@ -1867,28 +1874,15 @@ Whenever an environment variable is associated with a configuration option, its 
 Configuration File
 ------------------
 
-The configuration file of ReFrame defines the systems and environments to test as well as parameters controlling its behavior.
-Upon start up ReFrame checks for configuration files in the following locations in that order:
+The configuration file of ReFrame defines the systems and environments to test as well as parameters controlling the framework's behavior.
 
-1. ``$HOME/.reframe/settings.{py,json}``
-2. ``$RFM_INSTALL_PREFIX/settings.{py,json}``
-3. ``/etc/reframe.d/settings.{py,json}``
+ReFrame loads multiple configuration files to determine its final configuration.
+First, it loads unconditionally its builtin configuration which is located in ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
+If the :envvar:`RFM_CONFIG_PATH` environment variable is defined, ReFrame will look for configuration files named either ``settings.py`` or ``settings.json`` (in that order) in every location in the path and will load them.
+Finally, the :option:`--config-file` option is processed and any configuration files specified will also be loaded.
 
-ReFrame accepts configuration files either in Python or JSON syntax.
-If both are found in the same location, the Python file will be preferred.
+For a complete reference of the available configuration options, please refer to the :doc:`reframe.settings(8) <config_reference>` man page.
 
-The ``RFM_INSTALL_PREFIX`` environment variable refers to the installation directory of ReFrame.
-Users have no control over this variable.
-It is always set by the framework upon startup.
-
-If no configuration file can be found in any of the predefined locations, ReFrame will fall back to a generic configuration that allows it to run on any system.
-This configuration file is located in |reframe/core/settings.py|_.
-Users may *not* modify this file.
-
-For a complete reference of the configuration, please refer to :doc:`reframe.settings(8) <config_reference>` man page.
-
-.. |reframe/core/settings.py| replace:: ``reframe/core/settings.py``
-.. _reframe/core/settings.py: https://github.com/reframe-hpc/reframe/blob/master/reframe/core/settings.py
 
 Reporting Bugs
 --------------

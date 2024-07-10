@@ -420,6 +420,10 @@ def _create_file_handler(site_config, config_prefix):
     timestamp = site_config.get(f'{config_prefix}/timestamp')
     if timestamp:
         basename, ext = os.path.splitext(filename)
+        if not isinstance(timestamp, str):
+            # Use the default value from `datefmt`
+            timestamp = site_config.get(f'{config_prefix}/datefmt')
+
         filename = f'{basename}_{time.strftime(timestamp)}{ext}'
 
     append = site_config.get(f'{config_prefix}/append')
