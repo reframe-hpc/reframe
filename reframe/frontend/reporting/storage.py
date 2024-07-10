@@ -70,7 +70,6 @@ class _SqliteStorage(StorageBackend):
         with sqlite3.connect(self.__db_file) as conn:
             conn.execute('CREATE TABLE IF NOT EXISTS sessions('
                          'id INTEGER PRIMARY KEY, '
-                         'session_uuid TEXT, '
                          'session_start_unix REAL, '
                          'session_end_unix REAL, '
                          'json_blob TEXT, '
@@ -90,23 +89,19 @@ class _SqliteStorage(StorageBackend):
     def _db_store_report(self, conn, report, report_file_path):
         session_start_unix = report['session_info']['time_start_unix']
         session_end_unix = report['session_info']['time_end_unix']
-        session_uuid = datetime.fromtimestamp(session_start_unix).strftime(
-            r'%Y%m%dT%H%M%S%z'
-        )
         cursor = conn.execute(
             'INSERT INTO sessions VALUES('
-            ':session_id, :session_uuid, '
-            ':session_start_unix, :session_end_unix, '
+            ':session_id, :session_start_unix, :session_end_unix, '
             ':json_blob, :report_file)',
             {
                 'session_id': None,
-                'session_uuid': session_uuid,
                 'session_start_unix': session_start_unix,
                 'session_end_unix': session_end_unix,
                 'json_blob': jsonext.dumps(report),
                 'report_file': report_file_path
             }
         )
+        session_id = cursor.lastrowid
         for run_idx, run in enumerate(report['runs']):
             for test_idx, testcase in enumerate(run['testcases']):
                 sys, part = testcase['system'], testcase['partition']
@@ -123,13 +118,13 @@ class _SqliteStorage(StorageBackend):
                         'job_completion_time_unix': testcase[
                             'job_completion_time_unix'
                         ],
-                        'session_id': cursor.lastrowid,
+                        'session_id': session_id,
                         'run_index': run_idx,
                         'test_index': test_idx
                     }
                 )
 
-        return session_uuid
+        return session_id
 
     def store(self, report, report_file):
         with sqlite3.connect(self._db_file()) as conn:
@@ -157,7 +152,7 @@ class _SqliteStorage(StorageBackend):
     def fetch_session_time_period(self, session_uuid):
         with sqlite3.connect(self._db_file()) as conn:
             query = ('SELECT session_start_unix, session_end_unix '
-                     f'FROM sessions WHERE session_uuid == "{session_uuid}" '
+                     f'FROM sessions WHERE id == "{session_uuid}" '
                      'LIMIT 1')
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
