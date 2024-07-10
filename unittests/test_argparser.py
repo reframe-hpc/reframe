@@ -203,3 +203,10 @@ def test_envvar_option(default_exec_ctx, extended_parser):
 def test_envvar_option_default_val(default_exec_ctx, extended_parser):
     options = extended_parser.parse_args([])
     assert options.env_option == 'bar'
+
+
+def test_suppress_required(argparser):
+    group = argparser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--foo', action='store_true')
+    group.add_argument('--bar', action='store_true')
+    argparser.parse_args([], suppress_required=True)

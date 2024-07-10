@@ -170,6 +170,12 @@ class _ArgumentHolder:
 
         return getattr(self._holder, name)
 
+    def __setattr__(self, name, value):
+        if name.startswith('_'):
+            super().__setattr__(name, value)
+        else:
+            setattr(self._holder, name, value)
+
     def add_argument(self, *flags, **kwargs):
         try:
             opt_name = kwargs['dest']
@@ -254,6 +260,14 @@ class ArgumentParser(_ArgumentHolder):
         self._groups.append(group)
         return group
 
+    def add_mutually_exclusive_group(self, *args, **kwargs):
+        group = _ArgumentGroup(
+            self._holder.add_mutually_exclusive_group(*args, **kwargs),
+            self._option_map
+        )
+        self._groups.append(group)
+        return group
+
     def _resolve_attr(self, attr, namespaces):
         for ns in namespaces:
             if ns is None:
@@ -269,7 +283,7 @@ class ArgumentParser(_ArgumentHolder):
         for g in self._groups:
             self._defaults.__dict__.update(g._defaults.__dict__)
 
-    def parse_args(self, args=None, namespace=None):
+    def parse_args(self, args=None, namespace=None, suppress_required=False):
         '''Convert argument strings to objects and return them as attributes of
         a namespace.
 
@@ -281,7 +295,30 @@ class ArgumentParser(_ArgumentHolder):
         for it will be looked up first in `namespace` and if not found there,
         it will be assigned the default value as specified in its corresponding
         `add_argument()` call. If no default value was specified either, the
-        attribute will be set to `None`.'''
+        attribute will be set to `None`.
+
+        If `suppress_required` is true, required mutually-exclusive groups will
+        be treated as optional for this parsing operation.
+        '''
+
+        class suppress_required_groups:
+            '''Temporarily suppress required groups if `suppress_required`
+            is true.'''
+            def __init__(this):
+                this._changed_grp = []
+
+            def __enter__(this):
+                if suppress_required:
+                    for grp in self._groups:
+                        if hasattr(grp, 'required') and grp.required:
+                            this._changed_grp.append(grp)
+                            grp.required = False
+
+                return this
+
+            def __exit__(this, *args, **kwargs):
+                for grp in this._changed_grp:
+                    grp.required = True
 
         # Enable auto-completion
         argcomplete.autocomplete(self._holder)
@@ -291,7 +328,8 @@ class ArgumentParser(_ArgumentHolder):
         # newly parsed options to completely override any options defined in
         # namespace. The implementation of `argparse.ArgumentParser` does not
         # do this in options with an 'append' action.
-        options = self._holder.parse_args(args, None)
+        with suppress_required_groups():
+            options = self._holder.parse_args(args, None)
 
         # Check if namespace refers to our namespace and take the cmd options
         # namespace suitable for ArgumentParser

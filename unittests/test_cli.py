@@ -528,6 +528,7 @@ def test_execution_modes(run_reframe, run_action):
     returncode, stdout, stderr = run_reframe(
         mode='unittest', action=run_action
     )
+    assert returncode == 0
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert 'FAILED' not in stdout
@@ -747,7 +748,8 @@ def test_show_config_all(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
         more_options=['--show-config'],
-        system='testsys'
+        system='testsys',
+        action=None
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -758,7 +760,8 @@ def test_show_config_param(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
         more_options=['--show-config=systems'],
-        system='testsys'
+        system='testsys',
+        action=None
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -769,7 +772,8 @@ def test_show_config_unknown_param(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
         more_options=['--show-config=foo'],
-        system='testsys'
+        system='testsys',
+        action=None
     )
     assert 'no such configuration parameter found' in stdout
     assert 'Traceback' not in stdout
@@ -780,7 +784,8 @@ def test_show_config_unknown_param(run_reframe):
 def test_show_config_null_param(run_reframe):
     returncode, stdout, stderr = run_reframe(
         more_options=['--show-config=general/report_junit'],
-        system='testsys'
+        system='testsys',
+        action=None
     )
     assert 'null' in stdout
     assert 'Traceback' not in stdout

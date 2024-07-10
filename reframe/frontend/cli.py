@@ -211,6 +211,7 @@ def calc_verbosity(site_config, quiesce):
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
+    action_options = argparser.add_mutually_exclusive_group(required=True)
     output_options = argparser.add_argument_group(
         'Options controlling ReFrame output'
     )
@@ -219,9 +220,6 @@ def main():
     )
     select_options = argparser.add_argument_group(
         'Options for selecting checks'
-    )
-    action_options = argparser.add_argument_group(
-        'Options controlling actions'
     )
     run_options = argparser.add_argument_group(
         'Options controlling the execution of checks'
@@ -374,7 +372,6 @@ def main():
         help=('Generate into FILE a Gitlab CI pipeline '
               'for the selected tests and exit'),
     )
-
     action_options.add_argument(
         '--describe', action='store_true',
         help='Give full details on the selected tests'
@@ -399,6 +396,18 @@ def main():
     action_options.add_argument(
         '--dry-run', action='store_true',
         help='Dry run the tests without submitting them for execution'
+    )
+    action_options.add_argument(
+        '--performance-compare', metavar='CMPSPEC', action='store',
+        help='Compare past performance results'
+    )
+    action_options.add_argument(
+        '--show-config', action='store', nargs='?', const='all',
+        metavar='PARAM',
+        help='Print the value of configuration parameter PARAM and exit'
+    )
+    action_options.add_argument(
+        '-V', '--version', action='version', version=osext.reframe_version()
     )
 
     # Run options
@@ -539,10 +548,6 @@ def main():
 
     # Reporting options
     reporting_options.add_argument(
-        '--performance-compare', metavar='CMPSPEC', action='store',
-        help='Compare past performance results'
-    )
-    reporting_options.add_argument(
         '--performance-report', action='store', nargs='?',
         const=argparse.CONST_DEFAULT,
         configvar='general/perf_report_spec',
@@ -573,20 +578,8 @@ def main():
         envvar='RFM_COLORIZE', configvar='general/colorize'
     )
     misc_options.add_argument(
-        '--show-config', action='store', nargs='?', const='all',
-        metavar='PARAM',
-        help='Print the value of configuration parameter PARAM and exit'
-    )
-    misc_options.add_argument(
-        '--index-db', action='store_true',
-        help='Index old job reports in the database',
-    )
-    misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
         envvar='RFM_SYSTEM'
-    )
-    misc_options.add_argument(
-        '-V', '--version', action='version', version=osext.reframe_version()
     )
     misc_options.add_argument(
         '-v', '--verbose', action='count',
@@ -838,7 +831,8 @@ def main():
                     itertools.chain.from_iterable(shlex.split(m)
                                                   for m in mode_args))
                 # Parse the mode's options and reparse the command-line
-                options = argparser.parse_args(mode_args)
+                options = argparser.parse_args(mode_args,
+                                               suppress_required=True)
                 options = argparser.parse_args(namespace=options.cmd_options)
                 options.update_config(site_config)
 
@@ -1309,16 +1303,6 @@ def main():
                 sys.exit(1)
             else:
                 sys.exit(0)
-
-        if not options.run and not options.dry_run:
-            printer.error("No action option specified. Available options:\n"
-                          "  - `-l'/`-L' for listing\n"
-                          "  - `-r' for running\n"
-                          "  - `--dry-run' for dry running\n"
-                          "  - `--list-tags' for listing unique test tags\n"
-                          "  - `--ci-generate' for generating a CI pipeline\n"
-                          f"Try `{argparser.prog} -h' for more options.")
-            sys.exit(1)
 
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):
