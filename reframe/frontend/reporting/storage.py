@@ -93,23 +93,23 @@ class _SqliteStorage(StorageBackend):
         session_uuid = datetime.fromtimestamp(session_start_unix).strftime(
             r'%Y%m%dT%H%M%S%z'
         )
+        cursor = conn.execute(
+            'INSERT INTO sessions VALUES('
+            ':session_id, :session_uuid, '
+            ':session_start_unix, :session_end_unix, '
+            ':json_blob, :report_file)',
+            {
+                'session_id': None,
+                'session_uuid': session_uuid,
+                'session_start_unix': session_start_unix,
+                'session_end_unix': session_end_unix,
+                'json_blob': jsonext.dumps(report),
+                'report_file': report_file_path
+            }
+        )
         for run_idx, run in enumerate(report['runs']):
             for test_idx, testcase in enumerate(run['testcases']):
                 sys, part = testcase['system'], testcase['partition']
-                cursor = conn.execute(
-                    'INSERT INTO sessions VALUES('
-                    ':session_id, :session_uuid, '
-                    ':session_start_unix, :session_end_unix, '
-                    ':json_blob, :report_file)',
-                    {
-                        'session_id': None,
-                        'session_uuid': session_uuid,
-                        'session_start_unix': session_start_unix,
-                        'session_end_unix': session_end_unix,
-                        'json_blob': jsonext.dumps(report),
-                        'report_file': report_file_path
-                    }
-                )
                 conn.execute(
                     'INSERT INTO testcases VALUES('
                     ':name, :system, :partition, :environ, '

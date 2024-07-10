@@ -15,6 +15,7 @@ import re
 import socket
 import time
 from collections.abc import Hashable
+from filelock import FileLock
 
 import reframe as rfm
 import reframe.utility.jsonext as jsonext
@@ -362,7 +363,7 @@ class RunReport:
             'num_skipped': self.__report['runs'][-1]['num_skipped']
         })
 
-    def save(self, filename, compress=False, link_to_last=True):
+    def _save(self, filename, compress, link_to_last):
         filename = _expand_report_filename(filename, newfile=True)
         with open(filename, 'w') as fp:
             if compress:
@@ -389,10 +390,17 @@ class RunReport:
                 else:
                     raise ReframeError('path exists and is not a symlink')
 
+    def save(self, filename, compress=False, link_to_last=True):
+        prefix = os.path.dirname(filename) or '.'
+        with FileLock(os.path.join(prefix, '.report.lock')):
+            self._save(filename, compress, link_to_last)
+
     def store(self):
         '''Store the report in the results storage.'''
 
-        return StorageBackend.default().store(self, self.filename)
+        prefix = os.path.dirname(self.filename) or '.'
+        with FileLock(os.path.join(prefix, '.db.lock')):
+            return StorageBackend.default().store(self, self.filename)
 
     def generate_xml_report(self):
         '''Generate a JUnit report from a standard ReFrame JSON report.'''
