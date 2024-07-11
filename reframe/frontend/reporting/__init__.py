@@ -14,6 +14,7 @@ import os
 import re
 import socket
 import time
+import uuid
 from collections.abc import Hashable
 from filelock import FileLock
 
@@ -213,7 +214,8 @@ class RunReport:
         self.__report = {
             'session_info': {
                 'data_version': DATA_VERSION,
-                'hostname': socket.gethostname()
+                'hostname': socket.gethostname(),
+                'uuid': str(uuid.uuid4())
             },
             'runs': [],
             'restored_cases': []
@@ -255,6 +257,7 @@ class RunReport:
         })
 
     def update_run_stats(self, stats):
+        session_uuid = self.__report['session_info']['uuid']
         for runid, tasks in stats.runs():
             testcases = []
             num_failures = 0
@@ -288,7 +291,9 @@ class RunReport:
                     'job_stdout': None,
                     'partition': partition.name,
                     'result': t.result,
+                    'runid': runid,
                     'scheduler': partition.scheduler.registered_name,
+                    'session_uuid': session_uuid,
                     'time_compile': t.duration('compile_complete'),
                     'time_performance': t.duration('performance'),
                     'time_run': t.duration('run_complete'),

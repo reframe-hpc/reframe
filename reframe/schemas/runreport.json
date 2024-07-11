@@ -87,17 +87,20 @@
                 "num_skipped": {"type": "number"},
                 "prefix_output": {"type": "string"},
                 "prefix_stage": {"type": "string"},
+                "runid": {"type": "number"},
+                "session_uuid": {"type": "string"},
                 "time_elapsed": {"type": "number"},
                 "time_end": {"type": "string"},
                 "time_end_unix": {"type": "number"},
                 "time_start": {"type": "string"},
                 "time_start_unix": {"type": "number"},
                 "user": {"type": "string"},
+                "uuid": {"type": "string"},
                 "version": {"type": "string"},
                 "workdir": {"type": "string"}
             },
             "required": ["data_version", "hostname",
-                         "time_elapsed", "time_end", "time_start"]
+                         "time_elapsed", "time_end", "time_start", "uuid"]
         },
         "restored_cases": {
             "type": "array",
