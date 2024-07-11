@@ -129,6 +129,13 @@ class _SqliteStorage(StorageBackend):
         with sqlite3.connect(self._db_file()) as conn:
             return self._db_store_report(conn, report, report_file)
 
+    def _enrich_testcase(self, tc, session_uuid, runid):
+        '''Enrich testcase record with more information'''
+
+        tc['runid'] = runid
+        tc['session_uuid'] = session_uuid
+        return tc
+
     def _fetch_testcases_raw(self, condition):
         with sqlite3.connect(self._db_file()) as conn:
             query = ('SELECT session_id, run_index, test_index, json_blob '
@@ -142,9 +149,10 @@ class _SqliteStorage(StorageBackend):
         sessions = {}
         for session_id, run_index, test_index, json_blob in results:
             report = jsonext.loads(sessions.setdefault(session_id, json_blob))
-            testcases.append(
-                report['runs'][run_index]['testcases'][test_index]
-            )
+            testcases.append(self._enrich_testcase(
+                report['runs'][run_index]['testcases'][test_index],
+                session_id, run_index
+            ))
 
         return testcases
 
@@ -176,9 +184,9 @@ class _SqliteStorage(StorageBackend):
         if not results:
             return []
 
-        testcases = []
         session_info = jsonext.loads(results[0][0])
-        for run in session_info['runs']:
-            testcases += run['testcases']
-
-        return testcases
+        return [
+            self._enrich_testcase(tc, session_uuid, runid)
+            for runid, run in enumerate(session_info['runs'])
+            for tc in run['testcases']
+        ]
