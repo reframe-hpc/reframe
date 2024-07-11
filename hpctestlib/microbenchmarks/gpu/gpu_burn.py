@@ -52,9 +52,9 @@ class gpu_burn_build(rfm.CompileOnlyRegressionTest, pin_prefix=True):
 
         if self.gpu_build is None:
             # Try to set the build type from the partition features
-            if 'cuda' in curr_env.features:
+            if 'cuda' in curr_part.features:
                 self.gpu_build = 'cuda'
-            elif 'hip' in curr_env.features:
+            elif 'hip' in curr_part.features:
                 self.gpu_build = 'hip'
 
         gpu_devices = curr_part.select_devices('gpu')
