@@ -166,3 +166,19 @@ class _SqliteStorage(StorageBackend):
             f'job_completion_time_unix <= {ts_end}) '
             'ORDER BY job_completion_time_unix'
         )
+
+    def fetch_testcases_from_session(self, session_uuid):
+        with sqlite3.connect(self._db_file()) as conn:
+            query = f'SELECT json_blob from sessions WHERE id=={session_uuid}'
+            getlogger().debug(query)
+            results = conn.execute(query).fetchall()
+
+        if not results:
+            return []
+
+        testcases = []
+        session_info = jsonext.loads(results[0][0])
+        for run in session_info['runs']:
+            testcases += run['testcases']
+
+        return testcases

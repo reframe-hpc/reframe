@@ -169,11 +169,22 @@ def _parse_aggregation(s):
     return Aggregator.create(op), _parse_extra_cols(extra_groups)
 
 
-_Match = namedtuple('_Match', ['period_base', 'period_target',
-                               'aggregator', 'extra_groups', 'extra_cols'])
+_Match = namedtuple('_Match',
+                    ['period_base', 'period_target',
+                     'session_base', 'session_target',
+                     'aggregator', 'extra_groups', 'extra_cols'])
 
 
 def parse_cmp_spec(spec):
+    def _parse_period_spec(s):
+        if s is None:
+            return None, None
+
+        if s.startswith('^'):
+            return s[1:], None
+
+        return None, _parse_time_period(s)
+
     parts = spec.split('/')
     if len(parts) == 3:
         period_base, period_target, aggr, cols = None, *parts
@@ -182,11 +193,9 @@ def parse_cmp_spec(spec):
     else:
         raise ValueError(f'invalid cmp spec: {spec}')
 
-    if period_base is not None:
-        period_base = _parse_time_period(period_base)
-
-    period_target = _parse_time_period(period_target)
+    session_base, period_base = _parse_period_spec(period_base)
+    session_target, period_target = _parse_period_spec(period_target)
     aggr_fn, extra_groups = _parse_aggregation(aggr)
     extra_cols = _parse_extra_cols(cols)
-    return _Match(period_base, period_target,
+    return _Match(period_base, period_target, session_base, session_target,
                   aggr_fn, extra_groups, extra_cols)

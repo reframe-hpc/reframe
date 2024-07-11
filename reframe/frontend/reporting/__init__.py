@@ -555,7 +555,7 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
 
 def performance_compare(cmp, report=None):
     match = parse_cmp_spec(cmp)
-    if match.period_base is None:
+    if match.period_base is None and match.session_base is None:
         if report is None:
             raise ValueError('report cannot be `None` '
                              'for current run comparisons')
@@ -564,14 +564,24 @@ def performance_compare(cmp, report=None):
         except IndexError:
             tcs_base = []
 
-    else:
+    elif match.period_base is not None:
         tcs_base = StorageBackend.default().fetch_testcases_time_period(
             *match.period_base
         )
+    else:
+        tcs_base = StorageBackend.default().fetch_testcases_from_session(
+            match.session_base
+        )
 
-    tcs_target = StorageBackend.default().fetch_testcases_time_period(
-        *match.period_target
-    )
+    if match.period_target:
+        tcs_target = StorageBackend.default().fetch_testcases_time_period(
+            *match.period_target
+        )
+    else:
+        tcs_target = StorageBackend.default().fetch_testcases_from_session(
+            match.session_target
+        )
+
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,
                                  match.aggregator, match.extra_groups,
                                  match.extra_cols)
