@@ -10,7 +10,7 @@ from reframe.core.variables import TestVar as variable
 
 address_tpl = (
     'https://gitlab.com/ampere2/metalwalls/-/raw/{version}/{bench}/{file}'
-    '?ref_type=tags\&inline=false'
+    '?ref_type=tags&inline=false'
 )
 
 extract_fields = [
@@ -95,7 +95,11 @@ extract_fields = [
 
     #######
     ('Ions Coulomb electric field gradient', 'long range', 'Ions Cfield grad'),
-    ('Ions Coulomb electric field gradient', 'short range', 'Ions Cfield grad'),
+    (
+        'Ions Coulomb electric field gradient',
+        'short range',
+        'Ions Cfield grad'
+    ),
     ('Ions Coulomb electric field gradient', 'self', 'Ions Cfield grad'),
 
     #######
@@ -130,11 +134,12 @@ extract_fields = [
     ('Diagnostics', 'IO', 'Diagnostics'),
 ]
 
+
 @rfm.simple_test
 class MetalWallsCheck(rfm.RunOnlyRegressionTest):
     """MetalWalls benchmark test.
-    
-    `MetalWalls <https://gitlab.com/ampere2/metalwalls>`__ is a molecular 
+
+    `MetalWalls <https://gitlab.com/ampere2/metalwalls>`__ is a molecular
     dynamics code dedicated to the modelling of electrochemical systems.
     Its main originality is the inclusion of a series of methods allowing to
     apply a constant potential within the electrode materials.
@@ -143,7 +148,7 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
     number of atoms and the type of simulation performed.
     They can be found in the following repository, which is also versioned:
     https://gitlab.com/ampere2/metalwalls/.
-    
+
     """
 
     #: The name of the output files to keep.
@@ -200,14 +205,14 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
         """Extract the total elapsed time from the output file"""
         return sn.extractsingle(
             r'Total elapsed time:\s+(?P<time>\S+)', 'run.out', 'time', float
-            )
+        )
 
     @performance_function('s')
     def extract_time(
         self, name: str = None, parent: str = None, kind: str = None
-        ) -> float:
+    ) -> float:
         """Extract the time from a specific report section of the output file
-        
+
         Args:
             name (str): The name of the report to extract
             parent (str): The parent section of the report
@@ -220,13 +225,13 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
             tag = 2
         else:
             raise ValueError(f'Unknown kind: {kind}')
-        
+
         # Example Fromat:
         # Ions->Atoms Coulomb potential
         # -----------------------------
-        #   long range                       9.55040E-03  9.64590E-01         0.71
-        #   k==0                             2.48271E-02  2.50754E+00         1.84
-        #   short range                      8.72464E-02  8.81189E+00         6.46
+        #   long range                       9.55040E-03  9.64590E-01      0.71
+        #   k==0                             2.48271E-02  2.50754E+00      1.84
+        #   short range                      8.72464E-02  8.81189E+00      6.46
         #
         # NEXT SECTION
         res = -1
