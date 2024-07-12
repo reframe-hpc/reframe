@@ -1,6 +1,5 @@
 """ReFrame benchmark for MetalWalls"""
 import re
-from typing import TypeVar
 
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -8,8 +7,6 @@ from reframe.core.builtins import (performance_function, run_after, run_before,
                                    sanity_function)
 from reframe.core.parameters import TestParam as parameter
 from reframe.core.variables import TestVar as variable
-
-R = TypeVar('R')
 
 address_tpl = (
     'https://gitlab.com/ampere2/metalwalls/-/raw/{version}/{bench}/{file}'
