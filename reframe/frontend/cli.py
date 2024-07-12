@@ -207,6 +207,29 @@ def calc_verbosity(site_config, quiesce):
     return curr_verbosity - quiesce
 
 
+class exit_gracefuly_on_error:
+    def __init__(self, message, logger=None, exceptions=None, exitcode=1):
+        self.__message = message
+        self.__logger = logger or PrettyPrinter()
+        self.__exceptions = exceptions or (Exception,)
+        self.__exitcode = exitcode
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is SystemExit:
+            # Allow users to exit inside the context manager
+            return
+
+        if isinstance(exc_val, self.__exceptions):
+            self.__logger.error(f'{self.__message}: {exc_val}')
+            self.__logger.verbose(
+                ''.join(traceback.format_exception(exc_type, exc_val, exc_tb))
+            )
+            sys.exit(self.__exitcode)
+
+
 @logging.time_function_noexit
 def main():
     # Setup command line options
@@ -366,15 +389,27 @@ def main():
         help='Select checks that satisfy the expression EXPR'
     )
 
-    # Action options
     action_options.add_argument(
         '--ci-generate', action='store', metavar='FILE',
         help=('Generate into FILE a Gitlab CI pipeline '
               'for the selected tests and exit'),
     )
     action_options.add_argument(
+        '--delete-stored-session', action='store', metavar='SESSION_UUID',
+        help='Delete stored session'
+    )
+    action_options.add_argument(
         '--describe', action='store_true',
         help='Give full details on the selected tests'
+    )
+    action_options.add_argument(
+        '--describe-stored-session', action='store', metavar='SESSION_UUID',
+        help='Get detailed session information in JSON'
+    )
+    action_options.add_argument(
+        '--describe-stored-testcases', action='store',
+        metavar='SESSION_UUID|PERIOD',
+        help='Get detailed test case information in JSON'
     )
     action_options.add_argument(
         '--detect-host-topology', metavar='FILE', action='store',
@@ -390,6 +425,15 @@ def main():
         '-L', '--list-detailed', nargs='?', const='T', choices=['C', 'T'],
         help=('List the selected tests (T) or the concretized test cases (C) '
               'providing more details')
+    )
+    action_options.add_argument(
+        '--list-stored-sessions', action='store_true',
+        help='List stored session'
+    )
+    action_options.add_argument(
+        '--list-stored-testcases', action='store',
+        metavar='SESSION_UUID|PERIOD',
+        help='List stored testcases by session or time period'
     )
     action_options.add_argument(
         '-l', '--list', nargs='?', const='T', choices=['C', 'T'],
@@ -734,7 +778,10 @@ def main():
         '''
 
         if (options.show_config or
-            options.detect_host_topology or options.describe):
+            options.detect_host_topology or
+            options.describe or
+            options.describe_stored_session or
+            options.describe_stored_testcases):
             logging.getlogger().setLevel(logging.ERROR)
             return True
         else:
@@ -881,6 +928,47 @@ def main():
                       "'--keep-stage-files' option.")
         printer.info(logfiles_message())
         sys.exit(1)
+
+    if options.list_stored_sessions:
+        with exit_gracefuly_on_error('failed to retrieve session data',
+                                     printer):
+            printer.table(reporting.session_data())
+            sys.exit(0)
+
+    if options.list_stored_testcases:
+        with exit_gracefuly_on_error('failed to retrieve test case data',
+                                     printer):
+            printer.table(reporting.testcase_data(
+                options.list_stored_testcases
+            ))
+            sys.exit(0)
+
+    if options.describe_stored_session:
+        # Restore logging level
+        printer.setLevel(logging.INFO)
+        with exit_gracefuly_on_error('failed to retrieve session data',
+                                     printer):
+            printer.info(jsonext.dumps(reporting.session_info(
+                options.describe_stored_session
+            ), indent=2))
+            sys.exit(0)
+
+    if options.describe_stored_testcases:
+        # Restore logging level
+        printer.setLevel(logging.INFO)
+        with exit_gracefuly_on_error('failed to retrieve test case data',
+                                     printer):
+            printer.info(jsonext.dumps(reporting.testcase_info(
+                options.describe_stored_testcases
+            ), indent=2))
+            sys.exit(0)
+
+    if options.delete_stored_session:
+        session_uuid = options.delete_stored_session
+        with exit_gracefuly_on_error('failed to delete session', printer):
+            reporting.delete_session(session_uuid)
+            printer.info(f'Session {session_uuid} deleted successfully.')
+            sys.exit(0)
 
     # Show configuration after everything is set up
     if options.show_config:
@@ -1296,7 +1384,7 @@ def main():
         if options.performance_compare:
             try:
                 printer.table(
-                    *reporting.performance_compare(options.performance_compare)
+                    reporting.performance_compare(options.performance_compare)
                 )
             except (errors.ReframeError, ValueError) as err:
                 printer.error(f'failed to generate performance report: {err}')
@@ -1458,7 +1546,7 @@ def main():
 
             if options.performance_report and not options.dry_run:
                 try:
-                    data, header = reporting.performance_compare(
+                    data = reporting.performance_compare(
                         rt.get_option('general/0/perf_report_spec'), report
                     )
                 except (errors.ReframeError, ValueError) as err:
@@ -1466,7 +1554,7 @@ def main():
                         f'failed to generate performance report: {err}'
                     )
                 else:
-                    printer.performance_report(data, header)
+                    printer.performance_report(data)
 
             # Generate the report for this session
             report_file = os.path.normpath(

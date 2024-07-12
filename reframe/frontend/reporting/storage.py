@@ -80,10 +80,9 @@ class _SqliteStorage(StorageBackend):
                          'environ TEXT,'
                          'job_completion_time_unix REAL,'
                          'session_uuid TEXT,'
-                         'run_index INTEGER,'
-                         'test_index INTEGER,'
+                         'uuid TEXT,'
                          'FOREIGN KEY(session_uuid) '
-                         'REFERENCES sessions(uuid))')
+                         'REFERENCES sessions(uuid) ON DELETE CASCADE)')
 
     def _db_store_report(self, conn, report, report_file_path):
         session_start_unix = report['session_info']['time_start_unix']
@@ -101,14 +100,14 @@ class _SqliteStorage(StorageBackend):
                 'report_file': report_file_path
             }
         )
-        for run_idx, run in enumerate(report['runs']):
-            for test_idx, testcase in enumerate(run['testcases']):
+        for run in report['runs']:
+            for testcase in run['testcases']:
                 sys, part = testcase['system'], testcase['partition']
                 conn.execute(
                     'INSERT INTO testcases VALUES('
                     ':name, :system, :partition, :environ, '
                     ':job_completion_time_unix, '
-                    ':session_uuid, :run_index, :test_index)',
+                    ':session_uuid, :uuid)',
                     {
                         'name': testcase['name'],
                         'system': sys,
@@ -118,8 +117,7 @@ class _SqliteStorage(StorageBackend):
                             'job_completion_time_unix'
                         ],
                         'session_uuid': session_uuid,
-                        'run_index': run_idx,
-                        'test_index': test_idx
+                        'uuid': testcase['uuid']
                     }
                 )
 
@@ -131,8 +129,9 @@ class _SqliteStorage(StorageBackend):
 
     def _fetch_testcases_raw(self, condition):
         with sqlite3.connect(self._db_file()) as conn:
-            query = ('SELECT session_uuid, run_index, test_index, json_blob '
-                     'FROM testcases JOIN sessions ON session_uuid == uuid '
+            query = ('SELECT session_uuid, testcases.uuid as uuid, json_blob '
+                     'FROM testcases '
+                     'JOIN sessions ON session_uuid == sessions.uuid '
                      f'WHERE {condition}')
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
@@ -140,7 +139,8 @@ class _SqliteStorage(StorageBackend):
         # Retrieve files
         testcases = []
         sessions = {}
-        for session_uuid, run_index, test_index, json_blob in results:
+        for session_uuid, uuid, json_blob in results:
+            run_index, test_index = [int(x) for x in uuid.split(':')[1:]]
             report = jsonext.loads(sessions.setdefault(session_uuid,
                                                        json_blob))
             testcases.append(
@@ -180,3 +180,29 @@ class _SqliteStorage(StorageBackend):
 
         session_info = jsonext.loads(results[0][0])
         return [tc for run in session_info['runs'] for tc in run['testcases']]
+
+    def fetch_all_sessions(self):
+        with sqlite3.connect(self._db_file()) as conn:
+            query = ('SELECT json_blob from sessions '
+                     'ORDER BY session_start_unix')
+            getlogger().debug(query)
+            results = conn.execute(query).fetchall()
+
+        if not results:
+            return []
+
+        return [jsonext.loads(json_blob) for json_blob, *_ in results]
+
+    def fetch_session_json(self, uuid):
+        with sqlite3.connect(self._db_file()) as conn:
+            query = f'SELECT json_blob FROM sessions WHERE uuid == "{uuid}"'
+            getlogger().debug(query)
+            results = conn.execute(query).fetchall()
+
+        return jsonext.loads(results[0][0]) if results else {}
+
+    def remove_session(self, uuid):
+        with sqlite3.connect(self._db_file()) as conn:
+            query = f'DELETE FROM sessions WHERE uuid == "{uuid}"'
+            getlogger().debug(query)
+            conn.execute(query)

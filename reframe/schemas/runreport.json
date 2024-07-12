@@ -57,7 +57,8 @@
                 "time_sanity": {"type": ["number", "null"]},
                 "time_setup": {"type": ["number", "null"]},
                 "time_total": {"type": ["number", "null"]},
-                "unique_name": {"type": "string"}
+                "unique_name": {"type": "string"},
+                "uuid": {"type": "string"}
             },
             "required": ["environ", "fail_phase", "fail_reason", "filename",
                          "job_completion_time_unix", "name", "perfvalues",

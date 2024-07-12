@@ -128,7 +128,7 @@ def _parse_timestamp(s):
     return ts.timestamp()
 
 
-def _parse_time_period(s):
+def parse_time_period(s):
     if s.startswith('^'):
         # Retrieve the period of a full session
         try:
@@ -183,7 +183,7 @@ def parse_cmp_spec(spec):
         if s.startswith('^'):
             return s[1:], None
 
-        return None, _parse_time_period(s)
+        return None, parse_time_period(s)
 
     parts = spec.split('/')
     if len(parts) == 3:

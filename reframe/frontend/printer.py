@@ -247,15 +247,17 @@ class PrettyPrinter:
 
         self.info('\n'.join(lines))
 
-    def performance_report(self, data, header):
+    def performance_report(self, data, **kwargs):
         width = min(80, shutil.get_terminal_size()[0])
         self.info('')
         self.info(' PERFORMANCE REPORT '.center(width, '='))
         self.info('')
-        self.table(data, header)
+        self.table(data, **kwargs)
         self.info('')
 
-    def table(self, data, header):
-        '''Print a table'''
+    def table(self, data, **kwargs):
+        '''Print tabular data'''
 
-        self.info(tabulate(data, headers=header, tablefmt='mixed_grid'))
+        kwargs.setdefault('headers', 'firstrow')
+        kwargs.setdefault('tablefmt', 'mixed_grid')
+        self.info(tabulate(data, **kwargs))

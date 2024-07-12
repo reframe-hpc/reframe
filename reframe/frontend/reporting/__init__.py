@@ -23,10 +23,11 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeError, what, is_severe
 from reframe.core.logging import getlogger, _format_time_rfc3339
+from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev
 from .storage import StorageBackend
-from .utility import Aggregator, parse_cmp_spec
+from .utility import Aggregator, parse_cmp_spec, parse_time_period
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
@@ -247,7 +248,7 @@ class RunReport:
                                            for c in restored_cases]
 
     def update_timestamps(self, ts_start, ts_end):
-        fmt = r'%FT%T%z'
+        fmt = r'%Y%m%dT%H%M%S%z'
         self.__report['session_info'].update({
             'time_start': time.strftime(fmt, time.localtime(ts_start)),
             'time_start_unix': ts_start,
@@ -263,7 +264,7 @@ class RunReport:
             num_failures = 0
             num_aborted = 0
             num_skipped = 0
-            for t in tasks:
+            for tidx, t in enumerate(tasks):
                 # We take partition and environment from the test case and not
                 # from the check, since if the test fails before `setup()`,
                 # these are not set inside the check.
@@ -299,7 +300,8 @@ class RunReport:
                     'time_run': t.duration('run_complete'),
                     'time_sanity': t.duration('sanity'),
                     'time_setup': t.duration('setup'),
-                    'time_total': t.duration('total')
+                    'time_total': t.duration('total'),
+                    'uuid': f'{session_uuid}:{runid}:{tidx}'
                 }
                 if check.job:
                     entry['job_stderr'] = check.stderr.evaluate()
@@ -412,6 +414,10 @@ class RunReport:
 
         report = self.__report
         xml_testsuites = etree.Element('testsuites')
+        # Create a XSD-friendly timestamp
+        session_ts = time.strftime(
+            r'%FT%T', time.localtime(report['session_info']['time_start_unix'])
+        )
         for run_id, rfm_run in enumerate(report['runs']):
             xml_testsuite = etree.SubElement(
                 xml_testsuites, 'testsuite',
@@ -424,9 +430,7 @@ class RunReport:
                     'package': 'reframe',
                     'tests': str(rfm_run['num_cases']),
                     'time': str(report['session_info']['time_elapsed']),
-                    # XSD schema does not like the timezone format,
-                    # so we remove it
-                    'timestamp': report['session_info']['time_start'][:-5],
+                    'timestamp': session_ts
                 }
             )
             etree.SubElement(xml_testsuite, 'properties')
@@ -534,7 +538,8 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
     ptarget = _aggregate_perf(grouped_target, target_fn, [])
 
     # Build the final table data
-    data = []
+    data = [['name', 'pvar', 'pval',
+             'punit', 'pdiff'] + extra_group_by + extra_cols]
     for key, aggr_data in pbase.items():
         pval = aggr_data['pval']
         try:
@@ -554,8 +559,7 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
         line += [aggr_data[c] for c in extra_cols]
         data.append(line)
 
-    return (data, (['name', 'pvar', 'pval', 'punit', 'pdiff'] +
-                   extra_group_by + extra_cols))
+    return data
 
 
 def performance_compare(cmp, report=None):
@@ -590,3 +594,82 @@ def performance_compare(cmp, report=None):
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,
                                  match.aggregator, match.extra_groups,
                                  match.extra_cols)
+
+
+def session_data():
+    '''Retrieve all sessions'''
+
+    data = [['UUID', 'Start time', 'End time', 'Num runs', 'Num cases']]
+    for sess_data in StorageBackend.default().fetch_all_sessions():
+        session_info = sess_data['session_info']
+        data.append(
+            [session_info['uuid'],
+             session_info['time_start'],
+             session_info['time_end'],
+             len(sess_data['runs']),
+             len(sess_data['runs'][0]['testcases'])]
+        )
+
+    return data
+
+
+def testcase_data(spec):
+    storage = StorageBackend.default()
+    if spec.startswith('^'):
+        testcases = storage.fetch_testcases_from_session(spec[1:])
+    else:
+        testcases = storage.fetch_testcases_time_period(
+            *parse_time_period(spec)
+        )
+
+    data = [['Name', 'System', 'Partition', 'Environment',
+             'Nodelist', 'Result', 'UUID']]
+    for tc in testcases:
+        data.append([
+            tc['name'],
+            tc['system'], tc['partition'], tc['environ'],
+            nodelist_abbrev(tc['job_nodelist']), tc['result'],
+            tc['uuid']
+        ])
+
+    return data
+
+
+def session_info(uuid):
+    '''Retrieve session details as JSON'''
+
+    session = StorageBackend.default().fetch_session_json(uuid)
+    if not session:
+        raise ReframeError(f'no such session: {uuid}')
+
+    return session
+
+
+def testcase_info(spec):
+    '''Retrieve test case details as JSON'''
+    testcases = []
+    if spec.startswith('^'):
+        session_uuid, *tc_index = spec[1:].split(':')
+        session = session_info(session_uuid)
+        if not tc_index:
+            for run in session['runs']:
+                testcases += run['testcases']
+        else:
+            run_index, test_index = tc_index
+            testcases.append(
+                session['runs'][run_index]['testcases'][test_index]
+            )
+    else:
+        testcases = StorageBackend.default().fetch_testcases_time_period(
+            *parse_time_period(spec)
+        )
+
+    return testcases
+
+
+def delete_session(session_uuid):
+    prefix = os.path.dirname(
+        osext.expandvars(runtime().get_option('general/0/report_file'))
+    )
+    with FileLock(os.path.join(prefix, '.db.lock')):
+        StorageBackend.default().remove_session(session_uuid)
