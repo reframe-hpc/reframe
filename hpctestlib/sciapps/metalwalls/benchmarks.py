@@ -222,6 +222,9 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
             parent (str): The parent section of the report
             kind (str): The kind of time to extract (avg or cumul)
         """
+        if kind is None:
+            return 0
+        
         kind = kind.lower()
         if kind == 'avg':
             tag = 1
