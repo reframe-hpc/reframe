@@ -163,6 +163,10 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
     #: :default: ``'21.06.1'``
     benchmark_version = variable(str, value='21.06.1', loggable=True)
 
+    executable = 'mw'
+    tags = {'sciapp', 'chemistry'}
+    descr = 'MetalWalls `mw` benchmark'
+
     #: Collect and report detailed performance metrics.
     #:
     #: :type: :class:`bool`
