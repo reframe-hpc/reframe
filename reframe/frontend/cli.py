@@ -678,6 +678,13 @@ def main():
         help='Directories where ReFrame will look for base configuration'
     )
     argparser.add_argument(
+        dest='generate_file_reports',
+        envvar='RFM_GENERATE_FILE_REPORTS',
+        configvar='general/generate_file_reports',
+        action='store_true',
+        help='Save session report in files'
+    )
+    argparser.add_argument(
         dest='git_timeout',
         envvar='RFM_GIT_TIMEOUT',
         configvar='general/git_timeout',
@@ -1564,24 +1571,26 @@ def main():
             if basedir:
                 os.makedirs(basedir, exist_ok=True)
 
-            # Save the report file
-            try:
-                default_loc = os.path.dirname(
-                    osext.expandvars(rt.get_default('general/report_file'))
-                )
-                report.save(
-                    report_file,
-                    compress=rt.get_option('general/0/compress_report'),
-                    link_to_last=(default_loc == os.path.dirname(report_file))
-                )
-            except OSError as e:
-                printer.warning(
-                    f'failed to generate report in {report_file!r}: {e}'
-                )
-            except errors.ReframeError as e:
-                printer.warning(
-                    f'failed to create symlink to latest report: {e}'
-                )
+            if rt.get_option('general/0/generate_file_reports'):
+                # Save the report file
+                try:
+                    default_loc = os.path.dirname(
+                        osext.expandvars(rt.get_default('general/report_file'))
+                    )
+                    report.save(
+                        report_file,
+                        compress=rt.get_option('general/0/compress_report'),
+                        link_to_last=(default_loc ==
+                                      os.path.dirname(report_file))
+                    )
+                except OSError as e:
+                    printer.warning(
+                        f'failed to generate report in {report_file!r}: {e}'
+                    )
+                except errors.ReframeError as e:
+                    printer.warning(
+                        f'failed to create symlink to latest report: {e}'
+                    )
 
             # Store the generated report for analytics
             try:

@@ -23,7 +23,6 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeError, what, is_severe
 from reframe.core.logging import getlogger, _format_time_rfc3339
-from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev
 from .storage import StorageBackend
@@ -405,9 +404,7 @@ class RunReport:
     def store(self):
         '''Store the report in the results storage.'''
 
-        prefix = os.path.dirname(self.filename) or '.'
-        with FileLock(os.path.join(prefix, '.db.lock')):
-            return StorageBackend.default().store(self, self.filename)
+        return StorageBackend.default().store(self, self.filename)
 
     def generate_xml_report(self):
         '''Generate a JUnit report from a standard ReFrame JSON report.'''
@@ -668,8 +665,4 @@ def testcase_info(spec):
 
 
 def delete_session(session_uuid):
-    prefix = os.path.dirname(
-        osext.expandvars(runtime().get_option('general/0/report_file'))
-    )
-    with FileLock(os.path.join(prefix, '.db.lock')):
-        StorageBackend.default().remove_session(session_uuid)
+    StorageBackend.default().remove_session(session_uuid)

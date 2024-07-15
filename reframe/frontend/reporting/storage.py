@@ -6,9 +6,11 @@
 import abc
 import os
 import sqlite3
+from filelock import FileLock
 
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
+from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger
 from reframe.core.runtime import runtime
 
@@ -22,12 +24,12 @@ class StorageBackend:
         if backend == 'sqlite':
             return _SqliteStorage(*args, **kwargs)
         else:
-            raise NotImplementedError
+            raise ReframeError(f'no such storage backend: {backend}')
 
     @classmethod
     def default(cls):
         '''Return default storage backend'''
-        return cls.create('sqlite')
+        return cls.create(runtime().get_option('storage/0/backend'))
 
     @abc.abstractmethod
     def store(self, report, report_file):
@@ -44,11 +46,9 @@ class StorageBackend:
 
 class _SqliteStorage(StorageBackend):
     def __init__(self):
-        site_config = runtime().site_config
-        prefix = os.path.dirname(osext.expandvars(
-            site_config.get('general/0/report_file')
-        ))
-        self.__db_file = os.path.join(prefix, 'results.db')
+        self.__db_file = os.path.join(
+            osext.expandvars(runtime().get_option('storage/0/sqlite_db_file'))
+        )
 
     def _db_file(self):
         prefix = os.path.dirname(self.__db_file)
@@ -123,9 +123,11 @@ class _SqliteStorage(StorageBackend):
 
         return session_uuid
 
-    def store(self, report, report_file):
-        with sqlite3.connect(self._db_file()) as conn:
-            return self._db_store_report(conn, report, report_file)
+    def store(self, report, report_file=None):
+        prefix = os.path.dirname(self.__db_file)
+        with FileLock(os.path.join(prefix, '.db.lock')):
+            with sqlite3.connect(self._db_file()) as conn:
+                return self._db_store_report(conn, report, report_file)
 
     def _fetch_testcases_raw(self, condition):
         with sqlite3.connect(self._db_file()) as conn:
@@ -202,7 +204,9 @@ class _SqliteStorage(StorageBackend):
         return jsonext.loads(results[0][0]) if results else {}
 
     def remove_session(self, uuid):
-        with sqlite3.connect(self._db_file()) as conn:
-            query = f'DELETE FROM sessions WHERE uuid == "{uuid}"'
-            getlogger().debug(query)
-            conn.execute(query)
+        prefix = os.path.dirname(self.__db_file)
+        with FileLock(os.path.join(prefix, '.db.lock')):
+            with sqlite3.connect(self._db_file()) as conn:
+                query = f'DELETE FROM sessions WHERE uuid == "{uuid}"'
+                getlogger().debug(query)
+                conn.execute(query)
