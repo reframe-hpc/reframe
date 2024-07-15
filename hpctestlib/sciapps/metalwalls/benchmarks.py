@@ -176,7 +176,7 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
     #: Parameter pack encoding the benchmark information.
     #:
     #: The first element of the tuple refers to the benchmark name,
-    #: the second is the final kinetic energy the third is the related 
+    #: the second is the final kinetic energy the third is the related
     #: tolerance, the fourth is the absolute temperature and the fifth is
     #: the related tolerance
     #:
@@ -213,21 +213,20 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
         return sn.extractsingle(
             r'Total elapsed time:\s+(?P<time>\S+)', 'run.out', 'time', float
         )
-    
+
     @sn.deferrable
     def extract_kinetic_energy(self):
         """Extract the final kinetic energy from the output file"""
         rgx = r'\|step\| +kinetic energy: +(?P<flag>\S+)'
         app = sn.extractall(rgx, 'run.out', 'flag', float)
         return app[-1]
-    
+
     @sn.deferrable
     def extract_temperature(self):
         """Extract the final temperature from the output file"""
         rgx = r'\|step\| +temperature: +(?P<flag>\S+)'
         app = sn.extractall(rgx, 'run.out', 'flag', float)
         return app[-1]
-
 
     @performance_function('s')
     def extract_time(
@@ -242,7 +241,7 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
         """
         if kind is None:
             return 0
-        
+
         kind = kind.lower()
         if kind == 'avg':
             tag = 1
