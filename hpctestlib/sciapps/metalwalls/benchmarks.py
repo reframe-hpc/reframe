@@ -176,22 +176,25 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
     #: Parameter pack encoding the benchmark information.
     #:
     #: The first element of the tuple refers to the benchmark name,
+    #: the second is the final kinetic energy the third is the related 
+    #: tolerance, the fourth is the absolute temperature and the fifth is
+    #: the related tolerance
     #:
-    #: :type: `Tuple[str,]`
+    #: :type: `Tuple[str, float, float, float, float]`
     #: :values:
     benchmark_info = parameter([
-        ('hackathonGPU/benchmark',),
-        ('hackathonGPU/benchmark2',),
-        ('hackathonGPU/benchmark3',),
-        ('hackathonGPU/benchmark4',),
-        ('hackathonGPU/benchmark5',),
-        ('hackathonGPU/benchmark6',),
+        ('hackathonGPU/benchmark', 14.00, 0.05, 301.74, 0.5),
+        ('hackathonGPU/benchmark2', 14.00, 0.05, 301.74, 0.5),
+        ('hackathonGPU/benchmark3', 16.08, 0.05, 293.42, 0.5),
+        ('hackathonGPU/benchmark4', 16.08, 0.05, 293.42, 0.5),
+        ('hackathonGPU/benchmark5', 25.72, 0.05, 297.47, 0.5),
+        ('hackathonGPU/benchmark6', 25.72, 0.05, 297.47, 0.5),
     ], fmt=lambda x: x[0], loggable=True)
 
     @run_after('init')
     def prepare_test(self):
         """Hook to the set the downloading of the pseudo-potentials"""
-        self.__bench, = self.benchmark_info
+        self.__bench, _, _, _, _ = self.benchmark_info
         self.descr = f'MetalWalls {self.__bench} benchmark'
         files_addresses = [
             address_tpl.format(
@@ -210,6 +213,21 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
         return sn.extractsingle(
             r'Total elapsed time:\s+(?P<time>\S+)', 'run.out', 'time', float
         )
+    
+    @sn.deferrable
+    def extract_kinetic_energy(self):
+        """Extract the final kinetic energy from the output file"""
+        rgx = r'\|step\| +kinetic energy: +(?P<flag>\S+)'
+        app = sn.extractall(rgx, 'run.out', 'flag', float)
+        return app[-1]
+    
+    @sn.deferrable
+    def extract_temperature(self):
+        """Extract the final temperature from the output file"""
+        rgx = r'\|step\| +temperature: +(?P<flag>\S+)'
+        app = sn.extractall(rgx, 'run.out', 'flag', float)
+        return app[-1]
+
 
     @performance_function('s')
     def extract_time(
@@ -273,4 +291,13 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
     @sanity_function
     def assert_job_finished(self):
         """Check if the job finished successfully"""
-        return sn.assert_found(r'Total elapsed time', 'run.out')
+        energy = self.extract_kinetic_energy()
+        temp = self.extract_temperature()
+        _, energy_ref, energy_tol, temp_ref, temp_tol = self.benchmark_info
+        en_rtol = energy_tol / energy_ref
+        t_rtol = temp_tol / temp_ref
+        return sn.all([
+            sn.assert_found(r'Total elapsed time', 'run.out'),
+            sn.assert_reference(energy, energy_ref, -en_rtol, en_rtol),
+            sn.assert_reference(temp, temp_ref, -t_rtol, t_rtol)
+        ])
