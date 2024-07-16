@@ -21,7 +21,7 @@ from filelock import FileLock
 import reframe as rfm
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
-from reframe.core.exceptions import ReframeError, what, is_severe
+from reframe.core.exceptions import ReframeError, what, is_severe, reraise_as
 from reframe.core.logging import getlogger, _format_time_rfc3339
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev
@@ -473,7 +473,9 @@ class RunReport:
 def _group_key(groups, testcase):
     key = []
     for grp in groups:
-        val = testcase[grp]
+        with reraise_as(ReframeError, (KeyError,), 'no such group'):
+            val = testcase[grp]
+
         if grp == 'job_nodelist':
             # Fold nodelist before adding as a key element
             key.append(nodelist_abbrev(val))
@@ -514,11 +516,12 @@ def _aggregate_perf(grouped_testcases, aggr_fn, cols):
     for key, seq in grouped_testcases.items():
         aggr_data.setdefault(key, {})
         aggr_data[key]['pval'] = aggr_fn(tc['pval'] for tc in seq)
-        for c in cols:
-            aggr_data[key][c] = other_aggr(
-                nodelist_abbrev(tc[c]) if c == 'job_nodelist' else tc[c]
-                for tc in seq
-            )
+        with reraise_as(ReframeError, (KeyError,), 'no such column'):
+            for c in cols:
+                aggr_data[key][c] = other_aggr(
+                    nodelist_abbrev(tc[c]) if c == 'job_nodelist' else tc[c]
+                    for tc in seq
+                )
 
     return aggr_data
 
@@ -560,7 +563,10 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
 
 
 def performance_compare(cmp, report=None):
-    match = parse_cmp_spec(cmp)
+    with reraise_as(ReframeError, (ValueError,),
+                    'could not parse comparison spec'):
+        match = parse_cmp_spec(cmp)
+
     if match.period_base is None and match.session_base is None:
         if report is None:
             raise ValueError('report cannot be `None` '

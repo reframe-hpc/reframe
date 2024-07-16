@@ -207,7 +207,7 @@ def calc_verbosity(site_config, quiesce):
     return curr_verbosity - quiesce
 
 
-class exit_gracefuly_on_error:
+class exit_gracefully_on_error:
     def __init__(self, message, logger=None, exceptions=None, exitcode=1):
         self.__message = message
         self.__logger = logger or PrettyPrinter()
@@ -937,14 +937,14 @@ def main():
         sys.exit(1)
 
     if options.list_stored_sessions:
-        with exit_gracefuly_on_error('failed to retrieve session data',
-                                     printer):
+        with exit_gracefully_on_error('failed to retrieve session data',
+                                      printer):
             printer.table(reporting.session_data())
             sys.exit(0)
 
     if options.list_stored_testcases:
-        with exit_gracefuly_on_error('failed to retrieve test case data',
-                                     printer):
+        with exit_gracefully_on_error('failed to retrieve test case data',
+                                      printer):
             printer.table(reporting.testcase_data(
                 options.list_stored_testcases
             ))
@@ -953,8 +953,8 @@ def main():
     if options.describe_stored_session:
         # Restore logging level
         printer.setLevel(logging.INFO)
-        with exit_gracefuly_on_error('failed to retrieve session data',
-                                     printer):
+        with exit_gracefully_on_error('failed to retrieve session data',
+                                      printer):
             printer.info(jsonext.dumps(reporting.session_info(
                 options.describe_stored_session
             ), indent=2))
@@ -963,8 +963,8 @@ def main():
     if options.describe_stored_testcases:
         # Restore logging level
         printer.setLevel(logging.INFO)
-        with exit_gracefuly_on_error('failed to retrieve test case data',
-                                     printer):
+        with exit_gracefully_on_error('failed to retrieve test case data',
+                                      printer):
             printer.info(jsonext.dumps(reporting.testcase_info(
                 options.describe_stored_testcases
             ), indent=2))
@@ -972,7 +972,7 @@ def main():
 
     if options.delete_stored_session:
         session_uuid = options.delete_stored_session
-        with exit_gracefuly_on_error('failed to delete session', printer):
+        with exit_gracefully_on_error('failed to delete session', printer):
             reporting.delete_session(session_uuid)
             printer.info(f'Session {session_uuid} deleted successfully.')
             sys.exit(0)
@@ -1393,7 +1393,7 @@ def main():
                 printer.table(
                     reporting.performance_compare(options.performance_compare)
                 )
-            except (errors.ReframeError, ValueError) as err:
+            except errors.ReframeError as err:
                 printer.error(f'failed to generate performance report: {err}')
                 sys.exit(1)
             else:
@@ -1556,7 +1556,7 @@ def main():
                     data = reporting.performance_compare(
                         rt.get_option('general/0/perf_report_spec'), report
                     )
-                except (errors.ReframeError, ValueError) as err:
+                except errors.ReframeError as err:
                     printer.warning(
                         f'failed to generate performance report: {err}'
                     )
