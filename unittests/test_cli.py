@@ -571,7 +571,7 @@ def test_timestamp_option_default(run_reframe):
     assert returncode == 0
 
     matches = re.findall(
-        r'(stage|output) directory: .*\/(\d{6}T\d{6}\+\d{4})', stdout
+        r'(stage|output) directory: .*\/(\d{8}T\d{6}\+\d{4})', stdout
     )
     assert len(matches) == 2
 

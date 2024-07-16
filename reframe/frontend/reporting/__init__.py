@@ -396,6 +396,10 @@ class RunReport:
                 else:
                     raise ReframeError('path exists and is not a symlink')
 
+    def is_empty(self):
+        '''Return :obj:`True` is no test cases where run'''
+        return self.__report['session_info']['num_cases'] == 0
+
     def save(self, filename, compress=False, link_to_last=True):
         prefix = os.path.dirname(filename) or '.'
         with FileLock(os.path.join(prefix, '.report.lock')):
@@ -625,13 +629,18 @@ def testcase_data(spec):
             *parse_time_period(spec)
         )
 
-    data = [['Name', 'System', 'Partition', 'Environment',
-             'Nodelist', 'Result', 'UUID']]
+    data = [['Name', 'SysEnv',
+             'Nodelist', 'Completion Time', 'Result', 'UUID']]
     for tc in testcases:
         data.append([
             tc['name'],
-            tc['system'], tc['partition'], tc['environ'],
-            nodelist_abbrev(tc['job_nodelist']), tc['result'],
+            f'{tc["system"]}:{tc["partition"]}@{tc["environ"]}',
+            nodelist_abbrev(tc['job_nodelist']),
+            # Always format the completion time as users can set their own
+            # formatting in the log record
+            time.strftime(r'%Y%m%dT%H%M%S%z',
+                          time.localtime(tc['job_completion_time_unix'])),
+            tc['result'],
             tc['uuid']
         ])
 

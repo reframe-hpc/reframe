@@ -317,7 +317,7 @@ def main():
         '--timestamp', action='store', nargs='?', metavar='TIMEFMT',
         const=argparse.CONST_DEFAULT,
         help=('Append a timestamp to the output and stage directory prefixes '
-              '(default: "%%y%%m%%dT%%H%%M%%S%%z")'),
+              '(default: "%%Y%%m%%dT%%H%%M%%S%%z")'),
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
 
@@ -1551,7 +1551,8 @@ def main():
                         report, global_stats=options.duration or options.reruns
                     )
 
-            if options.performance_report and not options.dry_run:
+            if (options.performance_report and
+                not options.dry_run and not report.is_empty()):
                 try:
                     data = reporting.performance_compare(
                         rt.get_option('general/0/perf_report_spec'), report
@@ -1571,7 +1572,8 @@ def main():
             if basedir:
                 os.makedirs(basedir, exist_ok=True)
 
-            if rt.get_option('general/0/generate_file_reports'):
+            if (rt.get_option('general/0/generate_file_reports') and
+                not report.is_empty()):
                 # Save the report file
                 try:
                     default_loc = os.path.dirname(
@@ -1593,18 +1595,20 @@ def main():
                     )
 
             # Store the generated report for analytics
-            try:
-                sess_uuid = report.store()
-            except Exception as e:
-                printer.warning(
-                    f'failed to store results in the database: {e}'
-                )
-            else:
-                printer.info(f'Current session stored with UUID: {sess_uuid}')
+            if not report.is_empty():
+                try:
+                    sess_uuid = report.store()
+                except Exception as e:
+                    printer.warning(
+                        f'failed to store results in the database: {e}'
+                    )
+                else:
+                    printer.info('Current session stored with UUID: '
+                                 f'{sess_uuid}')
 
             # Generate the junit xml report for this session
             junit_report_file = rt.get_option('general/0/report_junit')
-            if junit_report_file:
+            if junit_report_file and not report.is_empty():
                 # Expand variables in filename
                 junit_report_file = osext.expandvars(junit_report_file)
                 try:

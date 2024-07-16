@@ -588,7 +588,7 @@
         "general/resolve_module_conflicts": true,
         "general/save_log_files": false,
         "general/target_systems": ["*"],
-        "general/timestamp_dirs": "%y%m%dT%H%M%S%z",
+        "general/timestamp_dirs": "%Y%m%dT%H%M%S%z",
         "general/trap_job_errors": false,
         "general/unload_modules": [],
         "general/use_login_shell": false,
