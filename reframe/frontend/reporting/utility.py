@@ -109,14 +109,18 @@ def _parse_timestamp(s):
         ts = _do_parse(s)
     except ValueError as err:
         # Try the relative timestamps
-        match = re.match(r'(?P<ts>.*)(?P<amount>[\+|-]\d+)(?P<unit>[hdms])', s)
+        match = re.match(
+            r'(?P<ts>.*)(?P<amount>[\+|-]\d+)(?P<unit>[hdmsw])', s
+        )
         if not match:
             raise err
 
         ts = _do_parse(match.group('ts'))
         amount = int(match.group('amount'))
         unit = match.group('unit')
-        if unit == 'd':
+        if unit == 'w':
+            ts += timedelta(weeks=amount)
+        elif unit == 'd':
             ts += timedelta(days=amount)
         elif unit == 'm':
             ts += timedelta(minutes=amount)
