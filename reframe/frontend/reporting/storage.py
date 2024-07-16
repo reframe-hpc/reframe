@@ -45,6 +45,8 @@ class StorageBackend:
 
 
 class _SqliteStorage(StorageBackend):
+    SCHEMA_VERSION = '1.0'
+
     def __init__(self):
         self.__db_file = os.path.join(
             osext.expandvars(runtime().get_option('storage/0/sqlite_db_file'))
@@ -59,6 +61,7 @@ class _SqliteStorage(StorageBackend):
 
             self._db_create()
 
+        self._db_schema_check()
         return self.__db_file
 
     def _db_create(self):
@@ -75,14 +78,35 @@ class _SqliteStorage(StorageBackend):
                          'report_file TEXT)')
             conn.execute('CREATE TABLE IF NOT EXISTS testcases('
                          'name TEXT,'
-                         'system TEXT,'
-                         'partition TEXT,'
-                         'environ TEXT,'
-                         'job_completion_time_unix REAL,'
-                         'session_uuid TEXT,'
-                         'uuid TEXT,'
+                         'system TEXT, '
+                         'partition TEXT, '
+                         'environ TEXT, '
+                         'job_completion_time_unix REAL, '
+                         'session_uuid TEXT, '
+                         'uuid TEXT, '
                          'FOREIGN KEY(session_uuid) '
                          'REFERENCES sessions(uuid) ON DELETE CASCADE)')
+            conn.execute('CREATE TABLE IF NOT EXISTS metadata('
+                         'schema_version TEXT)')
+
+    def _db_schema_check(self):
+        with sqlite3.connect(self.__db_file) as conn:
+            results = conn.execute(
+                'SELECT schema_version FROM metadata').fetchall()
+
+        if not results:
+            # DB is new, insert the schema version
+            with sqlite3.connect(self.__db_file) as conn:
+                conn.execute('INSERT INTO metadata VALUES(:schema_version)',
+                             {'schema_version': self.SCHEMA_VERSION})
+        else:
+            found_ver = results[0][0]
+            if found_ver != self.SCHEMA_VERSION:
+                raise ReframeError(
+                    f'results DB in {self.__db_file!r} is '
+                    'of incompatible version: '
+                    f'found {found_ver}, required: {self.SCHEMA_VERSION}'
+                )
 
     def _db_store_report(self, conn, report, report_file_path):
         session_start_unix = report['session_info']['time_start_unix']
