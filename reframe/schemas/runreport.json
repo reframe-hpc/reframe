@@ -88,7 +88,6 @@
                 "num_skipped": {"type": "number"},
                 "prefix_output": {"type": "string"},
                 "prefix_stage": {"type": "string"},
-                "runid": {"type": "number"},
                 "session_uuid": {"type": "string"},
                 "time_elapsed": {"type": "number"},
                 "time_end": {"type": "string"},
@@ -101,7 +100,8 @@
                 "workdir": {"type": "string"}
             },
             "required": ["data_version", "hostname",
-                         "time_elapsed", "time_end", "time_start", "uuid"]
+                         "time_elapsed", "time_end_unix", "time_start_unix",
+                         "uuid"]
         },
         "restored_cases": {
             "type": "array",
@@ -116,7 +116,7 @@
                     "num_cases": {"type": "number"},
                     "num_failures": {"type": "number"},
                     "num_skipped": {"type": "number"},
-                    "runid": {"typeid": "number"},
+                    "run_index": {"type": "number"},
                     "testcases": {
                         "type": "array",
                         "items": {"$ref": "#/defs/testcase_type"}

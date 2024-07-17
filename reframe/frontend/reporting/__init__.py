@@ -33,6 +33,7 @@ from .utility import Aggregator, parse_cmp_spec, parse_time_period
 
 DATA_VERSION = '4.0'
 _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
+_DATETIME_FMT = r'%Y%m%dT%H%M%S%z'
 
 
 def format_testcase(json, name='unique_name'):
@@ -247,18 +248,18 @@ class RunReport:
                                            for c in restored_cases]
 
     def update_timestamps(self, ts_start, ts_end):
-        fmt = r'%Y%m%dT%H%M%S%z'
         self.__report['session_info'].update({
-            'time_start': time.strftime(fmt, time.localtime(ts_start)),
+            'time_start': time.strftime(_DATETIME_FMT,
+                                        time.localtime(ts_start)),
             'time_start_unix': ts_start,
-            'time_end': time.strftime(fmt, time.localtime(ts_end)),
+            'time_end': time.strftime(_DATETIME_FMT, time.localtime(ts_end)),
             'time_end_unix': ts_end,
             'time_elapsed': ts_end - ts_start
         })
 
     def update_run_stats(self, stats):
         session_uuid = self.__report['session_info']['uuid']
-        for runid, tasks in stats.runs():
+        for runidx, tasks in stats.runs():
             testcases = []
             num_failures = 0
             num_aborted = 0
@@ -291,7 +292,7 @@ class RunReport:
                     'job_stdout': None,
                     'partition': partition.name,
                     'result': t.result,
-                    'runid': runid,
+                    'run_index': runidx,
                     'scheduler': partition.scheduler.registered_name,
                     'session_uuid': session_uuid,
                     'time_compile': t.duration('compile_complete'),
@@ -300,7 +301,7 @@ class RunReport:
                     'time_sanity': t.duration('sanity'),
                     'time_setup': t.duration('setup'),
                     'time_total': t.duration('total'),
-                    'uuid': f'{session_uuid}:{runid}:{tidx}'
+                    'uuid': f'{session_uuid}:{runidx}:{tidx}'
                 }
                 if check.job:
                     entry['job_stderr'] = check.stderr.evaluate()
@@ -357,7 +358,7 @@ class RunReport:
                 'num_failures': num_failures,
                 'num_aborted': num_aborted,
                 'num_skipped': num_skipped,
-                'runid': runid,
+                'run_index': runidx,
                 'testcases': testcases
             })
 
@@ -515,7 +516,7 @@ def _group_testcases(testcases, group_by, extra_cols):
 
 
 def _aggregate_perf(grouped_testcases, aggr_fn, cols):
-    other_aggr = Aggregator.create('join_uniq', '|')
+    other_aggr = Aggregator.create('join_uniq', '\n')
     aggr_data = {}
     for key, seq in grouped_testcases.items():
         aggr_data.setdefault(key, {})
@@ -638,7 +639,7 @@ def testcase_data(spec):
             nodelist_abbrev(tc['job_nodelist']),
             # Always format the completion time as users can set their own
             # formatting in the log record
-            time.strftime(r'%Y%m%dT%H%M%S%z',
+            time.strftime(_DATETIME_FMT,
                           time.localtime(tc['job_completion_time_unix'])),
             tc['result'],
             tc['uuid']
