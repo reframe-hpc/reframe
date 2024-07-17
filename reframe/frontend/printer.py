@@ -13,7 +13,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility.color as color
 from reframe.core.exceptions import SanityError
-from reframe.frontend.reporting import format_testcase
+from reframe.frontend.reporting import format_testcase_from_json
 from reframe.utility import nodelist_abbrev
 
 
@@ -236,7 +236,7 @@ class PrettyPrinter:
         for i, run in enumerate(report['runs'][1:], start=1):
             for tc in run['testcases']:
                 # Overwrite entry from previous run if available
-                tc_info = format_testcase(tc)
+                tc_info = format_testcase_from_json(tc)
                 messages[tc_info] = (
                     f"  * Test {tc_info} was retried {i} time(s) and"
                     f" {'failed' if tc['result'] == 'fail' else 'passed'}."

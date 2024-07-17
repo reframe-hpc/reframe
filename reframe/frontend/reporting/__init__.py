@@ -36,13 +36,24 @@ _SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
 _DATETIME_FMT = r'%Y%m%dT%H%M%S%z'
 
 
-def format_testcase(json, name='unique_name'):
+def _format_sysenv(system, partition, environ):
+    return f'{system}:{partition}+{environ}'
+
+
+def format_testcase_from_json(tc):
     '''Format test case from its json representation'''
-    name = json[name]
-    system = json['system']
-    partition = json['partition']
-    environ = json['environ']
-    return f'{name}@{system}:{partition}+{environ}'
+    name = tc['name']
+    system = tc['system']
+    partition = tc['partition']
+    environ = tc['environ']
+    return f'{name} @{_format_sysenv(system, partition, environ)}'
+
+
+def format_testcase(tc):
+    return format_testcase_from_json({'name': tc.check.name,
+                                      'system': tc.check.current_system.name,
+                                      'partition': tc.partition.name,
+                                      'environ': tc.environ.name})
 
 
 class _RestoredSessionInfo:
@@ -57,11 +68,11 @@ class _RestoredSessionInfo:
         self._cases_index = {}
         for run in self._report['runs']:
             for tc in run['testcases']:
-                self._cases_index[format_testcase(tc)] = tc
+                self._cases_index[format_testcase_from_json(tc)] = tc
 
         # Index also the restored cases
         for tc in self._report['restored_cases']:
-            self._cases_index[format_testcase(tc)] = tc
+            self._cases_index[format_testcase_from_json(tc)] = tc
 
     def __getitem__(self, key):
         return self._report[key]
@@ -95,8 +106,8 @@ class _RestoredSessionInfo:
 
                 yield val
 
-    def case(self, check, part, env):
-        key = f'{check.unique_name}@{part.fullname}+{env.name}'
+    def case(self, tc):
+        key = format_testcase(tc)
         ret = self._cases_index.get(key)
         if ret is None:
             # Look up the case in the fallback reports
@@ -123,7 +134,7 @@ class _RestoredSessionInfo:
         return graph, restored
 
     def _do_restore(self, testcase):
-        tc = self.case(*testcase)
+        tc = self.case(testcase)
         if tc is None:
             raise ReframeError(
                 f'could not restore testcase {testcase!r}: '
@@ -244,7 +255,7 @@ class RunReport:
                 self.__report['session_info'][key] = val
 
     def update_restored_cases(self, restored_cases, restored_session):
-        self.__report['restored_cases'] = [restored_session.case(*c)
+        self.__report['restored_cases'] = [restored_session.case(c)
                                            for c in restored_cases]
 
     def update_timestamps(self, ts_start, ts_end):
@@ -437,7 +448,7 @@ class RunReport:
             )
             etree.SubElement(xml_testsuite, 'properties')
             for tc in rfm_run['testcases']:
-                casename = f'{format_testcase(tc, name="name")}'
+                casename = f'{format_testcase_from_json(tc)}'
                 testcase = etree.SubElement(
                     xml_testsuite, 'testcase',
                     attrib={
@@ -535,7 +546,8 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
                           extra_group_by=None, extra_cols=None):
     extra_group_by = extra_group_by or []
     extra_cols = extra_cols or []
-    group_by = ['name', 'pvar', 'punit'] + extra_group_by
+    group_by = (['name', 'system', 'partition', 'environ', 'pvar', 'punit'] +
+                extra_group_by)
 
     grouped_base = _group_testcases(base_testcases, group_by, extra_cols)
     grouped_target = _group_testcases(target_testcases, group_by, extra_cols)
@@ -543,7 +555,7 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
     ptarget = _aggregate_perf(grouped_target, target_fn, [])
 
     # Build the final table data
-    data = [['name', 'pvar', 'pval',
+    data = [['name', 'sysenv', 'pvar', 'pval',
              'punit', 'pdiff'] + extra_group_by + extra_cols]
     for key, aggr_data in pbase.items():
         pval = aggr_data['pval']
@@ -558,8 +570,9 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
                 pdiff = (pval - target_pval) / target_pval
                 pdiff = '{:+7.2%}'.format(pdiff)
 
-        name, pvar, punit, *extras = key
-        line = [name, pvar, pval, punit, pdiff, *extras]
+        name, system, partition, environ, pvar, punit, *extras = key
+        line = [name, _format_sysenv(system, partition, environ),
+                pvar, pval, punit, pdiff, *extras]
         # Add the extra columns
         line += [aggr_data[c] for c in extra_cols]
         data.append(line)
@@ -635,7 +648,7 @@ def testcase_data(spec):
     for tc in testcases:
         data.append([
             tc['name'],
-            f'{tc["system"]}:{tc["partition"]}@{tc["environ"]}',
+            _format_sysenv(tc['system'], tc['partition'], tc['environ']),
             nodelist_abbrev(tc['job_nodelist']),
             # Always format the completion time as users can set their own
             # formatting in the log record

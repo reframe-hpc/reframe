@@ -1230,7 +1230,7 @@ def main():
                 sys.exit(1)
 
             def _case_failed(t):
-                rec = restored_session.case(*t)
+                rec = restored_session.case(t)
                 if not rec:
                     return False
 
