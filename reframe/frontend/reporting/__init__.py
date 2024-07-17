@@ -590,10 +590,16 @@ def performance_compare(cmp, report=None):
             raise ValueError('report cannot be `None` '
                              'for current run comparisons')
         try:
-            tcs_base = report['runs'][0]['testcases']
+            # Get the last retry from every test case
+            num_runs = len(report['runs'])
+            tcs_base = []
+            for run in report['runs']:
+                run_idx = run['run_index']
+                for tc in run['testcases']:
+                    if tc['result'] != 'fail' or run_idx == num_runs - 1:
+                        tcs_base.append(tc)
         except IndexError:
             tcs_base = []
-
     elif match.period_base is not None:
         tcs_base = StorageBackend.default().fetch_testcases_time_period(
             *match.period_base

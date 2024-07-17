@@ -228,22 +228,22 @@ class PrettyPrinter:
             # Do nothing if no retries
             return
 
-        line_width = shutil.get_terminal_size()[0]
-        lines = [line_width * '=']
+        line_width = min(80, shutil.get_terminal_size()[0])
+        lines = ['', line_width * '=']
         lines.append('SUMMARY OF RETRIES')
         lines.append(line_width * '-')
-        messages = {}
-        for i, run in enumerate(report['runs'][1:], start=1):
+        retried_tc = set()
+        for run in reversed(report['runs'][1:]):
+            runidx = run['run_index']
             for tc in run['testcases']:
                 # Overwrite entry from previous run if available
                 tc_info = format_testcase_from_json(tc)
-                messages[tc_info] = (
-                    f"  * Test {tc_info} was retried {i} time(s) and"
-                    f" {'failed' if tc['result'] == 'fail' else 'passed'}."
-                )
-
-        for msg in sorted(messages):
-            lines.append(msg)
+                if tc_info not in retried_tc:
+                    lines.append(
+                        f"  * Test {tc_info} was retried {runidx} time(s) and "
+                        f" {'failed' if tc['result'] == 'fail' else 'passed'}."
+                    )
+                    retried_tc.add(tc_info)
 
         self.info('\n'.join(lines))
 
