@@ -14,6 +14,7 @@ import tempfile
 
 import reframe.core.settings as settings
 import reframe.core.runtime as rt
+import reframe.frontend.dependencies as dependencies
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 import reframe.utility as util
@@ -116,6 +117,33 @@ def make_runner(request):
         return executors.Runner(policy, *args, **kwargs)
 
     return _make_runner
+
+
+@pytest.fixture
+def make_cases(make_loader):
+    def _make_cases(checks=None, sort=False, *args, **kwargs):
+        if checks is None:
+            checks = make_loader(
+                ['unittests/resources/checks'], *args, **kwargs
+            ).load_all(force=True)
+
+        cases = executors.generate_testcases(checks)
+        if sort:
+            depgraph, _ = dependencies.build_deps(cases)
+            dependencies.validate_deps(depgraph)
+            cases = dependencies.toposort(depgraph)
+
+        return cases
+
+    return _make_cases
+
+
+@pytest.fixture
+def cases_with_deps(make_loader, make_cases):
+    checks = make_loader(
+        ['unittests/resources/checks_unlisted/deps_complex.py']
+    ).load_all()
+    return make_cases(checks, sort=True)
 
 
 @pytest.fixture
