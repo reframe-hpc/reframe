@@ -314,7 +314,8 @@ class RegressionTask:
 
     @property
     def succeeded(self):
-        return self._current_stage in {'finalize', 'cleanup'}
+        return (self._current_stage in {'finalize', 'cleanup'} and
+                not self._failed_stage == 'cleanup')
 
     @property
     def completed(self):

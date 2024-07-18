@@ -120,6 +120,16 @@ def make_runner(request):
 
 
 @pytest.fixture
+def make_async_runner():
+    def _make_runner(*args, **kwargs):
+        policy = policies.AsynchronousExecutionPolicy()
+        policy._pollctl.SLEEP_MIN = 0.001
+        return executors.Runner(policy, *args, **kwargs)
+
+    return _make_runner
+
+
+@pytest.fixture
 def make_cases(make_loader):
     def _make_cases(checks=None, sort=False, *args, **kwargs):
         if checks is None:

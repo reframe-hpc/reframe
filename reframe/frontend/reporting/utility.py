@@ -110,7 +110,7 @@ def _parse_timestamp(s):
     except ValueError as err:
         # Try the relative timestamps
         match = re.match(
-            r'(?P<ts>.*)(?P<amount>[\+|-]\d+)(?P<unit>[hdmsw])', s
+            r'(?P<ts>.*)(?P<amount>[\+|-]\d+)(?P<unit>[mhdw])', s
         )
         if not match:
             raise err
@@ -122,12 +122,10 @@ def _parse_timestamp(s):
             ts += timedelta(weeks=amount)
         elif unit == 'd':
             ts += timedelta(days=amount)
-        elif unit == 'm':
-            ts += timedelta(minutes=amount)
         elif unit == 'h':
             ts += timedelta(hours=amount)
-        elif unit == 's':
-            ts += timedelta(seconds=amount)
+        elif unit == 'm':
+            ts += timedelta(minutes=amount)
 
     return ts.timestamp()
 
@@ -156,12 +154,11 @@ def parse_time_period(s):
 
 
 def _parse_extra_cols(s):
-    try:
-        extra_cols = s.split('+')[1:]
-    except (ValueError, IndexError):
-        raise ValueError(f'invalid extra groups spec: {s}') from None
+    if s and not s.startswith('+'):
+        raise ValueError(f'invalid column spec: {s}')
 
-    return extra_cols
+    # Remove any empty columns
+    return [x for x in s.split('+')[1:] if x]
 
 
 def _parse_aggregation(s):

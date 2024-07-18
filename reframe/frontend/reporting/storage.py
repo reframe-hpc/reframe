@@ -149,8 +149,8 @@ class _SqliteStorage(StorageBackend):
 
     def store(self, report, report_file=None):
         prefix = os.path.dirname(self.__db_file)
-        with FileLock(os.path.join(prefix, '.db.lock')):
-            with sqlite3.connect(self._db_file()) as conn:
+        with sqlite3.connect(self._db_file()) as conn:
+            with FileLock(os.path.join(prefix, '.db.lock')):
                 return self._db_store_report(conn, report, report_file)
 
     def _fetch_testcases_raw(self, condition):
@@ -231,6 +231,9 @@ class _SqliteStorage(StorageBackend):
         prefix = os.path.dirname(self.__db_file)
         with FileLock(os.path.join(prefix, '.db.lock')):
             with sqlite3.connect(self._db_file()) as conn:
-                query = f'DELETE FROM sessions WHERE uuid == "{uuid}"'
+                query = (f'DELETE FROM sessions WHERE uuid == "{uuid}" '
+                         'RETURNING *')
                 getlogger().debug(query)
-                conn.execute(query)
+                deleted = conn.execute(query).fetchall()
+                if not deleted:
+                    raise ReframeError(f'no such session: {uuid}')

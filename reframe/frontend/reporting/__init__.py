@@ -235,6 +235,9 @@ class RunReport:
         now = time.time()
         self.update_timestamps(now, now)
 
+    def data(self):
+        return self.__report
+
     @property
     def filename(self):
         return self.__filename
