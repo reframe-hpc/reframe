@@ -874,7 +874,7 @@ The way the tests are generated and how they interact with the test filtering op
    - ``avail``: Tests will run on all the nodes of their respective valid partitions that are available for running jobs.
      Note that if a node is currently allocated to another job it is still considered as "available."
    - ``NODESTATE``: Tests will run on all the nodes of their respective valid partitions that are exclusively in state ``NODESTATE``.
-     aIf ``NODESTATE`` is not specified, ``idle`` is assumed.
+     If ``NODESTATE`` is not specified, ``idle`` is assumed.
    - ``NODESTATE*``: Tests will run on all the nodes of their respective valid partitions that are at least in state ``NODESTATE``.
 
    The state of the nodes will be determined once, before beginning the
