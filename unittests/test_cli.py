@@ -107,6 +107,8 @@ def run_reframe(tmp_path, monkeypatch):
             argv += ['-h']
         elif action == 'describe':
             argv += ['--describe']
+        else:
+            argv += [action]
 
         if perflogdir:
             argv += ['--perflogdir', perflogdir]
@@ -164,10 +166,7 @@ def test_check_restore_session_failed(run_reframe, tmp_path):
     run_reframe(
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py']
     )
-    returncode, stdout, _ = run_reframe(
-        checkpath=[],
-        more_options=['--restore-session', '--failed']
-    )
+    run_reframe(checkpath=[],  more_options=['--restore-session', '--failed'])
     report = reporting.restore_session(
         f'{tmp_path}/.reframe/reports/latest.json'
     )
@@ -186,10 +185,7 @@ def test_check_restore_session_succeeded_test(run_reframe, tmp_path):
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py'],
         more_options=['--keep-stage-files']
     )
-    returncode, stdout, _ = run_reframe(
-        checkpath=[],
-        more_options=['--restore-session', '-n', 'T1']
-    )
+    run_reframe(checkpath=[], more_options=['--restore-session', '-n', 'T1'])
     report = reporting.restore_session(
         f'{tmp_path}/.reframe/reports/latest.json'
     )
@@ -747,9 +743,8 @@ def test_filtering_by_expr(run_reframe):
 def test_show_config_all(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
-        more_options=['--show-config'],
-        system='testsys',
-        action=None
+        action='--show-config',
+        system='testsys'
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -759,9 +754,8 @@ def test_show_config_all(run_reframe):
 def test_show_config_param(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
-        more_options=['--show-config=systems'],
-        system='testsys',
-        action=None
+        action='--show-config=systems',
+        system='testsys'
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -771,9 +765,8 @@ def test_show_config_param(run_reframe):
 def test_show_config_unknown_param(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
-        more_options=['--show-config=foo'],
-        system='testsys',
-        action=None
+        action='--show-config=foo',
+        system='testsys'
     )
     assert 'no such configuration parameter found' in stdout
     assert 'Traceback' not in stdout
@@ -783,9 +776,8 @@ def test_show_config_unknown_param(run_reframe):
 
 def test_show_config_null_param(run_reframe):
     returncode, stdout, stderr = run_reframe(
-        more_options=['--show-config=general/report_junit'],
-        system='testsys',
-        action=None
+        action='--show-config=general/report_junit',
+        system='testsys'
     )
     assert 'null' in stdout
     assert 'Traceback' not in stdout
@@ -1115,10 +1107,7 @@ def test_exec_order(run_reframe, exec_order):
 def test_detect_host_topology(run_reframe):
     from reframe.utility.cpuinfo import cpuinfo
 
-    returncode, stdout, stderr = run_reframe(
-        more_options=['--detect-host-topology'],
-        action=None
-    )
+    returncode, stdout, stderr = run_reframe(action='--detect-host-topology')
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
@@ -1130,8 +1119,7 @@ def test_detect_host_topology_file(run_reframe, tmp_path):
 
     topo_file = tmp_path / 'topo.json'
     returncode, stdout, stderr = run_reframe(
-        more_options=[f'--detect-host-topology={topo_file}'],
-        action=None
+        action=f'--detect-host-topology={topo_file}',
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -1198,7 +1186,7 @@ def test_fixture_registry_env_sys(run_reframe):
     assert returncode == 0
     assert 'e1' in stdout
     assert 'sys1:p0' in stdout
-    returncode, stdout, stderr = run_reframe(
+    returncode, stdout, _ = run_reframe(
         system='sys1:p1',
         environs=['e1'],
         checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
@@ -1208,7 +1196,7 @@ def test_fixture_registry_env_sys(run_reframe):
     assert returncode == 0
     assert 'e1' in stdout
     assert 'sys1:p1' in stdout
-    returncode, stdout, stderr = run_reframe(
+    returncode, stdout, _ = run_reframe(
         system='sys1:p1',
         environs=['e2'],
         checkpath=['unittests/resources/checks_unlisted/fixtures_simple.py'],
@@ -1230,7 +1218,7 @@ def test_fixture_resolution(run_reframe, run_action):
     assert returncode == 0
 
 
-def test_dynamic_tests(run_reframe, tmp_path, run_action):
+def test_dynamic_tests(run_reframe, run_action):
     returncode, stdout, _ = run_reframe(
         system='sys0',
         environs=[],
@@ -1243,7 +1231,7 @@ def test_dynamic_tests(run_reframe, tmp_path, run_action):
     assert 'FAILED' not in stdout
 
 
-def test_dynamic_tests_filtering(run_reframe, tmp_path, run_action):
+def test_dynamic_tests_filtering(run_reframe, run_action):
     returncode, stdout, _ = run_reframe(
         system='sys1',
         environs=[],
@@ -1267,3 +1255,87 @@ def test_testlib_inherit_fixture_in_different_files(run_reframe):
     assert returncode == 0
     assert 'Ran 3/3 test case(s)' in stdout
     assert 'FAILED' not in stdout
+
+
+def test_storage_options(run_reframe, tmp_path):
+    def assert_no_crash(returncode, stdout, stderr, exitcode=0):
+        assert returncode == exitcode
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        return returncode, stdout, stderr
+
+    run_reframe2 = functools.partial(
+        run_reframe,
+        checkpath=['unittests/resources/checks/frontend_checks.py']
+    )
+
+    # Run first a normal run with a performance test to initialize the DB
+    run_reframe2(action='run')
+    assert os.path.exists(tmp_path / '.reframe' / 'reports' / 'results.db')
+
+    stdout = assert_no_crash(
+        *run_reframe(action='--list-stored-sessions')
+    )[1]
+
+    # Get the session uuid for later queries
+    uuid = re.search(r'(\S+-\S+)', stdout).group(1)
+
+    # Get details from the last session
+    stdout = assert_no_crash(
+        *run_reframe2(action=f'--describe-stored-session={uuid}')
+    )[1]
+    session_json = json.loads(stdout)
+
+    # List test cases by session
+    assert_no_crash(*run_reframe2(action=f'--list-stored-testcases=^{uuid}'))
+    assert_no_crash(
+        *run_reframe2(action=f'--describe-stored-testcases=^{uuid}')
+    )
+
+    # List test cases by time period
+    ts_start = session_json['session_info']['time_start']
+    assert_no_crash(
+        *run_reframe2(action=f'--list-stored-testcases={ts_start}:now')
+    )
+    assert_no_crash(
+        *run_reframe2(action=f'--describe-stored-testcases={ts_start}:now')
+    )
+
+    # Check that invalid argument do not crash CLI
+    assert_no_crash(*run_reframe2(action='--describe-stored-session=0'),
+                    exitcode=1)
+    assert_no_crash(*run_reframe2(action='--describe-stored-testcases=0'),
+                    exitcode=1)
+    assert_no_crash(*run_reframe2(action='--list-stored-testcases=0'),
+                    exitcode=1)
+
+    # Remove session
+    assert_no_crash(*run_reframe2(action=f'--delete-stored-session={uuid}'))
+
+
+def test_performance_compare(run_reframe):
+    def assert_no_crash(returncode, stdout, stderr, exitcode=0):
+        assert returncode == exitcode
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        return returncode, stdout, stderr
+
+    run_reframe2 = functools.partial(
+        run_reframe,
+        checkpath=['unittests/resources/checks/frontend_checks.py']
+    )
+    run_reframe2(action='run')
+
+    # Rerun with various arguments
+    assert_no_crash(
+        *run_reframe2(
+            action='--performance-compare=now-1m:now/now-1d:now/mean:/+result'
+        )
+    )
+
+    # Check that invalid arguments do not crash the CLI
+    assert_no_crash(
+        *run_reframe2(
+            action='--performance-compare=now-1m:now/now-1d:now/mean:+foo/+bar'
+        ), exitcode=1
+    )
