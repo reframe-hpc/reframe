@@ -1278,7 +1278,7 @@ def test_storage_options(run_reframe, tmp_path):
     )[1]
 
     # Get the session uuid for later queries
-    uuid = re.search(r'(\S+-\S+)', stdout).group(1)
+    uuid = re.search(r'(\w{8}-\w{4}-\w{4}-\w{4}-\w{12})', stdout).group(1)
 
     # Get details from the last session
     stdout = assert_no_crash(
