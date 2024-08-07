@@ -227,7 +227,22 @@ class _SqliteStorage(StorageBackend):
 
         return jsonext.loads(results[0][0]) if results else {}
 
-    def remove_session(self, uuid):
+    def _do_remove(self, uuid):
+        prefix = os.path.dirname(self.__db_file)
+        with FileLock(os.path.join(prefix, '.db.lock')):
+            with sqlite3.connect(self._db_file()) as conn:
+                # Check first if the uuid exists
+                query = f'SELECT * FROM sessions WHERE uuid == "{uuid}"'
+                getlogger().debug(query)
+                if not conn.execute(query).fetchall():
+                    raise ReframeError(f'no such session: {uuid}')
+
+                query = f'DELETE FROM sessions WHERE uuid == "{uuid}"'
+                getlogger().debug(query)
+                conn.execute(query)
+
+    def _do_remove2(self, uuid):
+        '''Remove a session using the RETURNING keyword'''
         prefix = os.path.dirname(self.__db_file)
         with FileLock(os.path.join(prefix, '.db.lock')):
             with sqlite3.connect(self._db_file()) as conn:
@@ -237,3 +252,9 @@ class _SqliteStorage(StorageBackend):
                 deleted = conn.execute(query).fetchall()
                 if not deleted:
                     raise ReframeError(f'no such session: {uuid}')
+
+    def remove_session(self, uuid):
+        if sqlite3.sqlite_version_info >= (3, 35, 0):
+            self._do_remove2(uuid)
+        else:
+            self._do_remove(uuid)
