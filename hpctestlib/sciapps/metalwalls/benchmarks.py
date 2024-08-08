@@ -228,7 +228,6 @@ class MetalWallsCheck(rfm.RunOnlyRegressionTest):
         app = sn.extractall(rgx, 'run.out', 'flag', float)
         return app[-1]
 
-    @performance_function('s')
     def extract_time(
         self, name: str = None, parent: str = None, kind: str = None
     ) -> float:
