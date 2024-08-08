@@ -395,7 +395,7 @@ def main():
               'for the selected tests and exit'),
     )
     action_options.add_argument(
-        '--delete-stored-session', action='store', metavar='SESSION_UUID',
+        '--delete-stored-session', action='store', metavar='UUID',
         help='Delete stored session'
     )
     action_options.add_argument(
@@ -403,7 +403,7 @@ def main():
         help='Give full details on the selected tests'
     )
     action_options.add_argument(
-        '--describe-stored-session', action='store', metavar='SESSION_UUID',
+        '--describe-stored-session', action='store', metavar='UUID',
         help='Get detailed session information in JSON'
     )
     action_options.add_argument(
@@ -432,7 +432,7 @@ def main():
     )
     action_options.add_argument(
         '--list-stored-testcases', action='store',
-        metavar='SESSION_UUID|PERIOD',
+        metavar='^SESSION_UUID|PERIOD',
         help='List stored testcases by session or time period'
     )
     action_options.add_argument(
