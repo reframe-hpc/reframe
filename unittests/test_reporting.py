@@ -277,10 +277,28 @@ def test_parse_cmp_spec_extra_cols(extra_cols):
     assert match.period_base is None
 
 
-@pytest.fixture(params=['^uuid/now-1d:now/min:/',
-                        'now-1d:now/^uuid/min:/',
-                        '^uuid0/^uuid1/min:/',
-                        'now-1m:now/now-1d:now/min:/'])
+def test_is_uuid():
+    # Test a standard UUID
+    assert report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2')
+
+    # Test a run UUID
+    assert report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2:0')
+
+    # Test a test case UUID
+    assert report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2:0:1')
+
+    # Test invalid UUIDs
+    assert not report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c')
+    assert not report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2:')
+    assert not report_util.is_uuid('foo')
+
+
+@pytest.fixture(params=[
+    '7daf4a71-997b-4417-9bda-225c9cab96c2/now-1d:now/min:/',
+    'now-1d:now/7daf4a71-997b-4417-9bda-225c9cab96c2/min:/',
+    '7daf4a71-997b-4417-9bda-225c9cab96c2/7daf4a71-997b-4417-9bda-225c9cab96c2/min:/',  # noqa: E501
+    'now-1m:now/now-1d:now/min:/']
+)
 def uuid_spec(request):
     return request.param
 
@@ -291,10 +309,10 @@ def test_parse_cmp_spec_with_uuid(uuid_spec):
         base, target = None, None
         if len(parts) == 3:
             base = None
-            target = parts[0][1:] if parts[0].startswith('^') else None
+            target = parts[0] if report_util.is_uuid(parts[0]) else None
         else:
-            base = parts[0][1:] if parts[0].startswith('^') else None
-            target = parts[1][1:] if parts[1].startswith('^') else None
+            base = parts[0] if report_util.is_uuid(parts[0]) else None
+            target = parts[1] if report_util.is_uuid(parts[1]) else None
 
         return base, target
 

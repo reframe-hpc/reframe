@@ -294,12 +294,11 @@ There are commands that act upon the selected tests and others that have a helpe
 
    .. versionadded:: 4.7
 
-.. option:: --describe-stored-testcases=^SESSION_UUID|TIME_PERIOD
+.. option:: --describe-stored-testcases=SESSION_UUID|TIME_PERIOD
 
    Get detailed test case information of the session with the specified UUID or from the specified time period.
 
    If a session UUID is provided only information about the test cases of this session will be provided.
-   Note that the session UUID must be prefixed with ``^``.
 
    For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
 
@@ -350,12 +349,11 @@ There are commands that act upon the selected tests and others that have a helpe
 
    .. versionadded:: 4.7
 
-.. option:: --list-stored-testcases=^SESSION_UUID|TIME_PERIOD
+.. option:: --list-stored-testcases=SESSION_UUID|TIME_PERIOD
 
    List all test cases from the session with the specified UUID or from the specified time period.
 
    If a session UUID is provided only the test cases of this session will be listed.
-   Note that the session UUID must be prefixed with ``^``.
 
    For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
 
@@ -1319,7 +1317,7 @@ The base test cases will be compared against those from the target period.
    The ``<base_cases>`` subspec is ommitted from the ``CMPSPEC`` of the :option:`--performance-report` option as the base test cases are always the test cases from the current session.
 
 The test cases for comparison can either be retrieved from an existing past session or a past time period.
-A past session is denoted with the ``^<session_uuid>`` syntax and only the test cases of that particular session will be selected.
+A past session is denoted with the ``<session_uuid>`` syntax and only the test cases of that particular session will be selected.
 To view the UUIDs of all stored sessions, use the :option:`--list-stored-sessions` option.
 
 To retrieve results from a time period, check the :ref:`time period syntax <time-period-syntax>` below.
@@ -1374,7 +1372,7 @@ Here are some examples of performance comparison specs:
 
   .. code-block:: console
 
-     ^7a70b2da-1544-4ac4-baf4-0fcddd30b672/now-10d:now/mean:/
+     7a70b2da-1544-4ac4-baf4-0fcddd30b672/now-10d:now/mean:/
 
 - Compare the best performance of the test cases run on two specific days, group by the node list and report also the test result:
 

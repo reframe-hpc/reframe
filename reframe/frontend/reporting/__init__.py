@@ -26,7 +26,7 @@ from reframe.core.logging import getlogger, _format_time_rfc3339
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev
 from .storage import StorageBackend
-from .utility import Aggregator, parse_cmp_spec, parse_time_period
+from .utility import Aggregator, parse_cmp_spec, parse_time_period, is_uuid
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
@@ -642,8 +642,8 @@ def session_data():
 
 def testcase_data(spec):
     storage = StorageBackend.default()
-    if spec.startswith('^'):
-        testcases = storage.fetch_testcases_from_session(spec[1:])
+    if is_uuid(spec):
+        testcases = storage.fetch_testcases_from_session(spec)
     else:
         testcases = storage.fetch_testcases_time_period(
             *parse_time_period(spec)
@@ -686,8 +686,8 @@ def session_info(uuid):
 def testcase_info(spec):
     '''Retrieve test case details as JSON'''
     testcases = []
-    if spec.startswith('^'):
-        session_uuid, *tc_index = spec[1:].split(':')
+    if is_uuid(spec):
+        session_uuid, *tc_index = spec.split(':')
         session = session_info(session_uuid)
         if not tc_index:
             for run in session['runs']:

@@ -408,7 +408,7 @@ def main():
     )
     action_options.add_argument(
         '--describe-stored-testcases', action='store',
-        metavar='^SESSION_UUID|PERIOD',
+        metavar='SESSION_UUID|PERIOD',
         help='Get detailed test case information in JSON'
     )
     action_options.add_argument(
@@ -432,7 +432,7 @@ def main():
     )
     action_options.add_argument(
         '--list-stored-testcases', action='store',
-        metavar='^SESSION_UUID|PERIOD',
+        metavar='SESSION_UUID|PERIOD',
         help='List stored testcases by session or time period'
     )
     action_options.add_argument(

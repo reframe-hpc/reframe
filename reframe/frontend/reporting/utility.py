@@ -130,11 +130,19 @@ def _parse_timestamp(s):
     return ts.timestamp()
 
 
+_UUID_PATTERN = re.compile(r'^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}(:\d+)?(:\d+)?$')
+
+
+def is_uuid(s):
+    '''Return true if `s` is a valid session, run or test case UUID'''
+    return _UUID_PATTERN.match(s) is not None
+
+
 def parse_time_period(s):
-    if s.startswith('^'):
+    if is_uuid(s):
         # Retrieve the period of a full session
         try:
-            session_uuid = s[1:]
+            session_uuid = s
         except IndexError:
             raise ValueError(f'invalid session uuid: {s}') from None
         else:
@@ -181,8 +189,8 @@ def parse_cmp_spec(spec):
         if s is None:
             return None, None
 
-        if s.startswith('^'):
-            return s[1:], None
+        if is_uuid(s):
+            return s, None
 
         return None, parse_time_period(s)
 

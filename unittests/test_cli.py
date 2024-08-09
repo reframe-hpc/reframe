@@ -1287,9 +1287,9 @@ def test_storage_options(run_reframe, tmp_path):
     session_json = json.loads(stdout)
 
     # List test cases by session
-    assert_no_crash(*run_reframe2(action=f'--list-stored-testcases=^{uuid}'))
+    assert_no_crash(*run_reframe2(action=f'--list-stored-testcases={uuid}'))
     assert_no_crash(
-        *run_reframe2(action=f'--describe-stored-testcases=^{uuid}')
+        *run_reframe2(action=f'--describe-stored-testcases={uuid}')
     )
 
     # List test cases by time period

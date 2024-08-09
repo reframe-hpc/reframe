@@ -2024,7 +2024,7 @@ You can use the :option:`--list-stored-testcases` to list the test cases of a sp
 
 .. code-block:: bash
 
-   reframe --list-stored-testcases=^53481b75-b98a-4668-b6ab-82b199cc2efe
+   reframe --list-stored-testcases=53481b75-b98a-4668-b6ab-82b199cc2efe
 
 .. code-block:: console
 
@@ -2040,9 +2040,6 @@ You can use the :option:`--list-stored-testcases` to list the test cases of a sp
    │ stream_test                             │ tutorialsys:default+clang │ myhost     │ 20240809T144057+0000 │ pass     │ 53481b75-b98a-4668-b6ab-82b199cc2efe:0:3 │
    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┙
 
-.. note::
-
-   Note that you have to precede the session UUID with a ``^``.
 
 The test case UUID comprises the UUID of the session where this test case belongs to, its run index (which run inside the session) and its test case index inside the run.
 A session may have multiple runs if it has retried some failed test cases (see :option:`--max-retries`) or if it has run its tests repeatedly (see :option:`--reruns` and :option:`--duration`).
@@ -2085,7 +2082,7 @@ The following will compare the performance of the test cases of the session ``a1
 
 .. code-block:: bash
 
-   reframe --performance-compare=^a120b895-8fe9-4209-a742-997442e37c47/now-1d:now/mean:/
+   reframe --performance-compare=a120b895-8fe9-4209-a742-997442e37c47/now-1d:now/mean:/
 
 .. code-block:: console
 
