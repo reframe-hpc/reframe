@@ -168,24 +168,29 @@ This can be suppressed by increasing the level at which this information is logg
 Run reports and performance logging
 -----------------------------------
 
-Once a test session finishes, ReFrame generates a detailed JSON report under ``$HOME/.reframe/reports``.
-Every time ReFrame is run a new report will be generated automatically.
-The latest one is always symlinked by the ``latest.json`` name, unless the :option:`--report-file` option is given.
+Once a test session finishes, ReFrame stores the detailed session information in database file located under ``$HOME/.reframe/reports``.
+Past performance data can be retrieved from this database and compared with the current or another run.
+We detail handling of the results database in section :ref:`inspecting-past-results`.
+
+By default, the session information is also saved in a JSON report file under ``$HOME/.reframe/reports``.
+The latest report is always symlinked by the ``latest.json`` name, unless the :option:`--report-file` option is given.
 
 For performance tests, in particular, an additional CSV file is generated with all the relevant information.
 These files are located by default under ``perflogs/<system>/<partition>/<testname>.log``.
 In our example, this translates to ``perflogs/generic/default/stream_test.log``.
 The information that is being logged is fully configurable and we will cover this in the :ref:`logging` section.
 
-Finally, you can use also the :option:`--performance-report` option, which will print a summary of the results of the performance tests that have run in the current session.
+Finally, you can use also the :option:`--performance-report` option, which will print a summary of the results of the performance tests that have run in the current session and compare them (by default) with their last obtained performance.
 
 .. code-block:: console
 
-   [stream_test /2e15a047 @generic:default:builtin]
-     num_tasks: 1
-     performance:
-       - copy_bw: 22704.4 MB/s (r: 0 MB/s l: -inf% u: +inf%)
-       - triad_bw: 16040.9 MB/s (r: 0 MB/s l: -inf% u: +inf%)
+   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
+   │ name        │ sysenv                  │ pvar     │    pval │ punit   │ pdiff   │ job_nodelist   │ result   │
+   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
+   │ stream_test │ generic:default+builtin │ copy_bw  │ 40304.2 │ MB/s    │ -0.08%  │ myhost         │ pass     │
+   ├─────────────┼─────────────────────────┼──────────┼─────────┼─────────┼─────────┼────────────────┼──────────┤
+   │ stream_test │ generic:default+builtin │ triad_bw │ 30550.3 │ MB/s    │ +0.04%  │ myhost         │ pass     │
+   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
 
 
 Inspecting the test artifacts
@@ -1969,3 +1974,139 @@ The format function takes the raw log record, the extras and the keys to ignore 
 Since we can't know the exact log record attributes, we iterate over its :attr:`__dict__` items and format the record keys as we go.
 Also note that we ignore all private field of the record starting with ``_``.
 Rerunning the previous example with ``CUSTOM_JSON=1`` will generated the modified JSON record.
+
+
+.. _inspecting-past-results:
+
+Inspecting past results
+=======================
+
+.. versionadded:: 4.7
+
+For every session that has run at least one test case, ReFrame stores all its details, including the test cases, in a database.
+Essentially, the stored information is the same as the one found in the :ref:`report file <run-reports-and-performance-logging>`.
+
+To list all the stored sessions use the :option:`--list-stored-sessions` option:
+
+.. code-block:: bash
+
+   reframe --list-stored-sessions
+
+This produces a table where the most important information about a session is listed:
+its unique identifier, its start and end time and how many test cases have run:
+
+.. code-block:: console
+
+   ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
+   │ UUID                                 │ Start time           │ End time             │   Num runs │   Num cases │
+   ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
+   │ fddb6678-6de2-427c-96b5-d1c6b3215b0e │ 20240809T135331+0000 │ 20240809T135335+0000 │          1 │           1 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ d96a133c-e5a8-4ceb-88de-f8adfb393f28 │ 20240809T135342+0000 │ 20240809T135345+0000 │          1 │           1 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ c7508042-64be-406a-89f1-c5d31b90f838 │ 20240809T143710+0000 │ 20240809T143713+0000 │          1 │           1 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 3bc5c067-42fa-4496-a5e4-50b92b3cc38e │ 20240809T144025+0000 │ 20240809T144026+0000 │          1 │           2 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 53481b75-b98a-4668-b6ab-82b199cc2efe │ 20240809T144056+0000 │ 20240809T144057+0000 │          1 │           4 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │
+   ...
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ bed145ca-0013-4b68-bfd4-620054121f91 │ 20240809T144459+0000 │ 20240809T144500+0000 │          1 │          10 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ a72c7536-274a-4a21-92c3-4116f38febd0 │ 20240809T144500+0000 │ 20240809T144500+0000 │          1 │           1 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 8cb26ff4-7897-42fc-a993-fbdef57c8983 │ 20240809T144510+0000 │ 20240809T144511+0000 │          1 │           5 │
+   ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
+
+You can use the :option:`--list-stored-testcases` to list the test cases of a specific session or those that have run within a certain period of time:
+
+.. code-block:: bash
+
+   reframe --list-stored-testcases=^53481b75-b98a-4668-b6ab-82b199cc2efe
+
+.. code-block:: console
+
+   ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┑
+   │ Name                                    │ SysEnv                    │ Nodelist   │ Completion Time      │ Result   │ UUID                                     │
+   ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┥
+   │ build_stream ~tutorialsys:default+gnu   │ tutorialsys:default+gnu   │            │ 20240809T145439+0000 │ pass     │ 53481b75-b98a-4668-b6ab-82b199cc2efe:0:0 │
+   ├─────────────────────────────────────────┼───────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ build_stream ~tutorialsys:default+clang │ tutorialsys:default+clang │            │ 20240809T145439+0000 │ pass     │ 53481b75-b98a-4668-b6ab-82b199cc2efe:0:1 │
+   ├─────────────────────────────────────────┼───────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ stream_test                             │ tutorialsys:default+gnu   │ myhost     │ 20240809T144057+0000 │ pass     │ 53481b75-b98a-4668-b6ab-82b199cc2efe:0:2 │
+   ├─────────────────────────────────────────┼───────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ stream_test                             │ tutorialsys:default+clang │ myhost     │ 20240809T144057+0000 │ pass     │ 53481b75-b98a-4668-b6ab-82b199cc2efe:0:3 │
+   ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┙
+
+.. note::
+
+   Note that you have to precede the session UUID with a ``^``.
+
+The test case UUID comprises the UUID of the session where this test case belongs to, its run index (which run inside the session) and its test case index inside the run.
+A session may have multiple runs if it has retried some failed test cases (see :option:`--max-retries`) or if it has run its tests repeatedly (see :option:`--reruns` and :option:`--duration`).
+
+You can also list the test cases that have run in a certain period of time use the :ref:`time period <time-period-syntax>` of :option:`--list-stored-testcases`:
+
+.. code-block:: bash
+
+   reframe --list-stored-testcases=20240809T144500+0000:now
+
+.. code-block:: console
+
+   ┍━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┑
+   │ Name   │ SysEnv                  │ Nodelist   │ Completion Time      │ Result   │ UUID                                     │
+   ┝━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┥
+   │ T2     │ generic:default+builtin │ myhost     │ 20240809T144500+0000 │ fail     │ bed145ca-0013-4b68-bfd4-620054121f91:0:7 │
+   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ T3     │ generic:default+builtin │ myhost     │ 20240809T144500+0000 │ pass     │ bed145ca-0013-4b68-bfd4-620054121f91:0:9 │
+   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ T6     │ generic:default+builtin │ myhost     │ 20240809T144500+0000 │ pass     │ a72c7536-274a-4a21-92c3-4116f38febd0:0:0 │
+   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ T0     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:0 │
+   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ T4     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:1 │
+   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ T5     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:2 │
+   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ T1     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:3 │
+   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
+   │ T6     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:4 │
+   ┕━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┙
+
+To get all the details of a session or a set of test cases you can use the :option:`--describe-stored-session` and :option:`--describe-stored-testcases` options which will return a JSON record with all the details.
+
+Comparing performance of test cases
+-----------------------------------
+
+ReFrame can be used to compare the performance of the same test cases run in different time periods using the :option:`--performance-compare` option.
+The following will compare the performance of the test cases of the session ``a120b895-8fe9-4209-a742-997442e37c47`` with any other same test case that has run the last 24h:
+
+.. code-block:: bash
+
+   reframe --performance-compare=^a120b895-8fe9-4209-a742-997442e37c47/now-1d:now/mean:/
+
+.. code-block:: console
+
+   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┑
+   │ name        │ sysenv                    │ pvar     │    pval │ punit   │ pdiff   │
+   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┥
+   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ 31274.5 │ MB/s    │ -22.47% │
+   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┼─────────┤
+   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ 18993.4 │ MB/s    │ -42.02% │
+   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┼─────────┤
+   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ 38546.2 │ MB/s    │ -9.24%  │
+   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┼─────────┤
+   │ stream_test │ tutorialsys:default+clang │ triad_bw │ 36866.3 │ MB/s    │ -4.72%  │
+   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
+
+Similarly to the :option:`--performance-compare` option, the :option:`--performance-report` option can compare the performance of the current run with any arbitrary past session or past time period.
+
+Finally, you can delete complete a stored session using the :option:`--delete-stored-session` option:
+
+.. code-block:: bash
+
+   reframe --delete-stored-session=a120b895-8fe9-4209-a742-997442e37c47
+
+Deleting a session will also delete all its test cases from the database.

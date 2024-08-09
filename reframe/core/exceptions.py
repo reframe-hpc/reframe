@@ -388,3 +388,17 @@ def what(exc_type, exc_value, tb):
             reason += f': {exc_value}'
 
     return reason
+
+
+class reraise_as:
+    def __init__(self, new_exc, exceptions=(Exception,), message=''):
+        self.__new_exc = new_exc
+        self.__exceptions = exceptions
+        self.__message = message
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if isinstance(exc_val, self.__exceptions):
+            raise self.__new_exc(self.__message) from exc_val

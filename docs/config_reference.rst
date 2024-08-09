@@ -60,6 +60,13 @@ It consists of the following properties, which we also call conventionally *conf
 
    A list of `general configuration objects <#general-configuration>`__.
 
+.. py:data:: storage
+
+   :required: No
+
+   A list of :ref:`storage configuration objects <storage-configuration>`
+
+   .. versionadded:: 4.7
 
 .. py:data:: autodetect_methods
 
@@ -1600,6 +1607,31 @@ The options of an execution mode will be passed to ReFrame as if they were speci
 
    A list of systems *only* that this execution mode is valid for.
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
+
+
+.. _storage-configuration:
+
+Result storage configuration
+============================
+
+.. versionadded:: 4.7
+
+.. py:attribute:: storage.backend
+
+   :required: No
+   :default: ``"sqlite"``
+
+   The backend to use for storing the test results.
+
+   Currently, only Sqlite can be used as a storage backend.
+
+
+.. py:attribute:: storage.sqlite_db_file
+
+   :required: No
+   :default: ``"${HOME}/.reframe/reports/results.db"``
+
+   The Sqlite database file to use.
 
 
 General Configuration

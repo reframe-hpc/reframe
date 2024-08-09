@@ -46,7 +46,8 @@ from reframe.core.schedulers import Job
 
 
 class _NoRuntime(ContainerPlatform):
-    '''Proxy container runtime for storing container platform info early enough.
+    '''Proxy container runtime for storing container platform info early
+    enough.
 
     This will be replaced by the framework with a concrete implementation
     based on the current partition info.
@@ -847,8 +848,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. deprecated:: 4.0.0
     #:    Please use :attr:`env_vars` instead.
     variables = deprecate(variable(alias=env_vars),
-                          f"the use of 'variables' is deprecated; "
-                          f"please use 'env_vars' instead")
+                          "the use of 'variables' is deprecated; "
+                          "please use 'env_vars' instead")
 
     #: Time limit for this test.
     #:
@@ -1517,8 +1518,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @loggable_as('job_nodelist')
     @property
     def _job_nodelist(self):
-        if self.job:
-            return self.job.nodelist
+        return self.job.nodelist if self.job else []
 
     def info(self):
         '''Provide live information for this test.
@@ -1705,7 +1705,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         )
 
     def _setup_run_job(self, **job_opts):
-        self._job = self._create_job(f'run', self.local, **job_opts)
+        self._job = self._create_job('run', self.local, **job_opts)
 
     def _setup_container_platform(self):
         try:
@@ -2217,7 +2217,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         if perf_patterns is not None and self.perf_variables:
             raise ReframeSyntaxError(
-                f"you cannot mix 'perf_patterns' and 'perf_variables' syntax"
+                "you cannot mix 'perf_patterns' and 'perf_variables' syntax"
             )
 
         # Convert `perf_patterns` to `perf_variables`
@@ -2365,7 +2365,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
             self.logger.debug(
-                f'outputdir and stagedir are the same; copying skipped'
+                'outputdir and stagedir are the same; copying skipped'
             )
         else:
             self._copy_to_outputdir()

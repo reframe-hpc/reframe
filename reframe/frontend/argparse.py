@@ -40,6 +40,24 @@ import reframe.utility.typecheck as typ
 # that essentially associate environment variables with configuration
 # arguments, without having to define a corresponding command line option.
 
+class _Undefined:
+    pass
+
+
+# We use a special value for denoting const values that are to be set from the
+# configuration default. This placeholder must be used as the `const` argument
+#  for options with `nargs='?'`. The underlying `ArgumentParser` will use the
+# `const` value as if it were supplied from the command-line thus fooling our
+# machinery of environment variables and configuration options overriding any
+# defaults. For this reason, we use a unique placeholder so that we can
+# distinguish whether this value is a default or actually supplied from the
+# command-line.
+CONST_DEFAULT = _Undefined()
+
+
+def _undefined(val):
+    return val is None or val is CONST_DEFAULT
+
 
 class _Namespace:
     def __init__(self, namespace, option_map):
@@ -76,7 +94,10 @@ class _Namespace:
             return ret
 
         envvar, _, action, arg_type, default = self.__option_map[name]
-        if ret is None and envvar is not None:
+        if ret is CONST_DEFAULT:
+            default = CONST_DEFAULT
+
+        if _undefined(ret) and envvar is not None:
             # Try the environment variable
             envvar, *delim = envvar.split(maxsplit=2)
             delim = delim[0] if delim else ','
@@ -120,14 +141,14 @@ class _Namespace:
                 errors.append(e)
                 continue
 
-            if value is not None:
+            if not _undefined(value):
                 site_config.add_sticky_option(confvar, value)
 
         return errors
 
     def __repr__(self):
         return (f'{type(self).__name__}({self.__namespace!r}, '
-                '{self.__option_map})')
+                f'{self.__option_map})')
 
 
 class _ArgumentHolder:
@@ -148,6 +169,12 @@ class _ArgumentHolder:
             )
 
         return getattr(self._holder, name)
+
+    def __setattr__(self, name, value):
+        if name.startswith('_'):
+            super().__setattr__(name, value)
+        else:
+            setattr(self._holder, name, value)
 
     def add_argument(self, *flags, **kwargs):
         try:
@@ -217,7 +244,7 @@ class ArgumentParser(_ArgumentHolder):
     '''Reframe's extended argument parser.
 
     This argument parser behaves almost identical to the original
-    `argparse.ArgumenParser`. In fact, it uses such a parser internally,
+    `argparse.ArgumentParser`. In fact, it uses such a parser internally,
     delegating all the calls to it. The key difference is how newly parsed
     options are combined with existing namespaces in `parse_args()`.'''
 
@@ -228,6 +255,14 @@ class ArgumentParser(_ArgumentHolder):
     def add_argument_group(self, *args, **kwargs):
         group = _ArgumentGroup(
             self._holder.add_argument_group(*args, **kwargs),
+            self._option_map
+        )
+        self._groups.append(group)
+        return group
+
+    def add_mutually_exclusive_group(self, *args, **kwargs):
+        group = _ArgumentGroup(
+            self._holder.add_mutually_exclusive_group(*args, **kwargs),
             self._option_map
         )
         self._groups.append(group)
@@ -248,7 +283,7 @@ class ArgumentParser(_ArgumentHolder):
         for g in self._groups:
             self._defaults.__dict__.update(g._defaults.__dict__)
 
-    def parse_args(self, args=None, namespace=None):
+    def parse_args(self, args=None, namespace=None, suppress_required=False):
         '''Convert argument strings to objects and return them as attributes of
         a namespace.
 
@@ -260,7 +295,30 @@ class ArgumentParser(_ArgumentHolder):
         for it will be looked up first in `namespace` and if not found there,
         it will be assigned the default value as specified in its corresponding
         `add_argument()` call. If no default value was specified either, the
-        attribute will be set to `None`.'''
+        attribute will be set to `None`.
+
+        If `suppress_required` is true, required mutually-exclusive groups will
+        be treated as optional for this parsing operation.
+        '''
+
+        class suppress_required_groups:
+            '''Temporarily suppress required groups if `suppress_required`
+            is true.'''
+            def __init__(this):
+                this._changed_grp = []
+
+            def __enter__(this):
+                if suppress_required:
+                    for grp in self._groups:
+                        if hasattr(grp, 'required') and grp.required:
+                            this._changed_grp.append(grp)
+                            grp.required = False
+
+                return this
+
+            def __exit__(this, *args, **kwargs):
+                for grp in this._changed_grp:
+                    grp.required = True
 
         # Enable auto-completion
         argcomplete.autocomplete(self._holder)
@@ -270,7 +328,8 @@ class ArgumentParser(_ArgumentHolder):
         # newly parsed options to completely override any options defined in
         # namespace. The implementation of `argparse.ArgumentParser` does not
         # do this in options with an 'append' action.
-        options = self._holder.parse_args(args, None)
+        with suppress_required_groups():
+            options = self._holder.parse_args(args, None)
 
         # Check if namespace refers to our namespace and take the cmd options
         # namespace suitable for ArgumentParser

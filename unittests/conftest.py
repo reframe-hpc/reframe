@@ -14,7 +14,11 @@ import tempfile
 
 import reframe.core.settings as settings
 import reframe.core.runtime as rt
+import reframe.frontend.dependencies as dependencies
+import reframe.frontend.executors as executors
+import reframe.frontend.executors.policies as policies
 import reframe.utility as util
+from reframe.frontend.loader import RegressionCheckLoader
 
 from .utility import TEST_CONFIG_FILE
 
@@ -78,6 +82,78 @@ def make_exec_ctx_g(make_exec_ctx):
         yield ctx
 
     yield _make_exec_ctx
+
+
+@pytest.fixture
+def common_exec_ctx(make_exec_ctx_g):
+    '''Execution context for the default generic system.'''
+    yield from make_exec_ctx_g(system='generic')
+
+
+@pytest.fixture
+def testsys_exec_ctx(make_exec_ctx_g):
+    '''Execution context for the `testsys:gpu` system.'''
+    yield from make_exec_ctx_g(system='testsys:gpu')
+
+
+@pytest.fixture
+def make_loader():
+    '''Test loader'''
+    def _make_loader(check_search_path, *args, **kwargs):
+        return RegressionCheckLoader(check_search_path, *args, **kwargs)
+
+    return _make_loader
+
+
+@pytest.fixture(params=[policies.SerialExecutionPolicy,
+                        policies.AsynchronousExecutionPolicy])
+def make_runner(request):
+    '''Test runner with all the execution policies'''
+
+    def _make_runner(*args, **kwargs):
+        # Use a much higher poll rate for the unit tests
+        policy = request.param()
+        policy._pollctl.SLEEP_MIN = 0.001
+        return executors.Runner(policy, *args, **kwargs)
+
+    return _make_runner
+
+
+@pytest.fixture
+def make_async_runner():
+    def _make_runner(*args, **kwargs):
+        policy = policies.AsynchronousExecutionPolicy()
+        policy._pollctl.SLEEP_MIN = 0.001
+        return executors.Runner(policy, *args, **kwargs)
+
+    return _make_runner
+
+
+@pytest.fixture
+def make_cases(make_loader):
+    def _make_cases(checks=None, sort=False, *args, **kwargs):
+        if checks is None:
+            checks = make_loader(
+                ['unittests/resources/checks'], *args, **kwargs
+            ).load_all(force=True)
+
+        cases = executors.generate_testcases(checks)
+        if sort:
+            depgraph, _ = dependencies.build_deps(cases)
+            dependencies.validate_deps(depgraph)
+            cases = dependencies.toposort(depgraph)
+
+        return cases
+
+    return _make_cases
+
+
+@pytest.fixture
+def cases_with_deps(make_loader, make_cases):
+    checks = make_loader(
+        ['unittests/resources/checks_unlisted/deps_complex.py']
+    ).load_all()
+    return make_cases(checks, sort=True)
 
 
 @pytest.fixture
