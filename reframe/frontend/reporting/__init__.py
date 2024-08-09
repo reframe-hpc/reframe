@@ -235,9 +235,6 @@ class RunReport:
         now = time.time()
         self.update_timestamps(now, now)
 
-    def data(self):
-        return self.__report
-
     @property
     def filename(self):
         return self.__filename
@@ -655,14 +652,20 @@ def testcase_data(spec):
     data = [['Name', 'SysEnv',
              'Nodelist', 'Completion Time', 'Result', 'UUID']]
     for tc in testcases:
+        ts_completed = tc['job_completion_time_unix']
+        if not ts_completed:
+            completion_time = 'n/a'
+        else:
+            # Always format the completion time as users can set their own
+            # formatting in the log record
+            completion_time = time.strftime(_DATETIME_FMT,
+                                            time.localtime(ts_completed))
+
         data.append([
             tc['name'],
             _format_sysenv(tc['system'], tc['partition'], tc['environ']),
             nodelist_abbrev(tc['job_nodelist']),
-            # Always format the completion time as users can set their own
-            # formatting in the log record
-            time.strftime(_DATETIME_FMT,
-                          time.localtime(tc['job_completion_time_unix'])),
+            completion_time,
             tc['result'],
             tc['uuid']
         ])
