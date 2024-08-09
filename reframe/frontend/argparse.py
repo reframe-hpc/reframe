@@ -46,7 +46,7 @@ class _Undefined:
 
 # We use a special value for denoting const values that are to be set from the
 # configuration default. This placeholder must be used as the `const` argument
-#  for options with `nargs='?'`. The underlying `ArugmentParser` will use the
+#  for options with `nargs='?'`. The underlying `ArgumentParser` will use the
 # `const` value as if it were supplied from the command-line thus fooling our
 # machinery of environment variables and configuration options overriding any
 # defaults. For this reason, we use a unique placeholder so that we can
@@ -244,7 +244,7 @@ class ArgumentParser(_ArgumentHolder):
     '''Reframe's extended argument parser.
 
     This argument parser behaves almost identical to the original
-    `argparse.ArgumenParser`. In fact, it uses such a parser internally,
+    `argparse.ArgumentParser`. In fact, it uses such a parser internally,
     delegating all the calls to it. The key difference is how newly parsed
     options are combined with existing namespaces in `parse_args()`.'''
 
