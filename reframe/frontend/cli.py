@@ -427,8 +427,8 @@ def main():
               'providing more details')
     )
     action_options.add_argument(
-        '--list-stored-sessions', action='store_true',
-        help='List stored sessions'
+        '--list-stored-sessions', nargs='?', action='store', const='all',
+        metavar='PERIOD', help='List stored sessions'
     )
     action_options.add_argument(
         '--list-stored-testcases', action='store',
@@ -939,7 +939,11 @@ def main():
     if options.list_stored_sessions:
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
-            printer.table(reporting.session_data())
+            time_period = options.list_stored_sessions
+            if time_period == 'all':
+                time_period = None
+
+            printer.table(reporting.session_data(time_period))
             sys.exit(0)
 
     if options.list_stored_testcases:

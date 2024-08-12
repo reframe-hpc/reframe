@@ -401,8 +401,15 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
 
     backend = report_storage.StorageBackend.default()
 
-    # Test `fetch_all_sessions`
-    stored_sessions = backend.fetch_all_sessions()
+    # Test `fetch_sessions_time_period`
+    stored_sessions = backend.fetch_sessions_time_period()
+    assert len(stored_sessions) == 2
+    for i, sess in enumerate(stored_sessions):
+        assert sess['session_info']['uuid'] == uuids[i]
+
+    # Test the time period version
+    now = time.time()
+    stored_sessions = backend.fetch_sessions_time_period(now - 60, now)
     assert len(stored_sessions) == 2
     for i, sess in enumerate(stored_sessions):
         assert sess['session_info']['uuid'] == uuids[i]
@@ -450,7 +457,7 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
 
     # Test session removal
     backend.remove_session(uuids[-1])
-    assert len(backend.fetch_all_sessions()) == 1
+    assert len(backend.fetch_sessions_time_period()) == 1
 
     testcases = backend.fetch_testcases_time_period(timestamps[0][0],
                                                     timestamps[1][1])

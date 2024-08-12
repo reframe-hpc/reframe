@@ -1986,7 +1986,7 @@ Inspecting past results
 For every session that has run at least one test case, ReFrame stores all its details, including the test cases, in a database.
 Essentially, the stored information is the same as the one found in the :ref:`report file <run-reports-and-performance-logging>`.
 
-To list all the stored sessions use the :option:`--list-stored-sessions` option:
+To list the stored sessions use the :option:`--list-stored-sessions` option:
 
 .. code-block:: bash
 

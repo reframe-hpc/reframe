@@ -623,11 +623,13 @@ def performance_compare(cmp, report=None):
                                  match.extra_cols)
 
 
-def session_data():
+def session_data(time_period):
     '''Retrieve all sessions'''
 
     data = [['UUID', 'Start time', 'End time', 'Num runs', 'Num cases']]
-    for sess_data in StorageBackend.default().fetch_all_sessions():
+    for sess_data in StorageBackend.default().fetch_sessions_time_period(
+        *parse_time_period(time_period) if time_period else (None, None)
+    ):
         session_info = sess_data['session_info']
         data.append(
             [session_info['uuid'],

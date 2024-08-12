@@ -343,9 +343,14 @@ There are commands that act upon the selected tests and others that have a helpe
       The variable names to which fixtures are bound are also listed.
       See :ref:`test_naming_scheme` for more information.
 
-.. option:: --list-stored-sessions
+.. _--list-stored-sessions:
 
-   List all sessions stored in the results database.
+.. option:: --list-stored-sessions[=TIME_PERIOD]
+
+   List sessions stored in the results database.
+
+   If ``TIME_PERIOD`` is not specified or if ``all`` is passed, all stored sessions will be listed.
+   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
 
    .. versionadded:: 4.7
 

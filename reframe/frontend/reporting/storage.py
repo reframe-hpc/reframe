@@ -207,10 +207,20 @@ class _SqliteStorage(StorageBackend):
         session_info = jsonext.loads(results[0][0])
         return [tc for run in session_info['runs'] for tc in run['testcases']]
 
-    def fetch_all_sessions(self):
+    def fetch_sessions_time_period(self, ts_start=None, ts_end=None):
         with sqlite3.connect(self._db_file()) as conn:
-            query = ('SELECT json_blob from sessions '
-                     'ORDER BY session_start_unix')
+            query = 'SELECT json_blob from sessions'
+            if ts_start or ts_end:
+                query += ' WHERE ('
+                if ts_start:
+                    query += f'session_start_unix >= {ts_start}'
+
+                if ts_end:
+                    query += f' AND session_start_unix <= {ts_end}'
+
+                query += ')'
+
+            query += ' ORDER BY session_start_unix'
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
