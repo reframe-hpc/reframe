@@ -1988,6 +1988,21 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 
+.. envvar:: RFM_SQLITE_DB_FILE
+
+   The SQlite database file for storing test results.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.storage.sqlite_db_file`
+      ================================== ==================
+
+   .. versionadded:: 4.7
+
+
 .. envvar:: RFM_SYSLOG_ADDRESS
 
    The address of the Syslog server to send performance logs.

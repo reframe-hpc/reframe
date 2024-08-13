@@ -752,6 +752,12 @@ def main():
         help='Resolve module conflicts automatically'
     )
     argparser.add_argument(
+        dest='sqlite_db_file',
+        envvar='RFM_SQLITE_DB_FILE',
+        configvar='storage/sqlite_db_file',
+        help='DB file where the results database resides'
+    )
+    argparser.add_argument(
         dest='syslog_address',
         envvar='RFM_SYSLOG_ADDRESS',
         configvar='logging/handlers_perflog/syslog_address',
