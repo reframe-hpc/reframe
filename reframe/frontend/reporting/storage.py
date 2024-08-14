@@ -166,15 +166,26 @@ class _SqliteStorage(StorageBackend):
 
         getprofiler().exit_region()
 
-        # Retrieve files
-        testcases = []
+        # Retrieve session info
         sessions = {}
         for session_uuid, uuid, json_blob in results:
+            sessions.setdefault(session_uuid, json_blob)
+
+        # Join all sessions and decode them at once
+        reports_blob = '[' + ','.join(sessions.values()) + ']'
+        getprofiler().enter_region('json decode')
+        reports = jsonext.loads(reports_blob)
+        getprofiler().exit_region()
+
+        # Reindex sessions with their decoded data
+        for rpt in reports:
+            sessions[rpt['session_info']['uuid']] = rpt
+
+        # Extract the test case data
+        testcases = []
+        for session_uuid, uuid, json_blob in results:
             run_index, test_index = [int(x) for x in uuid.split(':')[1:]]
-            getprofiler().enter_region('json decode')
-            report = jsonext.loads(sessions.setdefault(session_uuid,
-                                                       json_blob))
-            getprofiler().exit_region()
+            report = sessions[session_uuid]
             testcases.append(
                 report['runs'][run_index]['testcases'][test_index],
             )
