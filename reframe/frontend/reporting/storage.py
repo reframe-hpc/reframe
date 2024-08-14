@@ -11,7 +11,7 @@ from filelock import FileLock
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeError
-from reframe.core.logging import getlogger
+from reframe.core.logging import getlogger, time_function, getprofiler
 from reframe.core.runtime import runtime
 
 
@@ -153,7 +153,9 @@ class _SqliteStorage(StorageBackend):
             with FileLock(os.path.join(prefix, '.db.lock')):
                 return self._db_store_report(conn, report, report_file)
 
+    @time_function
     def _fetch_testcases_raw(self, condition):
+        getprofiler().enter_region('sqlite query')
         with sqlite3.connect(self._db_file()) as conn:
             query = ('SELECT session_uuid, testcases.uuid as uuid, json_blob '
                      'FROM testcases '
@@ -162,19 +164,24 @@ class _SqliteStorage(StorageBackend):
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
+        getprofiler().exit_region()
+
         # Retrieve files
         testcases = []
         sessions = {}
         for session_uuid, uuid, json_blob in results:
             run_index, test_index = [int(x) for x in uuid.split(':')[1:]]
+            getprofiler().enter_region('json decode')
             report = jsonext.loads(sessions.setdefault(session_uuid,
                                                        json_blob))
+            getprofiler().exit_region()
             testcases.append(
                 report['runs'][run_index]['testcases'][test_index],
             )
 
         return testcases
 
+    @time_function
     def fetch_session_time_period(self, session_uuid):
         with sqlite3.connect(self._db_file()) as conn:
             query = ('SELECT session_start_unix, session_end_unix '
@@ -187,6 +194,7 @@ class _SqliteStorage(StorageBackend):
 
             return None, None
 
+    @time_function
     def fetch_testcases_time_period(self, ts_start, ts_end):
         return self._fetch_testcases_raw(
             f'(job_completion_time_unix >= {ts_start} AND '
@@ -194,6 +202,7 @@ class _SqliteStorage(StorageBackend):
             'ORDER BY job_completion_time_unix'
         )
 
+    @time_function
     def fetch_testcases_from_session(self, session_uuid):
         with sqlite3.connect(self._db_file()) as conn:
             query = ('SELECT json_blob from sessions '
@@ -207,6 +216,7 @@ class _SqliteStorage(StorageBackend):
         session_info = jsonext.loads(results[0][0])
         return [tc for run in session_info['runs'] for tc in run['testcases']]
 
+    @time_function
     def fetch_sessions_time_period(self, ts_start=None, ts_end=None):
         with sqlite3.connect(self._db_file()) as conn:
             query = 'SELECT json_blob from sessions'
@@ -229,6 +239,7 @@ class _SqliteStorage(StorageBackend):
 
         return [jsonext.loads(json_blob) for json_blob, *_ in results]
 
+    @time_function
     def fetch_session_json(self, uuid):
         with sqlite3.connect(self._db_file()) as conn:
             query = f'SELECT json_blob FROM sessions WHERE uuid == "{uuid}"'
@@ -263,6 +274,7 @@ class _SqliteStorage(StorageBackend):
                 if not deleted:
                     raise ReframeError(f'no such session: {uuid}')
 
+    @time_function
     def remove_session(self, uuid):
         if sqlite3.sqlite_version_info >= (3, 35, 0):
             self._do_remove2(uuid)

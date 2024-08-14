@@ -22,7 +22,7 @@ import reframe as rfm
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeError, what, is_severe, reraise_as
-from reframe.core.logging import getlogger, _format_time_rfc3339
+from reframe.core.logging import getlogger, _format_time_rfc3339, time_function
 from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev
@@ -504,6 +504,7 @@ def _group_key(groups, testcase):
     return tuple(key)
 
 
+@time_function
 def _group_testcases(testcases, group_by, extra_cols):
     grouped = {}
     for tc in testcases:
@@ -527,6 +528,7 @@ def _group_testcases(testcases, group_by, extra_cols):
     return grouped
 
 
+@time_function
 def _aggregate_perf(grouped_testcases, aggr_fn, cols):
     if runtime().get_option('general/0/table_format') == 'csv':
         # Use a csv friendly delimiter
@@ -549,6 +551,7 @@ def _aggregate_perf(grouped_testcases, aggr_fn, cols):
     return aggr_data
 
 
+@time_function
 def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
                           extra_group_by=None, extra_cols=None):
     extra_group_by = extra_group_by or []
@@ -587,6 +590,7 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
     return data
 
 
+@time_function
 def performance_compare(cmp, report=None):
     with reraise_as(ReframeError, (ValueError,),
                     'could not parse comparison spec'):
@@ -630,6 +634,7 @@ def performance_compare(cmp, report=None):
                                  match.extra_cols)
 
 
+@time_function
 def session_data(time_period):
     '''Retrieve all sessions'''
 
@@ -649,6 +654,7 @@ def session_data(time_period):
     return data
 
 
+@time_function
 def testcase_data(spec):
     storage = StorageBackend.default()
     if is_uuid(spec):
@@ -682,6 +688,7 @@ def testcase_data(spec):
     return data
 
 
+@time_function
 def session_info(uuid):
     '''Retrieve session details as JSON'''
 
@@ -692,6 +699,7 @@ def session_info(uuid):
     return session
 
 
+@time_function
 def testcase_info(spec):
     '''Retrieve test case details as JSON'''
     testcases = []
@@ -714,5 +722,6 @@ def testcase_info(spec):
     return testcases
 
 
+@time_function
 def delete_session(session_uuid):
     StorageBackend.default().remove_session(session_uuid)

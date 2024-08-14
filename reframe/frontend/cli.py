@@ -218,6 +218,7 @@ class exit_gracefully_on_error:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        logging.getprofiler().print_report(self.__logger.debug)
         if exc_type is SystemExit:
             # Allow users to exit inside the context manager
             return
