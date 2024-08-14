@@ -270,7 +270,7 @@ class PrettyPrinter:
         if table_format == 'plain':
             tablefmt = 'plain'
         elif table_format == 'pretty':
-            tablefmt = 'mixed_grid'
+            tablefmt = 'mixed_outline'
         else:
             raise ValueError(f'invalid table format: {table_format}')
 
