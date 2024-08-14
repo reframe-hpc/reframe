@@ -1257,7 +1257,12 @@ def test_testlib_inherit_fixture_in_different_files(run_reframe):
     assert 'FAILED' not in stdout
 
 
-def test_storage_options(run_reframe, tmp_path):
+@pytest.fixture(params=['csv', 'plain', 'pretty'])
+def table_format(request):
+    return request.param
+
+
+def test_storage_options(run_reframe, tmp_path, table_format):
     def assert_no_crash(returncode, stdout, stderr, exitcode=0):
         assert returncode == exitcode
         assert 'Traceback' not in stdout
@@ -1266,7 +1271,8 @@ def test_storage_options(run_reframe, tmp_path):
 
     run_reframe2 = functools.partial(
         run_reframe,
-        checkpath=['unittests/resources/checks/frontend_checks.py']
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        more_options=[f'--table-format={table_format}']
     )
 
     # Run first a normal run with a performance test to initialize the DB
@@ -1313,7 +1319,7 @@ def test_storage_options(run_reframe, tmp_path):
     assert_no_crash(*run_reframe2(action=f'--delete-stored-session={uuid}'))
 
 
-def test_performance_compare(run_reframe):
+def test_performance_compare(run_reframe, table_format):
     def assert_no_crash(returncode, stdout, stderr, exitcode=0):
         assert returncode == exitcode
         assert 'Traceback' not in stdout
@@ -1322,7 +1328,8 @@ def test_performance_compare(run_reframe):
 
     run_reframe2 = functools.partial(
         run_reframe,
-        checkpath=['unittests/resources/checks/frontend_checks.py']
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        more_options=[f'--table-format={table_format}']
     )
     run_reframe2(action='run')
 

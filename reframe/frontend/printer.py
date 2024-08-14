@@ -255,9 +255,25 @@ class PrettyPrinter:
         self.table(data, **kwargs)
         self.info('')
 
+    def _table_as_csv(self, data):
+        for line in data:
+            self.info(','.join(str(x) for x in line))
+
     def table(self, data, **kwargs):
         '''Print tabular data'''
 
+        table_format = rt.runtime().get_option('general/0/table_format')
+        if table_format == 'csv':
+            return self._table_as_csv(data)
+
+        # Map our options to tabulate
+        if table_format == 'plain':
+            tablefmt = 'plain'
+        elif table_format == 'pretty':
+            tablefmt = 'mixed_grid'
+        else:
+            raise ValueError(f'invalid table format: {table_format}')
+
         kwargs.setdefault('headers', 'firstrow')
-        kwargs.setdefault('tablefmt', 'mixed_grid')
+        kwargs.setdefault('tablefmt', tablefmt)
         self.info(tabulate(data, **kwargs))

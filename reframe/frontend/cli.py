@@ -626,6 +626,11 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
+        '--table-format', choices=['csv', 'plain', 'pretty'],
+        help='Table formatting',
+        envvar='RFM_TABLE_FORMAT', configvar='general/table_format'
+    )
+    misc_options.add_argument(
         '-v', '--verbose', action='count',
         help='Increase verbosity level of output',
         envvar='RFM_VERBOSE', configvar='general/verbose'

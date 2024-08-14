@@ -1891,6 +1891,20 @@ General Configuration
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
+.. py:attribute:: general.table_format
+
+   :required: No
+   :default: ``"pretty"``
+
+   Set the formatting of tabular output.
+
+   The acceptable values are the following:
+
+   - ``csv``: Generate CSV output
+   - ``plain``: Generate a plain table without any lines
+   - ``pretty``: (default) Generate a pretty table
+
+
 .. py:attribute:: general.timestamp_dirs
 
    :required: No

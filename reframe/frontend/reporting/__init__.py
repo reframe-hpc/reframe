@@ -23,6 +23,7 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeError, what, is_severe, reraise_as
 from reframe.core.logging import getlogger, _format_time_rfc3339
+from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev
 from .storage import StorageBackend
@@ -527,7 +528,13 @@ def _group_testcases(testcases, group_by, extra_cols):
 
 
 def _aggregate_perf(grouped_testcases, aggr_fn, cols):
-    other_aggr = Aggregator.create('join_uniq', '\n')
+    if runtime().get_option('general/0/table_format') == 'csv':
+        # Use a csv friendly delimiter
+        delim = '|'
+    else:
+        delim = '\n'
+
+    other_aggr = Aggregator.create('join_uniq', delim)
     aggr_data = {}
     for key, seq in grouped_testcases.items():
         aggr_data.setdefault(key, {})

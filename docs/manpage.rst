@@ -1129,6 +1129,18 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
+.. option:: --table-format=csv|plain|pretty
+
+   Set the formatting of tabular output printed by options :option:`--performance-compare`, :option:`--performance-report` and the options controlling the stored sessions.
+
+   The acceptable values are the following:
+
+   - ``csv``: Generate CSV output
+   - ``plain``: Generate a plain table without any lines
+   - ``pretty``: (default) Generate a pretty table
+
+   .. versionadded:: 4.7
+
 .. option:: --upgrade-config-file=OLD[:NEW]
 
    Convert the old-style configuration file ``OLD``, place it into the new file ``NEW`` and exit.
@@ -2031,6 +2043,21 @@ Whenever an environment variable is associated with a configuration option, its 
       Associated command line option     :option:`--system`
       Associated configuration parameter N/A
       ================================== ==================
+
+
+.. envvar:: RFM_TABLE_FORMAT
+
+   Set the format of the tables printed by various options accessing the results storage.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--table-format`
+      Associated configuration parameter :attr:`~config.general.table_format`
+      ================================== ==================
+
+   .. versionadded:: 4.7
 
 
 .. envvar:: RFM_TIMESTAMP_DIRS
