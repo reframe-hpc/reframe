@@ -86,6 +86,8 @@ class _SqliteStorage(StorageBackend):
                          'uuid TEXT, '
                          'FOREIGN KEY(session_uuid) '
                          'REFERENCES sessions(uuid) ON DELETE CASCADE)')
+            conn.execute('CREATE INDEX IF NOT EXISTS index_testcases_time '
+                         'on testcases(job_completion_time_unix)')
             conn.execute('CREATE TABLE IF NOT EXISTS metadata('
                          'schema_version TEXT)')
 
