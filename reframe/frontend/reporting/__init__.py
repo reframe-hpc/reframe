@@ -591,7 +591,7 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
 
 
 @time_function
-def performance_compare(cmp, report=None):
+def performance_compare(cmp, report=None, namepatt=None):
     with reraise_as(ReframeError, (ValueError,),
                     'could not parse comparison spec'):
         match = parse_cmp_spec(cmp)
@@ -613,20 +613,20 @@ def performance_compare(cmp, report=None):
             tcs_base = []
     elif match.period_base is not None:
         tcs_base = StorageBackend.default().fetch_testcases_time_period(
-            *match.period_base
+            *match.period_base, namepatt
         )
     else:
         tcs_base = StorageBackend.default().fetch_testcases_from_session(
-            match.session_base
+            match.session_base, namepatt
         )
 
     if match.period_target:
         tcs_target = StorageBackend.default().fetch_testcases_time_period(
-            *match.period_target
+            *match.period_target, namepatt
         )
     else:
         tcs_target = StorageBackend.default().fetch_testcases_from_session(
-            match.session_target
+            match.session_target, namepatt
         )
 
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,
@@ -655,13 +655,13 @@ def session_data(time_period):
 
 
 @time_function
-def testcase_data(spec):
+def testcase_data(spec, namepatt=None):
     storage = StorageBackend.default()
     if is_uuid(spec):
-        testcases = storage.fetch_testcases_from_session(spec)
+        testcases = storage.fetch_testcases_from_session(spec, namepatt)
     else:
         testcases = storage.fetch_testcases_time_period(
-            *parse_time_period(spec)
+            *parse_time_period(spec), namepatt
         )
 
     data = [['Name', 'SysEnv',
@@ -700,7 +700,7 @@ def session_info(uuid):
 
 
 @time_function
-def testcase_info(spec):
+def testcase_info(spec, namepatt=None):
     '''Retrieve test case details as JSON'''
     testcases = []
     if is_uuid(spec):
@@ -716,7 +716,7 @@ def testcase_info(spec):
             )
     else:
         testcases = StorageBackend.default().fetch_testcases_time_period(
-            *parse_time_period(spec)
+            *parse_time_period(spec), namepatt
         )
 
     return testcases

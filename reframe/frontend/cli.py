@@ -959,10 +959,11 @@ def main():
             sys.exit(0)
 
     if options.list_stored_testcases:
+        namepatt = '|'.join(options.names)
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
             printer.table(reporting.testcase_data(
-                options.list_stored_testcases
+                options.list_stored_testcases, namepatt
             ))
             sys.exit(0)
 
@@ -979,10 +980,11 @@ def main():
     if options.describe_stored_testcases:
         # Restore logging level
         printer.setLevel(logging.INFO)
+        namepatt = '|'.join(options.names)
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
             printer.info(jsonext.dumps(reporting.testcase_info(
-                options.describe_stored_testcases
+                options.describe_stored_testcases, namepatt
             ), indent=2))
             sys.exit(0)
 
@@ -1405,9 +1407,11 @@ def main():
             sys.exit(0)
 
         if options.performance_compare:
+            namepatt = '|'.join(options.names)
             try:
                 printer.table(
-                    reporting.performance_compare(options.performance_compare)
+                    reporting.performance_compare(options.performance_compare,
+                                                  namepatt=namepatt)
                 )
             except errors.ReframeError as err:
                 printer.error(f'failed to generate performance report: {err}')

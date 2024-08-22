@@ -5,6 +5,7 @@
 
 import abc
 import os
+import re
 import sqlite3
 from filelock import FileLock
 
@@ -63,6 +64,13 @@ class _SqliteStorage(StorageBackend):
 
         self._db_schema_check()
         return self.__db_file
+
+    def _db_matches(self, patt, item):
+        if patt is None:
+            return True
+
+        regex = re.compile(patt)
+        return regex.match(item) is not None
 
     def _db_create(self):
         clsname = type(self).__name__
@@ -164,6 +172,9 @@ class _SqliteStorage(StorageBackend):
                      'JOIN sessions ON session_uuid == sessions.uuid '
                      f'WHERE {condition}')
             getlogger().debug(query)
+
+            # Create SQLite function for filtering using name patterns
+            conn.create_function('REGEXP', 2, self._db_matches)
             results = conn.execute(query).fetchall()
 
         getprofiler().exit_region()
@@ -208,15 +219,18 @@ class _SqliteStorage(StorageBackend):
             return None, None
 
     @time_function
-    def fetch_testcases_time_period(self, ts_start, ts_end):
+    def fetch_testcases_time_period(self, ts_start, ts_end, name_pattern=None):
+        expr = (f'job_completion_time_unix >= {ts_start} AND '
+                f'job_completion_time_unix <= {ts_end}')
+        if name_pattern:
+            expr += f' AND name REGEXP "{name_pattern}"'
+
         return self._fetch_testcases_raw(
-            f'(job_completion_time_unix >= {ts_start} AND '
-            f'job_completion_time_unix <= {ts_end}) '
-            'ORDER BY job_completion_time_unix'
+            f'({expr}) ORDER BY job_completion_time_unix'
         )
 
     @time_function
-    def fetch_testcases_from_session(self, session_uuid):
+    def fetch_testcases_from_session(self, session_uuid, name_pattern=None):
         with sqlite3.connect(self._db_file()) as conn:
             query = ('SELECT json_blob from sessions '
                      f'WHERE uuid == "{session_uuid}"')
@@ -227,7 +241,8 @@ class _SqliteStorage(StorageBackend):
             return []
 
         session_info = jsonext.loads(results[0][0])
-        return [tc for run in session_info['runs'] for tc in run['testcases']]
+        return [tc for run in session_info['runs'] for tc in run['testcases']
+                if self._db_matches(name_pattern, tc['name'])]
 
     @time_function
     def fetch_sessions_time_period(self, ts_start=None, ts_end=None):
