@@ -1615,7 +1615,7 @@ def main():
                     )
 
             # Store the generated report for analytics
-            if not report.is_empty():
+            if not report.is_empty() and not options.dry_run:
                 try:
                     sess_uuid = report.store()
                 except Exception as e:

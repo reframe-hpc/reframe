@@ -187,9 +187,8 @@ Finally, you can use also the :option:`--performance-report` option, which will 
    ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
    │ name        │ sysenv                  │ pvar     │    pval │ punit   │ pdiff   │ job_nodelist   │ result   │
    ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
-   │ stream_test │ generic:default+builtin │ copy_bw  │ 40304.2 │ MB/s    │ -0.08%  │ myhost         │ pass     │
-   ├─────────────┼─────────────────────────┼──────────┼─────────┼─────────┼─────────┼────────────────┼──────────┤
-   │ stream_test │ generic:default+builtin │ triad_bw │ 30550.3 │ MB/s    │ +0.04%  │ myhost         │ pass     │
+   │ stream_test │ generic:default+builtin │ copy_bw  │ 40310.2 │ MB/s    │ +0.05%  │ myhost         │ pass     │
+   │ stream_test │ generic:default+builtin │ triad_bw │ 30533.2 │ MB/s    │ -0.06%  │ myhost         │ pass     │
    ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
 
 
