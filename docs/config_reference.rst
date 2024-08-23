@@ -439,6 +439,16 @@ System Partition Configuration
       No other test would be able to proceed.
 
 
+.. py:attribute:: systems.partitions.sched_options.unqualified_hostnames
+
+   :required: No
+   :default: ``false``
+
+   Use unqualified hostnames in the ``local`` scheduler backend.
+
+   .. versionadded:: 4.7
+
+
 .. py:attribute:: systems.partitions.sched_options.use_nodes_option
 
    :required: No

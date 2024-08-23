@@ -522,6 +522,21 @@ def test_submit_timelimit(minimal_job, local_only):
         assert minimal_job.state == 'TIMEOUT'
 
 
+def test_submit_unqualified_hostnames(make_exec_ctx, make_job, local_only):
+    make_exec_ctx(
+        system='testsys',
+        options={
+            'systems/partitions/sched_options/unqualified_hostnames': True
+        }
+    )
+    hostname = socket.gethostname().split('.')[0]
+    minimal_job = make_job(sched_opts={'part_name': 'login'})
+    minimal_job.prepare('true')
+    minimal_job.submit()
+    minimal_job.wait()
+    assert minimal_job.nodelist == [hostname]
+
+
 def test_submit_job_array(make_job, slurm_only, exec_ctx):
     job = make_job(sched_access=exec_ctx.access)
     job.options = ['--array=0-1']
