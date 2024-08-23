@@ -995,6 +995,19 @@ def main():
             printer.info(f'Session {session_uuid} deleted successfully.')
             sys.exit(0)
 
+    if options.performance_compare:
+        namepatt = '|'.join(options.names)
+        try:
+            printer.table(
+                reporting.performance_compare(options.performance_compare,
+                                                namepatt=namepatt)
+            )
+        except errors.ReframeError as err:
+            printer.error(f'failed to generate performance report: {err}')
+            sys.exit(1)
+        else:
+            sys.exit(0)
+
     # Show configuration after everything is set up
     if options.show_config:
         # Restore logging level
@@ -1405,19 +1418,6 @@ def main():
                 f'in {options.ci_generate!r}.\n'
             )
             sys.exit(0)
-
-        if options.performance_compare:
-            namepatt = '|'.join(options.names)
-            try:
-                printer.table(
-                    reporting.performance_compare(options.performance_compare,
-                                                  namepatt=namepatt)
-                )
-            except errors.ReframeError as err:
-                printer.error(f'failed to generate performance report: {err}')
-                sys.exit(1)
-            else:
-                sys.exit(0)
 
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):
