@@ -442,6 +442,13 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
     assert len(testcases) == 12
     assert _count_failed(testcases) == 6
 
+    # Test name filtering
+    testcases = backend.fetch_testcases_time_period(timestamps[0][0],
+                                                    timestamps[1][1],
+                                                    '^HelloTest')
+    assert len(testcases) == 2
+    assert _count_failed(testcases) == 0
+
     # Test the inverted period
     assert backend.fetch_testcases_time_period(timestamps[1][1],
                                                timestamps[0][0]) == []
@@ -451,6 +458,11 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
         testcases = backend.fetch_testcases_from_session(uuid)
         assert len(testcases) == 9
         assert _count_failed(testcases) == 5
+
+        # Test name filtering
+        testcases = backend.fetch_testcases_from_session(uuid, '^HelloTest')
+        assert len(testcases) == 1
+        assert _count_failed(testcases) == 0
 
     # Test an invalid uuid
     assert backend.fetch_testcases_from_session(0) == []
