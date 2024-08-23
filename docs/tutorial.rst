@@ -187,8 +187,8 @@ Finally, you can use also the :option:`--performance-report` option, which will 
    ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
    │ name        │ sysenv                  │ pvar     │    pval │ punit   │ pdiff   │ job_nodelist   │ result   │
    ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
-   │ stream_test │ generic:default+builtin │ copy_bw  │ 40310.2 │ MB/s    │ +0.05%  │ myhost         │ pass     │
-   │ stream_test │ generic:default+builtin │ triad_bw │ 30533.2 │ MB/s    │ -0.06%  │ myhost         │ pass     │
+   │ stream_test │ generic:default+builtin │ copy_bw  │ 40292.1 │ MB/s    │ -0.04%  │ myhost         │ pass     │
+   │ stream_test │ generic:default+builtin │ triad_bw │ 30564.7 │ MB/s    │ +0.12%  │ myhost         │ pass     │
    ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
 
 
@@ -1988,6 +1988,7 @@ Essentially, the stored information is the same as the one found in the :ref:`re
 To list the stored sessions use the :option:`--list-stored-sessions` option:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
    reframe --list-stored-sessions
 
@@ -1996,47 +1997,42 @@ its unique identifier, its start and end time and how many test cases have run:
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
    │ UUID                                 │ Start time           │ End time             │   Num runs │   Num cases │
    ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
-   │ fddb6678-6de2-427c-96b5-d1c6b3215b0e │ 20240809T135331+0000 │ 20240809T135335+0000 │          1 │           1 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ d96a133c-e5a8-4ceb-88de-f8adfb393f28 │ 20240809T135342+0000 │ 20240809T135345+0000 │          1 │           1 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ c7508042-64be-406a-89f1-c5d31b90f838 │ 20240809T143710+0000 │ 20240809T143713+0000 │          1 │           1 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 3bc5c067-42fa-4496-a5e4-50b92b3cc38e │ 20240809T144025+0000 │ 20240809T144026+0000 │          1 │           2 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 53481b75-b98a-4668-b6ab-82b199cc2efe │ 20240809T144056+0000 │ 20240809T144057+0000 │          1 │           4 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │
-   ...
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ bed145ca-0013-4b68-bfd4-620054121f91 │ 20240809T144459+0000 │ 20240809T144500+0000 │          1 │          10 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ a72c7536-274a-4a21-92c3-4116f38febd0 │ 20240809T144500+0000 │ 20240809T144500+0000 │          1 │           1 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 8cb26ff4-7897-42fc-a993-fbdef57c8983 │ 20240809T144510+0000 │ 20240809T144511+0000 │          1 │           5 │
+   │ fedb2cf8-6efa-43d8-a6dc-e72c868deba6 │ 20240823T104554+0000 │ 20240823T104557+0000 │          1 │           1 │
+   │ 4253d6b3-3926-4c4c-a7e8-3f7dffe9bf23 │ 20240823T104608+0000 │ 20240823T104612+0000 │          1 │           1 │
+   │ 453e64a2-f941-49e2-b628-bf50883a6387 │ 20240823T104721+0000 │ 20240823T104725+0000 │          1 │           1 │
+   │ d923cca2-a72b-43ca-aca1-de741b65088b │ 20240823T104753+0000 │ 20240823T104757+0000 │          1 │           1 │
+   │ 300b973b-84a6-4932-89eb-577a832fe357 │ 20240823T104814+0000 │ 20240823T104815+0000 │          1 │           2 │
+   │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e │ 20240823T104834+0000 │ 20240823T104835+0000 │          1 │           4 │
+   │ 2a00c55d-4492-498c-89f0-7cf821f308c1 │ 20240823T104843+0000 │ 20240823T104845+0000 │          1 │           4 │
+   │ 98fe5a68-2582-49ca-9c3c-6bfd9b877143 │ 20240823T104902+0000 │ 20240823T104903+0000 │          1 │           4 │
+   │ 4bbc27bc-be50-4cca-9d1b-c5fb4988a5c0 │ 20240823T104922+0000 │ 20240823T104933+0000 │          1 │          26 │
+   │ 200ea28f-6c3a-4973-a2b7-aa08408dbeec │ 20240823T104939+0000 │ 20240823T104943+0000 │          1 │          10 │
+   │ b756755b-3181-4bb4-9eaa-cc8c3a9d7a43 │ 20240823T104955+0000 │ 20240823T104956+0000 │          1 │          10 │
+   │ a8a99808-c22d-4b9c-83bc-164289fe6aa7 │ 20240823T105007+0000 │ 20240823T105007+0000 │          1 │           4 │
+   │ f9b63cdc-7dda-44c5-ab85-1e9752047834 │ 20240823T105019+0000 │ 20240823T105020+0000 │          1 │          10 │
+   │ 271fc2e7-b550-4325-b8bb-57bdf95f1d0d │ 20240823T105020+0000 │ 20240823T105020+0000 │          1 │           1 │
+   │ 50cdb774-f231-4f61-8472-7daaa5199d57 │ 20240823T105031+0000 │ 20240823T105032+0000 │          1 │           5 │
    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
 
 You can use the :option:`--list-stored-testcases` to list the test cases of a specific session or those that have run within a certain period of time:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=53481b75-b98a-4668-b6ab-82b199cc2efe
+   reframe --list-stored-testcases=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e
 
 .. code-block:: console
 
    ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┑
    │ Name                                    │ SysEnv                    │ Nodelist   │ Completion Time      │ Result   │ UUID                                     │
    ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┥
-   │ build_stream ~tutorialsys:default+gnu   │ tutorialsys:default+gnu   │            │ 20240809T145439+0000 │ pass     │ 53481b75-b98a-4668-b6ab-82b199cc2efe:0:0 │
-   ├─────────────────────────────────────────┼───────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ build_stream ~tutorialsys:default+clang │ tutorialsys:default+clang │            │ 20240809T145439+0000 │ pass     │ 53481b75-b98a-4668-b6ab-82b199cc2efe:0:1 │
-   ├─────────────────────────────────────────┼───────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ stream_test                             │ tutorialsys:default+gnu   │ myhost     │ 20240809T144057+0000 │ pass     │ 53481b75-b98a-4668-b6ab-82b199cc2efe:0:2 │
-   ├─────────────────────────────────────────┼───────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ stream_test                             │ tutorialsys:default+clang │ myhost     │ 20240809T144057+0000 │ pass     │ 53481b75-b98a-4668-b6ab-82b199cc2efe:0:3 │
+   │ build_stream ~tutorialsys:default+gnu   │ tutorialsys:default+gnu   │            │ n/a                  │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:0 │
+   │ build_stream ~tutorialsys:default+clang │ tutorialsys:default+clang │            │ n/a                  │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:1 │
+   │ stream_test                             │ tutorialsys:default+gnu   │ myhost     │ 20240823T104835+0000 │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:2 │
+   │ stream_test                             │ tutorialsys:default+clang │ myhost     │ 20240823T104835+0000 │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:3 │
    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┙
 
 
@@ -2046,63 +2042,69 @@ A session may have multiple runs if it has retried some failed test cases (see :
 You can also list the test cases that have run in a certain period of time use the :ref:`time period <time-period-syntax>` of :option:`--list-stored-testcases`:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=20240809T144500+0000:now
+   reframe --list-stored-testcases=20240823T104835+0000:now
 
 .. code-block:: console
 
-   ┍━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┑
-   │ Name   │ SysEnv                  │ Nodelist   │ Completion Time      │ Result   │ UUID                                     │
-   ┝━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┥
-   │ T2     │ generic:default+builtin │ myhost     │ 20240809T144500+0000 │ fail     │ bed145ca-0013-4b68-bfd4-620054121f91:0:7 │
-   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ T3     │ generic:default+builtin │ myhost     │ 20240809T144500+0000 │ pass     │ bed145ca-0013-4b68-bfd4-620054121f91:0:9 │
-   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ T6     │ generic:default+builtin │ myhost     │ 20240809T144500+0000 │ pass     │ a72c7536-274a-4a21-92c3-4116f38febd0:0:0 │
-   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ T0     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:0 │
-   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ T4     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:1 │
-   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ T5     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:2 │
-   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ T1     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:3 │
-   ├────────┼─────────────────────────┼────────────┼──────────────────────┼──────────┼──────────────────────────────────────────┤
-   │ T6     │ generic:default+builtin │ myhost     │ 20240809T144510+0000 │ pass     │ 8cb26ff4-7897-42fc-a993-fbdef57c8983:0:4 │
-   ┕━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┙
+   ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┑
+   │ Name                                                │ SysEnv                    │ Nodelist   │ Completion Time      │ Result   │ UUID                                      │
+   ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┥
+   │ stream_test                                         │ tutorialsys:default+gnu   │ myhost     │ 20240823T104835+0000 │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:2  │
+   │ stream_test                                         │ tutorialsys:default+clang │ myhost     │ 20240823T104835+0000 │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:3  │
+   │ stream_test                                         │ tutorialsys:default+gnu   │ myhost     │ 20240823T104844+0000 │ pass     │ 2a00c55d-4492-498c-89f0-7cf821f308c1:0:2  │
+   │ stream_test                                         │ tutorialsys:default+clang │ myhost     │ 20240823T104845+0000 │ pass     │ 2a00c55d-4492-498c-89f0-7cf821f308c1:0:3  │
+   │ stream_test                                         │ tutorialsys:default+gnu   │ myhost     │ 20240823T104903+0000 │ pass     │ 98fe5a68-2582-49ca-9c3c-6bfd9b877143:0:2  │
+   │ stream_test                                         │ tutorialsys:default+clang │ myhost     │ 20240823T104903+0000 │ pass     │ 98fe5a68-2582-49ca-9c3c-6bfd9b877143:0:3  │
+   ...
+   │ T6                                                  │ generic:default+builtin   │ myhost     │ 20240823T105020+0000 │ pass     │ 271fc2e7-b550-4325-b8bb-57bdf95f1d0d:0:0  │
+   │ T0                                                  │ generic:default+builtin   │ myhost     │ 20240823T105031+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:0  │
+   │ T4                                                  │ generic:default+builtin   │ myhost     │ 20240823T105031+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:1  │
+   │ T5                                                  │ generic:default+builtin   │ myhost     │ 20240823T105031+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:2  │
+   │ T1                                                  │ generic:default+builtin   │ myhost     │ 20240823T105031+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:3  │
+   │ T6                                                  │ generic:default+builtin   │ myhost     │ 20240823T105032+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:4  │
+   ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┙
 
 To get all the details of a session or a set of test cases you can use the :option:`--describe-stored-session` and :option:`--describe-stored-testcases` options which will return a JSON record with all the details.
+
+You can also combine the :option:`-n` option with the :option:`--list-stored-testcases` and :option:`--describe-stored-testcases` options in order to restrict the listing to specific tests only:
+
+.. code-block:: bash
+   :caption: Run in the single-node container.
+
+   reframe --list-stored-testcases=20240823T104835+0000:now -n stream_test
+
 
 Comparing performance of test cases
 -----------------------------------
 
 ReFrame can be used to compare the performance of the same test cases run in different time periods using the :option:`--performance-compare` option.
-The following will compare the performance of the test cases of the session ``a120b895-8fe9-4209-a742-997442e37c47`` with any other same test case that has run the last 24h:
+The following will compare the performance of the test cases of the session ``1fb8488e-c361-4355-b7df-c0dcf3cdcc1e`` with any other same test case that has run the last 24h:
 
 .. code-block:: bash
+   :caption: Run in the single-node container.
 
-   reframe --performance-compare=a120b895-8fe9-4209-a742-997442e37c47/now-1d:now/mean:/
+   reframe --performance-compare=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e/now-1d:now/mean:/
 
 .. code-block:: console
 
    ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┑
    │ name        │ sysenv                    │ pvar     │    pval │ punit   │ pdiff   │
    ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┥
-   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ 31274.5 │ MB/s    │ -22.47% │
-   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┼─────────┤
-   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ 18993.4 │ MB/s    │ -42.02% │
-   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┼─────────┤
-   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ 38546.2 │ MB/s    │ -9.24%  │
-   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┼─────────┤
-   │ stream_test │ tutorialsys:default+clang │ triad_bw │ 36866.3 │ MB/s    │ -4.72%  │
+   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ 44139   │ MB/s    │ +11.14% │
+   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ 39344.7 │ MB/s    │ +20.77% │
+   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ 44979.1 │ MB/s    │ +10.81% │
+   │ stream_test │ tutorialsys:default+clang │ triad_bw │ 39330.8 │ MB/s    │ +8.28%  │
    ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
 
+The :option:`-n` option can also be combined with :option:`--performance-compare` to restrict the test cases listed.
 Similarly to the :option:`--performance-compare` option, the :option:`--performance-report` option can compare the performance of the current run with any arbitrary past session or past time period.
 
 Finally, you can delete complete a stored session using the :option:`--delete-stored-session` option:
 
 .. code-block:: bash
 
-   reframe --delete-stored-session=a120b895-8fe9-4209-a742-997442e37c47
+   reframe --delete-stored-session=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e
 
 Deleting a session will also delete all its test cases from the database.

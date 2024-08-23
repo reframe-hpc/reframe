@@ -299,8 +299,8 @@ There are commands that act upon the selected tests and others that have a helpe
    Get detailed test case information of the session with the specified UUID or from the specified time period.
 
    If a session UUID is provided only information about the test cases of this session will be provided.
-
-   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
+   This option can be combined with :option:`--name` to restrict the listing to specific tests.
+   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
 
    .. versionadded:: 4.7
 
@@ -359,8 +359,8 @@ There are commands that act upon the selected tests and others that have a helpe
    List all test cases from the session with the specified UUID or from the specified time period.
 
    If a session UUID is provided only the test cases of this session will be listed.
-
-   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
+   This option can be combined with :option:`--name` to restrict the listing to specific tests.
+   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
 
    .. versionadded:: 4.7
 
@@ -394,6 +394,7 @@ There are commands that act upon the selected tests and others that have a helpe
 
    Compare the performance of test cases that have run in the past.
 
+   This option can be combined with :option:`--name` to restrict the comparison to specific tests.
    Check the :ref:`performance-comparisons` section for the exact syntax of ``CMPSPEC``.
 
    .. versionadded:: 4.7
