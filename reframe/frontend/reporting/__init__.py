@@ -516,6 +516,7 @@ def _group_testcases(testcases, group_by, extra_cols):
             record = {
                 'pvar': pvar,
                 'pval': pval,
+                'pref': pref,
                 'plower': plower,
                 'pupper': pupper,
                 'punit': punit,
