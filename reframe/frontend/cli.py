@@ -1158,6 +1158,10 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     print_infoline('log files',
                    ', '.join(repr(s) for s in session_info['log_files']))
+    print_infoline(
+        'results database',
+        repr(osext.expandvars(rt.get_option('storage/0/sqlite_db_file')))
+    )
     printer.info('')
     try:
         logging.getprofiler().enter_region('test processing')
