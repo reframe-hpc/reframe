@@ -170,7 +170,7 @@ Run reports and performance logging
 
 Once a test session finishes, ReFrame stores the detailed session information in a database file located under ``$HOME/.reframe/reports``.
 Past performance data can be retrieved from this database and compared with the current or another run.
-We detail handling of the results database in section :ref:`inspecting-past-results`.
+We explain in detail the handling of the results database in section :ref:`inspecting-past-results`.
 
 By default, the session information is also saved in a JSON report file under ``$HOME/.reframe/reports``.
 The latest report is always symlinked by the ``latest.json`` name, unless the :option:`--report-file` option is given.

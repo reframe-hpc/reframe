@@ -1422,7 +1422,7 @@ The ``<abs_timestamp>`` is an absolute timestamp in one of the following ``strpt
 
 Optionally, a shift argument can be appended with ``+`` or ``-`` signs, followed by an amount of weeks (``w``), days (``d``), hours (``h``) or minutes (``m``).
 
-For example, the period of the last 10 days can be specified as ``now:now-10d``.
+For example, the period of the last 10 days can be specified as ``now-10d:now``.
 Similarly, the period of the week starting on August 5, 2024 will be specified as ``20240805:20240805+1w``.
 
 Environment
