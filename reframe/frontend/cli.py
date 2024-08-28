@@ -1000,7 +1000,7 @@ def main():
         try:
             printer.table(
                 reporting.performance_compare(options.performance_compare,
-                                                namepatt=namepatt)
+                                              namepatt=namepatt)
             )
         except errors.ReframeError as err:
             printer.error(f'failed to generate performance report: {err}')
