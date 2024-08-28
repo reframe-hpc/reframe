@@ -158,23 +158,23 @@ def assert_job_script_sanity(job):
 
 def _expected_lsf_directives(job):
     return set([
-        f'#BSUB -J testjob',
+        '#BSUB -J testjob',
         f'#BSUB -o {job.stdout}',
         f'#BSUB -e {job.stderr}',
         f'#BSUB -nnodes {job.num_tasks // job.num_tasks_per_node}',
         f'#BSUB -W {int(job.time_limit // 60)}',
         f'#BSUB -R "affinity[core({job.num_cpus_per_task})]"',
-        f'#BSUB -x',
-        f'#BSUB --account=spam',
-        f'#BSUB --gres=gpu:4',
-        f'#DW jobdw capacity=100GB',
-        f'#DW stage_in source=/foo',
+        '#BSUB -x',
+        '#BSUB --account=spam',
+        '#BSUB --gres=gpu:4',
+        '#DW jobdw capacity=100GB',
+        '#DW stage_in source=/foo',
     ])
 
 
 def _expected_lsf_directives_minimal(job):
     return set([
-        f'#BSUB -J testjob',
+        '#BSUB -J testjob',
         f'#BSUB -o {job.stdout}',
         f'#BSUB -e {job.stderr}',
         f'#BSUB -n {job.num_tasks}'
@@ -183,7 +183,7 @@ def _expected_lsf_directives_minimal(job):
 
 def _expected_lsf_directives_no_tasks(job):
     return set([
-        f'#BSUB -J testjob',
+        '#BSUB -J testjob',
         f'#BSUB -o {job.stdout}',
         f'#BSUB -e {job.stderr}'
     ])
@@ -202,24 +202,22 @@ def _expected_flux_directives_no_tasks(job):
 
 
 def _expected_sge_directives(job):
-    num_nodes = job.num_tasks // job.num_tasks_per_node
-    num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        f'#$ -N "testjob"',
-        f'#$ -l h_rt=0:5:0',
+        '#$ -N "testjob"',
+        '#$ -l h_rt=0:5:0',
         f'#$ -o {job.stdout}',
         f'#$ -e {job.stderr}',
         f'#$ -wd {job.workdir}',
-        f'#$ --gres=gpu:4',
-        f'#$ --account=spam',
-        f'#DW jobdw capacity=100GB',
-        f'#DW stage_in source=/foo'
+        '#$ --gres=gpu:4',
+        '#$ --account=spam',
+        '#DW jobdw capacity=100GB',
+        '#DW stage_in source=/foo'
     ])
 
 
 def _expected_sge_directives_minimal(job):
     return set([
-        f'#$ -N "testjob"',
+        '#$ -N "testjob"',
         f'#$ -o {job.stdout}',
         f'#$ -e {job.stderr}',
         f'#$ -wd {job.workdir}'
@@ -276,24 +274,24 @@ def _expected_pbs_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        f'#PBS -N testjob',
-        f'#PBS -l walltime=0:5:0',
+        '#PBS -N testjob',
+        '#PBS -l walltime=0:5:0',
         f'#PBS -o {job.stdout}',
         f'#PBS -e {job.stderr}',
         f'#PBS -l select={num_nodes}:mpiprocs={job.num_tasks_per_node}:ncpus={num_cpus_per_node}:mem=100GB:cpu_type=haswell',    # noqa: E501
-        f'#PBS --account=spam',
-        f'#PBS --gres=gpu:4',
-        f'#DW jobdw capacity=100GB',
-        f'#DW stage_in source=/foo'
+        '#PBS --account=spam',
+        '#PBS --gres=gpu:4',
+        '#DW jobdw capacity=100GB',
+        '#DW stage_in source=/foo'
     ])
 
 
 def _expected_pbs_directives_minimal(job):
     return set([
-        f'#PBS -N testjob',
+        '#PBS -N testjob',
         f'#PBS -o {job.stdout}',
         f'#PBS -e {job.stderr}',
-        f'#PBS -l select=1:mpiprocs=1:ncpus=1'
+        '#PBS -l select=1:mpiprocs=1:ncpus=1'
     ])
 
 
@@ -304,25 +302,25 @@ def _expected_torque_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_cpus_per_node = job.num_cpus_per_task * job.num_tasks_per_node
     return set([
-        f'#PBS -N testjob',
-        f'#PBS -l walltime=0:5:0',
+        '#PBS -N testjob',
+        '#PBS -l walltime=0:5:0',
         f'#PBS -o {job.stdout}',
         f'#PBS -e {job.stderr}',
         f'#PBS -l nodes={num_nodes}:ppn={num_cpus_per_node}:haswell',
-        f'#PBS -l mem=100GB',
-        f'#PBS --account=spam',
-        f'#PBS --gres=gpu:4',
-        f'#DW jobdw capacity=100GB',
-        f'#DW stage_in source=/foo'
+        '#PBS -l mem=100GB',
+        '#PBS --account=spam',
+        '#PBS --gres=gpu:4',
+        '#DW jobdw capacity=100GB',
+        '#DW stage_in source=/foo'
     ])
 
 
 def _expected_torque_directives_minimal(job):
     return set([
-        f'#PBS -N testjob',
+        '#PBS -N testjob',
         f'#PBS -o {job.stdout}',
         f'#PBS -e {job.stderr}',
-        f'#PBS -l nodes=1:ppn=1'
+        '#PBS -l nodes=1:ppn=1'
     ])
 
 
@@ -333,23 +331,23 @@ def _expected_oar_directives(job):
     num_nodes = job.num_tasks // job.num_tasks_per_node
     num_tasks_per_node = job.num_tasks_per_node
     return set([
-        f'#OAR -n "testjob"',
+        '#OAR -n "testjob"',
         f'#OAR -O {job.stdout}',
         f'#OAR -E {job.stderr}',
         f'#OAR -l /host={num_nodes}/core={num_tasks_per_node},walltime=0:5:0',
-        f'#OAR --account=spam',
-        f'#OAR --gres=gpu:4',
-        f'#DW jobdw capacity=100GB',
-        f'#DW stage_in source=/foo'
+        '#OAR --account=spam',
+        '#OAR --gres=gpu:4',
+        '#DW jobdw capacity=100GB',
+        '#DW stage_in source=/foo'
     ])
 
 
 def _expected_oar_directives_minimal(job):
     return set([
-        f'#OAR -n "testjob"',
+        '#OAR -n "testjob"',
         f'#OAR -O {job.stdout}',
         f'#OAR -E {job.stderr}',
-        f'#OAR -l /host=1/core=1'
+        '#OAR -l /host=1/core=1'
     ])
 
 
@@ -476,9 +474,9 @@ def test_prepare_nodes_option_minimal(make_exec_ctx, make_job, slurm_only):
 def test_submit(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job)
-    assert minimal_job.nodelist is None
+    assert minimal_job.nodelist == []
     submit_job(minimal_job)
-    assert minimal_job.jobid is not None
+    assert minimal_job.jobid != []
     minimal_job.wait()
 
     # Additional scheduler-specific checks
@@ -522,6 +520,21 @@ def test_submit_timelimit(minimal_job, local_only):
     if sched_name == 'local':
         assert minimal_job.signal == signal.SIGKILL
         assert minimal_job.state == 'TIMEOUT'
+
+
+def test_submit_unqualified_hostnames(make_exec_ctx, make_job, local_only):
+    make_exec_ctx(
+        system='testsys',
+        options={
+            'systems/partitions/sched_options/unqualified_hostnames': True
+        }
+    )
+    hostname = socket.gethostname().split('.')[0]
+    minimal_job = make_job(sched_opts={'part_name': 'login'})
+    minimal_job.prepare('true')
+    minimal_job.submit()
+    minimal_job.wait()
+    assert minimal_job.nodelist == [hostname]
 
 
 def test_submit_job_array(make_job, slurm_only, exec_ctx):
@@ -652,7 +665,7 @@ def test_sched_access_in_submit(make_job):
     job.scheduler._sched_access_in_submit = True
 
     if job.scheduler.registered_name in ('flux', 'local', 'ssh'):
-        pytest.skip(f'not relevant for this scheduler backend')
+        pytest.skip('not relevant for this scheduler backend')
 
     prepare_job(job)
     with open(job.script_filename) as fp:

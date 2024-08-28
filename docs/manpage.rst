@@ -17,8 +17,16 @@ The ``reframe`` command is part of ReFrame's frontend.
 This frontend is responsible for loading and running regression tests written in ReFrame.
 ReFrame executes tests by sending them down to a well defined pipeline.
 The implementation of the different stages of this pipeline is part of ReFrame's core architecture, but the frontend is responsible for driving this pipeline and executing tests through it.
-There are three basic phases that the frontend goes through, which are described briefly in the following.
+Usually, ReFrame processes tests in three phases:
 
+1. It :ref:`discovers and loads tests <test-discovery>` from the filesystem.
+2. It :ref:`filters <test-filtering>` the loaded tests based on the current system and any other criteria specified by the user.
+3. It :ref:`acts <commands>` upon the selected tests.
+
+There are also ReFrame commands that do not operate on a set of tests.
+
+
+.. _test-discovery:
 
 -------------------------------
 Test discovery and test loading
@@ -234,18 +242,24 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
       The ``NAME`` pattern is matched anywhere in the test name and not at its beginning.
       If you want to match at the beginning of a test name, you should prepend ``^``.
 
-------------
-Test actions
-------------
 
-ReFrame will finally act upon the selected tests.
-There are currently two actions that can be performed on tests: (a) list the tests and (b) execute the tests.
-An action must always be specified.
+.. _commands:
+
+--------
+Commands
+--------
+
+ReFrame commands are mutually exclusive and one of them must always be specified.
+There are commands that act upon the selected tests and others that have a helper function, such as querying the configuration, querying the results database etc.
+
+.. versionchanged:: 4.7
+
+   ReFrame commands are now mutually exclusive and only one can be specified every time.
 
 
 .. option:: --ci-generate=FILE
 
-   Do not run the tests, but generate a Gitlab `child pipeline <https://docs.gitlab.com/ee/ci/parent_child_pipelines.html>`__ specification in ``FILE``.
+   Generate a Gitlab `child pipeline <https://docs.gitlab.com/ee/ci/parent_child_pipelines.html>`__ specification in ``FILE`` that will run the selected tests.
 
    You can set up your Gitlab CI to use the generated file to run every test as a separate Gitlab job respecting test dependencies.
    For more information, have a look in :ref:`generate-ci-pipeline`.
@@ -255,6 +269,12 @@ An action must always be specified.
 
 
    .. versionadded:: 3.4.1
+
+.. option:: --delete-stored-session=UUID
+
+   Delete the stored session with the specified UUID from the results database.
+
+   .. versionadded:: 4.7
 
 .. option:: --describe
 
@@ -266,6 +286,33 @@ An action must always be specified.
 
    .. versionadded:: 3.10.0
 
+
+.. option:: --describe-stored-session=UUID
+
+   Get detailed information of the session with the specified UUID.
+   The output is in JSON format.
+
+   .. versionadded:: 4.7
+
+.. option:: --describe-stored-testcases=SESSION_UUID|TIME_PERIOD
+
+   Get detailed test case information of the session with the specified UUID or from the specified time period.
+
+   If a session UUID is provided only information about the test cases of this session will be provided.
+   This option can be combined with :option:`--name` to restrict the listing to specific tests.
+   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
+
+   .. versionadded:: 4.7
+
+.. _--detect-host-topology:
+
+.. option:: --detect-host-topology[=FILE]
+
+   Detect the local host processor topology, store it to ``FILE`` and exit.
+
+   If no ``FILE`` is specified, the standard output will be used.
+
+   .. versionadded:: 3.7.0
 
 .. option:: --dry-run
 
@@ -279,7 +326,6 @@ An action must always be specified.
    In this case, users can call the :func:`~reframe.core.pipeline.RegressionTest.is_dry_run` method in their test and take a specific action if the test is run in dry-run mode.
 
    .. versionadded:: 4.1
-
 
 .. option:: -L, --list-detailed[=T|C]
 
@@ -296,6 +342,27 @@ An action must always be specified.
    .. versionchanged:: 4.0.5
       The variable names to which fixtures are bound are also listed.
       See :ref:`test_naming_scheme` for more information.
+
+.. _--list-stored-sessions:
+
+.. option:: --list-stored-sessions[=TIME_PERIOD]
+
+   List sessions stored in the results database.
+
+   If ``TIME_PERIOD`` is not specified or if ``all`` is passed, all stored sessions will be listed.
+   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
+
+   .. versionadded:: 4.7
+
+.. option:: --list-stored-testcases=SESSION_UUID|TIME_PERIOD
+
+   List all test cases from the session with the specified UUID or from the specified time period.
+
+   If a session UUID is provided only the test cases of this session will be listed.
+   This option can be combined with :option:`--name` to restrict the listing to specific tests.
+   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
+
+   .. versionadded:: 4.7
 
 .. option:: -l, --list[=T|C]
 
@@ -323,15 +390,51 @@ An action must always be specified.
 
    .. versionadded:: 3.6.0
 
+.. option:: --performance-compare=CMPSPEC
+
+   Compare the performance of test cases that have run in the past.
+
+   This option can be combined with :option:`--name` to restrict the comparison to specific tests.
+   Check the :ref:`performance-comparisons` section for the exact syntax of ``CMPSPEC``.
+
+   .. versionadded:: 4.7
+
 .. option:: -r, --run
 
-   Execute the selected tests.
+   Run the selected tests.
 
-If more than one action options are specified, the precedence order is the following:
+.. option:: --show-config [PARAM]
 
-   .. code-block:: console
+   Show the value of configuration parameter ``PARAM`` as this is defined for the currently selected system and exit.
 
-      --describe > --list-detailed > --list > --list-tags > --ci-generate
+   The parameter value is printed in JSON format.
+   If ``PARAM`` is not specified or if it set to ``all``, the whole configuration for the currently selected system will be shown.
+   Configuration parameters are formatted as a path navigating from the top-level configuration object to the actual parameter.
+   The ``/`` character acts as a selector of configuration object properties or an index in array objects.
+   The ``@`` character acts as a selector by name for configuration objects that have a ``name`` property.
+   Here are some example queries:
+
+   - Retrieve all the partitions of the current system:
+
+     .. code:: bash
+
+        reframe --show-config=systems/0/partitions
+
+   - Retrieve the job scheduler of the partition named ``default``:
+
+     .. code:: bash
+
+        reframe --show-config=systems/0/partitions/@default/scheduler
+
+   - Retrieve the check search path for system ``foo``:
+
+     .. code:: bash
+
+        reframe --system=foo --show-config=general/0/check_search_path
+
+.. option:: -V, --version
+
+   Print version and exit.
 
 
 ----------------------------------
@@ -971,16 +1074,6 @@ Miscellaneous options
 
    .. versionchanged:: 4.0.0
 
-.. _--detect-host-topology:
-
-.. option:: --detect-host-topology[=FILE]
-
-   Detect the local host processor topology, store it to ``FILE`` and exit.
-
-   If no ``FILE`` is specified, the standard output will be used.
-
-   .. versionadded:: 3.7.0
-
 .. option:: --failure-stats
 
    Print failure statistics at the end of the run.
@@ -995,11 +1088,21 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_COLORIZE` environment variable or the :attr:`~config.general.colorize` general configuration parameter.
 
-.. option:: --performance-report
+.. _--performance-report:
 
-   Print a performance report for all the performance tests that have been run.
+.. option:: --performance-report[=CMPSPEC]
 
-   The report shows the performance values retrieved for the different performance variables defined in the tests.
+   Print a report summarizing the performance of all performance tests that have run in the current session.
+
+   For each test all of their performance variables are reported and optionally compared to past results based on the ``CMPSPEC`` specified.
+
+   If not specified, the default ``CMPSPEC`` is ``19700101T0000+0000:now/last:+job_nodelist/+result``, meaning that the current performance will be compared to the last run of the same test grouped additionally by the ``job_nodelist`` and showing also the obtained result (``pass`` or ``fail``).
+
+   For the exact syntax of ``CMPSPEC``, refer to :ref:`performance-comparisons`.
+
+   .. versionchanged:: 4.7
+
+      The format of the performance report has changed and the optional ``CMPSPEC`` argument is now added.
 
 .. option:: -q, --quiet
 
@@ -1014,35 +1117,6 @@ Miscellaneous options
    .. versionadded:: 3.9.3
 
 
-.. option:: --show-config [PARAM]
-
-   Show the value of configuration parameter ``PARAM`` as this is defined for the currently selected system and exit.
-
-   The parameter value is printed in JSON format.
-   If ``PARAM`` is not specified or if it set to ``all``, the whole configuration for the currently selected system will be shown.
-   Configuration parameters are formatted as a path navigating from the top-level configuration object to the actual parameter.
-   The ``/`` character acts as a selector of configuration object properties or an index in array objects.
-   The ``@`` character acts as a selector by name for configuration objects that have a ``name`` property.
-   Here are some example queries:
-
-   - Retrieve all the partitions of the current system:
-
-     .. code:: bash
-
-        reframe --show-config=systems/0/partitions
-
-   - Retrieve the job scheduler of the partition named ``default``:
-
-     .. code:: bash
-
-        reframe --show-config=systems/0/partitions/@default/scheduler
-
-   - Retrieve the check search path for system ``foo``:
-
-     .. code:: bash
-
-        reframe --system=foo --show-config=general/0/check_search_path
-
 .. option:: --system=NAME
 
    Load the configuration for system ``NAME``.
@@ -1056,15 +1130,23 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
+.. option:: --table-format=csv|plain|pretty
+
+   Set the formatting of tabular output printed by options :option:`--performance-compare`, :option:`--performance-report` and the options controlling the stored sessions.
+
+   The acceptable values are the following:
+
+   - ``csv``: Generate CSV output
+   - ``plain``: Generate a plain table without any lines
+   - ``pretty``: (default) Generate a pretty table
+
+   .. versionadded:: 4.7
+
 .. option:: --upgrade-config-file=OLD[:NEW]
 
    Convert the old-style configuration file ``OLD``, place it into the new file ``NEW`` and exit.
 
    If a new file is not given, a file in the system temporary directory will be created.
-
-.. option:: -V, --version
-
-   Print version and exit.
 
 .. option:: -v, --verbose
 
@@ -1210,6 +1292,139 @@ Very large test names meant also very large path names which could also lead to 
 Fixtures followed a similar naming pattern making them hard to debug.
 
 
+Result storage
+--------------
+
+.. versionadded:: 4.7
+
+ReFrame stores the results of every session that has executed at least one test into a database.
+There is only one storage backend supported at the moment and this is SQLite.
+The full session information as recorded in a run report file (see :option:`--report-file`) is stored in the database.
+The test cases of the session are indexed by their run job completion time for quick retrieval of all the test cases that have run in a certain period of time.
+
+The database file is controlled by the :attr:`~config.storage.sqlite_db_file` configuration parameter and multiple ReFrame processes can access it safely simultaneously.
+
+There are several command-line options that allow users to query the results database, such as the :option:`--list-stored-sessions`, :option:`--list-stored-testcases`, :option:`--describe-stored-session` etc.
+Other options that access the results database are the :option:`--performance-compare` and :option:`--performance-report` which compare the performance results of the same test cases in different periods of time or from different sessions.
+Check the :ref:`commands` section for the complete list and details of each option related to the results database.
+
+Since the report file information is now kept in the results database, there is no need to keep the report files separately, although this remains the default behavior for backward compatibility.
+You can disable the report generation by turning off the :attr:`~config.general.generate_file_reports` configuration parameter.
+The file report of any session can be retrieved from the database with the :option:`--describe-stored-session` option.
+
+
+.. _performance-comparisons:
+
+Performance comparisons
+-----------------------
+
+.. versionadded:: 4.7
+
+The :option:`--performance-compare` and :option:`--performance-report` options accept a ``CMPSPEC`` argument that specifies how to select and compare test cases.
+The full syntax of ``CMPSPEC`` is the following:
+
+.. code-block:: console
+
+   <base_cases>/<target_cases>/<aggr>/<extra_cols>
+
+The ``<base_cases>`` and ``<target_cases>`` subspecs specify how the base and target test cases will be retrieved.
+The base test cases will be compared against those from the target period.
+
+.. note::
+
+   The ``<base_cases>`` subspec is ommitted from the ``CMPSPEC`` of the :option:`--performance-report` option as the base test cases are always the test cases from the current session.
+
+The test cases for comparison can either be retrieved from an existing past session or a past time period.
+A past session is denoted with the ``<session_uuid>`` syntax and only the test cases of that particular session will be selected.
+To view the UUIDs of all stored sessions, use the :option:`--list-stored-sessions` option.
+
+To retrieve results from a time period, check the :ref:`time period syntax <time-period-syntax>` below.
+
+The ``<aggr>`` subspec specifies how the performance of both the base and target cases should be grouped and aggregated.
+The syntax is the following:
+
+.. code-block:: console
+
+   <aggr_fn>:[+<groupby>]*
+
+The ``<aggr_fn>`` is a symbolic name for a function to aggregate the grouped test cases.
+It can take one of the following values:
+
+- ``first``: retrieve the performance data of the first test case only
+- ``last``: retrieve the performance data of the last test case only
+- ``max``: retrieve the maximum of all test cases
+- ``mean``: calculate the mean over all test cases
+- ``median``: retrieve the median of all test cases
+- ``min``: retrieve the minimum of all test cases
+
+The test cases are always grouped by the following attributes:
+
+- The test :attr:`~reframe.core.pipeline.RegressionTest.name`
+- The system name
+- The partition name
+- The environment name
+- The performance variable name (see :func:`@performance_function <reframe.core.builtins.performance_function>` and :attr:`~reframe.core.pipeline.RegressionTest.perf_variables`)
+- The performance variable unit
+
+The ``+<groupby>`` subspec specifies additional attributes to group the test cases by.
+Any loggable test attribute can be selected.
+
+.. note::
+
+   The loggable attributes of a test are the same as the ones list in the logging :attr:`~config.logging.handlers_perflog.format` option but without the ``check_`` prefix.
+
+Finally, the ``<extra_cols>`` subspec specifies additional test attributes to list as columns in the resulting comparison table.
+The syntax is the following:
+
+.. code-block:: console
+
+   [+<col>]*
+
+``col`` refers to any loggable attribute of the test.
+If these attributes have different values across the aggregated test cases,
+the unique values will be joined using the ``|`` separator.
+
+Here are some examples of performance comparison specs:
+
+- Compare the test cases of the session ``7a70b2da-1544-4ac4-baf4-0fcddd30b672`` with the mean performance of the last 10 days:
+
+  .. code-block:: console
+
+     7a70b2da-1544-4ac4-baf4-0fcddd30b672/now-10d:now/mean:/
+
+- Compare the best performance of the test cases run on two specific days, group by the node list and report also the test result:
+
+  .. code-block:: console
+
+     20240701:20240701+1d/20240705:20240705+1d/mean:+job_nodelist/+result
+
+.. _time-period-syntax:
+
+Time periods
+------------
+
+A time period needs to be specified as part of the ``CMPSPEC`` of the :option:`--performance-compare` and :option:`--performance-report` options or as an argument to options that request past results from results database.
+
+The general syntax of time period subspec is the following:
+
+.. code-block:: console
+
+   <ts_start>:<ts_end>
+
+``<ts_start>`` and ``<ts_end>`` are timestamp denoting the start and end of the requested period.
+More specifically, the syntax of each timestamp is the following:
+
+.. code-block:: console
+
+   <abs_timestamp>[+|-<amount>w|d|h|m]
+
+The ``<abs_timestamp>`` is an absolute timestamp in one of the following ``strptime``-compatible formats or the special value ``now``: ``%Y%m%d``, ``%Y%m%dT%H%M``, ``%Y%m%dT%H%M%S``, ``%Y%m%dT%H%M%S%z``.
+
+Optionally, a shift argument can be appended with ``+`` or ``-`` signs, followed by an amount of weeks (``w``), days (``d``), hours (``h``) or minutes (``m``).
+
+For example, the period of the last 10 days can be specified as ``now-10d:now``.
+Similarly, the period of the week starting on August 5, 2024 will be specified as ``20240805:20240805+1w``.
+
 Environment
 -----------
 
@@ -1224,21 +1439,6 @@ Boolean environment variables can have any value of ``true``, ``yes``, ``y`` (ca
 
 Here is an alphabetical list of the environment variables recognized by ReFrame.
 Whenever an environment variable is associated with a configuration option, its default value is omitted as it is the same.
-
-
-.. envvar:: RFM_SCHED_ACCESS_IN_SUBMIT
-
-   Pass access options in the submission command (relevant for LSF, OAR, PBS and Slurm).
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     N/A
-      Associated configuration parameter :attr::attr:`~config.systems.partitions.sched_options.sched_access_in_submit`
-      ================================== ==================
-
-.. versionadded:: 4.7
 
 
 .. envvar:: RFM_AUTODETECT_FQDN
@@ -1452,6 +1652,20 @@ Whenever an environment variable is associated with a configuration option, its 
    .. versionadded:: 4.7
 
 
+.. envvar:: RFM_GENERATE_FILE_REPORTS
+
+   Store session reports also in files.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     n/a
+      Associated configuration parameter :attr:`~config.general.generate_file_reports`
+      ================================== ==================
+
+   .. versionadded:: 4.7
+
 .. envvar:: RFM_GIT_TIMEOUT
 
    Timeout value in seconds used when checking if a git repository exists.
@@ -1600,6 +1814,21 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 
+.. envvar:: RFM_PERF_REPORT_SPEC
+
+   The default ``CMPSPEC`` of the :option:`--performance-report` option.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--performance-report`
+      Associated configuration parameter :attr:`~config.general.perf_report_spec`
+      ================================== ==================
+
+   .. versionadded:: 4.7
+
+
 .. envvar:: RFM_PERFLOG_DIR
 
    Directory prefix for logging performance data.
@@ -1744,6 +1973,21 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 
+.. envvar:: RFM_SCHED_ACCESS_IN_SUBMIT
+
+   Pass access options in the submission command (relevant for LSF, OAR, PBS and Slurm).
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr::attr:`~config.systems.partitions.sched_options.sched_access_in_submit`
+      ================================== ==================
+
+.. versionadded:: 4.7
+
+
 .. envvar:: RFM_STAGE_DIR
 
    Directory prefix for staging test resources.
@@ -1755,6 +1999,21 @@ Whenever an environment variable is associated with a configuration option, its 
       Associated command line option     :option:`-s`
       Associated configuration parameter :attr:`~config.systems.stagedir`
       ================================== ==================
+
+
+.. envvar:: RFM_SQLITE_DB_FILE
+
+   The SQlite database file for storing test results.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.storage.sqlite_db_file`
+      ================================== ==================
+
+   .. versionadded:: 4.7
 
 
 .. envvar:: RFM_SYSLOG_ADDRESS
@@ -1785,6 +2044,21 @@ Whenever an environment variable is associated with a configuration option, its 
       Associated command line option     :option:`--system`
       Associated configuration parameter N/A
       ================================== ==================
+
+
+.. envvar:: RFM_TABLE_FORMAT
+
+   Set the format of the tables printed by various options accessing the results storage.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--table-format`
+      Associated configuration parameter :attr:`~config.general.table_format`
+      ================================== ==================
+
+   .. versionadded:: 4.7
 
 
 .. envvar:: RFM_TIMESTAMP_DIRS
