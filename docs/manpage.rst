@@ -1096,7 +1096,7 @@ Miscellaneous options
 
    For each test all of their performance variables are reported and optionally compared to past results based on the ``CMPSPEC`` specified.
 
-   If not specified, the default ``CMPSPEC`` is ``19700101T0000+0000:now/last:+job_nodelist/+result``, meaning that the current performance will be compared to the last run oif the same test grouped additionally by the ``job_nodelist`` and showing also the obtained result (``pass`` or ``fail``).
+   If not specified, the default ``CMPSPEC`` is ``19700101T0000+0000:now/last:+job_nodelist/+result``, meaning that the current performance will be compared to the last run of the same test grouped additionally by the ``job_nodelist`` and showing also the obtained result (``pass`` or ``fail``).
 
    For the exact syntax of ``CMPSPEC``, refer to :ref:`performance-comparisons`.
 
@@ -1297,15 +1297,15 @@ Result storage
 
 .. versionadded:: 4.7
 
-ReFrame stores the results of every session that has exectuted at least one test into a database.
-There is only one storage backend supported at the moment and this is Sqlite.
+ReFrame stores the results of every session that has executed at least one test into a database.
+There is only one storage backend supported at the moment and this is SQLite.
 The full session information as recorded in a run report file (see :option:`--report-file`) is stored in the database.
 The test cases of the session are indexed by their run job completion time for quick retrieval of all the test cases that have run in a certain period of time.
 
 The database file is controlled by the :attr:`~config.storage.sqlite_db_file` configuration parameter and multiple ReFrame processes can access it safely simultaneously.
 
 There are several command-line options that allow users to query the results database, such as the :option:`--list-stored-sessions`, :option:`--list-stored-testcases`, :option:`--describe-stored-session` etc.
-Other options that access the results database are the :option:`--performance-compare` and :option:`--performance-report` options which compare the performance results of the same test cases in different periods of time or from different sessions.
+Other options that access the results database are the :option:`--performance-compare` and :option:`--performance-report` which compare the performance results of the same test cases in different periods of time or from different sessions.
 Check the :ref:`commands` section for the complete list and details of each option related to the results database.
 
 Since the report file information is now kept in the results database, there is no need to keep the report files separately, although this remains the default behavior for backward compatibility.

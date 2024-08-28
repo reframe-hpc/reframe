@@ -168,7 +168,7 @@ This can be suppressed by increasing the level at which this information is logg
 Run reports and performance logging
 -----------------------------------
 
-Once a test session finishes, ReFrame stores the detailed session information in database file located under ``$HOME/.reframe/reports``.
+Once a test session finishes, ReFrame stores the detailed session information in a database file located under ``$HOME/.reframe/reports``.
 Past performance data can be retrieved from this database and compared with the current or another run.
 We detail handling of the results database in section :ref:`inspecting-past-results`.
 
@@ -180,7 +180,7 @@ These files are located by default under ``perflogs/<system>/<partition>/<testna
 In our example, this translates to ``perflogs/generic/default/stream_test.log``.
 The information that is being logged is fully configurable and we will cover this in the :ref:`logging` section.
 
-Finally, you can use also the :option:`--performance-report` option, which will print a summary of the results of the performance tests that have run in the current session and compare them (by default) with their last obtained performance.
+Finally, you can use also the :option:`--performance-report` option, which will print a summary of the results of the performance tests that have run in the current session and compare them (by default) to their last obtained performance.
 
 .. code-block:: console
 
@@ -2101,7 +2101,7 @@ The following will compare the performance of the test cases of the session ``1f
 The :option:`-n` option can also be combined with :option:`--performance-compare` to restrict the test cases listed.
 Similarly to the :option:`--performance-compare` option, the :option:`--performance-report` option can compare the performance of the current run with any arbitrary past session or past time period.
 
-Finally, you can delete complete a stored session using the :option:`--delete-stored-session` option:
+Finally, you can delete completely a stored session using the :option:`--delete-stored-session` option:
 
 .. code-block:: bash
 
