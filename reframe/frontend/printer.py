@@ -276,4 +276,14 @@ class PrettyPrinter:
 
         kwargs.setdefault('headers', 'firstrow')
         kwargs.setdefault('tablefmt', tablefmt)
-        self.info(tabulate(data, **kwargs))
+        hide_columns = rt.runtime().get_option('general/0/table_hide_columns')
+        if hide_columns and kwargs['headers'] == 'firstrow' and data:
+            hide_columns = hide_columns.split(',')
+            colidx = [i for i, col in enumerate(data[0])
+                      if col not in hide_columns]
+
+            tab_data = [[rec[col] for col in colidx] for rec in data]
+        else:
+            tab_data = data
+
+        self.info(tabulate(tab_data, **kwargs))

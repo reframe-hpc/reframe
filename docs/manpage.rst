@@ -1132,13 +1132,19 @@ Miscellaneous options
 
 .. option:: --table-format=csv|plain|pretty
 
-   Set the formatting of tabular output printed by options :option:`--performance-compare`, :option:`--performance-report` and the options controlling the stored sessions.
+   Set the formatting of tabular output printed by the options :option:`--performance-compare`, :option:`--performance-report` and the options controlling the stored sessions.
 
    The acceptable values are the following:
 
    - ``csv``: Generate CSV output
    - ``plain``: Generate a plain table without any lines
    - ``pretty``: (default) Generate a pretty table
+
+   .. versionadded:: 4.7
+
+.. option:: --table-hide-columns=COLUMNS
+
+   Hide the specified comma-separated list of columns from the tabular output printed by the options :option:`--performance-compare`, :option:`--performance-report` and the options controlling the stored sessions.
 
    .. versionadded:: 4.7
 

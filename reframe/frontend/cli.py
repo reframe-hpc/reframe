@@ -632,6 +632,11 @@ def main():
         envvar='RFM_TABLE_FORMAT', configvar='general/table_format'
     )
     misc_options.add_argument(
+        '--table-hide-columns', metavar='COLS', action='store',
+        help='Hide specific columns from the final table',
+        envvar='RFM_TABLE_HIDE_COLUMNS', configvar='general/table_hide_columns'
+    )
+    misc_options.add_argument(
         '-v', '--verbose', action='count',
         help='Increase verbosity level of output',
         envvar='RFM_VERBOSE', configvar='general/verbose'
