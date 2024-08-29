@@ -276,6 +276,7 @@ class PrettyPrinter:
 
         kwargs.setdefault('headers', 'firstrow')
         kwargs.setdefault('tablefmt', tablefmt)
+        kwargs.setdefault('numalign', 'right')
         hide_columns = rt.runtime().get_option('general/0/table_hide_columns')
         if hide_columns and kwargs['headers'] == 'firstrow' and data:
             hide_columns = hide_columns.split(',')
