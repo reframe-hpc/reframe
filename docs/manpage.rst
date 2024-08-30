@@ -2007,9 +2007,24 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 
+.. envvar:: RFM_SQLITE_CONN_TIMEOUT
+
+   Timeout for SQLite database connections.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.storage.sqlite_conn_timeout`
+      ================================== ==================
+
+   .. versionadded:: 4.7
+
+
 .. envvar:: RFM_SQLITE_DB_FILE
 
-   The SQlite database file for storing test results.
+   The SQLite database file for storing test results.
 
    .. table::
       :align: left

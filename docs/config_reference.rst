@@ -1636,12 +1636,20 @@ Result storage configuration
    Currently, only Sqlite can be used as a storage backend.
 
 
+.. py:attribute:: storage.sqlite_conn_timeout
+
+   :required: No
+   :default: ``60``
+
+   Timeout in seconds for SQLite database connections.
+
+
 .. py:attribute:: storage.sqlite_db_file
 
    :required: No
    :default: ``"${HOME}/.reframe/reports/results.db"``
 
-   The Sqlite database file to use.
+   The SQLite database file to use.
 
 
 General Configuration

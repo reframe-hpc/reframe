@@ -766,10 +766,16 @@ def main():
         help='Resolve module conflicts automatically'
     )
     argparser.add_argument(
+        dest='sqlite_conn_timeout',
+        envvar='RFM_SQLITE_CONN_TIMEOUT',
+        configvar='storage/sqlite_conn_timeout',
+        help='Timeout for DB connections (SQLite backend)'
+    )
+    argparser.add_argument(
         dest='sqlite_db_file',
         envvar='RFM_SQLITE_DB_FILE',
         configvar='storage/sqlite_db_file',
-        help='DB file where the results database resides'
+        help='DB file where the results database resides (SQLite backend)'
     )
     argparser.add_argument(
         dest='syslog_address',

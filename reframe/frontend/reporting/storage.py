@@ -72,12 +72,18 @@ class _SqliteStorage(StorageBackend):
         regex = re.compile(patt)
         return regex.match(item) is not None
 
+    def _db_connect(self, *args, **kwargs):
+        timeout = runtime().get_option('storage/0/sqlite_conn_timeout')
+        kwargs.setdefault('timeout', timeout)
+        with getprofiler().time_region('sqlite connect'):
+            return sqlite3.connect(*args, **kwargs)
+
     def _db_create(self):
         clsname = type(self).__name__
         getlogger().debug(
             f'{clsname}: creating results database in {self.__db_file}...'
         )
-        with sqlite3.connect(self.__db_file) as conn:
+        with self._db_connect(self.__db_file) as conn:
             conn.execute('CREATE TABLE IF NOT EXISTS sessions('
                          'uuid TEXT PRIMARY KEY, '
                          'session_start_unix REAL, '
@@ -100,13 +106,13 @@ class _SqliteStorage(StorageBackend):
                          'schema_version TEXT)')
 
     def _db_schema_check(self):
-        with sqlite3.connect(self.__db_file) as conn:
+        with self._db_connect(self.__db_file) as conn:
             results = conn.execute(
                 'SELECT schema_version FROM metadata').fetchall()
 
         if not results:
             # DB is new, insert the schema version
-            with sqlite3.connect(self.__db_file) as conn:
+            with self._db_connect(self.__db_file) as conn:
                 conn.execute('INSERT INTO metadata VALUES(:schema_version)',
                              {'schema_version': self.SCHEMA_VERSION})
         else:
@@ -159,14 +165,14 @@ class _SqliteStorage(StorageBackend):
 
     def store(self, report, report_file=None):
         prefix = os.path.dirname(self.__db_file)
-        with sqlite3.connect(self._db_file()) as conn:
+        with self._db_connect(self._db_file()) as conn:
             with FileLock(os.path.join(prefix, '.db.lock')):
                 return self._db_store_report(conn, report, report_file)
 
     @time_function
     def _fetch_testcases_raw(self, condition):
         getprofiler().enter_region('sqlite query')
-        with sqlite3.connect(self._db_file()) as conn:
+        with self._db_connect(self._db_file()) as conn:
             query = ('SELECT session_uuid, testcases.uuid as uuid, json_blob '
                      'FROM testcases '
                      'JOIN sessions ON session_uuid == sessions.uuid '
@@ -207,7 +213,7 @@ class _SqliteStorage(StorageBackend):
 
     @time_function
     def fetch_session_time_period(self, session_uuid):
-        with sqlite3.connect(self._db_file()) as conn:
+        with self._db_connect(self._db_file()) as conn:
             query = ('SELECT session_start_unix, session_end_unix '
                      f'FROM sessions WHERE uuid == "{session_uuid}" '
                      'LIMIT 1')
@@ -231,7 +237,7 @@ class _SqliteStorage(StorageBackend):
 
     @time_function
     def fetch_testcases_from_session(self, session_uuid, name_pattern=None):
-        with sqlite3.connect(self._db_file()) as conn:
+        with self._db_connect(self._db_file()) as conn:
             query = ('SELECT json_blob from sessions '
                      f'WHERE uuid == "{session_uuid}"')
             getlogger().debug(query)
@@ -246,7 +252,7 @@ class _SqliteStorage(StorageBackend):
 
     @time_function
     def fetch_sessions_time_period(self, ts_start=None, ts_end=None):
-        with sqlite3.connect(self._db_file()) as conn:
+        with self._db_connect(self._db_file()) as conn:
             query = 'SELECT json_blob from sessions'
             if ts_start or ts_end:
                 query += ' WHERE ('
@@ -269,7 +275,7 @@ class _SqliteStorage(StorageBackend):
 
     @time_function
     def fetch_session_json(self, uuid):
-        with sqlite3.connect(self._db_file()) as conn:
+        with self._db_connect(self._db_file()) as conn:
             query = f'SELECT json_blob FROM sessions WHERE uuid == "{uuid}"'
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
@@ -279,7 +285,7 @@ class _SqliteStorage(StorageBackend):
     def _do_remove(self, uuid):
         prefix = os.path.dirname(self.__db_file)
         with FileLock(os.path.join(prefix, '.db.lock')):
-            with sqlite3.connect(self._db_file()) as conn:
+            with self._db_connect(self._db_file()) as conn:
                 # Check first if the uuid exists
                 query = f'SELECT * FROM sessions WHERE uuid == "{uuid}"'
                 getlogger().debug(query)
@@ -294,7 +300,7 @@ class _SqliteStorage(StorageBackend):
         '''Remove a session using the RETURNING keyword'''
         prefix = os.path.dirname(self.__db_file)
         with FileLock(os.path.join(prefix, '.db.lock')):
-            with sqlite3.connect(self._db_file()) as conn:
+            with self._db_connect(self._db_file()) as conn:
                 query = (f'DELETE FROM sessions WHERE uuid == "{uuid}" '
                          'RETURNING *')
                 getlogger().debug(query)
