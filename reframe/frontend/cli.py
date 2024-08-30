@@ -1662,8 +1662,8 @@ def main():
             printer.error(message)
 
         if errors.is_exit_request(*exc_info):
-            # Print stack traces for exit requests only when TOO verbose
-            printer.debug2(tb)
+            # Print stack traces for exit requests when debugging
+            printer.debug(tb)
         elif errors.is_severe(*exc_info):
             printer.error(tb)
         else:
