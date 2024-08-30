@@ -218,9 +218,10 @@ class exit_gracefully_on_error:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        logging.getprofiler().print_report(self.__logger.debug)
         if exc_type is SystemExit:
             # Allow users to exit inside the context manager
+            logging.getprofiler().exit_region()
+            logging.getprofiler().print_report(self.__logger.debug)
             return
 
         if isinstance(exc_val, self.__exceptions):
@@ -228,6 +229,8 @@ class exit_gracefully_on_error:
             self.__logger.verbose(
                 ''.join(traceback.format_exception(exc_type, exc_val, exc_tb))
             )
+            logging.getprofiler().exit_region()
+            logging.getprofiler().print_report(self.__logger.debug)
             sys.exit(self.__exitcode)
 
 
@@ -632,6 +635,11 @@ def main():
         envvar='RFM_TABLE_FORMAT', configvar='general/table_format'
     )
     misc_options.add_argument(
+        '--table-hide-columns', metavar='COLS', action='store',
+        help='Hide specific columns from the final table',
+        envvar='RFM_TABLE_HIDE_COLUMNS', configvar='general/table_hide_columns'
+    )
+    misc_options.add_argument(
         '-v', '--verbose', action='count',
         help='Increase verbosity level of output',
         envvar='RFM_VERBOSE', configvar='general/verbose'
@@ -997,15 +1005,12 @@ def main():
 
     if options.performance_compare:
         namepatt = '|'.join(options.names)
-        try:
+        with exit_gracefully_on_error('failed to generate performance report',
+                                      printer):
             printer.table(
                 reporting.performance_compare(options.performance_compare,
                                               namepatt=namepatt)
             )
-        except errors.ReframeError as err:
-            printer.error(f'failed to generate performance report: {err}')
-            sys.exit(1)
-        else:
             sys.exit(0)
 
     # Show configuration after everything is set up
