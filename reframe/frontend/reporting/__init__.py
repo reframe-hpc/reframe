@@ -511,6 +511,11 @@ def _group_testcases(testcases, group_by, extra_cols):
         for pvar, reftuple in tc['perfvalues'].items():
             pvar = pvar.split(':')[-1]
             pval, pref, plower, pupper, punit = reftuple
+            if pval is None:
+                # Ignore `None` performance values
+                # (performance tests that failed sanity)
+                continue
+
             plower = pref * (1 + plower) if plower is not None else -math.inf
             pupper = pref * (1 + pupper) if pupper is not None else math.inf
             record = {
