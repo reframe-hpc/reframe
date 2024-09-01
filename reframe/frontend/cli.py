@@ -1592,9 +1592,12 @@ def main():
                     data = reporting.performance_compare(
                         rt.get_option('general/0/perf_report_spec'), report
                     )
-                except errors.ReframeError as err:
+                except Exception as err:
                     printer.warning(
                         f'failed to generate performance report: {err}'
+                    )
+                    printer.verbose(
+                        ''.join(traceback.format_exception(*sys.exc_info()))
                     )
                 else:
                     printer.performance_report(data)
@@ -1636,6 +1639,9 @@ def main():
                 except Exception as e:
                     printer.warning(
                         f'failed to store results in the database: {e}'
+                    )
+                    printer.verbose(
+                        ''.join(traceback.format_exception(*sys.exc_info()))
                     )
                 else:
                     printer.info('Current session stored with UUID: '
