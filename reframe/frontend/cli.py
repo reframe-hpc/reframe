@@ -985,11 +985,11 @@ def main():
     }
 
     # Print command line
-    printer.info(f"[ReFrame Setup]")
+    printer.info('[ReFrame Setup]')
     print_infoline('version', session_info['version'])
     print_infoline('command', repr(session_info['cmdline']))
     print_infoline(
-        f"launched by",
+        'launched by',
         f"{session_info['user'] or '<unknown>'}@{session_info['hostname']}"
     )
     print_infoline('working directory', repr(session_info['workdir']))
@@ -997,6 +997,7 @@ def main():
         'settings files',
         ', '.join(repr(x) for x in session_info['config_files'])
     )
+    print_infoline('selected system', repr(rt.system.name))
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")
