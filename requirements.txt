@@ -16,7 +16,7 @@ pytest-parallel==0.1.1
 pytest-rerunfailures==10.3; python_version == '3.6'
 pytest-rerunfailures==13.0; python_version == '3.7'
 pytest-rerunfailures==14.0; python_version >= '3.8'
-PyYAML==6.0.1
+PyYAML==6.0.2
 requests==2.27.1; python_version == '3.6'
 requests==2.31.0; python_version == '3.7'
 requests==2.32.2; python_version >= '3.8'
