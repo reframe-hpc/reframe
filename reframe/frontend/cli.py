@@ -766,10 +766,16 @@ def main():
         help='Resolve module conflicts automatically'
     )
     argparser.add_argument(
+        dest='sqlite_conn_timeout',
+        envvar='RFM_SQLITE_CONN_TIMEOUT',
+        configvar='storage/sqlite_conn_timeout',
+        help='Timeout for DB connections (SQLite backend)'
+    )
+    argparser.add_argument(
         dest='sqlite_db_file',
         envvar='RFM_SQLITE_DB_FILE',
         configvar='storage/sqlite_db_file',
-        help='DB file where the results database resides'
+        help='DB file where the results database resides (SQLite backend)'
     )
     argparser.add_argument(
         dest='syslog_address',
@@ -1586,9 +1592,12 @@ def main():
                     data = reporting.performance_compare(
                         rt.get_option('general/0/perf_report_spec'), report
                     )
-                except errors.ReframeError as err:
+                except Exception as err:
                     printer.warning(
                         f'failed to generate performance report: {err}'
+                    )
+                    printer.verbose(
+                        ''.join(traceback.format_exception(*sys.exc_info()))
                     )
                 else:
                     printer.performance_report(data)
@@ -1630,6 +1639,9 @@ def main():
                 except Exception as e:
                     printer.warning(
                         f'failed to store results in the database: {e}'
+                    )
+                    printer.verbose(
+                        ''.join(traceback.format_exception(*sys.exc_info()))
                     )
                 else:
                     printer.info('Current session stored with UUID: '
