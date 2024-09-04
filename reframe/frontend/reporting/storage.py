@@ -213,10 +213,16 @@ class _SqliteStorage(StorageBackend):
             session_uuid, run_index, test_index = uuid.split(':')
             run_index = int(run_index)
             test_index = int(test_index)
-            report = sessions[session_uuid]
-            testcases.append(
-                report['runs'][run_index]['testcases'][test_index],
-            )
+            try:
+                report = sessions[session_uuid]
+            except KeyError:
+                # Since we do two separate queries, new testcases may have been
+                # inserted to the DB meanwhile, so we ignore unknown sessions
+                continue
+            else:
+                testcases.append(
+                    report['runs'][run_index]['testcases'][test_index],
+                )
 
         return testcases
 
