@@ -349,7 +349,8 @@ There are commands that act upon the selected tests and others that have a helpe
 
    List sessions stored in the results database.
 
-   If ``TIME_PERIOD`` is not specified or if ``all`` is passed, all stored sessions will be listed.
+   If ``TIME_PERIOD`` is ``all``, all stored sessions will be listed.
+   If not specified, only the sessions of last week will be listed.
    For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
 
    .. versionadded:: 4.7
@@ -1096,7 +1097,7 @@ Miscellaneous options
 
    For each test all of their performance variables are reported and optionally compared to past results based on the ``CMPSPEC`` specified.
 
-   If not specified, the default ``CMPSPEC`` is ``19700101T0000+0000:now/last:+job_nodelist/+result``, meaning that the current performance will be compared to the last run of the same test grouped additionally by the ``job_nodelist`` and showing also the obtained result (``pass`` or ``fail``).
+   If not specified, the default ``CMPSPEC`` is ``now:now/last:/+job_nodelist+result``, meaning that the current performance will not be compared to any past run and, additionally, the ``job_nodelist`` and the test result (``pass`` or ``fail``) will be listed.
 
    For the exact syntax of ``CMPSPEC``, refer to :ref:`performance-comparisons`.
 

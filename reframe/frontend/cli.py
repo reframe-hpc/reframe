@@ -431,8 +431,8 @@ def main():
               'providing more details')
     )
     action_options.add_argument(
-        '--list-stored-sessions', nargs='?', action='store', const='all',
-        metavar='PERIOD', help='List stored sessions'
+        '--list-stored-sessions', nargs='?', action='store',
+        const='now-1w:now', metavar='PERIOD', help='List stored sessions'
     )
     action_options.add_argument(
         '--list-stored-testcases', action='store',
@@ -607,7 +607,7 @@ def main():
         configvar='general/perf_report_spec',
         envvar='RFM_PERF_REPORT_SPEC',
         help=('Print a report for performance tests '
-              '(default: "19700101T0000+0000:now/last:+job_nodelist/+result")')
+              '(default: "now:now/last:+job_nodelist/+result")')
     )
 
     # Miscellaneous options
