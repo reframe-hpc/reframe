@@ -171,12 +171,12 @@ class _SqliteStorage(StorageBackend):
 
     @time_function
     def _fetch_testcases_raw(self, condition):
-        getprofiler().enter_region('sqlite query')
+        # Retrieve relevant session info and index it in Python
+        getprofiler().enter_region('sqlite session query')
         with self._db_connect(self._db_file()) as conn:
-            query = ('SELECT session_uuid, testcases.uuid as uuid, json_blob '
-                     'FROM testcases '
-                     'JOIN sessions ON session_uuid == sessions.uuid '
-                     f'WHERE {condition}')
+            query = ('SELECT uuid, json_blob FROM sessions WHERE uuid IN '
+                     '(SELECT DISTINCT session_uuid FROM testcases '
+                     f'WHERE {condition})')
             getlogger().debug(query)
 
             # Create SQLite function for filtering using name patterns
@@ -185,10 +185,9 @@ class _SqliteStorage(StorageBackend):
 
         getprofiler().exit_region()
 
-        # Retrieve session info
         sessions = {}
-        for session_uuid, uuid, json_blob in results:
-            sessions.setdefault(session_uuid, json_blob)
+        for uuid, json_blob in results:
+            sessions.setdefault(uuid, json_blob)
 
         # Join all sessions and decode them at once
         reports_blob = '[' + ','.join(sessions.values()) + ']'
@@ -200,14 +199,30 @@ class _SqliteStorage(StorageBackend):
         for rpt in reports:
             sessions[rpt['session_info']['uuid']] = rpt
 
-        # Extract the test case data
+        # Extract the test case data by extracting their UUIDs
+        getprofiler().enter_region('sqlite testcase query')
+        with self._db_connect(self._db_file()) as conn:
+            query = f'SELECT uuid FROM testcases WHERE {condition}'
+            getlogger().debug(query)
+            conn.create_function('REGEXP', 2, self._db_matches)
+            results = conn.execute(query).fetchall()
+
+        getprofiler().exit_region()
         testcases = []
-        for session_uuid, uuid, json_blob in results:
-            run_index, test_index = [int(x) for x in uuid.split(':')[1:]]
-            report = sessions[session_uuid]
-            testcases.append(
-                report['runs'][run_index]['testcases'][test_index],
-            )
+        for uuid, *_ in results:
+            session_uuid, run_index, test_index = uuid.split(':')
+            run_index = int(run_index)
+            test_index = int(test_index)
+            try:
+                report = sessions[session_uuid]
+            except KeyError:
+                # Since we do two separate queries, new testcases may have been
+                # inserted to the DB meanwhile, so we ignore unknown sessions
+                continue
+            else:
+                testcases.append(
+                    report['runs'][run_index]['testcases'][test_index],
+                )
 
         return testcases
 
@@ -286,6 +301,9 @@ class _SqliteStorage(StorageBackend):
         prefix = os.path.dirname(self.__db_file)
         with FileLock(os.path.join(prefix, '.db.lock')):
             with self._db_connect(self._db_file()) as conn:
+                # Enable foreign keys for delete action to have cascade effect
+                conn.execute('PRAGMA foreign_keys = ON')
+
                 # Check first if the uuid exists
                 query = f'SELECT * FROM sessions WHERE uuid == "{uuid}"'
                 getlogger().debug(query)
@@ -301,6 +319,8 @@ class _SqliteStorage(StorageBackend):
         prefix = os.path.dirname(self.__db_file)
         with FileLock(os.path.join(prefix, '.db.lock')):
             with self._db_connect(self._db_file()) as conn:
+                # Enable foreign keys for delete action to have cascade effect
+                conn.execute('PRAGMA foreign_keys = ON')
                 query = (f'DELETE FROM sessions WHERE uuid == "{uuid}" '
                          'RETURNING *')
                 getlogger().debug(query)
