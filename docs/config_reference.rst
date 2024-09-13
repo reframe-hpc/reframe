@@ -1651,6 +1651,16 @@ Result storage configuration
 
    The SQLite database file to use.
 
+.. py:attribute:: storage.sqlite_db_file_mode
+
+   :required: No
+   :default: ``"644"``
+
+   The permissions of the SQLite database file in octal form.
+
+   The mode will only taken into account upon creation of the DB file.
+   Permissions of an existing DB file have to be changed manually.
+
 
 General Configuration
 =====================

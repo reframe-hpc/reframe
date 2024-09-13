@@ -52,6 +52,9 @@ class _SqliteStorage(StorageBackend):
         self.__db_file = os.path.join(
             osext.expandvars(runtime().get_option('storage/0/sqlite_db_file'))
         )
+        self.__db_file_mode = runtime().get_option(
+            'storage/0/sqlite_db_file_mode'
+        )
 
     def _db_file(self):
         prefix = os.path.dirname(self.__db_file)
@@ -77,6 +80,11 @@ class _SqliteStorage(StorageBackend):
         kwargs.setdefault('timeout', timeout)
         with getprofiler().time_region('sqlite connect'):
             return sqlite3.connect(*args, **kwargs)
+
+    def _db_lock(self):
+        prefix = os.path.dirname(self.__db_file)
+        return FileLock(os.path.join(prefix, '.db.lock'),
+                        mode=self.__db_file_mode)
 
     def _db_create(self):
         clsname = type(self).__name__
@@ -104,6 +112,8 @@ class _SqliteStorage(StorageBackend):
                          'on testcases(job_completion_time_unix)')
             conn.execute('CREATE TABLE IF NOT EXISTS metadata('
                          'schema_version TEXT)')
+        # Update DB file mode
+        os.chmod(self.__db_file, self.__db_file_mode)
 
     def _db_schema_check(self):
         with self._db_connect(self.__db_file) as conn:
@@ -164,9 +174,8 @@ class _SqliteStorage(StorageBackend):
         return session_uuid
 
     def store(self, report, report_file=None):
-        prefix = os.path.dirname(self.__db_file)
         with self._db_connect(self._db_file()) as conn:
-            with FileLock(os.path.join(prefix, '.db.lock')):
+            with self._db_lock():
                 return self._db_store_report(conn, report, report_file)
 
     @time_function
@@ -298,8 +307,7 @@ class _SqliteStorage(StorageBackend):
         return jsonext.loads(results[0][0]) if results else {}
 
     def _do_remove(self, uuid):
-        prefix = os.path.dirname(self.__db_file)
-        with FileLock(os.path.join(prefix, '.db.lock')):
+        with self._db_lock():
             with self._db_connect(self._db_file()) as conn:
                 # Enable foreign keys for delete action to have cascade effect
                 conn.execute('PRAGMA foreign_keys = ON')
@@ -316,8 +324,7 @@ class _SqliteStorage(StorageBackend):
 
     def _do_remove2(self, uuid):
         '''Remove a session using the RETURNING keyword'''
-        prefix = os.path.dirname(self.__db_file)
-        with FileLock(os.path.join(prefix, '.db.lock')):
+        with self._db_lock():
             with self._db_connect(self._db_file()) as conn:
                 # Enable foreign keys for delete action to have cascade effect
                 conn.execute('PRAGMA foreign_keys = ON')

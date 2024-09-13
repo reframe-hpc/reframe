@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import functools
 import inspect
 import itertools
 import json
@@ -776,6 +777,13 @@ def main():
         envvar='RFM_SQLITE_DB_FILE',
         configvar='storage/sqlite_db_file',
         help='DB file where the results database resides (SQLite backend)'
+    )
+    argparser.add_argument(
+        dest='sqlite_db_file_mode',
+        envvar='RFM_SQLITE_DB_FILE_MODE',
+        configvar='storage/sqlite_db_file_mode',
+        help='DB file permissions (SQLite backend)',
+        type=functools.partial(int, base=8)
     )
     argparser.add_argument(
         dest='syslog_address',
