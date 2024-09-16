@@ -52,9 +52,13 @@ class _SqliteStorage(StorageBackend):
         self.__db_file = os.path.join(
             osext.expandvars(runtime().get_option('storage/0/sqlite_db_file'))
         )
-        self.__db_file_mode = runtime().get_option(
+        mode = runtime().get_option(
             'storage/0/sqlite_db_file_mode'
         )
+        if not isinstance(mode, int):
+            self.__db_file_mode = int(mode, base=8)
+        else:
+            self.__db_file_mode = mode
 
     def _db_file(self):
         prefix = os.path.dirname(self.__db_file)
