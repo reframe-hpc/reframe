@@ -7,6 +7,7 @@ import abc
 import os
 import re
 import sqlite3
+import sys
 from filelock import FileLock
 
 import reframe.utility.jsonext as jsonext
@@ -87,8 +88,15 @@ class _SqliteStorage(StorageBackend):
 
     def _db_lock(self):
         prefix = os.path.dirname(self.__db_file)
-        return FileLock(os.path.join(prefix, '.db.lock'),
-                        mode=self.__db_file_mode)
+        if sys.version_info >= (3, 7):
+            kwargs = {'mode': self.__db_file_mode}
+        else:
+            # Python 3.6 forces us to use an older filelock version that does
+            # not support file modes. File modes where introduced in
+            # filelock 3.10
+            kwargs = {}
+
+        return FileLock(os.path.join(prefix, '.db.lock'), **kwargs)
 
     def _db_create(self):
         clsname = type(self).__name__
