@@ -7,6 +7,7 @@ import abc
 import os
 import re
 import sqlite3
+import sys
 from filelock import FileLock
 
 import reframe.utility.jsonext as jsonext
@@ -52,6 +53,13 @@ class _SqliteStorage(StorageBackend):
         self.__db_file = os.path.join(
             osext.expandvars(runtime().get_option('storage/0/sqlite_db_file'))
         )
+        mode = runtime().get_option(
+            'storage/0/sqlite_db_file_mode'
+        )
+        if not isinstance(mode, int):
+            self.__db_file_mode = int(mode, base=8)
+        else:
+            self.__db_file_mode = mode
 
     def _db_file(self):
         prefix = os.path.dirname(self.__db_file)
@@ -77,6 +85,18 @@ class _SqliteStorage(StorageBackend):
         kwargs.setdefault('timeout', timeout)
         with getprofiler().time_region('sqlite connect'):
             return sqlite3.connect(*args, **kwargs)
+
+    def _db_lock(self):
+        prefix = os.path.dirname(self.__db_file)
+        if sys.version_info >= (3, 7):
+            kwargs = {'mode': self.__db_file_mode}
+        else:
+            # Python 3.6 forces us to use an older filelock version that does
+            # not support file modes. File modes where introduced in
+            # filelock 3.10
+            kwargs = {}
+
+        return FileLock(os.path.join(prefix, '.db.lock'), **kwargs)
 
     def _db_create(self):
         clsname = type(self).__name__
@@ -104,6 +124,8 @@ class _SqliteStorage(StorageBackend):
                          'on testcases(job_completion_time_unix)')
             conn.execute('CREATE TABLE IF NOT EXISTS metadata('
                          'schema_version TEXT)')
+        # Update DB file mode
+        os.chmod(self.__db_file, self.__db_file_mode)
 
     def _db_schema_check(self):
         with self._db_connect(self.__db_file) as conn:
@@ -164,9 +186,8 @@ class _SqliteStorage(StorageBackend):
         return session_uuid
 
     def store(self, report, report_file=None):
-        prefix = os.path.dirname(self.__db_file)
         with self._db_connect(self._db_file()) as conn:
-            with FileLock(os.path.join(prefix, '.db.lock')):
+            with self._db_lock():
                 return self._db_store_report(conn, report, report_file)
 
     @time_function
@@ -298,8 +319,7 @@ class _SqliteStorage(StorageBackend):
         return jsonext.loads(results[0][0]) if results else {}
 
     def _do_remove(self, uuid):
-        prefix = os.path.dirname(self.__db_file)
-        with FileLock(os.path.join(prefix, '.db.lock')):
+        with self._db_lock():
             with self._db_connect(self._db_file()) as conn:
                 # Enable foreign keys for delete action to have cascade effect
                 conn.execute('PRAGMA foreign_keys = ON')
@@ -316,8 +336,7 @@ class _SqliteStorage(StorageBackend):
 
     def _do_remove2(self, uuid):
         '''Remove a session using the RETURNING keyword'''
-        prefix = os.path.dirname(self.__db_file)
-        with FileLock(os.path.join(prefix, '.db.lock')):
+        with self._db_lock():
             with self._db_connect(self._db_file()) as conn:
                 # Enable foreign keys for delete action to have cascade effect
                 conn.execute('PRAGMA foreign_keys = ON')
