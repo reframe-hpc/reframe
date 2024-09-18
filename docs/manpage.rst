@@ -694,6 +694,17 @@ Options controlling ReFrame execution
    .. versionchanged:: 3.6.1
       Multiple report files are now accepted.
 
+
+.. option:: --retries-threshold=VALUE[%]
+
+   Skip retries (see :option:`--max-retries`) if failures exceed the given threshold.
+
+   Threshold can be specified either as an absolute value or as a percentage using the ``%`` character, e.g., ``--retries-threshold=30%``.
+   Note that in certain shells the ``%`` character may need to be escaped.
+
+   .. versionadded:: 4.7
+
+
 .. option:: -S, --setvar=[TEST.]VAR=VAL
 
    Set variable ``VAR`` in all tests or optionally only in test ``TEST`` to ``VAL``.

@@ -573,10 +573,12 @@ class Runner:
     _timeout = fields.TypedField(typ.Duration, type(None), allow_implicit=True)
 
     def __init__(self, policy, printer=None, max_retries=0,
-                 max_failures=sys.maxsize, reruns=0, timeout=None):
+                 max_failures=sys.maxsize, reruns=0, timeout=None,
+                 retries_threshold=sys.maxsize):
         self._policy = policy
         self._printer = printer or PrettyPrinter()
         self._max_retries = max_retries
+        self._retries_threshold = retries_threshold
         self._num_reruns = reruns
         self._timeout = timeout
         self._t_init = timeout
@@ -620,7 +622,8 @@ class Runner:
                 self._policy.set_expiry(self._t_init + self._timeout)
 
             self._runall(testcases)
-            if self._max_retries:
+            if (self._max_retries and
+                len(self._stats.failed()) <= self._retries_threshold):
                 restored_cases = restored_cases or []
                 self._retry_failed(testcases + restored_cases)
 
