@@ -1031,7 +1031,7 @@ class LModImpl(TMod4Impl):
 
         return ret
 
-    @functools.lru_cache
+    @functools.lru_cache(maxsize=128)
     def conflicted_modules(self, module):
         if module.collection:
             # Conflicts have no meaning in module collection. The modules
