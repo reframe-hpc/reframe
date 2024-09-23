@@ -305,7 +305,6 @@ class RegressionTestMeta(type):
         '''
 
         # Collect the loggable properties
-        loggable_props = []
         namespace['_rfm_loggable_props'] = [
             v.fget._rfm_loggable for v in namespace.values()
             if hasattr(v, 'fget') and hasattr(v.fget, '_rfm_loggable')
@@ -816,7 +815,8 @@ class RegressionTestMeta(type):
     def variant_name(cls, variant_num=None):
         '''Return the name of the test variant with a specific variant number.
 
-        :param variant_num: An integer in the range of ``[0, cls.num_variants)``.
+        :param variant_num: An integer in the range of
+            ``[0, cls.num_variants)``.
         '''
 
         name = cls.__name__
