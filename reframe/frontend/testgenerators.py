@@ -94,13 +94,16 @@ def distribute_tests(testcases, node_map):
             obj.valid_systems = [partition.fullname]
 
         return make_test(
-            f'{cls.__name__}_{partition.fullname.replace(":", "_")}',
-            (cls,),
+            cls.__name__, (cls,),
             {
                 'valid_systems': [partition.fullname],
+                # We add a partition parameter so as to differentiate the test
+                # in case another test has the same nodes in another partition
+                '$part': builtins.parameter([partition.fullname],
+                                            loggable=False),
                 '$nid': builtins.parameter(
                     [[n] for n in node_map[partition.fullname]],
-                    fmt=util.nodelist_abbrev
+                    fmt=util.nodelist_abbrev, loggable=False
                 )
             },
             methods=[
@@ -110,7 +113,7 @@ def distribute_tests(testcases, node_map):
                 # will not be overwritten by a parent post-init hook
                 builtins.run_after('init')(_rfm_set_valid_systems),
             ]
-        ), ['$nid']
+        ), ['$part', '$nid']
 
     return _generate_tests(testcases, _make_dist_test)
 
@@ -122,9 +125,10 @@ def repeat_tests(testcases, num_repeats):
     def _make_repeat_test(testcase):
         cls = type(testcase.check)
         return make_test(
-            f'{cls.__name__}', (cls,),
+            cls.__name__, (cls,),
             {
-                '$repeat_no': builtins.parameter(range(num_repeats))
+                '$repeat_no': builtins.parameter(range(num_repeats),
+                                                 loggable=False)
             }
         ), ['$repeat_no']
 
@@ -150,17 +154,17 @@ def parameterize_tests(testcases, paramvars):
                 if var_check != cls.__name__:
                     continue
             else:
-                getlogger().warning(f'cannot set a variable in a fixture')
+                getlogger().warning('cannot set a variable in a fixture')
                 continue
 
-            if not var in cls.var_space:
+            if var not in cls.var_space:
                 getlogger().warning(
                     f'variable {var!r} not defined for test '
                     f'{check.display_name!r}; ignoring parameterization'
                 )
                 continue
 
-            body[f'${var}'] = builtins.parameter(values)
+            body[f'${var}'] = builtins.parameter(values, loggable=False)
 
         def _set_vars(self):
             for var in body.keys():
@@ -168,7 +172,7 @@ def parameterize_tests(testcases, paramvars):
                         make_convertible(getattr(self, f'{var}')))
 
         return make_test(
-            f'{cls.__name__}', (cls,),
+            cls.__name__, (cls,),
             body=body,
             methods=[builtins.run_after('init')(_set_vars)]
         ), body.keys()

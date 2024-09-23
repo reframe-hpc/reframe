@@ -1672,7 +1672,7 @@ By inspecting the generated script files, you will notice that ReFrame emits the
 .. code-block:: bash
    :caption: Run with the Docker compose setup.
 
-   cat /scratch/rfm-stage/output/pseudo-cluster/compute/gnu/stream_test_pseudo-cluster_compute_8de19aca/rfm_job.sh
+   cat /scratch/rfm-stage/output/pseudo-cluster/compute/gnu/stream_test_584fea5f/rfm_job.sh
 
 .. code-block:: bash
 
