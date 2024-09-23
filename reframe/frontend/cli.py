@@ -141,14 +141,15 @@ def describe_checks(testcases, printer):
         if tc.check.is_fixture():
             continue
 
-        if tc.check.name not in unique_names:
-            unique_names.add(tc.check.name)
+        if tc.check.display_name not in unique_names:
+            unique_names.add(tc.check.display_name)
             rec = json.loads(jsonext.dumps(tc.check))
 
             # Now manipulate the record to be more user-friendly
             #
             # 1. Add other fields that are relevant for users
             # 2. Remove all private fields
+            rec['name'] = tc.check.name
             rec['unique_name'] = tc.check.unique_name
             rec['display_name'] = tc.check.display_name
             rec['pipeline_hooks'] = {}
