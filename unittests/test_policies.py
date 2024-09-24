@@ -274,6 +274,13 @@ def test_retries_bad_check(make_runner, make_cases, common_exec_ctx):
     assert_runall(runner)
     assert runner.max_retries == rt.runtime().current_run
     assert 2 == len(runner.stats.failed())
+    assert 3 == runner.stats.num_runs
+
+
+def test_retries_threshold(make_runner, make_cases, common_exec_ctx):
+    runner = make_runner(max_retries=2, retries_threshold=1)
+    runner.runall(make_cases([BadSetupCheck(), BadSetupCheckEarly()]))
+    assert 1 == runner.stats.num_runs
 
 
 def test_retries_good_check(make_runner, make_cases, common_exec_ctx):
