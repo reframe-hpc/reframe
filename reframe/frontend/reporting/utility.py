@@ -28,6 +28,8 @@ class Aggregator:
             return AggrMin(*args, **kwargs)
         elif name == 'max':
             return AggrMax(*args, **kwargs)
+        elif name == 'count':
+            return AggrCount(*args, **kwargs)
         elif name == 'join_uniq':
             return AggrJoinUniqueValues(*args, **kwargs)
         else:
@@ -83,6 +85,18 @@ class AggrJoinUniqueValues(Aggregator):
     def __call__(self, iterable):
         unique_vals = {str(elem) for elem in iterable}
         return self.__delim.join(unique_vals)
+
+
+class AggrCount(Aggregator):
+    def __call__(self, iterable):
+        if hasattr(iterable, '__len__'):
+            return len(iterable)
+
+        count = 0
+        for _ in iterable:
+            count += 1
+
+        return count
 
 
 def _parse_timestamp(s):
@@ -161,30 +175,33 @@ def parse_time_period(s):
     return _parse_timestamp(ts_start), _parse_timestamp(ts_end)
 
 
-def _parse_extra_cols(s):
-    if s and not s.startswith('+'):
-        raise ValueError(f'invalid column spec: {s}')
+def _parse_columns(s, base_columns=None):
+    base_columns = base_columns or []
+    if not s:
+        return base_columns
 
-    # Remove any empty columns
-    return [x for x in s.split('+')[1:] if x]
+    if s.startswith('+'):
+        return base_columns + [x for x in s.split('+')[1:] if x]
+
+    return s.split(',')
 
 
-def _parse_aggregation(s):
+def _parse_aggregation(s, base_columns=None):
     try:
-        op, extra_groups = s.split(':')
+        op, group_cols = s.split(':')
     except ValueError:
         raise ValueError(f'invalid aggregate function spec: {s}') from None
 
-    return Aggregator.create(op), _parse_extra_cols(extra_groups)
+    return Aggregator.create(op), _parse_columns(group_cols, base_columns)
 
 
 _Match = namedtuple('_Match',
                     ['period_base', 'period_target',
                      'session_base', 'session_target',
-                     'aggregator', 'extra_groups', 'extra_cols'])
+                     'aggregator', 'groups', 'columns'])
 
 
-def parse_cmp_spec(spec):
+def parse_cmp_spec(spec, default_group_by=None, default_columns=None):
     def _parse_period_spec(s):
         if s is None:
             return None, None
@@ -194,6 +211,8 @@ def parse_cmp_spec(spec):
 
         return None, parse_time_period(s)
 
+    default_group_by = default_group_by or ['name', 'sysenv', 'pvar', 'punit']
+    default_columns = default_columns or ['pval', 'pdiff']
     parts = spec.split('/')
     if len(parts) == 3:
         period_base, period_target, aggr, cols = None, *parts
@@ -204,7 +223,9 @@ def parse_cmp_spec(spec):
 
     session_base, period_base = _parse_period_spec(period_base)
     session_target, period_target = _parse_period_spec(period_target)
-    aggr_fn, extra_groups = _parse_aggregation(aggr)
-    extra_cols = _parse_extra_cols(cols)
+    aggr_fn, group_cols = _parse_aggregation(aggr, default_group_by)
+
+    # Update base columns for listing
+    columns = _parse_columns(cols, group_cols + default_columns)
     return _Match(period_base, period_target, session_base, session_target,
-                  aggr_fn, extra_groups, extra_cols)
+                  aggr_fn, group_cols, columns)

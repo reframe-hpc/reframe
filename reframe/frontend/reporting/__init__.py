@@ -15,6 +15,7 @@ import re
 import socket
 import time
 import uuid
+from collections import UserDict
 from collections.abc import Hashable
 from filelock import FileLock
 
@@ -383,7 +384,13 @@ class RunReport:
                     key = alt_name if alt_name else name
                     try:
                         with suppress_deprecations():
-                            entry[key] = getattr(check, name)
+                            val = getattr(check, name)
+
+                        if name in test_cls.raw_params:
+                            # Attribute is parameter, so format it
+                            val = test_cls.raw_params[name].format(val)
+
+                        entry[key] = val
                     except AttributeError:
                         entry[key] = '<undefined>'
 
@@ -517,27 +524,59 @@ class RunReport:
             )
 
 
-def _group_key(groups, testcase):
+class _TCProxy(UserDict):
+    '''Test case to support dynamic fields'''
+    _required_keys = ['name', 'system', 'partition', 'environ']
+
+    def __init__(self, testcase, include_only=None):
+        if isinstance(testcase, _TCProxy):
+            testcase = testcase.data
+
+        if include_only is not None:
+            self.data = {}
+            for k in include_only + self._required_keys:
+                if k in testcase:
+                    self.data.setdefault(k, testcase[k])
+        else:
+            self.data = testcase
+
+    def __getitem__(self, key):
+        val = super().__getitem__(key)
+        if key == 'job_nodelist':
+            val = nodelist_abbrev(val)
+
+        return val
+
+    def __missing__(self, key):
+        if key == 'basename':
+            return self.data['name'].split()[0]
+        elif key == 'sysenv':
+            return _format_sysenv(self.data['system'],
+                                  self.data['partition'],
+                                  self.data['environ'])
+        elif key == 'pdiff':
+            return None
+        else:
+            raise KeyError(key)
+
+
+def _group_key(groups, testcase: _TCProxy):
     key = []
     for grp in groups:
         with reraise_as(ReframeError, (KeyError,), 'no such group'):
             val = testcase[grp]
+            if not isinstance(val, Hashable):
+                val = str(val)
 
-        if grp == 'job_nodelist':
-            # Fold nodelist before adding as a key element
-            key.append(nodelist_abbrev(val))
-        elif not isinstance(val, Hashable):
-            key.append(str(val))
-        else:
             key.append(val)
 
     return tuple(key)
 
 
 @time_function
-def _group_testcases(testcases, group_by, extra_cols):
+def _group_testcases(testcases, groups, columns):
     grouped = {}
-    for tc in testcases:
+    for tc in map(_TCProxy, testcases):
         for pvar, reftuple in tc['perfvalues'].items():
             pvar = pvar.split(':')[-1]
             pval, pref, plower, pupper, punit = reftuple
@@ -548,16 +587,16 @@ def _group_testcases(testcases, group_by, extra_cols):
 
             plower = pref * (1 + plower) if plower is not None else -math.inf
             pupper = pref * (1 + pupper) if pupper is not None else math.inf
-            record = {
+            record = _TCProxy(tc, include_only=columns)
+            record.update({
                 'pvar': pvar,
                 'pval': pval,
                 'pref': pref,
                 'plower': plower,
                 'pupper': pupper,
                 'punit': punit,
-                **{k: tc[k] for k in group_by + extra_cols if k in tc}
-            }
-            key = _group_key(group_by, record)
+            })
+            key = _group_key(groups, record)
             grouped.setdefault(key, [])
             grouped[key].append(record)
 
@@ -573,54 +612,80 @@ def _aggregate_perf(grouped_testcases, aggr_fn, cols):
         delim = '\n'
 
     other_aggr = Aggregator.create('join_uniq', delim)
+    count_aggr = Aggregator.create('count')
     aggr_data = {}
     for key, seq in grouped_testcases.items():
         aggr_data.setdefault(key, {})
-        aggr_data[key]['pval'] = aggr_fn(tc['pval'] for tc in seq)
         with reraise_as(ReframeError, (KeyError,), 'no such column'):
             for c in cols:
-                aggr_data[key][c] = other_aggr(
-                    nodelist_abbrev(tc[c]) if c == 'job_nodelist' else tc[c]
-                    for tc in seq
-                )
+                if c == 'pval':
+                    fn = aggr_fn
+                elif c == 'psamples':
+                    fn = count_aggr
+                else:
+                    fn = other_aggr
+
+                if fn is count_aggr:
+                    aggr_data[key][c] = fn(seq)
+                else:
+                    aggr_data[key][c] = fn(tc[c] for tc in seq)
 
     return aggr_data
 
 
 @time_function
 def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
-                          extra_group_by=None, extra_cols=None):
-    extra_group_by = extra_group_by or []
-    extra_cols = extra_cols or []
-    group_by = (['name', 'system', 'partition', 'environ', 'pvar', 'punit'] +
-                extra_group_by)
+                          groups=None, columns=None):
+    groups = groups or []
+    columns = columns or []
+    grouped_base = _group_testcases(base_testcases, groups, columns)
+    grouped_target = _group_testcases(target_testcases, groups, columns)
+    pbase = _aggregate_perf(grouped_base, base_fn, columns)
+    ptarget = _aggregate_perf(grouped_target, target_fn, columns)
 
-    grouped_base = _group_testcases(base_testcases, group_by, extra_cols)
-    grouped_target = _group_testcases(target_testcases, group_by, extra_cols)
-    pbase = _aggregate_perf(grouped_base, base_fn, extra_cols)
-    ptarget = _aggregate_perf(grouped_target, target_fn, [])
+    # For visual purposes if `name` is in `groups`, consider also its
+    # derivative `basename` to be in, so as to avoid duplicate columns
+    if 'name' in groups:
+        groups.append('basename')
 
     # Build the final table data
-    data = [['name', 'sysenv', 'pvar', 'pval',
-             'punit', 'pdiff'] + extra_group_by + extra_cols]
-    for key, aggr_data in pbase.items():
-        pval = aggr_data['pval']
-        try:
-            target_pval = ptarget[key]['pval']
-        except KeyError:
-            pdiff = 'n/a'
-        else:
-            if pval is None or target_pval is None:
-                pdiff = 'n/a'
-            else:
-                pdiff = (pval - target_pval) / target_pval
-                pdiff = '{:+7.2%}'.format(pdiff)
+    extra_cols = set(columns) - set(groups) - {'pdiff'}
 
-        name, system, partition, environ, pvar, punit, *extras = key
-        line = [name, _format_sysenv(system, partition, environ),
-                pvar, pval, punit, pdiff, *extras]
-        # Add the extra columns
-        line += [aggr_data[c] for c in extra_cols]
+    # Header line
+    header = []
+    for c in columns:
+        if c in extra_cols:
+            header += [f'{c}_A', f'{c}_B']
+        else:
+            header.append(c)
+
+    data = [header]
+    for key, aggr_data in pbase.items():
+        pdiff = None
+        line = []
+        for c in columns:
+            base = aggr_data.get(c)
+            try:
+                target = ptarget[key][c]
+            except KeyError:
+                target = None
+
+            if c == 'pval':
+                line.append('n/a' if base is None else base)
+                line.append('n/a' if target is None else target)
+
+                # compute diff for later usage
+                if base is not None and target is not None:
+                    pdiff = (base - target) / target
+                    pdiff = '{:+7.2%}'.format(pdiff)
+            elif c == 'pdiff':
+                line.append('n/a' if pdiff is None else pdiff)
+            elif c in extra_cols:
+                line.append('n/a' if base is None else base)
+                line.append('n/a' if target is None else target)
+            else:
+                line.append('n/a' if base is None else base)
+
         data.append(line)
 
     return data
@@ -667,8 +732,7 @@ def performance_compare(cmp, report=None, namepatt=None,
         )
 
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,
-                                 match.aggregator, match.extra_groups,
-                                 match.extra_cols)
+                                 match.aggregator, match.groups, match.columns)
 
 
 @time_function
@@ -715,36 +779,32 @@ def session_data(time_period, session_filter=None):
 
 @time_function
 def testcase_data(spec, namepatt=None, test_filter=None, sess_filter=None):
+    with reraise_as(ReframeError, (ValueError,),
+                    'could not parse comparison spec'):
+        match = parse_cmp_spec(spec, default_columns=['pval'])
+
+    if match.period_base or match.session_base:
+        raise ReframeError('only one time period or session are allowed: '
+                           'if you want to compare performance, '
+                           'use the `--performance-compare` option')
+
     storage = StorageBackend.default()
-    if is_uuid(spec):
-        testcases = storage.fetch_testcases_from_session(
-            spec, namepatt, test_filter, sess_filter
+    if match.period_target:
+        testcases = storage.fetch_testcases_time_period(
+            *match.period_target, namepatt, test_filter, sess_filter
         )
     else:
-        testcases = storage.fetch_testcases_time_period(
-            *parse_time_period(spec), namepatt, test_filter, sess_filter
+        testcases = storage.fetch_testcases_from_session(
+            match.session_target, namepatt, test_filter, sess_filter
         )
 
-    data = [['Name', 'SysEnv',
-             'Nodelist', 'Completion Time', 'Result', 'UUID']]
-    for tc in testcases:
-        ts_completed = tc['job_completion_time_unix']
-        if not ts_completed:
-            completion_time = 'n/a'
-        else:
-            # Always format the completion time as users can set their own
-            # formatting in the log record
-            completion_time = time.strftime(_DATETIME_FMT,
-                                            time.localtime(ts_completed))
-
-        data.append([
-            tc['name'],
-            _format_sysenv(tc['system'], tc['partition'], tc['environ']),
-            nodelist_abbrev(tc['job_nodelist']),
-            completion_time,
-            tc['result'],
-            tc['uuid']
-        ])
+    aggregated = _aggregate_perf(
+        _group_testcases(testcases, match.groups, match.columns),
+        match.aggregator, match.columns
+    )
+    data = [match.columns]
+    for aggr_data in aggregated.values():
+        data.append([aggr_data[c] for c in match.columns])
 
     return data
 
