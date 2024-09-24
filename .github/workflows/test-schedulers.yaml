@@ -15,7 +15,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Images
       run: |
-        docker compose -f .github/slurm-cluster/docker-compose.yaml build
+        docker compose -f .github/slurm-cluster/docker-compose.yml build
     - name: Run Unittests
       run: |
         docker compose -f .github/slurm-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend
