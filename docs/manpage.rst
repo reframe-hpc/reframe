@@ -4,13 +4,13 @@ Command Line Reference
 
 
 Synopsis
---------
+========
 
 .. option:: reframe [OPTION]... ACTION
 
 
 Description
------------
+===========
 
 ReFrame provides both a :doc:`programming interface <regression_test_api>` for writing regression tests and a command-line interface for managing and running the tests, which is detailed here.
 The ``reframe`` command is part of ReFrame's frontend.
@@ -26,9 +26,212 @@ Usually, ReFrame processes tests in three phases:
 There are also ReFrame commands that do not operate on a set of tests.
 
 
+.. _commands:
+
+Commands
+--------
+
+ReFrame commands are mutually exclusive and one of them must always be specified.
+There are commands that act upon the selected tests and others that have a helper function, such as querying the configuration, querying the results database etc.
+
+.. versionchanged:: 4.7
+
+   ReFrame commands are now mutually exclusive and only one can be specified every time.
+
+
+Test commands
+^^^^^^^^^^^^^
+
+.. option:: --ci-generate=FILE
+
+   Generate a Gitlab `child pipeline <https://docs.gitlab.com/ee/ci/parent_child_pipelines.html>`__ specification in ``FILE`` that will run the selected tests.
+
+   You can set up your Gitlab CI to use the generated file to run every test as a separate Gitlab job respecting test dependencies.
+   For more information, have a look in :ref:`generate-ci-pipeline`.
+
+   .. note::
+      This option will not work with the :ref:`test generation options <test-generators>`.
+
+
+   .. versionadded:: 3.4.1
+
+.. option:: --describe
+
+   Print a detailed description of the `selected tests <#test-filtering>`__ in JSON format and exit.
+
+   .. note::
+      The generated test description corresponds to its state after it has been initialized.
+      If any of its attributes are changed or set during its execution, their updated values will not be shown by this listing.
+
+   .. versionadded:: 3.10.0
+
+
+.. option:: --dry-run
+
+   Dry run the selected tests.
+
+   The dry-run mode will try to execute as much of the test pipeline as possible.
+   More specifically, the tests will not be submitted and will not be run for real,
+   but their stage directory will be prepared and the corresponding job script will be emitted.
+   Similarly, the sanity and performance functions will not be evaluated but all the preparation will happen.
+   Tests run in dry-run mode will not fail unless there is a programming error in the test or if the test tries to use a resource that is not produced in dry run mode (e.g., access the standard output or a resource produced by a dependency outside any sanity or performance function).
+   In this case, users can call the :func:`~reframe.core.pipeline.RegressionTest.is_dry_run` method in their test and take a specific action if the test is run in dry-run mode.
+
+   .. versionadded:: 4.1
+
+.. option:: -L, --list-detailed[=T|C]
+
+   List selected tests providing more details for each test.
+
+   The unique id of each test (see also :attr:`~reframe.core.pipeline.RegressionTest.unique_name`) as well as the file where each test is defined are printed.
+
+   This option accepts optionally a single argument denoting what type of listing is requested.
+   Please refer to :option:`-l` for an explanation of this argument.
+
+   .. versionadded:: 3.10.0
+      Support for different types of listing is added.
+
+   .. versionchanged:: 4.0.5
+      The variable names to which fixtures are bound are also listed.
+      See :ref:`test_naming_scheme` for more information.
+
+.. option:: -l, --list[=T|C]
+
+   List selected tests and their dependencies.
+
+   This option accepts optionally a single argument denoting what type of listing is requested.
+   There are two types of possible listings:
+
+   - *Regular test listing* (``T``, the default): This type of listing lists the tests and their dependencies or fixtures using their :attr:`~reframe.core.pipeline.RegressionTest.display_name`. A test that is listed as a dependency of another test will not be listed separately.
+   - *Concretized test case listing* (``C``): This type of listing lists the exact test cases and their dependencies as they have been concretized for the current system and environment combinations.
+     This listing shows practically the exact test DAG that will be executed.
+
+   .. versionadded:: 3.10.0
+      Support for different types of listing is added.
+
+   .. versionchanged:: 4.0.5
+      The variable names to which fixtures are bound are also listed.
+      See :ref:`test_naming_scheme` for more information.
+
+.. option:: --list-tags
+
+   List the unique tags of the selected tests.
+
+   The tags are printed in alphabetical order.
+
+   .. versionadded:: 3.6.0
+
+.. option:: -r, --run
+
+   Run the selected tests.
+
+
+Result storage commands
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. option:: --delete-stored-session=UUID
+
+   Delete the stored session with the specified UUID from the results database.
+
+   .. versionadded:: 4.7
+
+.. option:: --describe-stored-session=UUID
+
+   Get detailed information of the session with the specified UUID.
+   The output is in JSON format.
+
+   .. versionadded:: 4.7
+
+.. option:: --describe-stored-testcases=SESSION_UUID|TIME_PERIOD
+
+   Get detailed test case information of the session with the specified UUID or from the specified time period.
+
+   If a session UUID is provided only information about the test cases of this session will be provided.
+   This option can be combined with :option:`--name` to restrict the listing to specific tests.
+   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
+
+   .. versionadded:: 4.7
+
+.. _--list-stored-sessions:
+
+.. option:: --list-stored-sessions[=TIME_PERIOD]
+
+   List sessions stored in the results database.
+
+   If ``TIME_PERIOD`` is ``all``, all stored sessions will be listed.
+   If not specified, only the sessions of last week will be listed.
+   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
+
+   .. versionadded:: 4.7
+
+.. option:: --list-stored-testcases=SESSION_UUID|TIME_PERIOD
+
+   List all test cases from the session with the specified UUID or from the specified time period.
+
+   If a session UUID is provided only the test cases of this session will be listed.
+   This option can be combined with :option:`--name` to restrict the listing to specific tests.
+   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
+
+   .. versionadded:: 4.7
+
+.. option:: --performance-compare=CMPSPEC
+
+   Compare the performance of test cases that have run in the past.
+
+   This option can be combined with :option:`--name` to restrict the comparison to specific tests.
+   Check the :ref:`performance-comparisons` section for the exact syntax of ``CMPSPEC``.
+
+   .. versionadded:: 4.7
+
+Other commands
+^^^^^^^^^^^^^^
+
+.. _--detect-host-topology:
+
+.. option:: --detect-host-topology[=FILE]
+
+   Detect the local host processor topology, store it to ``FILE`` and exit.
+
+   If no ``FILE`` is specified, the standard output will be used.
+
+   .. versionadded:: 3.7.0
+
+.. option:: --show-config [PARAM]
+
+   Show the value of configuration parameter ``PARAM`` as this is defined for the currently selected system and exit.
+
+   The parameter value is printed in JSON format.
+   If ``PARAM`` is not specified or if it set to ``all``, the whole configuration for the currently selected system will be shown.
+   Configuration parameters are formatted as a path navigating from the top-level configuration object to the actual parameter.
+   The ``/`` character acts as a selector of configuration object properties or an index in array objects.
+   The ``@`` character acts as a selector by name for configuration objects that have a ``name`` property.
+   Here are some example queries:
+
+   - Retrieve all the partitions of the current system:
+
+     .. code:: bash
+
+        reframe --show-config=systems/0/partitions
+
+   - Retrieve the job scheduler of the partition named ``default``:
+
+     .. code:: bash
+
+        reframe --show-config=systems/0/partitions/@default/scheduler
+
+   - Retrieve the check search path for system ``foo``:
+
+     .. code:: bash
+
+        reframe --system=foo --show-config=general/0/check_search_path
+
+.. option:: -V, --version
+
+   Print version and exit.
+
+
 .. _test-discovery:
 
--------------------------------
 Test discovery and test loading
 -------------------------------
 
@@ -64,7 +267,6 @@ This is something that test developers should bear in mind.
 
 .. _test-filtering:
 
---------------
 Test filtering
 --------------
 
@@ -243,202 +445,6 @@ This happens recursively so that if test ``T1`` depends on ``T2`` and ``T2`` dep
       If you want to match at the beginning of a test name, you should prepend ``^``.
 
 
-.. _commands:
-
---------
-Commands
---------
-
-ReFrame commands are mutually exclusive and one of them must always be specified.
-There are commands that act upon the selected tests and others that have a helper function, such as querying the configuration, querying the results database etc.
-
-.. versionchanged:: 4.7
-
-   ReFrame commands are now mutually exclusive and only one can be specified every time.
-
-
-.. option:: --ci-generate=FILE
-
-   Generate a Gitlab `child pipeline <https://docs.gitlab.com/ee/ci/parent_child_pipelines.html>`__ specification in ``FILE`` that will run the selected tests.
-
-   You can set up your Gitlab CI to use the generated file to run every test as a separate Gitlab job respecting test dependencies.
-   For more information, have a look in :ref:`generate-ci-pipeline`.
-
-   .. note::
-      This option will not work with the :ref:`test generation options <test-generators>`.
-
-
-   .. versionadded:: 3.4.1
-
-.. option:: --delete-stored-session=UUID
-
-   Delete the stored session with the specified UUID from the results database.
-
-   .. versionadded:: 4.7
-
-.. option:: --describe
-
-   Print a detailed description of the `selected tests <#test-filtering>`__ in JSON format and exit.
-
-   .. note::
-      The generated test description corresponds to its state after it has been initialized.
-      If any of its attributes are changed or set during its execution, their updated values will not be shown by this listing.
-
-   .. versionadded:: 3.10.0
-
-
-.. option:: --describe-stored-session=UUID
-
-   Get detailed information of the session with the specified UUID.
-   The output is in JSON format.
-
-   .. versionadded:: 4.7
-
-.. option:: --describe-stored-testcases=SESSION_UUID|TIME_PERIOD
-
-   Get detailed test case information of the session with the specified UUID or from the specified time period.
-
-   If a session UUID is provided only information about the test cases of this session will be provided.
-   This option can be combined with :option:`--name` to restrict the listing to specific tests.
-   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
-
-   .. versionadded:: 4.7
-
-.. _--detect-host-topology:
-
-.. option:: --detect-host-topology[=FILE]
-
-   Detect the local host processor topology, store it to ``FILE`` and exit.
-
-   If no ``FILE`` is specified, the standard output will be used.
-
-   .. versionadded:: 3.7.0
-
-.. option:: --dry-run
-
-   Dry run the selected tests.
-
-   The dry-run mode will try to execute as much of the test pipeline as possible.
-   More specifically, the tests will not be submitted and will not be run for real,
-   but their stage directory will be prepared and the corresponding job script will be emitted.
-   Similarly, the sanity and performance functions will not be evaluated but all the preparation will happen.
-   Tests run in dry-run mode will not fail unless there is a programming error in the test or if the test tries to use a resource that is not produced in dry run mode (e.g., access the standard output or a resource produced by a dependency outside any sanity or performance function).
-   In this case, users can call the :func:`~reframe.core.pipeline.RegressionTest.is_dry_run` method in their test and take a specific action if the test is run in dry-run mode.
-
-   .. versionadded:: 4.1
-
-.. option:: -L, --list-detailed[=T|C]
-
-   List selected tests providing more details for each test.
-
-   The unique id of each test (see also :attr:`~reframe.core.pipeline.RegressionTest.unique_name`) as well as the file where each test is defined are printed.
-
-   This option accepts optionally a single argument denoting what type of listing is requested.
-   Please refer to :option:`-l` for an explanation of this argument.
-
-   .. versionadded:: 3.10.0
-      Support for different types of listing is added.
-
-   .. versionchanged:: 4.0.5
-      The variable names to which fixtures are bound are also listed.
-      See :ref:`test_naming_scheme` for more information.
-
-.. _--list-stored-sessions:
-
-.. option:: --list-stored-sessions[=TIME_PERIOD]
-
-   List sessions stored in the results database.
-
-   If ``TIME_PERIOD`` is ``all``, all stored sessions will be listed.
-   If not specified, only the sessions of last week will be listed.
-   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
-
-   .. versionadded:: 4.7
-
-.. option:: --list-stored-testcases=SESSION_UUID|TIME_PERIOD
-
-   List all test cases from the session with the specified UUID or from the specified time period.
-
-   If a session UUID is provided only the test cases of this session will be listed.
-   This option can be combined with :option:`--name` to restrict the listing to specific tests.
-   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
-
-   .. versionadded:: 4.7
-
-.. option:: -l, --list[=T|C]
-
-   List selected tests and their dependencies.
-
-   This option accepts optionally a single argument denoting what type of listing is requested.
-   There are two types of possible listings:
-
-   - *Regular test listing* (``T``, the default): This type of listing lists the tests and their dependencies or fixtures using their :attr:`~reframe.core.pipeline.RegressionTest.display_name`. A test that is listed as a dependency of another test will not be listed separately.
-   - *Concretized test case listing* (``C``): This type of listing lists the exact test cases and their dependencies as they have been concretized for the current system and environment combinations.
-     This listing shows practically the exact test DAG that will be executed.
-
-   .. versionadded:: 3.10.0
-      Support for different types of listing is added.
-
-   .. versionchanged:: 4.0.5
-      The variable names to which fixtures are bound are also listed.
-      See :ref:`test_naming_scheme` for more information.
-
-.. option:: --list-tags
-
-   List the unique tags of the selected tests.
-
-   The tags are printed in alphabetical order.
-
-   .. versionadded:: 3.6.0
-
-.. option:: --performance-compare=CMPSPEC
-
-   Compare the performance of test cases that have run in the past.
-
-   This option can be combined with :option:`--name` to restrict the comparison to specific tests.
-   Check the :ref:`performance-comparisons` section for the exact syntax of ``CMPSPEC``.
-
-   .. versionadded:: 4.7
-
-.. option:: -r, --run
-
-   Run the selected tests.
-
-.. option:: --show-config [PARAM]
-
-   Show the value of configuration parameter ``PARAM`` as this is defined for the currently selected system and exit.
-
-   The parameter value is printed in JSON format.
-   If ``PARAM`` is not specified or if it set to ``all``, the whole configuration for the currently selected system will be shown.
-   Configuration parameters are formatted as a path navigating from the top-level configuration object to the actual parameter.
-   The ``/`` character acts as a selector of configuration object properties or an index in array objects.
-   The ``@`` character acts as a selector by name for configuration objects that have a ``name`` property.
-   Here are some example queries:
-
-   - Retrieve all the partitions of the current system:
-
-     .. code:: bash
-
-        reframe --show-config=systems/0/partitions
-
-   - Retrieve the job scheduler of the partition named ``default``:
-
-     .. code:: bash
-
-        reframe --show-config=systems/0/partitions/@default/scheduler
-
-   - Retrieve the check search path for system ``foo``:
-
-     .. code:: bash
-
-        reframe --system=foo --show-config=general/0/check_search_path
-
-.. option:: -V, --version
-
-   Print version and exit.
-
-
-----------------------------------
 Options controlling ReFrame output
 ----------------------------------
 
@@ -559,7 +565,6 @@ Options controlling ReFrame output
    This option can also be set using the :envvar:`RFM_TIMESTAMP_DIRS` environment variable or the :attr:`~config.general.timestamp_dirs` general configuration parameter.
 
 
--------------------------------------
 Options controlling ReFrame execution
 -------------------------------------
 
@@ -811,7 +816,6 @@ Options controlling ReFrame execution
    Skip sanity checking phase.
 
 
-----------------------------------
 Options controlling job submission
 ----------------------------------
 
@@ -836,9 +840,9 @@ Options controlling job submission
    .. versionchanged:: 3.1
       Use ``&`` to combine constraints.
 
-------------------------
-Flexible node allocation
-------------------------
+
+Options controlling flexible node allocation
+--------------------------------------------
 
 ReFrame can automatically set the number of tasks of a test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a value less than or equal to zero.
 This scheme is conveniently called *flexible node allocation* and is valid only for the Slurm backend.
@@ -879,7 +883,6 @@ If no node can be selected, the test will be marked as a failure with an appropr
    .. versionadded:: 4.7
 
 
----------------------------------------
 Options controlling ReFrame environment
 ---------------------------------------
 
@@ -973,7 +976,6 @@ It does so by leveraging the selected system's environment modules system.
 
 .. _test-generators:
 
-----------------------------------------
 Options for generating tests dynamically
 ----------------------------------------
 
@@ -1062,7 +1064,6 @@ The way the tests are generated and how they interact with the test filtering op
    .. versionadded:: 3.12.0
 
 
----------------------
 Miscellaneous options
 ---------------------
 
@@ -1191,7 +1192,7 @@ Miscellaneous options
 .. _test_naming_scheme:
 
 Test Naming Scheme
-------------------
+==================
 
 .. versionadded:: 3.10.0
 
@@ -1308,7 +1309,6 @@ Also users should not rely on how the variant numbers are assigned to a test, as
    A hash code is associated with each test.
 
 
---------------------------------------
 Differences from the old naming scheme
 --------------------------------------
 
@@ -1320,7 +1320,7 @@ Fixtures followed a similar naming pattern making them hard to debug.
 
 
 Result storage
---------------
+==============
 
 .. versionadded:: 4.7
 
@@ -1343,7 +1343,7 @@ The file report of any session can be retrieved from the database with the :opti
 .. _performance-comparisons:
 
 Performance comparisons
------------------------
+=======================
 
 .. versionadded:: 4.7
 
@@ -1428,7 +1428,7 @@ Here are some examples of performance comparison specs:
 .. _time-period-syntax:
 
 Time periods
-------------
+============
 
 A time period needs to be specified as part of the ``CMPSPEC`` of the :option:`--performance-compare` and :option:`--performance-report` options or as an argument to options that request past results from results database.
 
@@ -1453,7 +1453,7 @@ For example, the period of the last 10 days can be specified as ``now-10d:now``.
 Similarly, the period of the week starting on August 5, 2024 will be specified as ``20240805:20240805+1w``.
 
 Environment
------------
+===========
 
 Several aspects of ReFrame can be controlled through environment variables.
 Usually environment variables have counterparts in command line options or configuration parameters.
@@ -2203,7 +2203,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
 
 Configuration File
-------------------
+==================
 
 The configuration file of ReFrame defines the systems and environments to test as well as parameters controlling the framework's behavior.
 
@@ -2216,12 +2216,12 @@ For a complete reference of the available configuration options, please refer to
 
 
 Reporting Bugs
---------------
+==============
 
 For bugs, feature request, help, please open an issue on Github: <https://github.com/reframe-hpc/reframe>
 
 
 See Also
---------
+========
 
 See full documentation online: <https://reframe-hpc.readthedocs.io/>
