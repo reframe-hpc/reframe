@@ -1,0 +1,21 @@
+name: Test Schedulers
+on:
+  pull_request: []
+
+jobs:
+  squeue-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build Images
+      run: |
+        docker compose -f ./github/slurm-cluster/docker-compose.yaml build
+    - name: Run Unittests
+      run: |
+        docker compose -f ./github/slurm-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend

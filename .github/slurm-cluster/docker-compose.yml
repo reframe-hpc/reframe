@@ -1,0 +1,113 @@
+services:
+  munge-key-generator:
+    image: ghcr.io/reframe-hpc/munge-ubuntu:20.04
+    hostname: munge-host
+    healthcheck:
+        test: ["CMD-SHELL", "test -f /scratch/munge.key"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+    volumes:
+      - shared-scratch:/scratch
+
+  frontend:
+    image: slurm-reframe
+    container_name: frontend
+    build:
+      dockerfile: .github/slurm-cluster/reframe/Dockerfile
+      context: ../../
+    hostname: login
+    user: admin
+    init: True
+    volumes:
+      - shared-home:/home/admin:rw
+      - shared-scratch:/scratch:rw
+    links:
+      - slurm-master
+    depends_on:
+      munge-key-generator:
+        condition: service_healthy
+      slurm-master:
+        condition: service_started
+      node0:
+        condition: service_started
+      node1:
+        condition: service_started
+      node2:
+        condition: service_started
+    environment:
+      - SLURM_CPUS_ON_NODE=1
+
+  slurm-master:
+    image: ghcr.io/reframe-hpc/slurm-master-ubuntu:20.04
+    hostname: slurm-master
+    user: admin
+    volumes:
+      - shared-home:/home/admin
+      - shared-scratch:/scratch:rw
+    depends_on:
+      munge-key-generator:
+          condition: service_healthy
+    environment:
+      - SLURM_CPUS_ON_NODE=1
+
+  node0:
+    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:20.04
+    hostname: nid00
+    container_name: slurm-node0
+    user: admin
+    volumes:
+      - shared-home:/home/admin
+      - shared-scratch:/scratch:rw
+    environment:
+      - SLURM_NODENAME=nid00
+      - SLURM_CPUS_ON_NODE=1
+    depends_on:
+      munge-key-generator:
+          condition: service_healthy
+      slurm-master:
+          condition: service_started
+    links:
+      - slurm-master
+
+  node1:
+    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:20.04
+    hostname: nid01
+    container_name: slurm-node1
+    user: admin
+    volumes:
+      - shared-home:/home/admin
+      - shared-scratch:/scratch:rw
+    environment:
+      - SLURM_NODENAME=nid01
+      - SLURM_CPUS_ON_NODE=1
+    depends_on:
+      munge-key-generator:
+          condition: service_healthy
+      slurm-master:
+          condition: service_started
+    links:
+      - slurm-master
+
+  node2:
+    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:20.04
+    hostname: nid02
+    container_name: slurm-node2
+    user: admin
+    volumes:
+      - shared-home:/home/admin
+      - shared-scratch:/scratch:rw
+    environment:
+      - SLURM_NODENAME=nid02
+      - SLURM_CPUS_ON_NODE=1
+    depends_on:
+      munge-key-generator:
+          condition: service_healthy
+      slurm-master:
+          condition: service_started
+    links:
+      - slurm-master
+
+volumes:
+  shared-home:
+  shared-scratch:
