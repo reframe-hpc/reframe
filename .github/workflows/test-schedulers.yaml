@@ -3,8 +3,11 @@ on:
   pull_request: []
 
 jobs:
-  squeue-test:
+  scheduler-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scheduler: ['squeue', 'torque']
     steps:
     - uses: actions/checkout@v4
     - name: Login to GitHub Container Registry
@@ -15,7 +18,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Images
       run: |
-        docker compose -f .github/slurm-cluster/docker-compose.yml build
-    - name: Run Unittests
+        docker compose -f .github/pseudo-cluster/docker-compose.yml build
+    - name: Run Unittests with ${{ matrix.scheduler }} sceduler
       run: |
-        docker compose -f .github/slurm-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend
+        BACKEND=${{ matrix.scheduler }}docker compose -f .github/pseudo-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend

@@ -14,7 +14,7 @@ services:
     image: slurm-reframe
     container_name: frontend
     build:
-      dockerfile: .github/slurm-cluster/reframe/Dockerfile
+      dockerfile: .github/pseudo-cluster/reframe/Dockerfile
       context: ../../
     hostname: login
     user: admin
@@ -37,6 +37,7 @@ services:
         condition: service_started
     environment:
       - SLURM_CPUS_ON_NODE=1
+      - BACKEND=${BACKEND:-squeue}
 
   slurm-master:
     image: ghcr.io/reframe-hpc/slurm-master-ubuntu:20.04

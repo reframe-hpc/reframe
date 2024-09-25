@@ -24,9 +24,9 @@ RUN useradd -m admin -s /usr/bin/bash -d /home/admin && \
     echo "admin:admin" | chpasswd && adduser admin sudo && \
     echo "admin     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-COPY .github/slurm-cluster/reframe/slurm.conf /etc/slurm-llnl/
-COPY .github/slurm-cluster/reframe/cgroup.conf /etc/slurm-llnl/
-COPY .github/slurm-cluster/reframe/docker-entrypoint.sh /etc/slurm-llnl/
+COPY .github/pseudo-cluster/reframe/slurm.conf /etc/slurm-llnl/
+COPY .github/pseudo-cluster/reframe/cgroup.conf /etc/slurm-llnl/
+COPY .github/pseudo-cluster/reframe/docker-entrypoint.sh /etc/slurm-llnl/
 COPY . /usr/local/share/reframe
 
 RUN mkdir /scratch && \
