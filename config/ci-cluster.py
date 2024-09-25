@@ -28,12 +28,19 @@ site_configuration = {
                 {
                     'name': 'compute-torque',
                     'descr': 'Torque compute nodes',
-                    'scheduler': 'squeue',
+                    'scheduler': 'torque',
+                    'launcher': 'mpiexec',
+                    'access': ['-p all'],
+                    'environs': ['gnu', 'clang']
+                },
+                {
+                    'name': 'compute-pbs',
+                    'descr': 'PBS compute nodes',
+                    'scheduler': 'pbs',
                     'launcher': 'mpiexec',
                     'access': ['-p all'],
                     'environs': ['gnu', 'clang']
                 }
-
             ]
         },
     ],

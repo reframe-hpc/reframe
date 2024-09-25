@@ -16,6 +16,8 @@ cp -r /usr/local/share/reframe .
 cd reframe
 ./bootstrap.sh
 
+echo "Running unittests with backend scheduler: ${BACKEND}"
+
 tempdir=$(mktemp -d -p /scratch)
 TMPDIR=$tempdir ./test_reframe.py -v \
     --rfm-user-config=config/ci-cluster.py \
