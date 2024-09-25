@@ -21,4 +21,4 @@ jobs:
         docker compose -f .github/pseudo-cluster/docker-compose.yml build
     - name: Run Unittests with ${{ matrix.scheduler }} sceduler
       run: |
-        BACKEND=${{ matrix.scheduler }}docker compose -f .github/pseudo-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend
+        BACKEND=${{ matrix.scheduler }} docker compose -f .github/pseudo-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend
