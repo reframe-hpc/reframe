@@ -1129,6 +1129,15 @@ Miscellaneous options
    .. versionadded:: 3.9.3
 
 
+.. option:: --session-extras KV_DATA
+
+   Annotate the current session with custom key/value metadata.
+
+   The key/value data is specified as a comma-separated list of `key=value` pairs.
+   When listing stored sessions with the :option:`--list-stored-sessions` option, any associated custom metadata will be presented by default.
+
+   .. versionadded:: 4.7
+
 .. option:: --system=NAME
 
    Load the configuration for system ``NAME``.

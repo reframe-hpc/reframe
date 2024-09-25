@@ -283,7 +283,14 @@ class PrettyPrinter:
             colidx = [i for i, col in enumerate(data[0])
                       if col not in hide_columns]
 
-            tab_data = [[rec[col] for col in colidx] for rec in data]
+            def _access(seq, i, default=None):
+                # Safe access of i-th element of a sequence
+                try:
+                    return seq[i]
+                except IndexError:
+                    return default
+
+            tab_data = [[_access(rec, col) for col in colidx] for rec in data]
         else:
             tab_data = data
 

@@ -616,6 +616,10 @@ def main():
         help=('Print a report for performance tests '
               '(default: "now:now/last:+job_nodelist/+result")')
     )
+    reporting_options.add_argument(
+        '--session-extras', action='store', metavar='KV_DATA',
+        help='Annotate session with custom key/value data'
+    )
 
     # Miscellaneous options
     misc_options.add_argument(
@@ -1589,6 +1593,15 @@ def main():
             report.update_run_stats(runner.stats)
             if options.restore_session is not None:
                 report.update_restored_cases(restored_cases, restored_session)
+
+            if options.session_extras:
+                # Update report's extras
+                extras = {}
+                for arg in options.session_extras.split(','):
+                    k, v = arg.split('=', maxsplit=1)
+                    extras[k] = v
+
+                report.update_extras(extras)
 
             # Print a retry report if we did any retries
             if options.max_retries and runner.stats.failed(run=0):
