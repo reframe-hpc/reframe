@@ -523,6 +523,11 @@ def main():
         help='Restore a testing session from REPORT file'
     )
     run_options.add_argument(
+        '--retries-threshold', action='store', default='1000%',
+        metavar='VALUE[%]',
+        help='Retry tests only if failures do not exceed threshold'
+    )
+    run_options.add_argument(
         '-S', '--setvar', action='append', metavar='[TEST.]VAR=VAL',
         dest='vars', default=[],
         help=('Set test variable VAR to VAL in all tests '
@@ -1564,8 +1569,16 @@ def main():
                 f"{options.reruns}"
             )
 
+        # Parse retries threshold
+        if options.retries_threshold[-1] == '%':
+            ratio = int(options.retries_threshold[:-1]) / 100.
+            retries_threshold = int(len(testcases)*ratio)
+        else:
+            retries_threshold = int(options.retries_threshold)
+
         runner = Runner(exec_policy, printer, options.max_retries,
-                        options.maxfail, options.reruns, options.duration)
+                        options.maxfail, options.reruns, options.duration,
+                        retries_threshold)
         try:
             time_start = time.time()
             runner.runall(testcases, restored_cases)
