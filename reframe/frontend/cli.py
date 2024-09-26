@@ -1180,6 +1180,7 @@ def main():
         'settings files',
         ', '.join(repr(x) for x in session_info['config_files'])
     )
+    print_infoline('selected system', repr(rt.system.name))
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")
