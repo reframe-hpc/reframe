@@ -1,4 +1,4 @@
-name: Test Schedulers
+name: ReFrame CI / Scheduler backend tests
 on:
   pull_request: []
 
