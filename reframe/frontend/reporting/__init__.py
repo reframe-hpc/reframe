@@ -25,7 +25,7 @@ from reframe.core.exceptions import ReframeError, what, is_severe, reraise_as
 from reframe.core.logging import getlogger, _format_time_rfc3339, time_function
 from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
-from reframe.utility import nodelist_abbrev
+from reframe.utility import nodelist_abbrev, OrderedSet
 from .storage import StorageBackend
 from .utility import Aggregator, parse_cmp_spec, parse_time_period, is_uuid
 
@@ -268,6 +268,14 @@ class RunReport:
             'time_end_unix': ts_end,
             'time_elapsed': ts_end - ts_start
         })
+
+    def update_extras(self, extras):
+        '''Attach user-specific metadata to the session'''
+
+        # We prepend a special character to the user extras in order to avoid
+        # possible conflicts with existing keys
+        for k, v in extras.items():
+            self.__report['session_info'][f'${k}'] = v
 
     def update_run_stats(self, stats):
         session_uuid = self.__report['session_info']['uuid']
@@ -645,17 +653,38 @@ def session_data(time_period):
     '''Retrieve all sessions'''
 
     data = [['UUID', 'Start time', 'End time', 'Num runs', 'Num cases']]
+    extra_cols = OrderedSet()
     for sess_data in StorageBackend.default().fetch_sessions_time_period(
         *parse_time_period(time_period) if time_period else (None, None)
     ):
         session_info = sess_data['session_info']
-        data.append(
-            [session_info['uuid'],
-             session_info['time_start'],
-             session_info['time_end'],
-             len(sess_data['runs']),
-             len(sess_data['runs'][0]['testcases'])]
-        )
+        record = [session_info['uuid'],
+                  session_info['time_start'],
+                  session_info['time_end'],
+                  len(sess_data['runs']),
+                  len(sess_data['runs'][0]['testcases'])]
+
+        # Expand output with any user metadata
+        for k in session_info:
+            if k.startswith('$'):
+                extra_cols.add(k[1:])
+
+        # Add any extras recorded so far
+        for key in extra_cols:
+            record.append(session_info.get(f'${key}', ''))
+
+        data.append(record)
+
+    # Do a final grooming pass of the data to expand short records
+    if extra_cols:
+        data[0] += extra_cols
+
+    for rec in data:
+        diff = len(extra_cols) - len(rec)
+        if diff == 0:
+            break
+
+        rec += ['n/a' for _ in range(diff)]
 
     return data
 

@@ -1262,13 +1262,14 @@ def table_format(request):
     return request.param
 
 
-def test_storage_options(run_reframe, tmp_path, table_format):
-    def assert_no_crash(returncode, stdout, stderr, exitcode=0):
-        assert returncode == exitcode
-        assert 'Traceback' not in stdout
-        assert 'Traceback' not in stderr
-        return returncode, stdout, stderr
+def assert_no_crash(returncode, stdout, stderr, exitcode=0):
+    assert returncode == exitcode
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    return returncode, stdout, stderr
 
+
+def test_storage_options(run_reframe, tmp_path, table_format):
     run_reframe2 = functools.partial(
         run_reframe,
         checkpath=['unittests/resources/checks/frontend_checks.py'],
@@ -1326,6 +1327,19 @@ def test_storage_options(run_reframe, tmp_path, table_format):
 
     # Remove session
     assert_no_crash(*run_reframe2(action=f'--delete-stored-session={uuid}'))
+
+
+def test_session_annotations(run_reframe):
+    assert_no_crash(*run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action='-r',
+        more_options=['--session-extras', 'key1=val1,key2=val2',
+                      '-n', '^PerformanceFailureCheck']
+    ), exitcode=1)
+
+    stdout = assert_no_crash(*run_reframe(action='--list-stored-sessions'))[1]
+    for text in ['key1', 'key2', 'val1', 'val2']:
+        assert text in stdout
 
 
 def test_performance_compare(run_reframe, table_format):
