@@ -13,6 +13,7 @@ import shlex
 import sys
 import time
 import traceback
+import yaml
 
 import reframe.core.config as config
 import reframe.core.exceptions as errors
@@ -479,6 +480,10 @@ def main():
     action_options.add_argument(
         '-V', '--version', action='version', version=osext.reframe_version()
     )
+    action_options.add_argument(
+        '--import-results', action='store', metavar='SPECFILE',
+        help='Import results to the database'
+    )
 
     # Run options
     run_options.add_argument(
@@ -831,6 +836,7 @@ def main():
         action='store_true',
         help='Use a login shell for job scripts'
     )
+    argparser.add_argument('args', metavar='ARGS', nargs='*', positional=True)
 
     def restrict_logging():
         '''Restrict logging to errors only.
@@ -1064,6 +1070,21 @@ def main():
                                               namepatt,
                                               options.filter_expr)
             )
+            sys.exit(0)
+
+    if options.import_results:
+        with exit_gracefully_on_error('failed to import results', printer):
+            with open(options.import_results) as fp:
+                spec = yaml.load(fp, yaml.Loader)
+
+            if spec['import']['from'] == 'perflog':
+                kwargs = spec['import']
+                del kwargs['from']
+                report = reporting.RunReport.create_from_perflog(*options.args,
+                                                                 **kwargs)
+            # report.save('foo.json', link_to_last=False)
+            uuid = report.store()
+            printer.info(f'Results imported successfully as session {uuid}')
             sys.exit(0)
 
     # Show configuration after everything is set up
