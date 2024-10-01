@@ -196,7 +196,7 @@ class _ArgumentHolder:
 
             if flags and opt_name is None:
                 # A positional argument
-                opt_name = flags[-1]
+                opt_name, flags = flags[-1], flags[:-1]
 
         if opt_name is None:
             raise ValueError('could not infer a dest name: no flags defined')
@@ -230,7 +230,8 @@ class _ArgumentHolder:
         except KeyError:
             self._defaults.__dict__[opt_name] = None
 
-        if not flags:
+        positional = kwargs.pop('positional', False)
+        if not flags and not positional:
             return None
 
         return self._holder.add_argument(*flags, **kwargs)
