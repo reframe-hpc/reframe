@@ -18,6 +18,9 @@ Finally, ReFrame offers a powerful and efficient runtime for running and managin
 Publications
 ============
 
+Presentations & Talks
+---------------------
+
 * Slides [`pdf <https://users.ugent.be/~kehoste/eum24/008_eum24_ReFrame.pdf>`__][`talk <https://www.youtube.com/live/uSEeU-VJf6k?si=YB19mFpG6aAEBOgH>`__] @ `9th EasyBuild User Meeting 2024 <https://easybuild.io/eum24/>`__.
 * Slides [`part 1 <https://docs.google.com/presentation/d/1GmO2Uf29SaLg36bPB9g9eeaKMN-bLlDJ5IvLGLQJfD8/edit?usp=share_link>`__][`part 2 <https://drive.google.com/file/d/1gZwch0BPc1wDEkMwbM4vxCpMzWIx-Lo1/view?usp=sharing>`__][`talk <https://youtu.be/0ApEKc185Bw>`__] @ `8th EasyBuild User Meeting 2023 <https://easybuild.io/eum23/>`__.
 * Slides [`pdf <https://drive.google.com/file/d/1vmaWyRHgtq3DrYhSCVBzR8U5ErKbxGNf/view?usp=sharing>`__] @ `7th EasyBuild User Meeting 2022 <https://easybuild.io/eum22/>`__.
@@ -32,18 +35,26 @@ Publications
 * Slides [`pdf <https://github.com/eth-cscs/UserLabDay/blob/master/2018/slides/ci_and_regression/ReFrame_CI.pdf>`__] @ `CSCS User Lab Day 2018 <https://github.com/eth-cscs/UserLabDay>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1sZhibvUlGlT670aOHPdMlWFffWptYzLX>`__] @ `HPC Advisory Council 2018 <http://www.hpcadvisorycouncil.com/events/2018/swiss-workshop/>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1EyJ-siupkgLeVT54A4WlFpQtrJaU0xOy>`__] @ `SC17 <https://sc17.supercomputing.org/>`__.
-* Slides [`pdf <https://drive.google.com/open?id=18VrCy0MTplGo67uxVbzYZicQChor9VSY>`__] @ `CUG 2017 <https://cug.org/cug-2017/>`__.
+* Slides [`pdf <https://cug.org/proceedings/cug2017_proceedings/includes/files/pap122s2-file2.pdf>`__] @ `CUG 2017 <https://cug.org/cug-2017/>`__.
 
 
-Webinars and Tutorials
-======================
+Webinars & Tutorials
+--------------------
 
 * "ReFrame – Efficient System and Application Performance Testing," CSCS Webinar, Aug. 29, 2022 [`slides <https://drive.google.com/file/d/1nOS_daleR79ZB1IaToVdW5mDpJQYRcY2/view?usp=sharing>`__] [`recording <https://youtu.be/NDxlKATEcQk>`__] [`demo run <https://asciinema.org/a/517693>`__].
 * Tutorial at 6th EasyBuild User Meeting 2021 [`YouTube <https://youtube.com/playlist?list=PLhnGtSmEGEQjySVEPTUSLpewpOWwX5mjb>`__]
 
 
+Papers
+------
+
+- Vasileios Karakasis et al. "A regression framework for checking the health of large HPC systems". In: *Cray User Group 2017* (Redmond, Washington, USA, May 8--11, 2017). [`pdf <https://cug.org/proceedings/cug2017_proceedings/includes/files/pap122s2-file1.pdf>`__]
+
+- Vasileios Karakasis et al. "Enabling Continuous Testing of HPC Systems Using ReFrame". In: *Tools and Techniques for High Performance Computing. HUST -- Annual Workshop on HPC User Support Tools* (Denver, Colorado, USA, Nov. 17--18, 2019). Ed. by Guido Juckeland and Sunita Chandrasekaran. Vol. 1190. Communications in Computer and Information Science. Cham, Switzerland: Springer International Publishing, Mar. 2020, pp. 49--68. isbn: 978-3-030-44728-1. doi: `10.1007/978-3-030-44728-1_3 <https://doi.org/10.1007/978-3-030-44728-1_3>`__.
+
 
 .. toctree::
+   :maxdepth: 2
    :caption: Table of Contents
 
    started
