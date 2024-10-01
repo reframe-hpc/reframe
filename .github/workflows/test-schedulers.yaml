@@ -1,0 +1,24 @@
+name: ReFrame CI / Scheduler backend tests
+on:
+  pull_request: []
+
+jobs:
+  scheduler-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scheduler: ['pbs', 'squeue', 'torque']
+    steps:
+    - uses: actions/checkout@v4
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build Images
+      run: |
+        docker compose -f .github/pseudo-cluster/docker-compose.yml build
+    - name: Run Unittests with ${{ matrix.scheduler }} sceduler
+      run: |
+        BACKEND=${{ matrix.scheduler }} docker compose -f .github/pseudo-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend
