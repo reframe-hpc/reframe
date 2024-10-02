@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import decimal
+import collections
 import functools
 import inspect
 import json
@@ -246,8 +247,8 @@ class RunReport:
     '''
     def __init__(self):
         # Initialize the report with the required fields
-        self.__filename = None
-        self.__report = {
+        self._filename = None
+        self._report = {
             'session_info': {
                 'data_version': DATA_VERSION,
                 'hostname': socket.gethostname(),
@@ -261,16 +262,16 @@ class RunReport:
 
     @property
     def filename(self):
-        return self.__filename
+        return self._filename
 
     def __getattr__(self, name):
-        return getattr(self.__report, name)
+        return getattr(self._report, name)
 
     def __getitem__(self, key):
-        return self.__report[key]
+        return self._report[key]
 
     def __rfm_json_encode__(self):
-        return self.__report
+        return self._report
 
     @classmethod
     def create_from_perflog(cls, *logfiles, format=None,
@@ -393,23 +394,60 @@ class RunReport:
             'run_index': run_index,
             'testcases': testcases
         })
-        return report
+        return [report]
+
+    @classmethod
+    def create_from_sqlite_db(cls, *dbfiles, exclude_sessions=None,
+                              include_sessions=None, time_period=None):
+        dst_backend = StorageBackend.default()
+        dst_schema = dst_backend.schema_version()
+        if not time_period:
+            time_period = {'start': '19700101T0000+0000', 'end': 'now'}
+
+        start = time_period.get('start', '19700101T0000+0000')
+        end = time_period.get('end', 'now')
+        ts_start, ts_end = parse_time_period(f'{start}:{end}')
+        include_sessions = set(include_sessions) if include_sessions else set()
+        exclude_sessions = set(exclude_sessions) if exclude_sessions else set()
+        reports = []
+        for filename in dbfiles:
+            src_backend = StorageBackend.create('sqlite', filename)
+            src_schema = src_backend.schema_version()
+            if src_schema != dst_schema:
+                getlogger().warning(
+                    f'ignoring DB file {filename}: schema version mismatch: '
+                    f'cannot import from DB v{src_schema} to v{dst_schema}'
+                )
+                continue
+
+            sessions = src_backend.fetch_sessions_time_period(ts_start, ts_end)
+            for sess in sessions:
+                uuid = sess['session_info']['uuid']
+                if include_sessions and uuid not in include_sessions:
+                    continue
+
+                if exclude_sessions and uuid in exclude_sessions:
+                    continue
+
+                reports.append(_ImportedRunReport(sess))
+
+        return reports
 
     def _add_run(self, run):
-        self.__report['runs'].append(run)
+        self._report['runs'].append(run)
 
     def update_session_info(self, session_info):
         # Remove timestamps
         for key, val in session_info.items():
             if not key.startswith('time_'):
-                self.__report['session_info'][key] = val
+                self._report['session_info'][key] = val
 
     def update_restored_cases(self, restored_cases, restored_session):
-        self.__report['restored_cases'] = [restored_session.case(c)
-                                           for c in restored_cases]
+        self._report['restored_cases'] = [restored_session.case(c)
+                                          for c in restored_cases]
 
     def update_timestamps(self, ts_start, ts_end):
-        self.__report['session_info'].update({
+        self._report['session_info'].update({
             'time_start': time.strftime(_DATETIME_FMT,
                                         time.localtime(ts_start)),
             'time_start_unix': ts_start,
@@ -426,10 +464,10 @@ class RunReport:
             raise ValueError('cannot use reserved keys '
                              f'`{",".join(clashed_keys)}` as session extras')
 
-        self.__report['session_info'].update(extras)
+        self._report['session_info'].update(extras)
 
     def update_run_stats(self, stats):
-        session_uuid = self.__report['session_info']['uuid']
+        session_uuid = self._report['session_info']['uuid']
         for runidx, tasks in stats.runs():
             testcases = []
             num_failures = 0
@@ -530,7 +568,7 @@ class RunReport:
 
                 testcases.append(entry)
 
-            self.__report['runs'].append({
+            self._report['runs'].append({
                 'num_cases': len(tasks),
                 'num_failures': num_failures,
                 'num_aborted': num_aborted,
@@ -540,23 +578,23 @@ class RunReport:
             })
 
         # Update session info from stats
-        self.__report['session_info'].update({
-            'num_cases': self.__report['runs'][0]['num_cases'],
-            'num_failures': self.__report['runs'][-1]['num_failures'],
-            'num_aborted': self.__report['runs'][-1]['num_aborted'],
-            'num_skipped': self.__report['runs'][-1]['num_skipped']
+        self._report['session_info'].update({
+            'num_cases': self._report['runs'][0]['num_cases'],
+            'num_failures': self._report['runs'][-1]['num_failures'],
+            'num_aborted': self._report['runs'][-1]['num_aborted'],
+            'num_skipped': self._report['runs'][-1]['num_skipped']
         })
 
     def _save(self, filename, compress, link_to_last):
         filename = _expand_report_filename(filename, newfile=True)
         with open(filename, 'w') as fp:
             if compress:
-                jsonext.dump(self.__report, fp)
+                jsonext.dump(self._report, fp)
             else:
-                jsonext.dump(self.__report, fp, indent=2)
+                jsonext.dump(self._report, fp, indent=2)
                 fp.write('\n')
 
-        self.__filename = filename
+        self._filename = filename
         if not link_to_last:
             return
 
@@ -576,7 +614,7 @@ class RunReport:
 
     def is_empty(self):
         '''Return :obj:`True` is no test cases where run'''
-        return self.__report['session_info']['num_cases'] == 0
+        return self._report['session_info']['num_cases'] == 0
 
     def save(self, filename, compress=False, link_to_last=True):
         prefix = os.path.dirname(filename) or '.'
@@ -591,7 +629,7 @@ class RunReport:
     def generate_xml_report(self):
         '''Generate a JUnit report from a standard ReFrame JSON report.'''
 
-        report = self.__report
+        report = self._report
         xml_testsuites = etree.Element('testsuites')
         # Create a XSD-friendly timestamp
         session_ts = time.strftime(
@@ -686,6 +724,30 @@ class _TCProxy(UserDict):
             return None
         else:
             raise KeyError(key)
+
+
+class _ImportedRunReport(RunReport):
+    def __init__(self, report):
+        self._filename = f'{report["session_info"]["uuid"]}.json'
+        self._report = report
+
+    def _add_run(self, run):
+        raise NotImplementedError
+
+    def update_session_info(self, session_info):
+        raise NotImplementedError
+
+    def update_restored_cases(self, restored_cases, restored_session):
+        raise NotImplementedError
+
+    def update_timestamps(self, ts_start, ts_end):
+        raise NotImplementedError
+
+    def update_extras(self, extras):
+        raise NotImplementedError
+
+    def update_run_stats(self, stats):
+        raise NotImplementedError
 
 
 def _group_key(groups, testcase: _TCProxy):

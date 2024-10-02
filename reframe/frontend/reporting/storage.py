@@ -74,11 +74,11 @@ class StorageBackend:
 
 
 class _SqliteStorage(StorageBackend):
-    SCHEMA_VERSION = '1.0'
+    _SCHEMA_VERSION = '1.0'
 
-    def __init__(self):
-        self.__db_file = os.path.join(
-            osext.expandvars(runtime().get_option('storage/0/sqlite_db_file'))
+    def __init__(self, dbfile=None):
+        self.__db_file = dbfile or osext.expandvars(
+                runtime().get_option('storage/0/sqlite_db_file')
         )
         mode = runtime().get_option(
             'storage/0/sqlite_db_file_mode'
@@ -87,6 +87,16 @@ class _SqliteStorage(StorageBackend):
             self.__db_file_mode = int(mode, base=8)
         else:
             self.__db_file_mode = mode
+
+    def schema_version(self):
+        with self._db_connect(self._db_file()) as conn:
+            result = conn.execute(
+                'SELECT schema_version FROM metadata LIMIT 1'
+            ).fetchone()
+            if not result:
+                raise ReframeError(f'no DB metadata found in {self.__db_file}')
+
+            return result[0]
 
     def _db_file(self):
         prefix = os.path.dirname(self.__db_file)
@@ -173,14 +183,14 @@ class _SqliteStorage(StorageBackend):
             # DB is new, insert the schema version
             with self._db_connect(self.__db_file) as conn:
                 conn.execute('INSERT INTO metadata VALUES(:schema_version)',
-                             {'schema_version': self.SCHEMA_VERSION})
+                             {'schema_version': self._SCHEMA_VERSION})
         else:
             found_ver = results[0][0]
-            if found_ver != self.SCHEMA_VERSION:
+            if found_ver != self._SCHEMA_VERSION:
                 raise ReframeError(
                     f'results DB in {self.__db_file!r} is '
                     'of incompatible version: '
-                    f'found {found_ver}, required: {self.SCHEMA_VERSION}'
+                    f'found {found_ver}, required: {self._SCHEMA_VERSION}'
                 )
 
     def _db_store_report(self, conn, report, report_file_path):

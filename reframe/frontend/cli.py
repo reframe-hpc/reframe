@@ -1080,11 +1080,23 @@ def main():
             if spec['import']['from'] == 'perflog':
                 kwargs = spec['import']
                 del kwargs['from']
-                report = reporting.RunReport.create_from_perflog(*options.args,
-                                                                 **kwargs)
-            # report.save('foo.json', link_to_last=False)
-            uuid = report.store()
-            printer.info(f'Results imported successfully as session {uuid}')
+                reports = reporting.RunReport.create_from_perflog(
+                    *options.args, **kwargs
+                )
+            elif spec['import']['from'] == 'sqlite':
+                kwargs = spec['import']
+                del kwargs['from']
+                reports = reporting.RunReport.create_from_sqlite_db(
+                    *options.args, **kwargs
+                )
+
+            for rpt in reports:
+                uuid = rpt.store()
+                printer.info(f'Successfully imported session {uuid}')
+
+            if not reports:
+                printer.info('No sessions have been imported')
+
             sys.exit(0)
 
     # Show configuration after everything is set up
