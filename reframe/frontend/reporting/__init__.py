@@ -605,7 +605,8 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
 
 
 @time_function
-def performance_compare(cmp, report=None, namepatt=None):
+def performance_compare(cmp, report=None, namepatt=None,
+                        test_filter=None, sess_filter=None):
     with reraise_as(ReframeError, (ValueError,),
                     'could not parse comparison spec'):
         match = parse_cmp_spec(cmp)
@@ -627,20 +628,20 @@ def performance_compare(cmp, report=None, namepatt=None):
             tcs_base = []
     elif match.period_base is not None:
         tcs_base = StorageBackend.default().fetch_testcases_time_period(
-            *match.period_base, namepatt
+            *match.period_base, namepatt, test_filter, sess_filter
         )
     else:
         tcs_base = StorageBackend.default().fetch_testcases_from_session(
-            match.session_base, namepatt
+            match.session_base, namepatt, test_filter, sess_filter
         )
 
     if match.period_target:
         tcs_target = StorageBackend.default().fetch_testcases_time_period(
-            *match.period_target, namepatt
+            *match.period_target, namepatt, test_filter, sess_filter
         )
     else:
         tcs_target = StorageBackend.default().fetch_testcases_from_session(
-            match.session_target, namepatt
+            match.session_target, namepatt, test_filter, sess_filter
         )
 
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,
@@ -649,13 +650,14 @@ def performance_compare(cmp, report=None, namepatt=None):
 
 
 @time_function
-def session_data(time_period):
+def session_data(time_period, session_filter=None):
     '''Retrieve all sessions'''
 
     data = [['UUID', 'Start time', 'End time', 'Num runs', 'Num cases']]
     extra_cols = OrderedSet()
     for sess_data in StorageBackend.default().fetch_sessions_time_period(
-        *parse_time_period(time_period) if time_period else (None, None)
+        *parse_time_period(time_period) if time_period else (None, None),
+        session_filter
     ):
         session_info = sess_data['session_info']
         record = [session_info['uuid'],
@@ -690,13 +692,15 @@ def session_data(time_period):
 
 
 @time_function
-def testcase_data(spec, namepatt=None):
+def testcase_data(spec, namepatt=None, test_filter=None, sess_filter=None):
     storage = StorageBackend.default()
     if is_uuid(spec):
-        testcases = storage.fetch_testcases_from_session(spec, namepatt)
+        testcases = storage.fetch_testcases_from_session(
+            spec, namepatt, test_filter, sess_filter
+        )
     else:
         testcases = storage.fetch_testcases_time_period(
-            *parse_time_period(spec), namepatt
+            *parse_time_period(spec), namepatt, test_filter, sess_filter
         )
 
     data = [['Name', 'SysEnv',

@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
+import functools
 import os
 import re
 import sqlite3
@@ -15,6 +16,7 @@ import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger, time_function, getprofiler
 from reframe.core.runtime import runtime
+from reframe.utility import nodelist_abbrev
 
 
 class StorageBackend:
@@ -42,7 +44,8 @@ class StorageBackend:
         '''Fetch the time period from specific session'''
 
     @abc.abstractmethod
-    def fetch_testcases_time_period(self, ts_start, ts_end):
+    def fetch_testcases_time_period(self, ts_start, ts_end, namepatt,
+                                    test_filter, sess_filter):
         '''Fetch all test cases from specified period'''
 
 
@@ -79,6 +82,16 @@ class _SqliteStorage(StorageBackend):
 
         regex = re.compile(patt)
         return regex.match(item) is not None
+
+    def _db_filter_json(self, expr, item):
+        if expr is None:
+            return True
+
+        if 'job_nodelist' in expr:
+            item['abbrev'] = nodelist_abbrev
+            expr = expr.replace('job_nodelist', 'abbrev(job_nodelist)')
+
+        return eval(expr, None, item)
 
     def _db_connect(self, *args, **kwargs):
         timeout = runtime().get_option('storage/0/sqlite_conn_timeout')
@@ -261,18 +274,22 @@ class _SqliteStorage(StorageBackend):
             return None, None
 
     @time_function
-    def fetch_testcases_time_period(self, ts_start, ts_end, name_pattern=None):
+    def fetch_testcases_time_period(self, ts_start, ts_end, name_patt=None,
+                                    test_filter=None, sess_filter=None):
         expr = (f'job_completion_time_unix >= {ts_start} AND '
                 f'job_completion_time_unix <= {ts_end}')
-        if name_pattern:
-            expr += f' AND name REGEXP "{name_pattern}"'
+        if name_patt:
+            expr += f' AND name REGEXP "{name_patt}"'
 
-        return self._fetch_testcases_raw(
+        testcases = self._fetch_testcases_raw(
             f'({expr}) ORDER BY job_completion_time_unix'
         )
+        filt_fn = functools.partial(self._db_filter_json, test_filter)
+        return [*filter(filt_fn, testcases)]
 
     @time_function
-    def fetch_testcases_from_session(self, session_uuid, name_pattern=None):
+    def fetch_testcases_from_session(self, session_uuid, name_pattern=None,
+                                     test_filter=None, sess_filter=None):
         with self._db_connect(self._db_file()) as conn:
             query = ('SELECT json_blob from sessions '
                      f'WHERE uuid == "{session_uuid}"')
@@ -284,10 +301,12 @@ class _SqliteStorage(StorageBackend):
 
         session_info = jsonext.loads(results[0][0])
         return [tc for run in session_info['runs'] for tc in run['testcases']
-                if self._db_matches(name_pattern, tc['name'])]
+                if (self._db_matches(name_pattern, tc['name']) and
+                    self._db_filter_json(test_filter, tc))]
 
     @time_function
-    def fetch_sessions_time_period(self, ts_start=None, ts_end=None):
+    def fetch_sessions_time_period(self, ts_start=None, ts_end=None,
+                                   sess_filter=None):
         with self._db_connect(self._db_file()) as conn:
             query = 'SELECT json_blob from sessions'
             if ts_start or ts_end:
