@@ -63,9 +63,14 @@ class NoPrgEnvCheck(BaseFrontendCheck):
 
 @rfm.simple_test
 class SanityFailureCheck(BaseFrontendCheck):
+    '''A performance test that fails in sanity.'''
     @sanity_function
     def validate_output(self):
         return sn.assert_found('foo', self.stdout)
+
+    @performance_function('Gflop/s')
+    def perf(self):
+        return sn.extractsingle(r'perf: (\d+)', self.stdout, 1, int)
 
 
 @rfm.simple_test

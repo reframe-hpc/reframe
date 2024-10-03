@@ -6,10 +6,9 @@
         "testcase_type": {
             "type": "object",
             "properties": {
+                "build_jobid": {"type": ["string", "null"]},
                 "build_stderr": {"type": ["string", "null"]},
                 "build_stdout": {"type": ["string", "null"]},
-                "check_params": {"type": "object"},
-                "check_vars": {"type": "object"},
                 "dependencies_actual": {
                     "type": "array",
                     "items": {
@@ -23,9 +22,7 @@
                     "type": "array",
                     "items": {"type": "string"}
                 },
-                "description": {"type": "string"},
-                "display_name": {"type": "string"},
-                "environment": {"type": ["string", "null"]},
+                "environ": {"type": ["string", "null"]},
                 "fail_info": {
                     "type": ["object", "null"],
                     "properties": {
@@ -43,65 +40,30 @@
                 "fail_severe": {"type": "boolean"},
                 "filename": {"type": "string"},
                 "fixture": {"type": "boolean"},
-                "jobid": {"type": ["string", "null"]},
+                "job_completion_time": {"type": ["string", "null"]},
+                "job_completion_time_unix": {"type": ["number", "null"]},
                 "job_stderr": {"type": ["string", "null"]},
                 "job_stdout": {"type": ["string", "null"]},
-                "maintainers": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
                 "name": {"type": "string"},
-                "nodelist": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
                 "outputdir": {"type": ["string", "null"]},
-                "perfvars": {
-                    "type": ["array", "null"],
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "name": {"type": "string"},
-                            "reference": {
-                                "type": ["number", "null"]
-                            },
-                            "thres_lower": {
-                                "type": ["number", "null"]
-                            },
-                            "thres_upper": {
-                                "type": ["number", "null"]
-                            },
-                            "unit": {"type": ["string", "null"]},
-                            "value": {"type": "number"}
-                        },
-                        "required": [
-                            "name", "reference",
-                            "thres_lower", "thres_upper",
-                            "unit", "value"
-                        ]
-                    }
-                },
-                "prefix": {"type": "string"},
-                "result": {
-                    "type": "string",
-                    "enum": ["success", "failure", "aborted", "skipped"]
-                },
-                "scheduler": {"type": ["string", "null"]},
-                "stagedir": {"type": ["string", "null"]},
+                "perfvalues": {"type": "object"},
+                "partition": {"type": ["string", "null"]},
+                "result": {"type": "string"},
+                "scheduler": {"type": "string"},
                 "system": {"type": "string"},
-                "tags": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
                 "time_compile": {"type": ["number", "null"]},
                 "time_performance": {"type": ["number", "null"]},
                 "time_run": {"type": ["number", "null"]},
                 "time_sanity": {"type": ["number", "null"]},
                 "time_setup": {"type": ["number", "null"]},
                 "time_total": {"type": ["number", "null"]},
-                "unique_name": {"type": "string"}
+                "unique_name": {"type": "string"},
+                "uuid": {"type": "string"}
             },
-            "required": ["environment", "stagedir", "system", "unique_name"]
+            "required": ["environ", "fail_phase", "fail_reason", "filename",
+                         "job_completion_time_unix", "name", "perfvalues",
+                         "partition", "result", "system", "time_total",
+                         "unique_name"]
         }
     },
     "type": "object",
@@ -123,16 +85,23 @@
                 "num_cases": {"type": "number"},
                 "num_failures": {"type": "number"},
                 "num_aborted": {"type": "number"},
+                "num_skipped": {"type": "number"},
                 "prefix_output": {"type": "string"},
                 "prefix_stage": {"type": "string"},
+                "session_uuid": {"type": "string"},
                 "time_elapsed": {"type": "number"},
                 "time_end": {"type": "string"},
+                "time_end_unix": {"type": "number"},
                 "time_start": {"type": "string"},
+                "time_start_unix": {"type": "number"},
                 "user": {"type": "string"},
+                "uuid": {"type": "string"},
                 "version": {"type": "string"},
                 "workdir": {"type": "string"}
             },
-            "required": ["data_version"]
+            "required": ["data_version", "hostname",
+                         "time_elapsed", "time_end_unix", "time_start_unix",
+                         "uuid"]
         },
         "restored_cases": {
             "type": "array",
@@ -143,16 +112,17 @@
             "items": {
                 "type": "object",
                 "properties": {
+                    "num_aborted": {"type": "number"},
                     "num_cases": {"type": "number"},
                     "num_failures": {"type": "number"},
-                    "num_aborted": {"type": "number"},
-                    "runid": {"type": "number"},
+                    "num_skipped": {"type": "number"},
+                    "run_index": {"type": "number"},
                     "testcases": {
                         "type": "array",
                         "items": {"$ref": "#/defs/testcase_type"}
                     }
                 },
-                "required": ["testcases"]
+                "required": ["num_cases", "num_failures", "testcases"]
             }
         }
     },

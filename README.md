@@ -97,3 +97,37 @@ Please join the community's [Slack channel](https://join.slack.com/t/reframetalk
 
 ReFrame is an open-source project and we welcome and encourage contributions!
 Check out our Contribution Guide [here](https://github.com/reframe-hpc/reframe/wiki/contributing-to-reframe).
+
+## Citing ReFrame
+
+You can cite ReFrame in publications as follows:
+
+> Vasileios Karakasis et al. "Enabling Continuous Testing of HPC Systems Using ReFrame". In: *Tools and Techniques for High Performance Computing. HUST - Annual Workshop on HPC User Support Tools* (Denver, Colorado, USA, Nov. 17–18, 2019). Ed. by Guido Juckeland and Sunita Chandrasekaran. Vol. 1190. Communications in Computer and Information Science. Cham, Switzerland: Springer International Publishing, Mar. 2020, pp. 49–68. isbn: 978-3-030-44728-1. doi: 10.1007/978-3-030-44728-1_3.
+
+The corresponding BibTeX entry is the following:
+
+```bibtex
+@InProceedings{karakasis20a,
+  author     = {Karakasis, Vasileios and Manitaras, Theofilos and Rusu, Victor Holanda and
+                Sarmiento-P{\'e}rez, Rafael and Bignamini, Christopher and Kraushaar, Matthias and
+                Jocksch, Andreas and Omlin, Samuel and Peretti-Pezzi, Guilherme and
+                Augusto, Jo{\~a}o P. S. C. and Friesen, Brian and He, Yun and Gerhardt, Lisa and
+                Cook, Brandon and You, Zhi-Qiang and Khuvis, Samuel and Tomko, Karen},
+  title      = {Enabling Continuous Testing of {HPC} Systems Using {ReFrame}},
+  booktitle  = {Tools and Techniques for High Performance Computing},
+  editor     = {Juckeland, Guido and Chandrasekaran, Sunita},
+  year       = {2020},
+  month      = mar,
+  series     = {Communications in Computer and Information Science},
+  volume     = {1190},
+  pages      = {49--68},
+  address    = {Cham, Switzerland},
+  publisher  = {Springer International Publishing},
+  doi        = {10.1007/978-3-030-44728-1_3},
+  venue      = {Denver, Colorado, USA},
+  eventdate  = {2019-11-17/2019-11-18},
+  eventtitle = {{HUST} - Annual Workshop on {HPC} User Support Tools},
+  isbn       = {978-3-030-44728-1},
+  issn       = {1865-0937},
+}
+```

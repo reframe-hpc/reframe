@@ -7,7 +7,7 @@ import pytest
 
 import reframe.core.runtime as rt
 import unittests.utility as test_util
-from reframe.frontend.argparse import ArgumentParser
+from reframe.frontend.argparse import ArgumentParser, CONST_DEFAULT
 
 
 @pytest.fixture
@@ -118,7 +118,7 @@ def extended_parser():
         default='bar'
     )
     foo_options.add_argument(
-        '--timestamp', action='store',
+        '--timestamp', action='store', nargs='?', const=CONST_DEFAULT,
         envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
     foo_options.add_argument(
@@ -143,17 +143,14 @@ def extended_parser():
 
 def test_option_precedence(default_exec_ctx, extended_parser):
     with rt.temp_environment(env_vars={
-            'RFM_TIMESTAMP': '%F',
             'RFM_NON_DEFAULT_CRAYPE': 'yes',
             'RFM_MODULES_PRELOAD': 'a,b,c',
             'RFM_CHECK_SEARCH_PATH': 'x:y:z'
 
     }):
-        options = extended_parser.parse_args(
-            ['--timestamp=%FT%T', '--nocolor']
-        )
+        options = extended_parser.parse_args(['--nocolor', '--timestamp'])
         assert options.recursive is None
-        assert options.timestamp == '%FT%T'
+        assert options.timestamp is CONST_DEFAULT
         assert options.non_default_craype is True
         assert options.config_file is None
         assert options.prefix is None
@@ -165,19 +162,17 @@ def test_option_precedence(default_exec_ctx, extended_parser):
 
 def test_option_with_config(default_exec_ctx, extended_parser, tmp_path):
     with rt.temp_environment(env_vars={
-            'RFM_TIMESTAMP': '%F',
+            'RFM_TIMESTAMP_DIRS': r'%F',
             'RFM_NON_DEFAULT_CRAYPE': 'yes',
             'RFM_MODULES_PRELOAD': 'a,b,c',
             'RFM_KEEP_STAGE_FILES': 'no',
             'RFM_GIT_TIMEOUT': '0.3'
     }):
         site_config = rt.runtime().site_config
-        options = extended_parser.parse_args(
-            ['--timestamp=%FT%T', '--nocolor']
-        )
+        options = extended_parser.parse_args(['--nocolor', '--timestamp'])
         options.update_config(site_config)
         assert site_config.get('general/0/check_search_recursive') is False
-        assert site_config.get('general/0/timestamp_dirs') == '%FT%T'
+        assert site_config.get('general/0/timestamp_dirs') == r'%F'
         assert site_config.get('general/0/non_default_craype') is True
         assert site_config.get('systems/0/prefix') == str(tmp_path)
         assert site_config.get('general/0/colorize') is False
@@ -208,3 +203,10 @@ def test_envvar_option(default_exec_ctx, extended_parser):
 def test_envvar_option_default_val(default_exec_ctx, extended_parser):
     options = extended_parser.parse_args([])
     assert options.env_option == 'bar'
+
+
+def test_suppress_required(argparser):
+    group = argparser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--foo', action='store_true')
+    group.add_argument('--bar', action='store_true')
+    argparser.parse_args([], suppress_required=True)

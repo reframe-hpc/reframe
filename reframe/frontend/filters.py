@@ -6,7 +6,6 @@
 import re
 
 from reframe.core.exceptions import ReframeError
-from reframe.core.runtime import runtime
 
 
 def re_compile(patt):
@@ -22,7 +21,6 @@ def _have_name(patt):
     def _fn(case):
         # Match pattern, but remove spaces from the `display_name`
         display_name = case.check.display_name.replace(' ', '')
-        rt = runtime()
         if '@' in patt:
             # Do an exact match on the unique name
             return patt.replace('@', '_') == case.check.unique_name
@@ -43,7 +41,6 @@ def have_not_name(patt):
 
 
 def have_any_name(names):
-    rt = runtime()
     variant_matches = []
     hash_matches = []
     regex_matches = []

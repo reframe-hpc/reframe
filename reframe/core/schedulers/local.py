@@ -70,7 +70,12 @@ class LocalJobScheduler(sched.JobScheduler):
 
         # Update job info
         job._jobid = proc.pid
-        job._nodelist = [socket.gethostname()]
+        hostname = socket.gethostname()
+        if self.get_option('unqualified_hostnames'):
+            job._nodelist = [hostname.split('.')[0]]
+        else:
+            job._nodelist = [hostname]
+
         job._proc = proc
         job._f_stdout = f_stdout
         job._f_stderr = f_stderr

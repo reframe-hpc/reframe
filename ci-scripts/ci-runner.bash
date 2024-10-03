@@ -170,7 +170,7 @@ else
         for backend in slurm pbs torque; do
             echo "[INFO] Running unit tests with ${backend}"
             TMPDIR=$tempdir checked_exec ./test_reframe.py ${parallel_opts} \
-                         --rfm-user-config=config/cscs-ci.py \
+                         --rfm-user-config=ci-scripts/configs/cscs-ci.py \
                          -W=error::reframe.core.warnings.ReframeDeprecationWarning \
                          --rfm-user-system=dom:${backend} -ra
         done
@@ -178,7 +178,7 @@ else
     else
         echo "[INFO] Running unit tests"
         TMPDIR=$tempdir checked_exec ./test_reframe.py ${parallel_opts} \
-                     --rfm-user-config=config/cscs-ci.py \
+                     --rfm-user-config=ci-scripts/configs/cscs-ci.py \
                      -W=error::reframe.core.warnings.ReframeDeprecationWarning -ra
     fi
 

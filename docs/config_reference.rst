@@ -60,6 +60,13 @@ It consists of the following properties, which we also call conventionally *conf
 
    A list of `general configuration objects <#general-configuration>`__.
 
+.. py:data:: storage
+
+   :required: No
+
+   A list of :ref:`storage configuration objects <storage-configuration>`
+
+   .. versionadded:: 4.7
 
 .. py:data:: autodetect_methods
 
@@ -430,6 +437,16 @@ System Partition Configuration
       Job submission is a synchronous operation in ReFrame.
       If this option is set, ReFrame's execution will block until the error conditions specified in this list are resolved.
       No other test would be able to proceed.
+
+
+.. py:attribute:: systems.partitions.sched_options.unqualified_hostnames
+
+   :required: No
+   :default: ``false``
+
+   Use unqualified hostnames in the ``local`` scheduler backend.
+
+   .. versionadded:: 4.7
 
 
 .. py:attribute:: systems.partitions.sched_options.use_nodes_option
@@ -1602,6 +1619,49 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
+.. _storage-configuration:
+
+Result storage configuration
+============================
+
+.. versionadded:: 4.7
+
+.. py:attribute:: storage.backend
+
+   :required: No
+   :default: ``"sqlite"``
+
+   The backend to use for storing the test results.
+
+   Currently, only Sqlite can be used as a storage backend.
+
+
+.. py:attribute:: storage.sqlite_conn_timeout
+
+   :required: No
+   :default: ``60``
+
+   Timeout in seconds for SQLite database connections.
+
+
+.. py:attribute:: storage.sqlite_db_file
+
+   :required: No
+   :default: ``"${HOME}/.reframe/reports/results.db"``
+
+   The SQLite database file to use.
+
+.. py:attribute:: storage.sqlite_db_file_mode
+
+   :required: No
+   :default: ``"644"``
+
+   The permissions of the SQLite database file in octal form.
+
+   The mode will only taken into account upon creation of the DB file.
+   Permissions of an existing DB file have to be changed manually.
+
+
 General Configuration
 =====================
 
@@ -1857,6 +1917,20 @@ General Configuration
 
    A list of systems or system/partitions combinations that these general options are valid for.
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
+
+
+.. py:attribute:: general.table_format
+
+   :required: No
+   :default: ``"pretty"``
+
+   Set the formatting of tabular output.
+
+   The acceptable values are the following:
+
+   - ``csv``: Generate CSV output
+   - ``plain``: Generate a plain table without any lines
+   - ``pretty``: (default) Generate a pretty table
 
 
 .. py:attribute:: general.timestamp_dirs
