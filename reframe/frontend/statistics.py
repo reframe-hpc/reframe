@@ -267,6 +267,7 @@ class TestStats:
             printer.info(f"  * Description: {rec['description']}")
             printer.info(f"  * System partition: {rec['system']}")
             printer.info(f"  * Environment: {rec['environment']}")
+            printer.info(f"  * Test file: {rec['filename']}")
             printer.info(f"  * Stage directory: {rec['stagedir']}")
             printer.info(
                 f"  * Node list: {util.nodelist_abbrev(rec['nodelist'])}"
