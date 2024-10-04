@@ -204,7 +204,7 @@ class _SqliteStorage(StorageBackend):
                 return self._db_store_report(conn, report, report_file)
 
     @time_function
-    def _fetch_testcases_raw(self, condition):
+    def _fetch_testcases_raw(self, condition, sess_filter=None):
         # Retrieve relevant session info and index it in Python
         getprofiler().enter_region('sqlite session query')
         with self._db_connect(self._db_file()) as conn:
@@ -218,7 +218,6 @@ class _SqliteStorage(StorageBackend):
             results = conn.execute(query).fetchall()
 
         getprofiler().exit_region()
-
         sessions = {}
         for uuid, json_blob in results:
             sessions.setdefault(uuid, json_blob)
@@ -229,9 +228,14 @@ class _SqliteStorage(StorageBackend):
         reports = jsonext.loads(reports_blob)
         getprofiler().exit_region()
 
-        # Reindex sessions with their decoded data
+        # Reindex and filter sessions based on their decoded data
+        sessions.clear()
         for rpt in reports:
-            sessions[rpt['session_info']['uuid']] = rpt
+            try:
+                if self._db_filter_json(sess_filter, rpt['session_info']):
+                    sessions[rpt['session_info']['uuid']] = rpt
+            except Exception:
+                continue
 
         # Extract the test case data by extracting their UUIDs
         getprofiler().enter_region('sqlite testcase query')
@@ -282,7 +286,7 @@ class _SqliteStorage(StorageBackend):
             expr += f' AND name REGEXP "{name_patt}"'
 
         testcases = self._fetch_testcases_raw(
-            f'({expr}) ORDER BY job_completion_time_unix'
+            f'({expr}) ORDER BY job_completion_time_unix', sess_filter
         )
         filt_fn = functools.partial(self._db_filter_json, test_filter)
         return [*filter(filt_fn, testcases)]

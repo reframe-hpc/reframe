@@ -33,8 +33,31 @@ from .utility import Aggregator, parse_cmp_spec, parse_time_period, is_uuid
 # Major version bumps are expected to break the validation of previous schemas
 
 DATA_VERSION = '4.0'
-_SCHEMA = os.path.join(rfm.INSTALL_PREFIX, 'reframe/schemas/runreport.json')
+_SCHEMA = None
+_RESERVED_SESSION_INFO_KEYS = None
 _DATETIME_FMT = r'%Y%m%dT%H%M%S%z'
+
+
+def _schema():
+    global _SCHEMA
+    if _SCHEMA is not None:
+        return _SCHEMA
+
+    with open(os.path.join(rfm.INSTALL_PREFIX,
+                           'reframe/schemas/runreport.json')) as fp:
+        _SCHEMA = json.load(fp)
+        return _SCHEMA
+
+
+def _reserved_session_info_keys():
+    global _RESERVED_SESSION_INFO_KEYS
+    if _RESERVED_SESSION_INFO_KEYS is not None:
+        return _RESERVED_SESSION_INFO_KEYS
+
+    _RESERVED_SESSION_INFO_KEYS = set(
+        _schema()['properties']['session_info']['properties'].keys()
+    )
+    return _RESERVED_SESSION_INFO_KEYS
 
 
 def _format_sysenv(system, partition, environ):
@@ -183,11 +206,8 @@ def _restore_session(filename):
             f'report file {filename!r} is not a valid JSON file') from e
 
     # Validate the report
-    with open(_SCHEMA) as fp:
-        schema = json.load(fp)
-
     try:
-        jsonschema.validate(report, schema)
+        jsonschema.validate(report, _schema())
     except jsonschema.ValidationError as e:
         try:
             found_ver = report['session_info']['data_version']
@@ -272,10 +292,12 @@ class RunReport:
     def update_extras(self, extras):
         '''Attach user-specific metadata to the session'''
 
-        # We prepend a special character to the user extras in order to avoid
-        # possible conflicts with existing keys
-        for k, v in extras.items():
-            self.__report['session_info'][f'${k}'] = v
+        clashed_keys = set(extras.keys()) & _reserved_session_info_keys()
+        if clashed_keys:
+            raise ValueError('cannot use reserved keys '
+                             f'`{",".join(clashed_keys)}` as session extras')
+
+        self.__report['session_info'].update(extras)
 
     def update_run_stats(self, stats):
         session_uuid = self.__report['session_info']['uuid']
@@ -668,12 +690,12 @@ def session_data(time_period, session_filter=None):
 
         # Expand output with any user metadata
         for k in session_info:
-            if k.startswith('$'):
-                extra_cols.add(k[1:])
+            if k not in _reserved_session_info_keys():
+                extra_cols.add(k)
 
         # Add any extras recorded so far
         for key in extra_cols:
-            record.append(session_info.get(f'${key}', ''))
+            record.append(session_info.get(key, ''))
 
         data.append(record)
 
