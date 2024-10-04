@@ -185,7 +185,7 @@ class PbsJobScheduler(sched.JobScheduler):
         return job.completed
 
     def _update_nodelist(self, job, nodespec):
-        if job.nodelist is not None:
+        if job.nodelist:
             return
 
         job._nodelist = [x.split('/')[0] for x in nodespec.split('+')]

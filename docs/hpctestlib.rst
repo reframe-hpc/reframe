@@ -106,6 +106,10 @@ Scientific Applications
    :members:
    :show-inheritance:
 
+.. automodule:: hpctestlib.sciapps.metalwalls.benchmarks
+   :members:
+   :show-inheritance:
+
 System
 =======================
 

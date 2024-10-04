@@ -6,6 +6,7 @@
 import abc
 import contextlib
 import copy
+import itertools
 import os
 import signal
 import sys
@@ -24,13 +25,60 @@ from reframe.core.exceptions import (AbortTaskError,
                                      ForceExitError,
                                      RunSessionTimeout,
                                      SkipTestError,
+                                     StatisticsError,
                                      TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.statistics import TestStats
 
 ABORT_REASONS = (AssertionError, FailureLimitError,
                  KeyboardInterrupt, ForceExitError, RunSessionTimeout)
+
+
+class TestStats:
+    '''Stores test case statistics.'''
+
+    def __init__(self):
+        # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
+        self._alltasks = [[]]
+
+    def add_task(self, task):
+        current_run = runtime.runtime().current_run
+        if current_run == len(self._alltasks):
+            self._alltasks.append([])
+
+        self._alltasks[current_run].append(task)
+
+    def runs(self):
+        for runid, tasks in enumerate(self._alltasks):
+            yield runid, tasks
+
+    def tasks(self, run=-1):
+        if run is None:
+            yield from itertools.chain(*self._alltasks)
+        else:
+            try:
+                yield from self._alltasks[run]
+            except IndexError:
+                raise StatisticsError(f'no such run: {run}') from None
+
+    def failed(self, run=-1):
+        return [t for t in self.tasks(run) if t.failed]
+
+    def skipped(self, run=-1):
+        return [t for t in self.tasks(run) if t.skipped]
+
+    def aborted(self, run=-1):
+        return [t for t in self.tasks(run) if t.aborted]
+
+    def completed(self, run=-1):
+        return [t for t in self.tasks(run) if t.completed]
+
+    def num_cases(self, run=-1):
+        return sum(1 for _ in self.tasks(run))
+
+    @property
+    def num_runs(self):
+        return len(self._alltasks)
 
 
 class TestCase:
@@ -115,12 +163,10 @@ def generate_testcases(checks, prepare=False):
     '''Generate concrete test cases from checks.
 
     If `prepare` is true then each of the cases will also be prepared for
-    being sent to the test pipeline. Note that setting this to true may slow down
-    the test case generation.
-
+    being sent to the test pipeline. Note that setting this to true may slow
+    down the test case generation.
     '''
 
-    rt = runtime.runtime()
     cases = []
     for c in checks:
         valid_comb = runtime.valid_sysenv_comb(c.valid_systems,
@@ -268,7 +314,8 @@ class RegressionTask:
 
     @property
     def succeeded(self):
-        return self._current_stage in {'finalize', 'cleanup'}
+        return (self._current_stage in {'finalize', 'cleanup'} and
+                not self._failed_stage == 'cleanup')
 
     @property
     def completed(self):
@@ -281,6 +328,19 @@ class RegressionTask:
     @property
     def skipped(self):
         return self._skipped
+
+    @property
+    def result(self):
+        if self.succeeded:
+            return 'pass'
+        elif self.failed:
+            return 'fail'
+        elif self.aborted:
+            return 'abort'
+        elif self.skipped:
+            return 'skip'
+        else:
+            return '<unknown>'
 
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
@@ -348,7 +408,6 @@ class RegressionTask:
         with runtime.temp_config(self.testcase.partition.fullname):
             with temp_dry_run(self.check):
                 return fn(*args, **kwargs)
-
 
     @logging.time_function
     def setup(self, *args, **kwargs):
@@ -514,10 +573,12 @@ class Runner:
     _timeout = fields.TypedField(typ.Duration, type(None), allow_implicit=True)
 
     def __init__(self, policy, printer=None, max_retries=0,
-                 max_failures=sys.maxsize, reruns=0, timeout=None):
+                 max_failures=sys.maxsize, reruns=0, timeout=None,
+                 retries_threshold=sys.maxsize):
         self._policy = policy
         self._printer = printer or PrettyPrinter()
         self._max_retries = max_retries
+        self._retries_threshold = retries_threshold
         self._num_reruns = reruns
         self._timeout = timeout
         self._t_init = timeout
@@ -561,7 +622,8 @@ class Runner:
                 self._policy.set_expiry(self._t_init + self._timeout)
 
             self._runall(testcases)
-            if self._max_retries:
+            if (self._max_retries and
+                len(self._stats.failed()) <= self._retries_threshold):
                 restored_cases = restored_cases or []
                 self._retry_failed(testcases + restored_cases)
 
@@ -586,9 +648,6 @@ class Runner:
             runid = None if self._global_stats else -1
             num_aborted = len(self._stats.aborted(runid))
             num_failures = len(self._stats.failed(runid))
-            num_completed = len(self._stats.completed(runid))
-            num_skipped = len(self._stats.skipped(runid))
-            num_tasks = self._stats.num_cases(runid)
             if num_failures > 0:
                 status = 'FAILED'
             elif num_aborted > 0:

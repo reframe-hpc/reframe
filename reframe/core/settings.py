@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 #
-# Generic fallback configuration
+# Builtin configuration
 #
 
 site_configuration = {

@@ -12,20 +12,16 @@ services:
 
   frontend:
     image: slurm-reframe
-    build:
-      context: examples/tutorial/dockerfiles/slurm-cluster/reframe
-      args:
-        REFRAME_REPO: reframe-hpc
-        REFRAME_TAG: develop
     container_name: frontend
+    build:
+      dockerfile: .github/pseudo-cluster/reframe/Dockerfile
+      context: ../../
     hostname: login
     user: admin
+    init: True
     volumes:
       - shared-home:/home/admin:rw
       - shared-scratch:/scratch:rw
-      - type: bind
-        source: ./examples
-        target: /home/admin/reframe-examples
     links:
       - slurm-master
     depends_on:
@@ -41,6 +37,7 @@ services:
         condition: service_started
     environment:
       - SLURM_CPUS_ON_NODE=1
+      - BACKEND=${BACKEND:-squeue}
 
   slurm-master:
     image: ghcr.io/reframe-hpc/slurm-master-ubuntu:20.04
