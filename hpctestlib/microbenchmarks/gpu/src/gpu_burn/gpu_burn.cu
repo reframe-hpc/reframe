@@ -161,7 +161,7 @@ public:
       XMemcpy(d_B, h_B, d_resultSize, XMemcpyHostToDevice);
   }
 
-  void compute() = delete;
+  void compute();
 
   void compare() {
       int numberOfErrors;
