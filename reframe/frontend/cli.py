@@ -1046,7 +1046,7 @@ def main():
 
     if site_config.get('general/0/remote_detect') and site_config.get('general/0/remote_command'):
         remote_commands = site_config.get('general/0/remote_command')
-        detect_topology_cmd = "reframe --detect-host-topology="
+        detect_topology_cmd = "reframe --detect-host-topology=topo.json"
         detect_topology_found = [
             s for s in remote_commands if detect_topology_cmd in s
         ]
@@ -1055,7 +1055,7 @@ def main():
             printer.debug(
                 "Adding ReFrame topology detection to the curstom command"
             )
-            remote_cmd_args.append("reframe --detect-host-topology=topo.json")
+            remote_cmd_args.append(detect_topology_cmd)
 
     # Show configuration after everything is set up
     if options.show_config:
