@@ -42,6 +42,7 @@ detecting topology info for tutorialsys:default
   RFM_PURGE_ENVIRONMENT=<not set>
   RFM_REMOTE_DETECT=<not set>
   RFM_REMOTE_WORKDIR=<not set>
+  RFM_REMOTE_COMMAND=<not set>
   RFM_REPORT_FILE=<not set>
   RFM_REPORT_JUNIT=<not set>
   RFM_RESOLVE_MODULE_CONFLICTS=<not set>
