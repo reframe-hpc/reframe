@@ -770,6 +770,13 @@ def main():
         help='Working directory for launching ReFrame remotely'
     )
     argparser.add_argument(
+        dest='remote_command',
+        envvar='RFM_REMOTE_COMMAND',
+        configvar='general/remote_command',
+        action='append',
+        help='Custom command to launch ReFrame remotely when detecting system topology'
+    )
+    argparser.add_argument(
         dest='resolve_module_conflicts',
         envvar='RFM_RESOLVE_MODULE_CONFLICTS',
         configvar='general/resolve_module_conflicts',
@@ -1036,6 +1043,19 @@ def main():
                                               namepatt=namepatt)
             )
             sys.exit(0)
+
+    if site_config.get('general/0/remote_detect') and site_config.get('general/0/remote_command'):
+        remote_commands = site_config.get('general/0/remote_command')
+        detect_topology_cmd = "reframe --detect-host-topology="
+        detect_topology_found = [
+            s for s in remote_commands if detect_topology_cmd in s
+        ]
+        if not detect_topology_found:
+            remote_cmd_args = site_config.get('general/0/remote_command')
+            printer.debug(
+                "Adding ReFrame topology detection to the curstom command"
+            )
+            remote_cmd_args.append("reframe --detect-host-topology=topo.json")
 
     # Show configuration after everything is set up
     if options.show_config:
