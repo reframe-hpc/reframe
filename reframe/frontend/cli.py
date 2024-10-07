@@ -774,7 +774,7 @@ def main():
         envvar='RFM_REMOTE_COMMAND',
         configvar='general/remote_command',
         action='append',
-        help='Custom command to launch ReFrame remotely when detecting system topology'
+        help='Custom command for topology detection of remote partition'
     )
     argparser.add_argument(
         dest='resolve_module_conflicts',
@@ -1044,7 +1044,8 @@ def main():
             )
             sys.exit(0)
 
-    if site_config.get('general/0/remote_detect') and site_config.get('general/0/remote_command'):
+    if site_config.get('general/0/remote_detect') and \
+            site_config.get('general/0/remote_command'):
         remote_commands = site_config.get('general/0/remote_command')
         detect_topology_cmd = "reframe --detect-host-topology=topo.json"
         detect_topology_found = [

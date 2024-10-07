@@ -162,7 +162,9 @@ def _remote_detect(part):
     try:
         prefix = runtime.runtime().get_option('general/0/remote_workdir')
         if runtime.runtime().get_option('general/0/remote_command'):
-            custom_command = runtime.runtime().get_option('general/0/remote_command')
+            custom_command = runtime.runtime().get_option(
+                'general/0/remote_command'
+            )
             remote_dirname = os.path.abspath(
                 tempfile.mkdtemp(prefix='rfm.', dir=(prefix)))
             with osext.change_dir(remote_dirname):
@@ -172,7 +174,8 @@ def _remote_detect(part):
                                  sched_access=part.access)
                 _emit_custom_script(job, [part.local_env], custom_command)
                 job.prepare(
-                    custom_command, [part.local_env], trap_errors=True, login=use_login_shell
+                    custom_command, [part.local_env], 
+                    trap_errors=True, login=use_login_shell
                 )
                 getlogger().debug('submitting detection script')
                 _log_contents(job.script_filename)
