@@ -51,7 +51,7 @@
             "properties": {
                 "type": {
                     "type": "string",
-                    "enum": ["file", "filelog", "graylog", "stream", "syslog", "httpjson"]
+                    "enum": ["file", "filelog", "graylog", "stream", "syslog", "httpjson", "plugin"]
                 },
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},

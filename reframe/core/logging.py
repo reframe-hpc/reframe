@@ -678,39 +678,35 @@ class HTTPJSONHandler(logging.Handler):
             raise LoggingError('logging failed') from e
 
 
+_create_handler_registry = {
+    'file': _create_file_handler,
+    'filelog': _create_filelog_handler,
+    'syslog': _create_syslog_handler,
+    'stream': _create_stream_handler,
+    'graylog': _create_graylog_handler,
+    'httpjson': _create_httpjson_handler,
+}
+
+
+def register_plugin_handler(create_plugin_handler):
+    _create_handler_registry["plugin"] = create_plugin_handler
+
+
 def _extract_handlers(site_config, handlers_group):
     handler_prefix = f'logging/0/{handlers_group}'
     handlers_list = site_config.get(handler_prefix)
     handlers = []
     for i, handler_config in enumerate(handlers_list):
         handler_type = handler_config['type']
-        if handler_type == 'file':
-            hdlr = _create_file_handler(site_config, f'{handler_prefix}/{i}')
-        elif handler_type == 'filelog':
-            hdlr = _create_filelog_handler(
-                site_config, f'{handler_prefix}/{i}'
-            )
-        elif handler_type == 'syslog':
-            hdlr = _create_syslog_handler(site_config, f'{handler_prefix}/{i}')
-        elif handler_type == 'stream':
-            hdlr = _create_stream_handler(site_config, f'{handler_prefix}/{i}')
-        elif handler_type == 'graylog':
-            hdlr = _create_graylog_handler(
-                site_config, f'{handler_prefix}/{i}'
-            )
+
+        try:
+            create_handler = _create_handler_registry[handler_type]
+            hdlr = create_handler(site_config, f'{handler_prefix}/{i}')
             if hdlr is None:
                 getlogger().warning('could not initialize the '
-                                    'graylog handler; ignoring ...')
+                                    f'{handler_type} handler; ignoring ...')
                 continue
-        elif handler_type == 'httpjson':
-            hdlr = _create_httpjson_handler(
-                site_config, f'{handler_prefix}/{i}'
-            )
-            if hdlr is None:
-                getlogger().warning('could not initialize the '
-                                    'httpjson handler; ignoring ...')
-                continue
-        else:
+        except KeyError:
             # Should not enter here
             raise AssertionError(f'unknown handler type: {handler_type}')
 
