@@ -147,8 +147,9 @@ Result storage commands
    Get detailed test case information of the session with the specified UUID or from the specified time period.
 
    If a session UUID is provided only information about the test cases of this session will be provided.
-   This option can be combined with :option:`--name` to restrict the listing to specific tests.
    For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
+
+   This option can be combined with :option:`--name`, :option:`--filter-expr` and :option:`--session-filter` to restrict the listed tests based on test or session attributes.
 
    .. versionadded:: 4.7
 
@@ -164,13 +165,14 @@ Result storage commands
 
    .. versionadded:: 4.7
 
-.. option:: --list-stored-testcases=SESSION_UUID|TIME_PERIOD
+.. option:: --list-stored-testcases=CMPSPEC
 
-   List all test cases from the session with the specified UUID or from the specified time period.
+   Select and list information of stored testcases.
 
-   If a session UUID is provided only the test cases of this session will be listed.
-   This option can be combined with :option:`--name` to restrict the listing to specific tests.
-   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
+   The ``CMPSPEC`` argument specifies how testcases will be selected, aggregated and presented.
+   Check the :ref:`performance-comparisons` section for the exact syntax of ``CMPSPEC``.
+
+   This option can be combined with :option:`--name`, :option:`--filter-expr` and :option:`--session-filter` to restrict the listed tests based on test or session attributes.
 
    .. versionadded:: 4.7
 
@@ -178,8 +180,10 @@ Result storage commands
 
    Compare the performance of test cases that have run in the past.
 
-   This option can be combined with :option:`--name` to restrict the comparison to specific tests.
+   The ``CMPSPEC`` argument specifies how testcases will be selected, aggregated and presented.
    Check the :ref:`performance-comparisons` section for the exact syntax of ``CMPSPEC``.
+
+   This option can be combined with :option:`--name`, :option:`--filter-expr` and :option:`--session-filter` to restrict the listed tests based on test or session attributes.
 
    .. versionadded:: 4.7
 
@@ -1135,7 +1139,15 @@ Miscellaneous options
    Annotate the current session with custom key/value metadata.
 
    The key/value data is specified as a comma-separated list of `key=value` pairs.
-   When listing stored sessions with the :option:`--list-stored-sessions` option, any associated custom metadata will be presented by default.
+   When listing stored sessions with the :option:`--list-stored-sessions` option, any associated custom metadata will be presented.
+
+   .. versionadded:: 4.7
+
+.. option:: --session-filter EXPR
+
+   Filter session based on the given expression.
+
+   The expression ``EXPR`` can be any valid Python expression on the session information, including any user-specific extras (see :option:`--session-extras`).
 
    .. versionadded:: 4.7
 
@@ -1341,19 +1353,17 @@ Performance comparisons
 
 .. versionadded:: 4.7
 
-The :option:`--performance-compare` and :option:`--performance-report` options accept a ``CMPSPEC`` argument that specifies how to select and compare test cases.
+The options :option:`--performance-compare`, :option:`--performance-report` and :option:`--list-stored-testcases` accept a ``CMPSPEC`` argument that specifies how to select, aggregate and present information on single testcases or A/B testcase comparisons.
 The full syntax of ``CMPSPEC`` is the following:
 
 .. code-block:: console
 
-   <base_cases>/<target_cases>/<aggr>/<extra_cols>
+   <base_cases>/<target_cases>/<aggr>/<columns>
 
 The ``<base_cases>`` and ``<target_cases>`` subspecs specify how the base and target test cases will be retrieved.
 The base test cases will be compared against those from the target period.
 
-.. note::
-
-   The ``<base_cases>`` subspec is ommitted from the ``CMPSPEC`` of the :option:`--performance-report` option as the base test cases are always the test cases from the current session.
+Note that the ``<base_cases>`` subspec is ommitted from the ``CMPSPEC`` of the :option:`--performance-report` and :option:`--list-stored-testcases` options, since in the first case the base test cases are those from the current run, whereas in the second case, the purpose of the option is not to compare results.
 
 The test cases for comparison can either be retrieved from an existing past session or a past time period.
 A past session is denoted with the ``<session_uuid>`` syntax and only the test cases of that particular session will be selected.
@@ -1366,9 +1376,9 @@ The syntax is the following:
 
 .. code-block:: console
 
-   <aggr_fn>:[+<groupby>]*
+   <aggr_fn>:[<groupby>]
 
-The ``<aggr_fn>`` is a symbolic name for a function to aggregate the grouped test cases.
+The ``<aggr_fn>`` is a symbolic name for a function to aggregate the performance of the grouped test cases.
 It can take one of the following values:
 
 - ``first``: retrieve the performance data of the first test case only
@@ -1378,7 +1388,7 @@ It can take one of the following values:
 - ``median``: retrieve the median of all test cases
 - ``min``: retrieve the minimum of all test cases
 
-The test cases are always grouped by the following attributes:
+The test cases are by default grouped by the following attributes:
 
 - The test :attr:`~reframe.core.pipeline.RegressionTest.name`
 - The system name
@@ -1387,23 +1397,32 @@ The test cases are always grouped by the following attributes:
 - The performance variable name (see :func:`@performance_function <reframe.core.builtins.performance_function>` and :attr:`~reframe.core.pipeline.RegressionTest.perf_variables`)
 - The performance variable unit
 
-The ``+<groupby>`` subspec specifies additional attributes to group the test cases by.
-Any loggable test attribute can be selected.
+The ``<groupby>`` subspec specifies how the test cases will be grouped and can take one of the two following forms:
 
-.. note::
+1. ``+attr1+attr2...``: In this form the test cases will be grouped based on the default group-by attributes plus the user-specified ones (``attr1``, ``attr2`` etc.)
+2. ``attr1,attr2,...``: In this form the test cases will be grouped based on the user-specified attributes only (``attr1``, ``attr2`` etc.).
 
-   The loggable attributes of a test are the same as the ones list in the logging :attr:`~config.logging.handlers_perflog.format` option but without the ``check_`` prefix.
+As an attribute for grouping test cases, any loggable test variable or parameter can be selected, as well as the following pseudo-attributes which are extracted or calculated on-the-fly:
 
-Finally, the ``<extra_cols>`` subspec specifies additional test attributes to list as columns in the resulting comparison table.
-The syntax is the following:
+- ``basename``: The test's name stripped off from any parameters.
+  This is a equivalent to the test's class name.
+- ``pvar``: the name of the performance variable
+- ``pval``: the value of the performance variable (i.e., the obtained performance)
+- ``pref``: the reference value of the performance variable
+- ``plower``: the lower threshold of the performance variable as an absolute value
+- ``pupper``: the upper threshold of the performance variable as an absolute value
+- ``punit``: the unit of the performance variable
+- ``pdiff``: the difference as a percentage between the base and target performance values when a performance comparison is attempted.
+  More specifically, ``pdiff = (pval_base - pval_target) / pval_target``.
+- ``psamples``: the number of test cases aggregated.
+- ``sysenv``: The system/partition/environment combination as a single string of the form ``{system}:{partition}+{environ}``
 
-.. code-block:: console
-
-   [+<col>]*
-
-``col`` refers to any loggable attribute of the test.
-If these attributes have different values across the aggregated test cases,
-the unique values will be joined using the ``|`` separator.
+Finally, the ``<columns>`` subspec specifies the test attributes to include as columns in the resulting table.
+Its syntax is the same as with the ``<groupby>`` subspec described above.
+For performance comparisons, ReFrame will generate two columns for every attribute in the subspec that is not also a group-by attribute, suffixed with ``_A`` and ``_B``.
+These columns contain the aggregated values of the corresponding attributes.
+Note that only the aggregation of ``pval`` (i.e. the test case performance)  can be controlled (see above).
+All other attributes are aggregated by joining their unique values.
 
 Here are some examples of performance comparison specs:
 
@@ -1417,7 +1436,8 @@ Here are some examples of performance comparison specs:
 
   .. code-block:: console
 
-     20240701:20240701+1d/20240705:20240705+1d/mean:+job_nodelist/+result
+     20240701:20240701+1d/20240705:20240705+1d/max:+job_nodelist/+result
+
 
 .. _time-period-syntax:
 
