@@ -1912,6 +1912,22 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 
+.. envvar:: RFM_REMOTE_COMMAND
+
+   List of commands to be run in order to auto-detect processor information of remote partitions.
+   The commands must run reframe with ``--detect-host-topology=topo.json``. If this command is not specified it is added at the end of the list of commands.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.general.remote_command`
+      ================================== ==================
+
+   .. versionadded:: 4.7.0
+
+
 .. envvar:: RFM_REMOTE_DETECT
 
    Auto-detect processor information of remote partitions as well.
@@ -1941,20 +1957,6 @@ Whenever an environment variable is associated with a configuration option, its 
 
    .. versionadded:: 3.7.0
 
-.. envvar:: RFM_REMOTE_COMMAND
-
-   List of commands to be run in order to auto-detect processor information of remote partitions.
-   The commands must run reframe with ``--detect-host-topology=topo.json``. If this command is not specified it is added at the end of the list of commands.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     N/A
-      Associated configuration parameter :attr:`~config.general.remote_command`
-      ================================== ==================
-
-   .. versionadded:: 4.7.0
 
 .. envvar:: RFM_REPORT_FILE
 

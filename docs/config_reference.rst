@@ -1800,7 +1800,7 @@ General Configuration
 .. py:attribute:: general.remote_command
 
    :required: No
-   :default: ``""``
+   :default: ``[]``
 
    List of commands to be run in order to auto-detect processor information of remote partitions.
    The commands must run reframe with ``--detect-host-topology=topo.json``. If this command is not specified it is added at the end of the list of commands.

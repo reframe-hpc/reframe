@@ -591,7 +591,7 @@
         "general/purge_environment": false,
         "general/remote_detect": false,
         "general/remote_workdir": ".",
-        "general/remote_command": "",
+        "general/remote_command": [],
         "general/report_file": "${HOME}/.reframe/reports/run-report-{sessionid}.json",
         "general/report_junit": null,
         "general/resolve_module_conflicts": true,
