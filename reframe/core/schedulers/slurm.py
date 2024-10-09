@@ -363,6 +363,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         if partitions:
             partitions = set(partitions.strip().split(','))
         else:
+            # Use a default partition if one is configured. Otherwise,
+            # fallback to the partition Slurm chooses for this set of options.
             default_partition = (
                 self._get_default_partition() or
                 self._get_actual_partition(options)
