@@ -1164,12 +1164,6 @@ Miscellaneous options
 
    .. versionadded:: 4.7
 
-.. option:: --table-hide-columns=COLUMNS
-
-   Hide the specified comma-separated list of columns from the tabular output printed by the options :option:`--performance-compare`, :option:`--performance-report` and the options controlling the stored sessions.
-
-   .. versionadded:: 4.7
-
 .. option:: --upgrade-config-file=OLD[:NEW]
 
    Convert the old-style configuration file ``OLD``, place it into the new file ``NEW`` and exit.

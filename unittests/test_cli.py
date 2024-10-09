@@ -1301,15 +1301,6 @@ def test_storage_options(run_reframe, tmp_path, table_format):
         *run_reframe2(action=f'--describe-stored-testcases={uuid}')
     )
 
-    # Check hiding of table column
-    stdout = assert_no_crash(*run_reframe2(
-        action=f'--list-stored-testcases={uuid}/mean:/',
-        more_options=['--table-hide-columns=SysEnv,Nodelist,UUID']
-    ))[1]
-    assert 'SysEnv' not in stdout
-    assert 'Nodelist' not in stdout
-    assert 'UUID' not in stdout
-
     # List test cases by time period
     ts_start = session_json['session_info']['time_start']
     assert_no_crash(
