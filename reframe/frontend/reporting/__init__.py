@@ -781,7 +781,7 @@ def session_data(time_period, session_filter=None):
 def testcase_data(spec, namepatt=None, test_filter=None, sess_filter=None):
     with reraise_as(ReframeError, (ValueError,),
                     'could not parse comparison spec'):
-        match = parse_cmp_spec(spec, default_columns=['pval'])
+        match = parse_cmp_spec(spec, default_extra_cols=['pval'])
 
     if match.period_base or match.session_base:
         raise ReframeError('only one time period or session are allowed: '

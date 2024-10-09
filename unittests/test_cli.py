@@ -1294,14 +1294,16 @@ def test_storage_options(run_reframe, tmp_path, table_format):
     session_json = json.loads(stdout)
 
     # List test cases by session
-    assert_no_crash(*run_reframe2(action=f'--list-stored-testcases={uuid}'))
+    assert_no_crash(*run_reframe2(
+        action=f'--list-stored-testcases={uuid}/mean:/'
+    ))
     assert_no_crash(
         *run_reframe2(action=f'--describe-stored-testcases={uuid}')
     )
 
     # Check hiding of table column
     stdout = assert_no_crash(*run_reframe2(
-        action=f'--list-stored-testcases={uuid}',
+        action=f'--list-stored-testcases={uuid}/mean:/',
         more_options=['--table-hide-columns=SysEnv,Nodelist,UUID']
     ))[1]
     assert 'SysEnv' not in stdout
@@ -1311,7 +1313,7 @@ def test_storage_options(run_reframe, tmp_path, table_format):
     # List test cases by time period
     ts_start = session_json['session_info']['time_start']
     assert_no_crash(
-        *run_reframe2(action=f'--list-stored-testcases={ts_start}:now')
+        *run_reframe2(action=f'--list-stored-testcases={ts_start}:now/mean:/')
     )
     assert_no_crash(
         *run_reframe2(action=f'--describe-stored-testcases={ts_start}:now')

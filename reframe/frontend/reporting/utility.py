@@ -181,7 +181,13 @@ def _parse_columns(s, base_columns=None):
         return base_columns
 
     if s.startswith('+'):
+        if ',' in s:
+            raise ValueError(f'invalid column spec: {s}')
+
         return base_columns + [x for x in s.split('+')[1:] if x]
+
+    if '+' in s:
+        raise ValueError(f'invalid column spec: {s}')
 
     return s.split(',')
 
@@ -200,8 +206,11 @@ _Match = namedtuple('_Match',
                      'session_base', 'session_target',
                      'aggregator', 'groups', 'columns'])
 
+DEFAULT_GROUP_BY = ['name', 'sysenv', 'pvar', 'punit']
+DEFAULT_EXTRA_COLS = ['pval', 'pdiff']
 
-def parse_cmp_spec(spec, default_group_by=None, default_columns=None):
+
+def parse_cmp_spec(spec, default_group_by=None, default_extra_cols=None):
     def _parse_period_spec(s):
         if s is None:
             return None, None
@@ -211,8 +220,8 @@ def parse_cmp_spec(spec, default_group_by=None, default_columns=None):
 
         return None, parse_time_period(s)
 
-    default_group_by = default_group_by or ['name', 'sysenv', 'pvar', 'punit']
-    default_columns = default_columns or ['pval', 'pdiff']
+    default_group_by = default_group_by or list(DEFAULT_GROUP_BY)
+    default_extra_cols = default_extra_cols or list(DEFAULT_EXTRA_COLS)
     parts = spec.split('/')
     if len(parts) == 3:
         period_base, period_target, aggr, cols = None, *parts
@@ -226,6 +235,6 @@ def parse_cmp_spec(spec, default_group_by=None, default_columns=None):
     aggr_fn, group_cols = _parse_aggregation(aggr, default_group_by)
 
     # Update base columns for listing
-    columns = _parse_columns(cols, group_cols + default_columns)
+    columns = _parse_columns(cols, group_cols + default_extra_cols)
     return _Match(period_base, period_target, session_base, session_target,
                   aggr_fn, group_cols, columns)
