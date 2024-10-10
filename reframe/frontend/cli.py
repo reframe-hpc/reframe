@@ -770,13 +770,6 @@ def main():
         help='Working directory for launching ReFrame remotely'
     )
     argparser.add_argument(
-        dest='remote_command',
-        envvar='RFM_REMOTE_COMMAND',
-        configvar='general/remote_command',
-        action='append',
-        help='Custom command for topology detection of remote partition'
-    )
-    argparser.add_argument(
         dest='resolve_module_conflicts',
         envvar='RFM_RESOLVE_MODULE_CONFLICTS',
         configvar='general/resolve_module_conflicts',
