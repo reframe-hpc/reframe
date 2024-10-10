@@ -66,6 +66,20 @@ def remote_exec_ctx(make_exec_ctx, temp_topo):
 
 
 @pytest.fixture
+def remote_custom_exec_ctx(make_exec_ctx, temp_topo):
+    if test_util.USER_CONFIG_FILE is None:
+        pytest.skip('no user configuration file supplied')
+
+    ctx = make_exec_ctx(test_util.USER_CONFIG_FILE,
+                        test_util.USER_SYSTEM,
+                        {'general/remote_detect': True,
+                         'general/remote_command': [
+                             'echo \'{"dummy": "value"}\' > topo.json',
+                         ]})
+    yield ctx
+
+
+@pytest.fixture
 def invalid_topo_exec_ctx(make_exec_ctx_g, invalid_topo):
     yield from make_exec_ctx_g()
 
@@ -114,6 +128,16 @@ def test_remote_autodetect(remote_exec_ctx):
     # All we can do with this test is to trigger the remote auto-detection
     # path; since we don't know what the remote user system is, we cannot test
     # if the topology is right.
+    partition = test_util.partition_by_scheduler()
+    if not partition:
+        pytest.skip('job submission not supported')
+
+    autodetect.detect_topology()
+
+
+def test_remote_custom_autodetect(remote_custom_exec_ctx):
+    # Test that a dummy topo.json file is created if a command to do
+    # so is specified as custom command for remote detection
     partition = test_util.partition_by_scheduler()
     if not partition:
         pytest.skip('job submission not supported')
