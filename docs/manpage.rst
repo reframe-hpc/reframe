@@ -1141,6 +1141,8 @@ Miscellaneous options
    The key/value data is specified as a comma-separated list of `key=value` pairs.
    When listing stored sessions with the :option:`--list-stored-sessions` option, any associated custom metadata will be presented.
 
+   This option can be specified multiple times, in which case the data from all options will be combined in a single list of key/value data.
+
    .. versionadded:: 4.7
 
 .. option:: --session-filter EXPR

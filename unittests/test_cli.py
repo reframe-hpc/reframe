@@ -1327,6 +1327,7 @@ def test_session_annotations(run_reframe):
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         action='-r',
         more_options=['--session-extras', 'key1=val1,key2=val2',
+                      '--session-extras', 'key3=val3',
                       '-n', '^PerformanceFailureCheck']
     ), exitcode=1)
 
