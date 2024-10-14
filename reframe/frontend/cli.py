@@ -645,7 +645,7 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
-        '--table-format', choices=['csv', 'plain', 'pretty'],
+        '--table-format', choices=['csv', 'plain', 'outline', 'grid'],
         help='Table formatting',
         envvar='RFM_TABLE_FORMAT', configvar='general/table_format'
     )

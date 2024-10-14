@@ -1257,7 +1257,7 @@ def test_testlib_inherit_fixture_in_different_files(run_reframe):
     assert 'FAILED' not in stdout
 
 
-@pytest.fixture(params=['csv', 'plain', 'pretty'])
+@pytest.fixture(params=['csv', 'plain', 'grid', 'outline'])
 def table_format(request):
     return request.param
 
