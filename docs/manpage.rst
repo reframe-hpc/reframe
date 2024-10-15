@@ -149,7 +149,7 @@ Result storage commands
    If a session UUID is provided only information about the test cases of this session will be provided.
    For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
 
-   This option can be combined with :option:`--name`, :option:`--filter-expr` and :option:`--session-filter` to restrict the listed tests based on test or session attributes.
+   This option can be combined with :option:`--name` and :option:`--filter-expr` to restrict the listed tests.
 
    .. versionadded:: 4.7
 
@@ -172,7 +172,7 @@ Result storage commands
    The ``CMPSPEC`` argument specifies how testcases will be selected, aggregated and presented.
    Check the :ref:`performance-comparisons` section for the exact syntax of ``CMPSPEC``.
 
-   This option can be combined with :option:`--name`, :option:`--filter-expr` and :option:`--session-filter` to restrict the listed tests based on test or session attributes.
+   This option can be combined with :option:`--name` and :option:`--filter-expr` to restrict the listed tests.
 
    .. versionadded:: 4.7
 
@@ -183,7 +183,7 @@ Result storage commands
    The ``CMPSPEC`` argument specifies how testcases will be selected, aggregated and presented.
    Check the :ref:`performance-comparisons` section for the exact syntax of ``CMPSPEC``.
 
-   This option can be combined with :option:`--name`, :option:`--filter-expr` and :option:`--session-filter` to restrict the listed tests based on test or session attributes.
+   This option can be combined with :option:`--name` and :option:`--filter-expr` to restrict the listed tests.
 
    .. versionadded:: 4.7
 
@@ -1145,13 +1145,6 @@ Miscellaneous options
 
    .. versionadded:: 4.7
 
-.. option:: --session-filter EXPR
-
-   Filter session based on the given expression.
-
-   The expression ``EXPR`` can be any valid Python expression on the session information, including any user-specific extras (see :option:`--session-extras`).
-
-   .. versionadded:: 4.7
 
 .. option:: --system=NAME
 
@@ -1371,11 +1364,13 @@ The base test cases will be compared against those from the target period.
 
 Note that the ``<base_cases>`` subspec is ommitted from the ``CMPSPEC`` of the :option:`--performance-report` and :option:`--list-stored-testcases` options, since in the first case the base test cases are those from the current run, whereas in the second case, the purpose of the option is not to compare results.
 
-The test cases for comparison can either be retrieved from an existing past session or a past time period.
-A past session is denoted with the ``<session_uuid>`` syntax and only the test cases of that particular session will be selected.
-To view the UUIDs of all stored sessions, use the :option:`--list-stored-sessions` option.
+The ``base_cases`` and ``target_cases`` subspecs can take one of the following forms:
 
-To retrieve results from a time period, check the :ref:`time period syntax <time-period-syntax>` below.
+- ``<session_uuid>``: An explicit session UUID.
+- ``?<session_filter>``: A valid Python expression on the available session information including any user-specific session extras (see also :option:`--session-extras`), e.g., ``?'xyz=="123"'``.
+  In this case, the testcases from all sessions matching the filter will be retrieved.
+- A time period specification.
+  See the :ref:`time period syntax <time-period-syntax>` below for more information.
 
 The ``<aggr>`` subspec specifies how the performance of both the base and target cases should be grouped and aggregated.
 The syntax is the following:

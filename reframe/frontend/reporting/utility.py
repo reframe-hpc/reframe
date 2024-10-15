@@ -10,7 +10,6 @@ import types
 from collections import namedtuple
 from datetime import datetime, timedelta
 from numbers import Number
-from .storage import StorageBackend
 
 
 class Aggregator:
@@ -153,24 +152,10 @@ def is_uuid(s):
 
 
 def parse_time_period(s):
-    if is_uuid(s):
-        # Retrieve the period of a full session
-        try:
-            session_uuid = s
-        except IndexError:
-            raise ValueError(f'invalid session uuid: {s}') from None
-        else:
-            backend = StorageBackend.default()
-            ts_start, ts_end = backend.fetch_session_time_period(
-                session_uuid
-            )
-            if not ts_start or not ts_end:
-                raise ValueError(f'no such session: {session_uuid}')
-    else:
-        try:
-            ts_start, ts_end = s.split(':')
-        except ValueError:
-            raise ValueError(f'invalid time period spec: {s}') from None
+    try:
+        ts_start, ts_end = s.split(':')
+    except ValueError:
+        raise ValueError(f'invalid time period spec: {s}') from None
 
     return _parse_timestamp(ts_start), _parse_timestamp(ts_end)
 
@@ -202,9 +187,9 @@ def _parse_aggregation(s, base_columns=None):
 
 
 _Match = namedtuple('_Match',
-                    ['period_base', 'period_target',
-                     'session_base', 'session_target',
-                     'aggregator', 'groups', 'columns'])
+                    ['base', 'target', 'aggregator', 'groups', 'columns'])
+
+_Query = namedtuple('_Query', ['sess_uuid', 'sess_filter', 'period'])
 
 DEFAULT_GROUP_BY = ['name', 'sysenv', 'pvar', 'punit']
 DEFAULT_EXTRA_COLS = ['pval', 'pdiff']
@@ -213,28 +198,38 @@ DEFAULT_EXTRA_COLS = ['pval', 'pdiff']
 def parse_cmp_spec(spec, default_group_by=None, default_extra_cols=None):
     def _parse_period_spec(s):
         if s is None:
-            return None, None
+            return None, None, None
 
         if is_uuid(s):
-            return s, None
+            return s, None, None
 
-        return None, parse_time_period(s)
+        if s.startswith('?'):
+            return None, s[1:], None
+
+        return None, None, parse_time_period(s)
 
     default_group_by = default_group_by or list(DEFAULT_GROUP_BY)
     default_extra_cols = default_extra_cols or list(DEFAULT_EXTRA_COLS)
     parts = spec.split('/')
     if len(parts) == 3:
-        period_base, period_target, aggr, cols = None, *parts
+        base_spec, target_spec, aggr, cols = None, *parts
     elif len(parts) == 4:
-        period_base, period_target, aggr, cols = parts
+        base_spec, target_spec, aggr, cols = parts
     else:
         raise ValueError(f'invalid cmp spec: {spec}')
 
-    session_base, period_base = _parse_period_spec(period_base)
-    session_target, period_target = _parse_period_spec(period_target)
+    if base_spec is not None:
+        base = _Query(*_parse_period_spec(base_spec))
+    else:
+        base = None
+
+    if target_spec is not None:
+        target = _Query(*_parse_period_spec(target_spec))
+    else:
+        target = None
+
     aggr_fn, group_cols = _parse_aggregation(aggr, default_group_by)
 
     # Update base columns for listing
     columns = _parse_columns(cols, group_cols + default_extra_cols)
-    return _Match(period_base, period_target, session_base, session_target,
-                  aggr_fn, group_cols, columns)
+    return _Match(base, target, aggr_fn, group_cols, columns)

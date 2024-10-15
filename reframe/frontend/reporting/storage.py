@@ -40,13 +40,55 @@ class StorageBackend:
         '''Store the given report'''
 
     @abc.abstractmethod
-    def fetch_session_time_period(self, session_uuid):
-        '''Fetch the time period from specific session'''
+    def fetch_testcases_time_period(self, ts_start, ts_end, name_patt=None,
+                                    test_filter=None, sess_filter=None):
+        '''Fetch all test cases from the specified time period.
+
+        :arg ts_start: the start timestamp of the period as seconds from Epoch.
+        :arg ts_end: the end timestamp of the period as seconds from Epoch.
+        :arg name_patt: regex to filter test cases by name.
+        :arg test_filter: arbitrary Python exrpession to filter test cases,
+            e.g., ``'job_nodelist == "nid01"'``.
+        :arg sess_filter: arbitrary Python expression to filter the sessions,
+            from which to select the test cases.
+        :returns: A list of matching test cases.
+        '''
 
     @abc.abstractmethod
-    def fetch_testcases_time_period(self, ts_start, ts_end, namepatt,
-                                    test_filter, sess_filter):
-        '''Fetch all test cases from specified period'''
+    def fetch_testcases_single_session(self, session_uuid,
+                                       name_patt=None, test_filter=None):
+        '''Fetch all test cases from the specified session.
+
+        :arg session_uuid: The UUID of the session.
+        :arg name_patt: See same argument of
+            :func:`fetch_testcases_time_period`
+        :arg test_filter: See same argument of
+            :func:`fetch_testcases_time_period`
+        :returns: A list of matching test cases.
+        '''
+
+    @abc.abstractmethod
+    def fetch_testcases_multiple_sessions(self, session_filter,
+                                          name_pattern=None, test_filter=None):
+        '''Fetch all test cases from the sessions matching a filter.
+
+        :arg session_filter: A Python expression that matches any
+            ``session_info`` key.
+        :arg name_patt: See same argument of
+            :func:`fetch_testcases_time_period`
+        :arg test_filter: See same argument of
+            :func:`fetch_testcases_time_period`
+        :returns: A list of matching test cases.
+        '''
+
+    @abc.abstractmethod
+    def fetch_sessions_time_period(self, ts_start=None, ts_end=None):
+        '''Fetch all sessions from a time period.
+
+        :arg ts_start: the start timestamp of the period as seconds from Epoch.
+        :arg ts_end: the end timestamp of the period as seconds from Epoch.
+        :returns: A list of matching sessions.
+        '''
 
 
 class _SqliteStorage(StorageBackend):
@@ -204,20 +246,11 @@ class _SqliteStorage(StorageBackend):
                 return self._db_store_report(conn, report, report_file)
 
     @time_function
-    def _fetch_testcases_raw(self, condition, sess_filter=None):
-        # Retrieve relevant session info and index it in Python
-        getprofiler().enter_region('sqlite session query')
-        with self._db_connect(self._db_file()) as conn:
-            query = ('SELECT uuid, json_blob FROM sessions WHERE uuid IN '
-                     '(SELECT DISTINCT session_uuid FROM testcases '
-                     f'WHERE {condition})')
-            getlogger().debug(query)
+    def _decode_sessions(self, results, sess_filter):
+        '''Decode session for the raw DB results.
 
-            # Create SQLite function for filtering using name patterns
-            conn.create_function('REGEXP', 2, self._db_matches)
-            results = conn.execute(query).fetchall()
-
-        getprofiler().exit_region()
+        Return a map of session uuids to decoded session data
+        '''
         sessions = {}
         for uuid, json_blob in results:
             sessions.setdefault(uuid, json_blob)
@@ -236,6 +269,25 @@ class _SqliteStorage(StorageBackend):
                     sessions[rpt['session_info']['uuid']] = rpt
             except Exception:
                 continue
+
+        return sessions
+
+    @time_function
+    def _fetch_testcases_raw(self, condition, sess_filter=None):
+        # Retrieve relevant session info and index it in Python
+        getprofiler().enter_region('sqlite session query')
+        with self._db_connect(self._db_file()) as conn:
+            query = ('SELECT uuid, json_blob FROM sessions WHERE uuid IN '
+                     '(SELECT DISTINCT session_uuid FROM testcases '
+                     f'WHERE {condition})')
+            getlogger().debug(query)
+
+            # Create SQLite function for filtering using name patterns
+            conn.create_function('REGEXP', 2, self._db_matches)
+            results = conn.execute(query).fetchall()
+
+        getprofiler().exit_region()
+        sessions = self._decode_sessions(results, sess_filter)
 
         # Extract the test case data by extracting their UUIDs
         getprofiler().enter_region('sqlite testcase query')
@@ -265,17 +317,27 @@ class _SqliteStorage(StorageBackend):
         return testcases
 
     @time_function
-    def fetch_session_time_period(self, session_uuid):
+    def _fetch_testcases_from_sess_info(self, sess_uuid, sess_filter,
+                                        name_pattern=None, test_filter=None):
+        assert sess_uuid is None or sess_filter is None
+        query = 'SELECT uuid, json_blob from sessions'
+        if sess_uuid is not None:
+            query += f' WHERE uuid == "{sess_uuid}"'
+
+        getprofiler().enter_region('sqlite session query')
         with self._db_connect(self._db_file()) as conn:
-            query = ('SELECT session_start_unix, session_end_unix '
-                     f'FROM sessions WHERE uuid == "{session_uuid}" '
-                     'LIMIT 1')
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
-            if results:
-                return results[0]
 
-            return None, None
+        getprofiler().exit_region()
+        if not results:
+            return []
+
+        sessions = self._decode_sessions(results, sess_filter)
+        return [tc for sess in sessions.values()
+                for run in sess['runs'] for tc in run['testcases']
+                if (self._db_matches(name_pattern, tc['name']) and
+                    self._db_filter_json(test_filter, tc))]
 
     @time_function
     def fetch_testcases_time_period(self, ts_start, ts_end, name_patt=None,
@@ -291,26 +353,18 @@ class _SqliteStorage(StorageBackend):
         filt_fn = functools.partial(self._db_filter_json, test_filter)
         return [*filter(filt_fn, testcases)]
 
-    @time_function
-    def fetch_testcases_from_session(self, session_uuid, name_pattern=None,
-                                     test_filter=None, sess_filter=None):
-        with self._db_connect(self._db_file()) as conn:
-            query = ('SELECT json_blob from sessions '
-                     f'WHERE uuid == "{session_uuid}"')
-            getlogger().debug(query)
-            results = conn.execute(query).fetchall()
+    def fetch_testcases_single_session(self, session_uuid,
+                                       name_pattern=None, test_filter=None):
+        return self._fetch_testcases_from_sess_info(session_uuid, None,
+                                                    name_pattern, test_filter)
 
-        if not results:
-            return []
-
-        session_info = jsonext.loads(results[0][0])
-        return [tc for run in session_info['runs'] for tc in run['testcases']
-                if (self._db_matches(name_pattern, tc['name']) and
-                    self._db_filter_json(test_filter, tc))]
+    def fetch_testcases_multiple_sessions(self, session_filter,
+                                          name_pattern=None, test_filter=None):
+        return self._fetch_testcases_from_sess_info(None, session_filter,
+                                                    name_pattern, test_filter)
 
     @time_function
-    def fetch_sessions_time_period(self, ts_start=None, ts_end=None,
-                                   sess_filter=None):
+    def fetch_sessions_time_period(self, ts_start=None, ts_end=None):
         with self._db_connect(self._db_file()) as conn:
             query = 'SELECT json_blob from sessions'
             if ts_start or ts_end:

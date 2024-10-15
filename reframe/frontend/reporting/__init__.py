@@ -676,8 +676,13 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
 
                 # compute diff for later usage
                 if base is not None and target is not None:
-                    pdiff = (base - target) / target
-                    pdiff = '{:+7.2%}'.format(pdiff)
+                    if base == 0 and target == 0:
+                        pdiff = math.nan
+                    elif target == 0:
+                        pdiff = math.inf
+                    else:
+                        pdiff = (base - target) / target
+                        pdiff = '{:+7.2%}'.format(pdiff)
             elif c == 'pdiff':
                 line.append('n/a' if pdiff is None else pdiff)
             elif c in extra_cols:
@@ -692,13 +697,13 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
 
 
 @time_function
-def performance_compare(cmp, report=None, namepatt=None,
-                        test_filter=None, sess_filter=None):
+def performance_compare(cmp, report=None, namepatt=None, test_filter=None):
     with reraise_as(ReframeError, (ValueError,),
                     'could not parse comparison spec'):
         match = parse_cmp_spec(cmp)
 
-    if match.period_base is None and match.session_base is None:
+    backend = StorageBackend.default()
+    if match.base is None:
         if report is None:
             raise ValueError('report cannot be `None` '
                              'for current run comparisons')
@@ -713,22 +718,30 @@ def performance_compare(cmp, report=None, namepatt=None,
                         tcs_base.append(tc)
         except IndexError:
             tcs_base = []
-    elif match.period_base is not None:
-        tcs_base = StorageBackend.default().fetch_testcases_time_period(
-            *match.period_base, namepatt, test_filter, sess_filter
+    elif match.base.period is not None:
+        tcs_base = backend.fetch_testcases_time_period(
+            *match.base.period, namepatt, test_filter
+        )
+    elif match.base.sess_uuid is not None:
+        tcs_base = backend.fetch_testcases_single_session(
+            match.base.sess_uuid, namepatt, test_filter
         )
     else:
-        tcs_base = StorageBackend.default().fetch_testcases_from_session(
-            match.session_base, namepatt, test_filter, sess_filter
+        tcs_base = backend.fetch_testcases_multiple_sessions(
+            match.base.sess_filter, namepatt, test_filter
         )
 
-    if match.period_target:
-        tcs_target = StorageBackend.default().fetch_testcases_time_period(
-            *match.period_target, namepatt, test_filter, sess_filter
+    if match.target.period is not None:
+        tcs_target = backend.fetch_testcases_time_period(
+            *match.target.period, namepatt, test_filter,
+        )
+    elif match.target.sess_uuid is not None:
+        tcs_target = backend.fetch_testcases_single_session(
+            match.target.sess_uuid, namepatt, test_filter
         )
     else:
-        tcs_target = StorageBackend.default().fetch_testcases_from_session(
-            match.session_target, namepatt, test_filter, sess_filter
+        tcs_target = backend.fetch_testcases_multiple_sessions(
+            match.target.sess_filter, namepatt, test_filter
         )
 
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,
@@ -736,14 +749,13 @@ def performance_compare(cmp, report=None, namepatt=None,
 
 
 @time_function
-def session_data(time_period, session_filter=None):
-    '''Retrieve all sessions'''
+def session_data(time_period):
+    '''Retrieve sessions'''
 
     data = [['UUID', 'Start time', 'End time', 'Num runs', 'Num cases']]
     extra_cols = OrderedSet()
     for sess_data in StorageBackend.default().fetch_sessions_time_period(
-        *parse_time_period(time_period) if time_period else (None, None),
-        session_filter
+        *parse_time_period(time_period) if time_period else (None, None)
     ):
         session_info = sess_data['session_info']
         record = [session_info['uuid'],
@@ -778,24 +790,28 @@ def session_data(time_period, session_filter=None):
 
 
 @time_function
-def testcase_data(spec, namepatt=None, test_filter=None, sess_filter=None):
+def testcase_data(spec, namepatt=None, test_filter=None):
     with reraise_as(ReframeError, (ValueError,),
                     'could not parse comparison spec'):
         match = parse_cmp_spec(spec, default_extra_cols=['pval'])
 
-    if match.period_base or match.session_base:
+    if match.base is not None:
         raise ReframeError('only one time period or session are allowed: '
                            'if you want to compare performance, '
                            'use the `--performance-compare` option')
 
     storage = StorageBackend.default()
-    if match.period_target:
+    if match.target.period:
         testcases = storage.fetch_testcases_time_period(
-            *match.period_target, namepatt, test_filter, sess_filter
+            *match.target.period, namepatt, test_filter,
+        )
+    elif match.target.sess_uuid:
+        testcases = storage.fetch_testcases_single_session(
+            match.target.sess_uuid, namepatt, test_filter
         )
     else:
-        testcases = storage.fetch_testcases_from_session(
-            match.session_target, namepatt, test_filter, sess_filter
+        testcases = storage.fetch_testcases_multiple_sessions(
+            match.target.sess_filter, namepatt, test_filter
         )
 
     aggregated = _aggregate_perf(

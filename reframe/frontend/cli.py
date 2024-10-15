@@ -620,10 +620,6 @@ def main():
         '--session-extras', action='append', metavar='KV_DATA',
         help='Annotate session with custom key/value data'
     )
-    reporting_options.add_argument(
-        '--session-filter', action='store', metavar='EXPR',
-        help='Filter sessions'
-    )
 
     # Miscellaneous options
     misc_options.add_argument(
@@ -994,8 +990,7 @@ def main():
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
             printer.table(reporting.testcase_data(
-                options.list_stored_testcases, namepatt,
-                options.filter_expr, options.session_filter
+                options.list_stored_testcases, namepatt, options.filter_expr
             ))
             sys.exit(0)
 
@@ -1035,8 +1030,7 @@ def main():
                 reporting.performance_compare(options.performance_compare,
                                               None,
                                               namepatt,
-                                              options.filter_expr,
-                                              options.session_filter)
+                                              options.filter_expr)
             )
             sys.exit(0)
 
