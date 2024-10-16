@@ -151,6 +151,62 @@ def is_uuid(s):
     return _UUID_PATTERN.match(s) is not None
 
 
+class QuerySelector:
+    '''A union class for the different session and testcase queries.
+
+    A session or testcase query can be of one of the following kinds:
+
+    - Query by time period
+    - Query by session uuid
+    - Query by session filtering expression
+
+    This class holds only a single value that is interpreted differently,
+    depending on how it was constructed.
+    There are methods to query the actual kind of the held value, so that
+    callers can take appropriate action.
+    '''
+    BY_SESS_FILTER = 1
+    BY_SESS_UUID = 2
+    BY_TIME_PERIOD = 3
+
+    def __init__(self, value, kind):
+        self.__value = value
+        self.__kind = kind
+
+    @property
+    def value(self):
+        return self.__value
+
+    @property
+    def kind(self):
+        return self.__kind
+
+    def by_time_period(self):
+        return self.__kind == self.BY_TIME_PERIOD
+
+    def by_session_uuid(self):
+        return self.__kind == self.BY_SESS_UUID
+
+    def by_session_filter(self):
+        return self.__kind == self.BY_SESS_FILTER
+
+    @classmethod
+    def from_time_period(cls, ts_start, ts_end):
+        return cls((ts_start, ts_end), cls.BY_TIME_PERIOD)
+
+    @classmethod
+    def from_session_uuid(cls, uuid):
+        return cls(uuid, cls.BY_SESS_UUID)
+
+    @classmethod
+    def from_session_filter(cls, sess_filter):
+        return cls(sess_filter, cls.BY_SESS_FILTER)
+
+    def __repr__(self):
+        clsname = type(self).__name__
+        return f'{clsname}(value={self.__value}, kind={self.__kind})'
+
+
 def parse_time_period(s):
     try:
         ts_start, ts_end = s.split(':')
@@ -186,28 +242,27 @@ def _parse_aggregation(s, base_columns=None):
     return Aggregator.create(op), _parse_columns(group_cols, base_columns)
 
 
+def parse_query_spec(s):
+    if s is None:
+        return None
+
+    if is_uuid(s):
+        return QuerySelector.from_session_uuid(s)
+
+    if s.startswith('?'):
+        return QuerySelector.from_session_filter(s[1:])
+
+    return QuerySelector.from_time_period(*parse_time_period(s))
+
+
 _Match = namedtuple('_Match',
                     ['base', 'target', 'aggregator', 'groups', 'columns'])
-
-_Query = namedtuple('_Query', ['sess_uuid', 'sess_filter', 'period'])
 
 DEFAULT_GROUP_BY = ['name', 'sysenv', 'pvar', 'punit']
 DEFAULT_EXTRA_COLS = ['pval', 'pdiff']
 
 
 def parse_cmp_spec(spec, default_group_by=None, default_extra_cols=None):
-    def _parse_period_spec(s):
-        if s is None:
-            return None, None, None
-
-        if is_uuid(s):
-            return s, None, None
-
-        if s.startswith('?'):
-            return None, s[1:], None
-
-        return None, None, parse_time_period(s)
-
     default_group_by = default_group_by or list(DEFAULT_GROUP_BY)
     default_extra_cols = default_extra_cols or list(DEFAULT_EXTRA_COLS)
     parts = spec.split('/')
@@ -218,16 +273,8 @@ def parse_cmp_spec(spec, default_group_by=None, default_extra_cols=None):
     else:
         raise ValueError(f'invalid cmp spec: {spec}')
 
-    if base_spec is not None:
-        base = _Query(*_parse_period_spec(base_spec))
-    else:
-        base = None
-
-    if target_spec is not None:
-        target = _Query(*_parse_period_spec(target_spec))
-    else:
-        target = None
-
+    base = parse_query_spec(base_spec)
+    target = parse_query_spec(target_spec)
     aggr_fn, group_cols = _parse_aggregation(aggr, default_group_by)
 
     # Update base columns for listing

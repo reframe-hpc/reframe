@@ -1291,7 +1291,7 @@ def test_storage_options(run_reframe, tmp_path, table_format):
     stdout = assert_no_crash(
         *run_reframe2(action=f'--describe-stored-session={uuid}')
     )[1]
-    session_json = json.loads(stdout)
+    sessions = json.loads(stdout)
 
     # List test cases by session
     assert_no_crash(*run_reframe2(
@@ -1302,7 +1302,7 @@ def test_storage_options(run_reframe, tmp_path, table_format):
     )
 
     # List test cases by time period
-    ts_start = session_json['session_info']['time_start']
+    ts_start = sessions[0]['session_info']['time_start']
     assert_no_crash(
         *run_reframe2(action=f'--list-stored-testcases={ts_start}:now/mean:/')
     )

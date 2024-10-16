@@ -18,6 +18,7 @@ import reframe.frontend.dependencies as dependencies
 import reframe.frontend.reporting as reporting
 import reframe.frontend.reporting.storage as report_storage
 from reframe.frontend.reporting.utility import (parse_cmp_spec, is_uuid,
+                                                QuerySelector,
                                                 DEFAULT_GROUP_BY,
                                                 DEFAULT_EXTRA_COLS)
 from reframe.core.exceptions import ReframeError
@@ -211,7 +212,8 @@ def test_parse_cmp_spec_period(time_period):
     duration = int(duration)
     match = parse_cmp_spec(f'{spec}/{spec}/mean:/')
     for query in ('base', 'target'):
-        ts_start, ts_end = getattr(match, query).period
+        assert getattr(match, query).by_time_period()
+        ts_start, ts_end = getattr(match, query).value
         if 'now' in spec:
             # Truncate splits of seconds if using `now` timestamps
             ts_start = int(ts_start)
@@ -338,8 +340,11 @@ def test_parse_cmp_spec_with_uuid(uuid_spec):
 
     match = parse_cmp_spec(uuid_spec)
     base_uuid, target_uuid = _uuids(uuid_spec)
-    assert match.base.sess_uuid == base_uuid
-    assert match.target.sess_uuid == target_uuid
+    if match.base.by_session_uuid():
+        assert match.base.value == base_uuid
+
+    if match.target.by_session_uuid():
+        assert match.target.value == target_uuid
 
 
 @pytest.fixture(params=[
@@ -353,9 +358,11 @@ def sess_filter(request):
 def test_parse_cmp_spec_with_filter(sess_filter):
     match = parse_cmp_spec(sess_filter)
     if match.base:
-        assert match.base.sess_filter == 'xyz == "123"'
+        assert match.base.by_session_filter()
+        assert match.base.value == 'xyz == "123"'
 
-    assert match.target.sess_filter == 'xyz == "789"'
+    assert match.target.by_session_filter()
+    assert match.target.value == 'xyz == "789"'
 
 
 @pytest.fixture(params=['2024:07:01T12:34:56', '20240701', '20240701:',
@@ -446,33 +453,30 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
 
     backend = report_storage.StorageBackend.default()
 
-    # Test `fetch_sessions_time_period`
-    stored_sessions = backend.fetch_sessions_time_period()
-    assert len(stored_sessions) == 2
-    for i, sess in enumerate(stored_sessions):
-        assert sess['session_info']['uuid'] == uuids[i]
+    from_time_period = QuerySelector.from_time_period
+    from_session_uuid = QuerySelector.from_session_uuid
 
-    # Test the time period version
+    # Test `fetch_sessions`: time period version
     now = time.time()
-    stored_sessions = backend.fetch_sessions_time_period(now - 60, now)
+    stored_sessions = backend.fetch_sessions(from_time_period(0, now))
     assert len(stored_sessions) == 2
     for i, sess in enumerate(stored_sessions):
         assert sess['session_info']['uuid'] == uuids[i]
 
-    # Test `fetch_session_json`
+    # Test `fetch_session`: session uuid version
     for uuid in uuids:
-        stored_session = backend.fetch_session_json(uuid)
-        assert stored_session['session_info']['uuid'] == uuid
+        stored_sessions = backend.fetch_sessions(from_session_uuid(uuid))
+        assert stored_sessions[0]['session_info']['uuid'] == uuid
 
     # Test an invalid uuid
-    assert backend.fetch_session_json(0) == {}
+    assert backend.fetch_sessions(from_session_uuid(0)) == []
 
-    # Test `fetch_testcases_time_period`
-    testcases = backend.fetch_testcases_time_period(timestamps[0][0],
-                                                    timestamps[1][1])
+    # Test `fetch_testcases`: time period version
+    testcases = backend.fetch_testcases(from_time_period(timestamps[0][0],
+                                                         timestamps[1][1]))
 
     # NOTE: test cases without an associated (run) job are not fetched by
-    # `fetch_testcases_time_period`;  in
+    # `fetch_testcases` (time period version);  in
     # this case 3 test cases per session are ignored: `BadSetupCheckEarly`,
     # `BadSetupCheck`, `CompileOnlyHelloTest`, which requires us to adapt the
     # expected counts below
@@ -480,39 +484,40 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
     assert _count_failed(testcases) == 6
 
     # Test name filtering
-    testcases = backend.fetch_testcases_time_period(timestamps[0][0],
-                                                    timestamps[1][1],
-                                                    '^HelloTest')
+    testcases = backend.fetch_testcases(
+        from_time_period(timestamps[0][0], timestamps[1][1]), '^HelloTest'
+    )
     assert len(testcases) == 2
     assert _count_failed(testcases) == 0
 
     # Test the inverted period
-    assert backend.fetch_testcases_time_period(timestamps[1][1],
-                                               timestamps[0][0]) == []
+    assert backend.fetch_testcases(from_time_period(timestamps[1][1],
+                                                    timestamps[0][0])) == []
 
-    # Test `fetch_testcases_from_session`
+    # Test `fetch_testcases`: session version
     for i, uuid in enumerate(uuids):
-        testcases = backend.fetch_testcases_single_session(uuid)
+        testcases = backend.fetch_testcases(from_session_uuid(uuid))
         assert len(testcases) == 9
         assert _count_failed(testcases) == 5
 
         # Test name filtering
-        testcases = backend.fetch_testcases_single_session(uuid, '^HelloTest')
+        testcases = backend.fetch_testcases(from_session_uuid(uuid),
+                                            '^HelloTest')
         assert len(testcases) == 1
         assert _count_failed(testcases) == 0
 
     # Test an invalid uuid
-    assert backend.fetch_testcases_single_session(0) == []
+    assert backend.fetch_testcases(from_session_uuid(0)) == []
 
     # Test session removal
-    backend.remove_session(uuids[-1])
-    assert len(backend.fetch_sessions_time_period()) == 1
+    removed = backend.remove_sessions(from_session_uuid(uuids[-1]))
+    assert removed == [uuids[-1]]
+    assert len(backend.fetch_sessions(from_time_period(0, now))) == 1
 
-    testcases = backend.fetch_testcases_time_period(timestamps[0][0],
-                                                    timestamps[1][1])
+    testcases = backend.fetch_testcases(from_time_period(timestamps[0][0],
+                                                         timestamps[1][1]))
     assert len(testcases) == 6
     assert _count_failed(testcases) == 3
 
     # Try an invalid uuid
-    with pytest.raises(ReframeError):
-        backend.remove_session(0)
+    backend.remove_sessions(from_session_uuid(0)) == []

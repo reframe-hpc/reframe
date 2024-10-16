@@ -17,6 +17,7 @@ from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger, time_function, getprofiler
 from reframe.core.runtime import runtime
 from reframe.utility import nodelist_abbrev
+from ..reporting.utility import QuerySelector
 
 
 class StorageBackend:
@@ -40,55 +41,30 @@ class StorageBackend:
         '''Store the given report'''
 
     @abc.abstractmethod
-    def fetch_testcases_time_period(self, ts_start, ts_end, name_patt=None,
-                                    test_filter=None, sess_filter=None):
-        '''Fetch all test cases from the specified time period.
+    def fetch_testcases(self, selector: QuerySelector, name_patt=None,
+                        test_filter=None):
+        '''Fetch test cases based on the specified query selector.
 
-        :arg ts_start: the start timestamp of the period as seconds from Epoch.
-        :arg ts_end: the end timestamp of the period as seconds from Epoch.
+        :arg selector: an instance of :class:`QuerySelector` that will specify
+            the actual type of query requested.
         :arg name_patt: regex to filter test cases by name.
         :arg test_filter: arbitrary Python exrpession to filter test cases,
             e.g., ``'job_nodelist == "nid01"'``.
-        :arg sess_filter: arbitrary Python expression to filter the sessions,
-            from which to select the test cases.
         :returns: A list of matching test cases.
         '''
 
     @abc.abstractmethod
-    def fetch_testcases_single_session(self, session_uuid,
-                                       name_patt=None, test_filter=None):
-        '''Fetch all test cases from the specified session.
+    def fetch_sessions(self, selector: QuerySelector):
+        '''Fetch sessions based on the specified query selector.
 
-        :arg session_uuid: The UUID of the session.
-        :arg name_patt: See same argument of
-            :func:`fetch_testcases_time_period`
-        :arg test_filter: See same argument of
-            :func:`fetch_testcases_time_period`
-        :returns: A list of matching test cases.
-        '''
-
-    @abc.abstractmethod
-    def fetch_testcases_multiple_sessions(self, session_filter,
-                                          name_pattern=None, test_filter=None):
-        '''Fetch all test cases from the sessions matching a filter.
-
-        :arg session_filter: A Python expression that matches any
-            ``session_info`` key.
-        :arg name_patt: See same argument of
-            :func:`fetch_testcases_time_period`
-        :arg test_filter: See same argument of
-            :func:`fetch_testcases_time_period`
-        :returns: A list of matching test cases.
-        '''
-
-    @abc.abstractmethod
-    def fetch_sessions_time_period(self, ts_start=None, ts_end=None):
-        '''Fetch all sessions from a time period.
-
-        :arg ts_start: the start timestamp of the period as seconds from Epoch.
-        :arg ts_end: the end timestamp of the period as seconds from Epoch.
+        :arg selector: an instance of :class:`QuerySelector` that will specify
+            the actual type of query requested.
         :returns: A list of matching sessions.
         '''
+
+    @abc.abstractmethod
+    def remove_sessions(self, selector: QuerySelector):
+        '''Remove sessions based on the specified query selector'''
 
 
 class _SqliteStorage(StorageBackend):
@@ -273,7 +249,7 @@ class _SqliteStorage(StorageBackend):
         return sessions
 
     @time_function
-    def _fetch_testcases_raw(self, condition, sess_filter=None):
+    def _fetch_testcases_raw(self, condition):
         # Retrieve relevant session info and index it in Python
         getprofiler().enter_region('sqlite session query')
         with self._db_connect(self._db_file()) as conn:
@@ -287,7 +263,7 @@ class _SqliteStorage(StorageBackend):
             results = conn.execute(query).fetchall()
 
         getprofiler().exit_region()
-        sessions = self._decode_sessions(results, sess_filter)
+        sessions = self._decode_sessions(results, None)
 
         # Extract the test case data by extracting their UUIDs
         getprofiler().enter_region('sqlite testcase query')
@@ -317,12 +293,11 @@ class _SqliteStorage(StorageBackend):
         return testcases
 
     @time_function
-    def _fetch_testcases_from_sess_info(self, sess_uuid, sess_filter,
-                                        name_pattern=None, test_filter=None):
-        assert sess_uuid is None or sess_filter is None
+    def _fetch_testcases_from_session(self, selector,
+                                      name_patt=None, test_filter=None):
         query = 'SELECT uuid, json_blob from sessions'
-        if sess_uuid is not None:
-            query += f' WHERE uuid == "{sess_uuid}"'
+        if selector.by_session_uuid():
+            query += f' WHERE uuid == "{selector.value}"'
 
         getprofiler().enter_region('sqlite session query')
         with self._db_connect(self._db_file()) as conn:
@@ -333,100 +308,99 @@ class _SqliteStorage(StorageBackend):
         if not results:
             return []
 
-        sessions = self._decode_sessions(results, sess_filter)
+        sessions = self._decode_sessions(
+            results, selector.value if selector.by_session_filter() else None
+        )
         return [tc for sess in sessions.values()
                 for run in sess['runs'] for tc in run['testcases']
-                if (self._db_matches(name_pattern, tc['name']) and
+                if (self._db_matches(name_patt, tc['name']) and
                     self._db_filter_json(test_filter, tc))]
 
     @time_function
-    def fetch_testcases_time_period(self, ts_start, ts_end, name_patt=None,
-                                    test_filter=None, sess_filter=None):
+    def _fetch_testcases_time_period(self, ts_start, ts_end, name_patt=None,
+                                     test_filter=None):
         expr = (f'job_completion_time_unix >= {ts_start} AND '
                 f'job_completion_time_unix <= {ts_end}')
         if name_patt:
             expr += f' AND name REGEXP "{name_patt}"'
 
         testcases = self._fetch_testcases_raw(
-            f'({expr}) ORDER BY job_completion_time_unix', sess_filter
+            f'({expr}) ORDER BY job_completion_time_unix'
         )
         filt_fn = functools.partial(self._db_filter_json, test_filter)
         return [*filter(filt_fn, testcases)]
 
-    def fetch_testcases_single_session(self, session_uuid,
-                                       name_pattern=None, test_filter=None):
-        return self._fetch_testcases_from_sess_info(session_uuid, None,
-                                                    name_pattern, test_filter)
-
-    def fetch_testcases_multiple_sessions(self, session_filter,
-                                          name_pattern=None, test_filter=None):
-        return self._fetch_testcases_from_sess_info(None, session_filter,
-                                                    name_pattern, test_filter)
-
     @time_function
-    def fetch_sessions_time_period(self, ts_start=None, ts_end=None):
-        with self._db_connect(self._db_file()) as conn:
-            query = 'SELECT json_blob from sessions'
-            if ts_start or ts_end:
-                query += ' WHERE ('
-                if ts_start:
-                    query += f'session_start_unix >= {ts_start}'
-
-                if ts_end:
-                    query += f' AND session_start_unix <= {ts_end}'
-
-                query += ')'
-
-            query += ' ORDER BY session_start_unix'
-            getlogger().debug(query)
-            results = conn.execute(query).fetchall()
-
-        if not results:
-            return []
-
-        return [jsonext.loads(json_blob) for json_blob, *_ in results]
-
-    @time_function
-    def fetch_session_json(self, uuid):
-        with self._db_connect(self._db_file()) as conn:
-            query = f'SELECT json_blob FROM sessions WHERE uuid == "{uuid}"'
-            getlogger().debug(query)
-            results = conn.execute(query).fetchall()
-
-        return jsonext.loads(results[0][0]) if results else {}
-
-    def _do_remove(self, uuid):
-        with self._db_lock():
-            with self._db_connect(self._db_file()) as conn:
-                # Enable foreign keys for delete action to have cascade effect
-                conn.execute('PRAGMA foreign_keys = ON')
-
-                # Check first if the uuid exists
-                query = f'SELECT * FROM sessions WHERE uuid == "{uuid}"'
-                getlogger().debug(query)
-                if not conn.execute(query).fetchall():
-                    raise ReframeError(f'no such session: {uuid}')
-
-                query = f'DELETE FROM sessions WHERE uuid == "{uuid}"'
-                getlogger().debug(query)
-                conn.execute(query)
-
-    def _do_remove2(self, uuid):
-        '''Remove a session using the RETURNING keyword'''
-        with self._db_lock():
-            with self._db_connect(self._db_file()) as conn:
-                # Enable foreign keys for delete action to have cascade effect
-                conn.execute('PRAGMA foreign_keys = ON')
-                query = (f'DELETE FROM sessions WHERE uuid == "{uuid}" '
-                         'RETURNING *')
-                getlogger().debug(query)
-                deleted = conn.execute(query).fetchall()
-                if not deleted:
-                    raise ReframeError(f'no such session: {uuid}')
-
-    @time_function
-    def remove_session(self, uuid):
-        if sqlite3.sqlite_version_info >= (3, 35, 0):
-            self._do_remove2(uuid)
+    def fetch_testcases(self, selector: QuerySelector,
+                        name_patt=None, test_filter=None):
+        if selector.by_time_period():
+            return self._fetch_testcases_time_period(
+                *selector.value, name_patt, test_filter
+            )
         else:
-            self._do_remove(uuid)
+            return self._fetch_testcases_from_session(
+                selector, name_patt, test_filter
+            )
+
+    @time_function
+    def fetch_sessions(self, selector: QuerySelector):
+        query = 'SELECT uuid, json_blob FROM sessions'
+        if selector.by_time_period():
+            ts_start, ts_end = selector.value
+            query += (f' WHERE (session_start_unix >= {ts_start} AND '
+                      f'session_start_unix <= {ts_end})')
+        elif selector.by_session_uuid():
+            query += f' WHERE uuid == "{selector.value}"'
+
+        with self._db_connect(self._db_file()) as conn:
+            getlogger().debug(query)
+            results = conn.execute(query).fetchall()
+
+        session = self._decode_sessions(
+            results, selector.value if selector.by_session_filter() else None
+        )
+        return [*session.values()]
+
+    def _do_remove(self, conn, uuids):
+        '''Remove sessions using the RETURNING keyword'''
+
+        # Enable foreign keys for delete action to have cascade effect
+        conn.execute('PRAGMA foreign_keys = ON')
+        uuids_sql = ','.join(f'"{uuid}"' for uuid in uuids)
+        query = f'DELETE FROM sessions WHERE uuid IN ({uuids_sql})'
+        getlogger().debug(query)
+        conn.execute(query).fetchall()
+
+        # Retrieve the uuids that have been removed
+        query = f'SELECT uuid FROM sessions WHERE uuid IN ({uuids_sql})'
+        getlogger().debug(query)
+        results = conn.execute(query).fetchall()
+        not_removed = {rec[0] for rec in results}
+        return list(set(uuids) - not_removed)
+
+    def _do_remove2(self, conn, uuids):
+        '''Remove sessions using the RETURNING keyword'''
+
+        # Enable foreign keys for delete action to have cascade effect
+        conn.execute('PRAGMA foreign_keys = ON')
+        uuids_sql = ','.join(f'"{uuid}"' for uuid in uuids)
+        query = (f'DELETE FROM sessions WHERE uuid IN ({uuids_sql}) '
+                 'RETURNING uuid')
+        getlogger().debug(query)
+        results = conn.execute(query).fetchall()
+        return [rec[0] for rec in results]
+
+    @time_function
+    def remove_sessions(self, selector: QuerySelector):
+        if selector.by_session_uuid():
+            uuids = [selector.value]
+        else:
+            uuids = [sess['session_info']['uuid']
+                     for sess in self.fetch_sessions(selector)]
+
+        with self._db_lock():
+            with self._db_connect(self._db_file()) as conn:
+                if sqlite3.sqlite_version_info >= (3, 35, 0):
+                    return self._do_remove2(conn, uuids)
+                else:
+                    return self._do_remove(conn, uuids)

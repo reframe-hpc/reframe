@@ -28,7 +28,7 @@ from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev, OrderedSet
 from .storage import StorageBackend
-from .utility import Aggregator, parse_cmp_spec, parse_time_period, is_uuid
+from .utility import Aggregator, parse_cmp_spec, parse_query_spec, is_uuid
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
@@ -718,44 +718,22 @@ def performance_compare(cmp, report=None, namepatt=None, test_filter=None):
                         tcs_base.append(tc)
         except IndexError:
             tcs_base = []
-    elif match.base.period is not None:
-        tcs_base = backend.fetch_testcases_time_period(
-            *match.base.period, namepatt, test_filter
-        )
-    elif match.base.sess_uuid is not None:
-        tcs_base = backend.fetch_testcases_single_session(
-            match.base.sess_uuid, namepatt, test_filter
-        )
     else:
-        tcs_base = backend.fetch_testcases_multiple_sessions(
-            match.base.sess_filter, namepatt, test_filter
-        )
+        tcs_base = backend.fetch_testcases(match.base, namepatt, test_filter)
 
-    if match.target.period is not None:
-        tcs_target = backend.fetch_testcases_time_period(
-            *match.target.period, namepatt, test_filter,
-        )
-    elif match.target.sess_uuid is not None:
-        tcs_target = backend.fetch_testcases_single_session(
-            match.target.sess_uuid, namepatt, test_filter
-        )
-    else:
-        tcs_target = backend.fetch_testcases_multiple_sessions(
-            match.target.sess_filter, namepatt, test_filter
-        )
-
+    tcs_target = backend.fetch_testcases(match.target, namepatt, test_filter)
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,
                                  match.aggregator, match.groups, match.columns)
 
 
 @time_function
-def session_data(time_period):
+def session_data(query):
     '''Retrieve sessions'''
 
     data = [['UUID', 'Start time', 'End time', 'Num runs', 'Num cases']]
     extra_cols = OrderedSet()
-    for sess_data in StorageBackend.default().fetch_sessions_time_period(
-        *parse_time_period(time_period) if time_period else (None, None)
+    for sess_data in StorageBackend.default().fetch_sessions(
+        parse_query_spec(query)
     ):
         session_info = sess_data['session_info']
         record = [session_info['uuid'],
@@ -801,19 +779,7 @@ def testcase_data(spec, namepatt=None, test_filter=None):
                            'use the `--performance-compare` option')
 
     storage = StorageBackend.default()
-    if match.target.period:
-        testcases = storage.fetch_testcases_time_period(
-            *match.target.period, namepatt, test_filter,
-        )
-    elif match.target.sess_uuid:
-        testcases = storage.fetch_testcases_single_session(
-            match.target.sess_uuid, namepatt, test_filter
-        )
-    else:
-        testcases = storage.fetch_testcases_multiple_sessions(
-            match.target.sess_filter, namepatt, test_filter
-        )
-
+    testcases = storage.fetch_testcases(match.target, namepatt, test_filter)
     aggregated = _aggregate_perf(
         _group_testcases(testcases, match.groups, match.columns),
         match.aggregator, match.columns
@@ -826,39 +792,19 @@ def testcase_data(spec, namepatt=None, test_filter=None):
 
 
 @time_function
-def session_info(uuid):
+def session_info(query):
     '''Retrieve session details as JSON'''
 
-    session = StorageBackend.default().fetch_session_json(uuid)
-    if not session:
-        raise ReframeError(f'no such session: {uuid}')
-
-    return session
+    return StorageBackend.default().fetch_sessions(parse_query_spec(query))
 
 
 @time_function
-def testcase_info(spec, namepatt=None):
+def testcase_info(query, namepatt=None, test_filter=None):
     '''Retrieve test case details as JSON'''
-    testcases = []
-    if is_uuid(spec):
-        session_uuid, *tc_index = spec.split(':')
-        session = session_info(session_uuid)
-        if not tc_index:
-            for run in session['runs']:
-                testcases += run['testcases']
-        else:
-            run_index, test_index = tc_index
-            testcases.append(
-                session['runs'][run_index]['testcases'][test_index]
-            )
-    else:
-        testcases = StorageBackend.default().fetch_testcases_time_period(
-            *parse_time_period(spec), namepatt
-        )
-
-    return testcases
+    return StorageBackend.default().fetch_testcases(parse_query_spec(query),
+                                                    namepatt, test_filter)
 
 
 @time_function
-def delete_session(session_uuid):
-    StorageBackend.default().remove_session(session_uuid)
+def delete_sessions(query):
+    return StorageBackend.default().remove_sessions(parse_query_spec(query))

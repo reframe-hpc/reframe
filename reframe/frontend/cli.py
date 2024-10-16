@@ -401,20 +401,20 @@ def main():
               'for the selected tests and exit'),
     )
     action_options.add_argument(
-        '--delete-stored-session', action='store', metavar='UUID',
-        help='Delete stored session'
+        '--delete-stored-sessions', action='store', metavar='QUERY',
+        help='Delete stored sessions'
     )
     action_options.add_argument(
         '--describe', action='store_true',
         help='Give full details on the selected tests'
     )
     action_options.add_argument(
-        '--describe-stored-session', action='store', metavar='UUID',
+        '--describe-stored-sessions', action='store', metavar='QUERY',
         help='Get detailed session information in JSON'
     )
     action_options.add_argument(
         '--describe-stored-testcases', action='store',
-        metavar='SESSION_UUID|PERIOD',
+        metavar='QUERY',
         help='Get detailed test case information in JSON'
     )
     action_options.add_argument(
@@ -434,12 +434,11 @@ def main():
     )
     action_options.add_argument(
         '--list-stored-sessions', nargs='?', action='store',
-        const='now-1w:now', metavar='PERIOD', help='List stored sessions'
+        const='now-1w:now', metavar='QUERY', help='List stored sessions'
     )
     action_options.add_argument(
-        '--list-stored-testcases', action='store',
-        metavar='SESSION_UUID|PERIOD',
-        help='List stored testcases by session or time period'
+        '--list-stored-testcases', action='store', metavar='QUERY',
+        help='List performance info for stored testcases'
     )
     action_options.add_argument(
         '-l', '--list', nargs='?', const='T', choices=['C', 'T'],
@@ -826,7 +825,7 @@ def main():
         if (options.show_config or
             options.detect_host_topology or
             options.describe or
-            options.describe_stored_session or
+            options.describe_stored_sessions or
             options.describe_stored_testcases):
             logging.getlogger().setLevel(logging.ERROR)
             return True
@@ -994,13 +993,13 @@ def main():
             ))
             sys.exit(0)
 
-    if options.describe_stored_session:
+    if options.describe_stored_sessions:
         # Restore logging level
         printer.setLevel(logging.INFO)
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
             printer.info(jsonext.dumps(reporting.session_info(
-                options.describe_stored_session
+                options.describe_stored_sessions
             ), indent=2))
             sys.exit(0)
 
@@ -1015,11 +1014,12 @@ def main():
             ), indent=2))
             sys.exit(0)
 
-    if options.delete_stored_session:
-        session_uuid = options.delete_stored_session
+    if options.delete_stored_sessions:
+        query = options.delete_stored_sessions
         with exit_gracefully_on_error('failed to delete session', printer):
-            reporting.delete_session(session_uuid)
-            printer.info(f'Session {session_uuid} deleted successfully.')
+            for uuid in reporting.delete_sessions(query):
+                printer.info(f'Session {uuid} deleted successfully.')
+
             sys.exit(0)
 
     if options.performance_compare:
