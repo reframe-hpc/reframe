@@ -17,9 +17,15 @@ import reframe.utility.jsonext as jsonext
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.reporting as reporting
 import reframe.frontend.reporting.storage as report_storage
-import reframe.frontend.reporting.utility as report_util
+from reframe.frontend.reporting.utility import (parse_cmp_spec, is_uuid,
+                                                QuerySelector,
+                                                DEFAULT_GROUP_BY,
+                                                DEFAULT_EXTRA_COLS)
 from reframe.core.exceptions import ReframeError
 from reframe.frontend.reporting import RunReport
+
+
+_DEFAULT_BASE_COLS = DEFAULT_GROUP_BY + DEFAULT_EXTRA_COLS
 
 
 # NOTE: We could move this to utility
@@ -204,9 +210,10 @@ def time_period(request):
 def test_parse_cmp_spec_period(time_period):
     spec, duration = time_period
     duration = int(duration)
-    match = report_util.parse_cmp_spec(f'{spec}/{spec}/mean:/')
-    for period in ('period_base', 'period_target'):
-        ts_start, ts_end = getattr(match, period)
+    match = parse_cmp_spec(f'{spec}/{spec}/mean:/')
+    for query in ('base', 'target'):
+        assert getattr(match, query).by_time_period()
+        ts_start, ts_end = getattr(match, query).value
         if 'now' in spec:
             # Truncate splits of seconds if using `now` timestamps
             ts_start = int(ts_start)
@@ -215,18 +222,18 @@ def test_parse_cmp_spec_period(time_period):
         assert ts_end - ts_start == duration
 
     # Check variant without base period
-    match = report_util.parse_cmp_spec(f'{spec}/mean:/')
-    assert match.period_base is None
+    match = parse_cmp_spec(f'{spec}/mean:/')
+    assert match.base is None
 
 
 @pytest.fixture(params=['first', 'last', 'mean', 'median',
-                        'min', 'max'])
+                        'min', 'max', 'count'])
 def aggregator(request):
     return request.param
 
 
 def test_parse_cmp_spec_aggregations(aggregator):
-    match = report_util.parse_cmp_spec(f'now-1m:now/now-1d:now/{aggregator}:/')
+    match = parse_cmp_spec(f'now-1m:now/now-1d:now/{aggregator}:/')
     data = [1, 2, 3, 4, 5]
     if aggregator == 'first':
         match.aggregator(data) == data[0]
@@ -240,57 +247,72 @@ def test_parse_cmp_spec_aggregations(aggregator):
         match.aggregator(data) == 3
     elif aggregator == 'mean':
         match.aggregator(data) == sum(data) / len(data)
+    elif aggregator == 'count':
+        match.aggregator(data) == len(data)
 
     # Check variant without base period
-    match = report_util.parse_cmp_spec(f'now-1d:now/{aggregator}:/')
-    assert match.period_base is None
+    match = parse_cmp_spec(f'now-1d:now/{aggregator}:/')
+    assert match.base is None
 
 
-@pytest.fixture(params=[('', []), ('+', []),
-                        ('+col1', ['col1']), ('+col1+', ['col1']),
-                        ('+col1+col2', ['col1', 'col2'])])
-def extra_cols(request):
+@pytest.fixture(params=[('',  DEFAULT_GROUP_BY),
+                        ('+', DEFAULT_GROUP_BY),
+                        ('+col1', DEFAULT_GROUP_BY + ['col1']),
+                        ('+col1+', DEFAULT_GROUP_BY + ['col1']),
+                        ('+col1+col2', DEFAULT_GROUP_BY + ['col1', 'col2']),
+                        ('col1,col2', ['col1', 'col2'])])
+def group_by_columns(request):
     return request.param
 
 
-def test_parse_cmp_spec_group_by(extra_cols):
-    spec, expected = extra_cols
-    match = report_util.parse_cmp_spec(
+def test_parse_cmp_spec_group_by(group_by_columns):
+    spec, expected = group_by_columns
+    match = parse_cmp_spec(
         f'now-1m:now/now-1d:now/min:{spec}/'
     )
-    assert match.extra_groups == expected
+    assert match.groups == expected
 
     # Check variant without base period
-    match = report_util.parse_cmp_spec(f'now-1d:now/min:{spec}/')
-    assert match.period_base is None
+    match = parse_cmp_spec(f'now-1d:now/min:{spec}/')
+    assert match.base is None
 
 
-def test_parse_cmp_spec_extra_cols(extra_cols):
-    spec, expected = extra_cols
-    match = report_util.parse_cmp_spec(
+@pytest.fixture(params=[('',  _DEFAULT_BASE_COLS),
+                        ('+', _DEFAULT_BASE_COLS),
+                        ('+col1', _DEFAULT_BASE_COLS + ['col1']),
+                        ('+col1+', _DEFAULT_BASE_COLS + ['col1']),
+                        ('+col1+col2', _DEFAULT_BASE_COLS + ['col1', 'col2']),
+                        ('col1,col2', ['col1', 'col2'])])
+def columns(request):
+    return request.param
+
+
+def test_parse_cmp_spec_extra_cols(columns):
+    spec, expected = columns
+    match = parse_cmp_spec(
         f'now-1m:now/now-1d:now/min:/{spec}'
     )
-    assert match.extra_cols == expected
+    assert match.columns == expected
 
     # Check variant without base period
-    match = report_util.parse_cmp_spec(f'now-1d:now/min:/{spec}')
-    assert match.period_base is None
+    match = parse_cmp_spec(f'now-1d:now/min:/{spec}')
+    assert match.base is None
 
 
 def test_is_uuid():
     # Test a standard UUID
-    assert report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2')
+    assert is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2')
 
     # Test a run UUID
-    assert report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2:0')
+    assert is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2:0')
 
     # Test a test case UUID
-    assert report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2:0:1')
+    assert is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2:0:1')
 
     # Test invalid UUIDs
-    assert not report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c')
-    assert not report_util.is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2:')
-    assert not report_util.is_uuid('foo')
+    assert not is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c')
+    assert not is_uuid('7daf4a71-997b-4417-9bda-225c9cab96c2:')
+    assert not is_uuid('foo')
 
 
 @pytest.fixture(params=[
@@ -309,17 +331,38 @@ def test_parse_cmp_spec_with_uuid(uuid_spec):
         base, target = None, None
         if len(parts) == 3:
             base = None
-            target = parts[0] if report_util.is_uuid(parts[0]) else None
+            target = parts[0] if is_uuid(parts[0]) else None
         else:
-            base = parts[0] if report_util.is_uuid(parts[0]) else None
-            target = parts[1] if report_util.is_uuid(parts[1]) else None
+            base = parts[0] if is_uuid(parts[0]) else None
+            target = parts[1] if is_uuid(parts[1]) else None
 
         return base, target
 
-    match = report_util.parse_cmp_spec(uuid_spec)
+    match = parse_cmp_spec(uuid_spec)
     base_uuid, target_uuid = _uuids(uuid_spec)
-    assert match.session_base == base_uuid
-    assert match.session_target == target_uuid
+    if match.base.by_session_uuid():
+        assert match.base.value == base_uuid
+
+    if match.target.by_session_uuid():
+        assert match.target.value == target_uuid
+
+
+@pytest.fixture(params=[
+    '?xyz == "123"/?xyz == "789"/mean:/',
+    '?xyz == "789"/mean:/'
+])
+def sess_filter(request):
+    return request.param
+
+
+def test_parse_cmp_spec_with_filter(sess_filter):
+    match = parse_cmp_spec(sess_filter)
+    if match.base:
+        assert match.base.by_session_filter()
+        assert match.base.value == 'xyz == "123"'
+
+    assert match.target.by_session_filter()
+    assert match.target.value == 'xyz == "789"'
 
 
 @pytest.fixture(params=['2024:07:01T12:34:56', '20240701', '20240701:',
@@ -331,32 +374,41 @@ def invalid_time_period(request):
 
 def test_parse_cmp_spec_invalid_period(invalid_time_period):
     with pytest.raises(ValueError):
-        report_util.parse_cmp_spec(f'{invalid_time_period}/now-1d:now/min:/')
+        parse_cmp_spec(f'{invalid_time_period}/now-1d:now/min:/')
 
     with pytest.raises(ValueError):
-        report_util.parse_cmp_spec(f'now-1d:now/{invalid_time_period}/min:/')
+        parse_cmp_spec(f'now-1d:now/{invalid_time_period}/min:/')
 
 
-@pytest.fixture(params=['mean', 'foo:', 'mean:col1+col2', 'mean:col1,col2'])
+def test_parse_cmp_invalid_filter():
+    invalid_sess_filter = 'xyz == "123"'
+    with pytest.raises(ValueError):
+        parse_cmp_spec(f'{invalid_sess_filter}/now-1d:now/min:/')
+
+    with pytest.raises(ValueError):
+        parse_cmp_spec(f'now-1d:now/{invalid_sess_filter}/min:/')
+
+
+@pytest.fixture(params=['mean', 'foo:', 'mean:col1+col2'])
 def invalid_aggr_spec(request):
     return request.param
 
 
 def test_parse_cmp_spec_invalid_aggregation(invalid_aggr_spec):
     with pytest.raises(ValueError):
-        report_util.parse_cmp_spec(
+        print(parse_cmp_spec(
             f'now-1m:now/now-1d:now/{invalid_aggr_spec}/'
-        )
+        ))
 
 
-@pytest.fixture(params=['col1+col2', 'col1,col2'])
+@pytest.fixture(params=['col1+col2', '+col1,col2'])
 def invalid_col_spec(request):
     return request.param
 
 
 def test_parse_cmp_spec_invalid_extra_cols(invalid_col_spec):
     with pytest.raises(ValueError):
-        report_util.parse_cmp_spec(
+        parse_cmp_spec(
             f'now-1m:now/now-1d:now/mean:/{invalid_col_spec}'
         )
 
@@ -374,7 +426,7 @@ def various_invalid_specs(request):
 
 def test_parse_cmp_spec_various_invalid(various_invalid_specs):
     with pytest.raises(ValueError):
-        report_util.parse_cmp_spec(various_invalid_specs)
+        parse_cmp_spec(various_invalid_specs)
 
 
 def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
@@ -401,41 +453,30 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
 
     backend = report_storage.StorageBackend.default()
 
-    # Test `fetch_sessions_time_period`
-    stored_sessions = backend.fetch_sessions_time_period()
-    assert len(stored_sessions) == 2
-    for i, sess in enumerate(stored_sessions):
-        assert sess['session_info']['uuid'] == uuids[i]
+    from_time_period = QuerySelector.from_time_period
+    from_session_uuid = QuerySelector.from_session_uuid
 
-    # Test the time period version
+    # Test `fetch_sessions`: time period version
     now = time.time()
-    stored_sessions = backend.fetch_sessions_time_period(now - 60, now)
+    stored_sessions = backend.fetch_sessions(from_time_period(0, now))
     assert len(stored_sessions) == 2
     for i, sess in enumerate(stored_sessions):
         assert sess['session_info']['uuid'] == uuids[i]
 
-    # Test `fetch_session_json`
+    # Test `fetch_session`: session uuid version
     for uuid in uuids:
-        stored_session = backend.fetch_session_json(uuid)
-        assert stored_session['session_info']['uuid'] == uuid
+        stored_sessions = backend.fetch_sessions(from_session_uuid(uuid))
+        assert stored_sessions[0]['session_info']['uuid'] == uuid
 
     # Test an invalid uuid
-    assert backend.fetch_session_json(0) == {}
+    assert backend.fetch_sessions(from_session_uuid(0)) == []
 
-    # Test `fetch_session_time_period`
-    for i, uuid in enumerate(uuids):
-        ts_session = backend.fetch_session_time_period(uuid)
-        assert ts_session == timestamps[i]
-
-    # Test an invalid uuid
-    assert backend.fetch_session_time_period(0) == (None, None)
-
-    # Test `fetch_testcases_time_period`
-    testcases = backend.fetch_testcases_time_period(timestamps[0][0],
-                                                    timestamps[1][1])
+    # Test `fetch_testcases`: time period version
+    testcases = backend.fetch_testcases(from_time_period(timestamps[0][0],
+                                                         timestamps[1][1]))
 
     # NOTE: test cases without an associated (run) job are not fetched by
-    # `fetch_testcases_time_period`;  in
+    # `fetch_testcases` (time period version);  in
     # this case 3 test cases per session are ignored: `BadSetupCheckEarly`,
     # `BadSetupCheck`, `CompileOnlyHelloTest`, which requires us to adapt the
     # expected counts below
@@ -443,39 +484,40 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
     assert _count_failed(testcases) == 6
 
     # Test name filtering
-    testcases = backend.fetch_testcases_time_period(timestamps[0][0],
-                                                    timestamps[1][1],
-                                                    '^HelloTest')
+    testcases = backend.fetch_testcases(
+        from_time_period(timestamps[0][0], timestamps[1][1]), '^HelloTest'
+    )
     assert len(testcases) == 2
     assert _count_failed(testcases) == 0
 
     # Test the inverted period
-    assert backend.fetch_testcases_time_period(timestamps[1][1],
-                                               timestamps[0][0]) == []
+    assert backend.fetch_testcases(from_time_period(timestamps[1][1],
+                                                    timestamps[0][0])) == []
 
-    # Test `fetch_testcases_from_session`
+    # Test `fetch_testcases`: session version
     for i, uuid in enumerate(uuids):
-        testcases = backend.fetch_testcases_from_session(uuid)
+        testcases = backend.fetch_testcases(from_session_uuid(uuid))
         assert len(testcases) == 9
         assert _count_failed(testcases) == 5
 
         # Test name filtering
-        testcases = backend.fetch_testcases_from_session(uuid, '^HelloTest')
+        testcases = backend.fetch_testcases(from_session_uuid(uuid),
+                                            '^HelloTest')
         assert len(testcases) == 1
         assert _count_failed(testcases) == 0
 
     # Test an invalid uuid
-    assert backend.fetch_testcases_from_session(0) == []
+    assert backend.fetch_testcases(from_session_uuid(0)) == []
 
     # Test session removal
-    backend.remove_session(uuids[-1])
-    assert len(backend.fetch_sessions_time_period()) == 1
+    removed = backend.remove_sessions(from_session_uuid(uuids[-1]))
+    assert removed == [uuids[-1]]
+    assert len(backend.fetch_sessions(from_time_period(0, now))) == 1
 
-    testcases = backend.fetch_testcases_time_period(timestamps[0][0],
-                                                    timestamps[1][1])
+    testcases = backend.fetch_testcases(from_time_period(timestamps[0][0],
+                                                         timestamps[1][1]))
     assert len(testcases) == 6
     assert _count_failed(testcases) == 3
 
     # Try an invalid uuid
-    with pytest.raises(ReframeError):
-        backend.remove_session(0)
+    backend.remove_sessions(from_session_uuid(0)) == []

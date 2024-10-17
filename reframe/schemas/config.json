@@ -591,7 +591,7 @@
         "general/report_junit": null,
         "general/resolve_module_conflicts": true,
         "general/save_log_files": false,
-        "general/table_format": "pretty",
+        "general/table_format": "outline",
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "%Y%m%dT%H%M%S%z",
         "general/trap_job_errors": false,
