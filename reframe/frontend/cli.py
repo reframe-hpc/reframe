@@ -977,11 +977,11 @@ def main():
     if options.list_stored_sessions:
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
-            time_period = options.list_stored_sessions
-            if time_period == 'all':
-                time_period = None
+            spec = options.list_stored_sessions
+            if spec == 'all':
+                spec = '19700101T0000+0000:now'
 
-            printer.table(reporting.session_data(time_period))
+            printer.table(reporting.session_data(spec))
             sys.exit(0)
 
     if options.list_stored_testcases:

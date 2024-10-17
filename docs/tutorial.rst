@@ -2036,9 +2036,9 @@ Note that a session may contain multiple runs of the same test.
    ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
 
 The grouping of the test cases, the aggregation and the actual columns shown in the final table are fully configurable.
-The exact syntax and the various posibilities are described in :ref:`performance-comparisons`.
+The exact syntax and the various posibilities are described in :ref:`querying-past-results`.
 
-You can also list the test cases that have run in a certain period of time by passing a :ref:`time period <time-period-syntax>` argument to :option:`--list-stored-testcases`.
+You can also list the test cases that have run in a certain period of time by passing a time period argument to :option:`--list-stored-testcases`.
 For example, the following will list the mean performance of all test cases that have run the last day:
 
 .. code-block:: bash
@@ -2063,7 +2063,7 @@ For example, the following will list the mean performance of all test cases that
    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
 
 Note that the :option:`--list-stored-testcases` will list only performance tests.
-You can get all the details of a session or a set of test cases using the :option:`--describe-stored-session` and :option:`--describe-stored-testcases` options which will return a detailed JSON record.
+You can get all the details of stored sessions or a set of test cases using the :option:`--describe-stored-sessions` and :option:`--describe-stored-testcases` options which will return a detailed JSON record.
 
 You can also combine :option:`--list-stored-testcases` and :option:`--describe-stored-testcases`  with the :option:`-n` and :option:`-E` options in order to restrict the listing to specific tests only:
 
@@ -2101,10 +2101,10 @@ Note that the absolute base performance (``pval_A`` column) is listed along with
 
 Similarly, the :option:`--performance-report` option can compare the performance of the current run with any arbitrary past session or past time period.
 
-Finally, a stored session can be deleted using the :option:`--delete-stored-session` option:
+Finally, a stored session can be deleted using the :option:`--delete-stored-sessions` option:
 
 .. code-block:: bash
 
-   reframe --delete-stored-session=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e
+   reframe --delete-stored-sessions=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e
 
 Deleting a session will also delete all its test cases from the database.
