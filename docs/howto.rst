@@ -1169,7 +1169,10 @@ If you use a Python-based configuration file, you can define your custom launche
 Implementing a custom log handler
 ---------------------------------
 
-Here's an example implementation of a custom log handler defined in a Python-based configuration file.
+.. versionadded:: 4.7
+
+ReFrame allows you to define custom log handlers and attach them to the framework.
+Here's an example implementation of a custom log handler and how it can be used in a Python-based configuration file.
 
 Define a custom log handler class based on :class:`~logging.Handler` which uses a custom logging API:
 
@@ -1179,17 +1182,17 @@ Define a custom log handler class based on :class:`~logging.Handler` which uses 
    import mylogger
 
    class MyLoggerHandler(logging.Handler):
-      def __init__(self, key):
-         super().__init__()
-         self.key = key
+       def __init__(self, key):
+           super().__init__()
+           self.key = key
 
-      def emit(self, record):
-         myrecord = {
-            'value': record.check_perf_value,
-         }
-         mylogger.log(self.key, myrecord)
+       def emit(self, record):
+           myrecord = {
+               'value': record.check_perf_value,
+           }
+           mylogger.log(self.key, myrecord)
 
-Apply the :func:`~reframe.core.logging.register_log_handler` decorator to a function returns an instance of the custom log handler:
+Applying the :func:`@register_log_handler <reframe.core.logging.register_log_handler>` decorator to a function returns an instance of the custom log handler:
 
 .. code-block:: python
 
@@ -1197,25 +1200,25 @@ Apply the :func:`~reframe.core.logging.register_log_handler` decorator to a func
 
    @register_log_handler("mylogger")
    def _create_mylogger_handler(site_config, config_prefix):
-      key = site_config.get(f'{config_prefix}/key')
-      return MyLoggerHandler(key)
+       key = site_config.get(f'{config_prefix}/key')
+       return MyLoggerHandler(key)
 
 
-Finally, add a handler entry with type matching registered name for the custom log handler to the site config:
+Finally, add a handler entry with type matching the registered name for the custom log handler to the site config:
 
 .. code-block:: python
 
    site_configuration = {
-      'logging': [
-         {
-            'handlers': [
-               {
-                  'type': 'mylogger',
-                  'key': 'abc',
-               },
-               ...
-            ]
-         }
-      ],
-      ...
+       'logging': [
+           {
+               'handlers': [
+                   {
+                       'type': 'mylogger',
+                       'key': 'abc',
+                   },
+                   ...
+               ]
+           }
+       ],
+       ...
    }
