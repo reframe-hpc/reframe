@@ -421,6 +421,7 @@ def register_log_handler(name):
     def _create_handler_wrapper(fn):
         _create_handlers[name] = fn
         return fn
+
     return _create_handler_wrapper
 
 
