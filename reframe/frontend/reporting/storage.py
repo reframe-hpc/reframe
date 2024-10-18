@@ -64,7 +64,12 @@ class StorageBackend:
 
     @abc.abstractmethod
     def remove_sessions(self, selector: QuerySelector):
-        '''Remove sessions based on the specified query selector'''
+        '''Remove sessions based on the specified query selector
+
+        :arg selector: an instance of :class:`QuerySelector` that will specify
+            the actual type of query requested.
+        :returns: A list of the session UUIDs that were succesfully deleted.
+        '''
 
 
 class _SqliteStorage(StorageBackend):
@@ -223,7 +228,7 @@ class _SqliteStorage(StorageBackend):
 
     @time_function
     def _decode_sessions(self, results, sess_filter):
-        '''Decode session for the raw DB results.
+        '''Decode sessions from the raw DB results.
 
         Return a map of session uuids to decoded session data
         '''
@@ -362,7 +367,7 @@ class _SqliteStorage(StorageBackend):
         return [*session.values()]
 
     def _do_remove(self, conn, uuids):
-        '''Remove sessions using the RETURNING keyword'''
+        '''Remove sessions'''
 
         # Enable foreign keys for delete action to have cascade effect
         conn.execute('PRAGMA foreign_keys = ON')

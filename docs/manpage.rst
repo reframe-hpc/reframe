@@ -1352,7 +1352,7 @@ The file report of any session can be retrieved from the database with the :opti
 .. _querying-past-results:
 
 Querying past results
-======================
+=====================
 
 .. versionadded:: 4.7
 

@@ -28,7 +28,7 @@ from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev, OrderedSet
 from .storage import StorageBackend
-from .utility import Aggregator, parse_cmp_spec, parse_query_spec, is_uuid
+from .utility import Aggregator, parse_cmp_spec, parse_query_spec
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
@@ -525,7 +525,7 @@ class RunReport:
 
 
 class _TCProxy(UserDict):
-    '''Test case to support dynamic fields'''
+    '''Test case proxy class to support dynamic fields'''
     _required_keys = ['name', 'system', 'partition', 'environ']
 
     def __init__(self, testcase, include_only=None):
