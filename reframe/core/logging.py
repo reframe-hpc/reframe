@@ -412,6 +412,20 @@ def _create_logger(site_config, *handlers_groups):
     return logger
 
 
+# Registry for log handler creation functions
+_create_handlers = {}
+
+
+def register_log_handler(name):
+    '''Register the decorated log handler creation function'''
+    def _create_handler_wrapper(fn):
+        _create_handlers[name] = fn
+        return fn
+
+    return _create_handler_wrapper
+
+
+@register_log_handler('file')
 def _create_file_handler(site_config, config_prefix):
     filename = os.path.expandvars(site_config.get(f'{config_prefix}/name'))
     if not filename:
@@ -431,6 +445,7 @@ def _create_file_handler(site_config, config_prefix):
                                                 mode='a+' if append else 'w+')
 
 
+@register_log_handler('filelog')
 def _create_filelog_handler(site_config, config_prefix):
     basedir = os.path.abspath(os.path.join(
         site_config.get('systems/0/prefix'),
@@ -447,6 +462,7 @@ def _create_filelog_handler(site_config, config_prefix):
                             ignore_keys=ignore_keys)
 
 
+@register_log_handler('syslog')
 def _create_syslog_handler(site_config, config_prefix):
     address = site_config.get(f'{config_prefix}/address')
 
@@ -485,6 +501,7 @@ def _create_syslog_handler(site_config, config_prefix):
     return logging.handlers.SysLogHandler(address, facility_type, socket_type)
 
 
+@register_log_handler('stream')
 def _create_stream_handler(site_config, config_prefix):
     stream = site_config.get(f'{config_prefix}/name')
     if stream == 'stdout':
@@ -496,6 +513,7 @@ def _create_stream_handler(site_config, config_prefix):
         raise AssertionError(f'unknown stream: {stream}')
 
 
+@register_log_handler('graylog')
 def _create_graylog_handler(site_config, config_prefix):
     try:
         import pygelf
@@ -528,6 +546,7 @@ def _create_graylog_handler(site_config, config_prefix):
                                   json_default=jsonext.encode)
 
 
+@register_log_handler('httpjson')
 def _create_httpjson_handler(site_config, config_prefix):
     url = site_config.get(f'{config_prefix}/url')
     extras = site_config.get(f'{config_prefix}/extras')
@@ -684,35 +703,18 @@ def _extract_handlers(site_config, handlers_group):
     handlers = []
     for i, handler_config in enumerate(handlers_list):
         handler_type = handler_config['type']
-        if handler_type == 'file':
-            hdlr = _create_file_handler(site_config, f'{handler_prefix}/{i}')
-        elif handler_type == 'filelog':
-            hdlr = _create_filelog_handler(
-                site_config, f'{handler_prefix}/{i}'
-            )
-        elif handler_type == 'syslog':
-            hdlr = _create_syslog_handler(site_config, f'{handler_prefix}/{i}')
-        elif handler_type == 'stream':
-            hdlr = _create_stream_handler(site_config, f'{handler_prefix}/{i}')
-        elif handler_type == 'graylog':
-            hdlr = _create_graylog_handler(
-                site_config, f'{handler_prefix}/{i}'
-            )
-            if hdlr is None:
-                getlogger().warning('could not initialize the '
-                                    'graylog handler; ignoring ...')
-                continue
-        elif handler_type == 'httpjson':
-            hdlr = _create_httpjson_handler(
-                site_config, f'{handler_prefix}/{i}'
-            )
-            if hdlr is None:
-                getlogger().warning('could not initialize the '
-                                    'httpjson handler; ignoring ...')
-                continue
-        else:
-            # Should not enter here
-            raise AssertionError(f'unknown handler type: {handler_type}')
+
+        try:
+            create_handler = _create_handlers[handler_type]
+        except KeyError:
+            raise ConfigError(
+                f'unknown handler type: {handler_type}') from None
+
+        hdlr = create_handler(site_config, f'{handler_prefix}/{i}')
+        if hdlr is None:
+            getlogger().warning('could not initialize the '
+                                f'{handler_type} handler; ignoring ...')
+            continue
 
         level = site_config.get(f'{handler_prefix}/{i}/level')
         fmt = site_config.get(f'{handler_prefix}/{i}/format')
