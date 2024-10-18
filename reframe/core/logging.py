@@ -707,7 +707,8 @@ def _extract_handlers(site_config, handlers_group):
         try:
             create_handler = _create_handlers[handler_type]
         except KeyError:
-            raise ConfigError(f'unknown handler type: {handler_type}') from None
+            raise ConfigError(
+                f'unknown handler type: {handler_type}') from None
 
         hdlr = create_handler(site_config, f'{handler_prefix}/{i}')
         if hdlr is None:
