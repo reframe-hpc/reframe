@@ -101,23 +101,16 @@ py_pkg_prefix=external/$(uname -m)
 # Install a fresh pip in the current environment
 pyver=$(python3 -c 'import sys; print(".".join(str(s) for s in sys.version_info[:2]))')
 if [ "$pyver" == "3.6" ]; then
-    get_pip_url="https://bootstrap.pypa.io/pip/3.6/get-pip.py"
+    get_pip="$PWD/tools/python/3.6/get-pip.py"
 elif [ "$pyver" == "3.7" ]; then
-    get_pip_url="https://bootstrap.pypa.io/pip/3.7/get-pip.py"
+    get_pip="$PWD/tools/python/3.7/get-pip.py"
 else
-    get_pip_url="https://bootstrap.pypa.io/get-pip.py"
+    get_pip="$PWD/tools/python/get-pip.py"
 fi
 
-if ! type "curl" > /dev/null 2>&1; then
-    echo -e "could not find \`curl': please install curl and try again"
-    exit 1
-fi
-
-INFO "curl -s $get_pip_url | $python"
-curl -s $get_pip_url | $python
-
-export PATH=$(pwd)/$py_pkg_prefix/usr/bin:$PATH
-export PYTHONPATH=$(pwd)/$py_pkg_prefix:$PYTHONPATH
+$python $get_pip
+export PATH=$PWD/$py_pkg_prefix/usr/bin:$PATH
+export PYTHONPATH=$PWD/$py_pkg_prefix:$PYTHONPATH
 if [ -n "$PYGELF" ]; then
     tmp_requirements=$(mktemp)
     sed -e 's/^#+pygelf%//g' requirements.txt > $tmp_requirements
