@@ -8,7 +8,7 @@ import re
 import statistics
 import types
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from numbers import Number
 from .storage import StorageBackend
 
@@ -89,7 +89,9 @@ def _parse_timestamp(s):
     if isinstance(s, Number):
         return s
 
-    now = datetime.now()
+    # Use UTC timezone to avoid daylight saving skewing when adding/subtracting
+    # periods across a daylight saving switch date
+    now = datetime.now(timezone.utc)
 
     def _do_parse(s):
         if s == 'now':
