@@ -602,11 +602,13 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
             available_nodes, self.sched_flex_alloc_nodes.lower()
         )
         getlogger().debug(
-            f'[F] Total available in state={self.sched_flex_alloc_nodes.lower()}: {len(available_nodes)}'
+            f'[F] Total available in state='
+            f'{self.sched_flex_alloc_nodes.lower()}: {len(available_nodes)}'
         )
         available_nodes = self.scheduler.filternodes(self, available_nodes)
         getlogger().debug(
-            f'[F] Total available after scheduler filter: {len(available_nodes)}'
+            f'[F] Total available after scheduler filter: '
+            f'{len(available_nodes)}'
         )
         return len(available_nodes) * num_tasks_per_node
 
