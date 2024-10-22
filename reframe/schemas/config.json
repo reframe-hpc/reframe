@@ -520,11 +520,11 @@
                     "pipeline_timeout": {"type": ["number", "null"]},
                     "purge_environment": {"type": "boolean"},
                     "remote_detect": {"type": "boolean"},
-                    "remote_workdir": {"type": "string"},
-                    "remote_command": {
+                    "remote_install": {
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "remote_workdir": {"type": "string"},
                     "report_file": {"type": "string"},
                     "report_junit": {"type": ["string", "null"]},
                     "resolve_module_conflicts": {"type": "boolean"},
@@ -590,8 +590,8 @@
         "general/perf_report_spec": "now:now/last:/+job_nodelist+result",
         "general/purge_environment": false,
         "general/remote_detect": false,
+        "general/remote_install": [],
         "general/remote_workdir": ".",
-        "general/remote_command": [],
         "general/report_file": "${HOME}/.reframe/reports/run-report-{sessionid}.json",
         "general/report_junit": null,
         "general/resolve_module_conflicts": true,

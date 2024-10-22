@@ -152,6 +152,7 @@ def _remote_detect(part):
         job.prepare(commands, env, trap_errors=True, login=use_login_shell)
 
     def _emit_custom_script(job, env, commands):
+        commands.append('reframe --detect-host-topology=topo.json')
         job.prepare(commands, env, trap_errors=True, login=use_login_shell)
 
     getlogger().info(
@@ -162,7 +163,7 @@ def _remote_detect(part):
     try:
         prefix = runtime.runtime().get_option('general/0/remote_workdir')
         custom_command = runtime.runtime().get_option(
-            'general/0/remote_command'
+            'general/0/remote_install'
         )
         with _copy_reframe(prefix) as (dirname, use_pip):
             with osext.change_dir(dirname):
@@ -172,11 +173,10 @@ def _remote_detect(part):
                                  sched_access=part.access)
                 if custom_command:
                     _emit_custom_script(job, [part.local_env], custom_command)
+                elif use_pip:
+                    _emit_script_for_pip(job, [part.local_env])
                 else:
-                    if use_pip:
-                        _emit_script_for_pip(job, [part.local_env])
-                    else:
-                        _emit_script_for_source(job, [part.local_env])
+                    _emit_script_for_source(job, [part.local_env])
                 getlogger().debug('submitting detection script')
                 _log_contents(job.script_filename)
                 job.submit()
