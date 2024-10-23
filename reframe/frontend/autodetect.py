@@ -47,7 +47,8 @@ class _copy_reframe:
         self._workdir = os.path.abspath(
             tempfile.mkdtemp(prefix='rfm.', dir=self._prefix)
         )
-        paths = ['bin/', 'reframe/', 'bootstrap.sh', 'requirements.txt']
+        paths = ['bin/', 'reframe/', 'tools/',
+                 'bootstrap.sh', 'requirements.txt']
         use_pip = False
         try:
             for p in paths:
