@@ -129,48 +129,55 @@ Test commands
 Result storage commands
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. option:: --delete-stored-session=UUID
+.. option:: --delete-stored-sessions=SELECT_SPEC
 
-   Delete the stored session with the specified UUID from the results database.
+   Delete the stored sessions matching the given selection criteria.
+
+   Check :ref:`session-selection` for information on the exact syntax of ``SELECT_SPEC``.
 
    .. versionadded:: 4.7
 
-.. option:: --describe-stored-session=UUID
+.. option:: --describe-stored-sessions=SELECT_SPEC
 
-   Get detailed information of the session with the specified UUID.
+   Get detailed information of the sessions matching the given selection criteria.
+
    The output is in JSON format.
+   Check :ref:`session-selection` for information on the exact syntax of ``SELECT_SPEC``.
 
    .. versionadded:: 4.7
 
-.. option:: --describe-stored-testcases=SESSION_UUID|TIME_PERIOD
+.. option:: --describe-stored-testcases=SELECT_SPEC
 
-   Get detailed test case information of the session with the specified UUID or from the specified time period.
+   Get detailed information of the test cases matching the given selection criteria.
 
-   If a session UUID is provided only information about the test cases of this session will be provided.
-   This option can be combined with :option:`--name` to restrict the listing to specific tests.
-   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
+   This option can be combined with :option:`--name` and :option:`--filter-expr` to restrict further the test cases.
+
+   Check :ref:`session-selection` for information on the exact syntax of ``SELECT_SPEC``.
 
    .. versionadded:: 4.7
 
 .. _--list-stored-sessions:
 
-.. option:: --list-stored-sessions[=TIME_PERIOD]
+.. option:: --list-stored-sessions[=SELECT_SPEC|all]
 
-   List sessions stored in the results database.
+   List sessions stored in the results database matching the given selection criteria.
 
-   If ``TIME_PERIOD`` is ``all``, all stored sessions will be listed.
-   If not specified, only the sessions of last week will be listed.
-   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax`.
+   If ``all`` is given instead of ``SELECT_SPEC``, all stored sessions will be listed.
+   This is equivalent to ``19700101T0000+0000:now``.
+   If the ``SELECT_SPEC`` is not specified, only the sessions of last week will be listed (equivalent to ``now-1w:now``).
+
+   Check :ref:`session-selection` for information on the exact syntax of ``SELECT_SPEC``.
 
    .. versionadded:: 4.7
 
-.. option:: --list-stored-testcases=SESSION_UUID|TIME_PERIOD
+.. option:: --list-stored-testcases=CMPSPEC
 
-   List all test cases from the session with the specified UUID or from the specified time period.
+   Select and list information of stored testcases.
 
-   If a session UUID is provided only the test cases of this session will be listed.
-   This option can be combined with :option:`--name` to restrict the listing to specific tests.
-   For the exact syntax of ``TIME_PERIOD`` check the :ref:`time-period-syntax` section.
+   The ``CMPSPEC`` argument specifies how testcases will be selected, aggregated and presented.
+   This option can be combined with :option:`--name` and :option:`--filter-expr` to restrict the listed tests.
+
+   Check the :ref:`querying-past-results` section for the exact syntax of ``CMPSPEC``.
 
    .. versionadded:: 4.7
 
@@ -178,8 +185,10 @@ Result storage commands
 
    Compare the performance of test cases that have run in the past.
 
-   This option can be combined with :option:`--name` to restrict the comparison to specific tests.
-   Check the :ref:`performance-comparisons` section for the exact syntax of ``CMPSPEC``.
+   The ``CMPSPEC`` argument specifies how testcases will be selected, aggregated and presented.
+   This option can be combined with :option:`--name` and :option:`--filter-expr` to restrict the listed tests.
+
+   Check the :ref:`querying-past-results` section for the exact syntax of ``CMPSPEC``.
 
    .. versionadded:: 4.7
 
@@ -1108,10 +1117,9 @@ Miscellaneous options
    Print a report summarizing the performance of all performance tests that have run in the current session.
 
    For each test all of their performance variables are reported and optionally compared to past results based on the ``CMPSPEC`` specified.
+   If not specified, ``CMPSPEC`` defaults to ``now:now/last:/+job_nodelist+result``, meaning that the current performance will not be compared to any past run and, additionally, the ``job_nodelist`` and the test result (``pass`` or ``fail``) will be listed.
 
-   If not specified, the default ``CMPSPEC`` is ``now:now/last:/+job_nodelist+result``, meaning that the current performance will not be compared to any past run and, additionally, the ``job_nodelist`` and the test result (``pass`` or ``fail``) will be listed.
-
-   For the exact syntax of ``CMPSPEC``, refer to :ref:`performance-comparisons`.
+   For the exact syntax of ``CMPSPEC``, refer to :ref:`querying-past-results`.
 
    .. versionchanged:: 4.7
 
@@ -1135,9 +1143,12 @@ Miscellaneous options
    Annotate the current session with custom key/value metadata.
 
    The key/value data is specified as a comma-separated list of `key=value` pairs.
-   When listing stored sessions with the :option:`--list-stored-sessions` option, any associated custom metadata will be presented by default.
+   When listing stored sessions with the :option:`--list-stored-sessions` option, any associated custom metadata will be presented.
+
+   This option can be specified multiple times, in which case the data from all options will be combined in a single list of key/value data.
 
    .. versionadded:: 4.7
+
 
 .. option:: --system=NAME
 
@@ -1152,21 +1163,19 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
-.. option:: --table-format=csv|plain|pretty
+.. option:: --table-format=csv|plain|outline|grid
 
    Set the formatting of tabular output printed by the options :option:`--performance-compare`, :option:`--performance-report` and the options controlling the stored sessions.
 
    The acceptable values are the following:
 
    - ``csv``: Generate CSV output
+   - ``grid``: Generate a table with grid lines
+   - ``outline``: (default) Generate a table with lines outlining the table and the header
    - ``plain``: Generate a plain table without any lines
-   - ``pretty``: (default) Generate a pretty table
 
-   .. versionadded:: 4.7
-
-.. option:: --table-hide-columns=COLUMNS
-
-   Hide the specified comma-separated list of columns from the tabular output printed by the options :option:`--performance-compare`, :option:`--performance-report` and the options controlling the stored sessions.
+   Note that the default ``outline`` format will not render correctly multi-line cells.
+   In this cases, prefer the ``grid`` or ``plain`` formats.
 
    .. versionadded:: 4.7
 
@@ -1331,50 +1340,84 @@ The test cases of the session are indexed by their run job completion time for q
 
 The database file is controlled by the :attr:`~config.storage.sqlite_db_file` configuration parameter and multiple ReFrame processes can access it safely simultaneously.
 
-There are several command-line options that allow users to query the results database, such as the :option:`--list-stored-sessions`, :option:`--list-stored-testcases`, :option:`--describe-stored-session` etc.
+There are several command-line options that allow users to query the results database, such as the :option:`--list-stored-sessions`, :option:`--list-stored-testcases`, :option:`--describe-stored-sessions` etc.
 Other options that access the results database are the :option:`--performance-compare` and :option:`--performance-report` which compare the performance results of the same test cases in different periods of time or from different sessions.
 Check the :ref:`commands` section for the complete list and details of each option related to the results database.
 
 Since the report file information is now kept in the results database, there is no need to keep the report files separately, although this remains the default behavior for backward compatibility.
 You can disable the report generation by turning off the :attr:`~config.general.generate_file_reports` configuration parameter.
-The file report of any session can be retrieved from the database with the :option:`--describe-stored-session` option.
+The file report of any session can be retrieved from the database with the :option:`--describe-stored-sessions` option.
 
 
-.. _performance-comparisons:
+.. _querying-past-results:
 
-Performance comparisons
-=======================
+Querying past results
+=====================
 
 .. versionadded:: 4.7
 
-The :option:`--performance-compare` and :option:`--performance-report` options accept a ``CMPSPEC`` argument that specifies how to select and compare test cases.
-The full syntax of ``CMPSPEC`` is the following:
+ReFrame provides several options for querying and inspecting past sessions and test case results.
+All those options follow a common syntax that builds on top of the following elements:
+
+1. Selection of sessions and test cases
+2. Grouping of test cases and performance aggregations
+3. Selection of test case attributes to present
+
+Throughout the documentation, we use the ``<select>`` notation for (1), ``<aggr>`` for (2) and ``<cols>`` for (3).
+For the options performing aggregations on test case performance we use the notation ``<cmpspec>`` which can take one of the following forms:
+
+1. ``<cmpspec> := <select>/<select>/<aggr>/<cols>`` for explicit performance comparisons (see :option:`--performance-compare`).
+2. ``<cmpspec> := <select>/<aggr>/<cols>`` for implicit performance comparisons (see :option:`--performance-report`)  or for simple performance aggregations (see :option:`--list-stored-testcases`).
+
+In the following we present in detail the exact syntax of every of the above syntactic elements.
+
+.. _session-selection:
+
+Selecting sessions and test cases
+----------------------------------
+
+The syntax for selecting sessions or test cases can take one of the following forms:
+
+1. ``<select> := <session_uuid>``: An explicit session UUID.
+2. ``<select> := ?<session_filter>``: A valid Python expression on the available session information including any user-specific session extras (see also :option:`--session-extras`), e.g., ``?'xyz=="123"'``.
+   In this case, the testcases from all sessions matching the filter will be retrieved.
+3. ``<select> := <time_period>``: A time period specification (see below for details).
+
+Time periods
+^^^^^^^^^^^^
+
+The general syntax of time period specification is the following:
 
 .. code-block:: console
 
-   <base_cases>/<target_cases>/<aggr>/<extra_cols>
+   <time_period> := <ts_start>:<ts_end>
 
-The ``<base_cases>`` and ``<target_cases>`` subspecs specify how the base and target test cases will be retrieved.
-The base test cases will be compared against those from the target period.
-
-.. note::
-
-   The ``<base_cases>`` subspec is ommitted from the ``CMPSPEC`` of the :option:`--performance-report` option as the base test cases are always the test cases from the current session.
-
-The test cases for comparison can either be retrieved from an existing past session or a past time period.
-A past session is denoted with the ``<session_uuid>`` syntax and only the test cases of that particular session will be selected.
-To view the UUIDs of all stored sessions, use the :option:`--list-stored-sessions` option.
-
-To retrieve results from a time period, check the :ref:`time period syntax <time-period-syntax>` below.
-
-The ``<aggr>`` subspec specifies how the performance of both the base and target cases should be grouped and aggregated.
-The syntax is the following:
+``<ts_start>`` and ``<ts_end>`` are timestamp denoting the start and end of the requested period.
+More specifically, the syntax of each timestamp is the following:
 
 .. code-block:: console
 
-   <aggr_fn>:[+<groupby>]*
+   <abs_timestamp>[+|-<amount>w|d|h|m]
 
-The ``<aggr_fn>`` is a symbolic name for a function to aggregate the grouped test cases.
+The ``<abs_timestamp>`` is an absolute timestamp in one of the following ``strptime``-compatible formats or the special value ``now``: ``%Y%m%d``, ``%Y%m%dT%H%M``, ``%Y%m%dT%H%M%S``, ``%Y%m%dT%H%M%S%z``.
+
+Optionally, a shift argument can be appended with ``+`` or ``-`` signs, followed by the number of weeks (``w``), days (``d``), hours (``h``) or minutes (``m``).
+
+For example, the period of the last 10 days can be specified as ``now-10d:now``.
+Similarly, the period of the week starting on August 5, 2024 will be specified as ``20240805:20240805+1w``.
+
+.. _testcase-grouping:
+
+Grouping test cases and aggregating performance
+------------------------------------------------
+
+The aggregation specification follows the general syntax:
+
+.. code-block:: console
+
+   <aggr> := <aggr_fn>:[<cols>]
+
+The ``<aggr_fn>`` is a symbolic name for a function to aggregate the performance of the grouped test cases.
 It can take one of the following values:
 
 - ``first``: retrieve the performance data of the first test case only
@@ -1384,7 +1427,7 @@ It can take one of the following values:
 - ``median``: retrieve the median of all test cases
 - ``min``: retrieve the minimum of all test cases
 
-The test cases are always grouped by the following attributes:
+The test cases are by default grouped by the following attributes:
 
 - The test :attr:`~reframe.core.pipeline.RegressionTest.name`
 - The system name
@@ -1393,23 +1436,42 @@ The test cases are always grouped by the following attributes:
 - The performance variable name (see :func:`@performance_function <reframe.core.builtins.performance_function>` and :attr:`~reframe.core.pipeline.RegressionTest.perf_variables`)
 - The performance variable unit
 
-The ``+<groupby>`` subspec specifies additional attributes to group the test cases by.
-Any loggable test attribute can be selected.
+The ``<cols>`` subspec specifies how the test cases will be grouped and can take one of the two following forms:
+
+1. ``+attr1+attr2...``: In this form the test cases will be grouped based on the default group-by attributes plus the user-specified ones (``attr1``, ``attr2`` etc.)
+2. ``attr1,attr2,...``: In this form the test cases will be grouped based on the user-specified attributes only (``attr1``, ``attr2`` etc.).
+
+As an attribute for grouping test cases, any loggable test variable or parameter can be selected, as well as the following pseudo-attributes which are extracted or calculated on-the-fly:
+
+- ``basename``: The test's name stripped off from any parameters.
+  This is a equivalent to the test's class name.
+- ``pvar``: the name of the performance variable
+- ``pval``: the value of the performance variable (i.e., the obtained performance)
+- ``pref``: the reference value of the performance variable
+- ``plower``: the lower threshold of the performance variable as an absolute value
+- ``pupper``: the upper threshold of the performance variable as an absolute value
+- ``punit``: the unit of the performance variable
+- ``pdiff``: the difference as a percentage between the base and target performance values when a performance comparison is attempted.
+  More specifically, ``pdiff = (pval_base - pval_target) / pval_target``.
+- ``psamples``: the number of test cases aggregated.
+- ``sysenv``: The system/partition/environment combination as a single string of the form ``{system}:{partition}+{environ}``
 
 .. note::
 
-   The loggable attributes of a test are the same as the ones list in the logging :attr:`~config.logging.handlers_perflog.format` option but without the ``check_`` prefix.
+   For performance comparisons, either implicit or explicit, the aggregation applies to both the base and target test cases.
 
-Finally, the ``<extra_cols>`` subspec specifies additional test attributes to list as columns in the resulting comparison table.
-The syntax is the following:
+Presenting the results
+----------------------
 
-.. code-block:: console
+The selection of the final columns of the results table is specified by the same syntax as the ``<cols>`` subspec described above.
 
-   [+<col>]*
+However, for performance comparisons, ReFrame will generate two columns for every attribute in the subspec that is not also a group-by attribute, suffixed with ``_A`` and ``_B``.
+These columns contain the aggregated values of the corresponding attributes.
+Note that only the aggregation of ``pval`` (i.e. the test case performance)  can be controlled (see :ref:`testcase-grouping`)
+All other attributes are aggregated by joining their unique values.
 
-``col`` refers to any loggable attribute of the test.
-If these attributes have different values across the aggregated test cases,
-the unique values will be joined using the ``|`` separator.
+Examples
+--------
 
 Here are some examples of performance comparison specs:
 
@@ -1423,34 +1485,31 @@ Here are some examples of performance comparison specs:
 
   .. code-block:: console
 
-     20240701:20240701+1d/20240705:20240705+1d/mean:+job_nodelist/+result
+     20240701:20240701+1d/20240705:20240705+1d/max:+job_nodelist/+result
 
-.. _time-period-syntax:
+Grammar
+-------
 
-Time periods
-============
+The formal grammar of the comparison syntax in BNF form is the following.
+Note that parts that have a grammar defined elsewhere (e.g., Python attributes and expressions, UUIDs etc.) are omitted.
 
-A time period needs to be specified as part of the ``CMPSPEC`` of the :option:`--performance-compare` and :option:`--performance-report` options or as an argument to options that request past results from results database.
+.. code-block:: bnf
 
-The general syntax of time period subspec is the following:
-
-.. code-block:: console
-
-   <ts_start>:<ts_end>
-
-``<ts_start>`` and ``<ts_end>`` are timestamp denoting the start and end of the requested period.
-More specifically, the syntax of each timestamp is the following:
-
-.. code-block:: console
-
-   <abs_timestamp>[+|-<amount>w|d|h|m]
-
-The ``<abs_timestamp>`` is an absolute timestamp in one of the following ``strptime``-compatible formats or the special value ``now``: ``%Y%m%d``, ``%Y%m%dT%H%M``, ``%Y%m%dT%H%M%S``, ``%Y%m%dT%H%M%S%z``.
-
-Optionally, a shift argument can be appended with ``+`` or ``-`` signs, followed by an amount of weeks (``w``), days (``d``), hours (``h``) or minutes (``m``).
-
-For example, the period of the last 10 days can be specified as ``now-10d:now``.
-Similarly, the period of the week starting on August 5, 2024 will be specified as ``20240805:20240805+1w``.
+   <cmpspec> ::= (<select> "/")? <select> "/" <aggr> "/" <cols>
+   <aggr> ::= <aggr_fn> ":" <cols>
+   <aggr_fn> ::= "first" | "last" | "max" | "min" | "mean" | "median"
+   <cols> ::= <extra_cols> | <explicit_cols>
+   <extra_cols> ::= ("+" <attr>)+
+   <explicit_cols> ::= <attr> ("," <attr>)*
+   <attr> ::= /* any Python attribute */
+   <select> ::= <session_uuid> | <session_filter> | <time_period>
+   <session_uuid> ::= /* any valid UUID */
+   <session_filter> ::= "?" <python_expr>
+   <python_expr> ::= /* any valid Python expression */
+   <time_period> ::= <timestamp> ":" <timestamp>
+   <timestamp> ::= ("now" | <abs_timestamp>) (("+" | "-") <number> ("w" | "d" | "h" | "m"))?
+   <abs_timestamp> ::= /* any timestamp of the format `%Y%m%d`, `%Y%m%dT%H%M`, `%Y%m%dT%H%M%S` */
+   <number> ::= [0-9]+
 
 Environment
 ===========

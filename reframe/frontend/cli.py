@@ -401,20 +401,20 @@ def main():
               'for the selected tests and exit'),
     )
     action_options.add_argument(
-        '--delete-stored-session', action='store', metavar='UUID',
-        help='Delete stored session'
+        '--delete-stored-sessions', action='store', metavar='QUERY',
+        help='Delete stored sessions'
     )
     action_options.add_argument(
         '--describe', action='store_true',
         help='Give full details on the selected tests'
     )
     action_options.add_argument(
-        '--describe-stored-session', action='store', metavar='UUID',
+        '--describe-stored-sessions', action='store', metavar='QUERY',
         help='Get detailed session information in JSON'
     )
     action_options.add_argument(
         '--describe-stored-testcases', action='store',
-        metavar='SESSION_UUID|PERIOD',
+        metavar='QUERY',
         help='Get detailed test case information in JSON'
     )
     action_options.add_argument(
@@ -434,12 +434,11 @@ def main():
     )
     action_options.add_argument(
         '--list-stored-sessions', nargs='?', action='store',
-        const='now-1w:now', metavar='PERIOD', help='List stored sessions'
+        const='now-1w:now', metavar='QUERY', help='List stored sessions'
     )
     action_options.add_argument(
-        '--list-stored-testcases', action='store',
-        metavar='SESSION_UUID|PERIOD',
-        help='List stored testcases by session or time period'
+        '--list-stored-testcases', action='store', metavar='QUERY',
+        help='List performance info for stored testcases'
     )
     action_options.add_argument(
         '-l', '--list', nargs='?', const='T', choices=['C', 'T'],
@@ -617,7 +616,7 @@ def main():
               '(default: "now:now/last:+job_nodelist/+result")')
     )
     reporting_options.add_argument(
-        '--session-extras', action='store', metavar='KV_DATA',
+        '--session-extras', action='append', metavar='KV_DATA',
         help='Annotate session with custom key/value data'
     )
 
@@ -641,14 +640,9 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
-        '--table-format', choices=['csv', 'plain', 'pretty'],
+        '--table-format', choices=['csv', 'plain', 'outline', 'grid'],
         help='Table formatting',
         envvar='RFM_TABLE_FORMAT', configvar='general/table_format'
-    )
-    misc_options.add_argument(
-        '--table-hide-columns', metavar='COLS', action='store',
-        help='Hide specific columns from the final table',
-        envvar='RFM_TABLE_HIDE_COLUMNS', configvar='general/table_hide_columns'
     )
     misc_options.add_argument(
         '-v', '--verbose', action='count',
@@ -831,7 +825,7 @@ def main():
         if (options.show_config or
             options.detect_host_topology or
             options.describe or
-            options.describe_stored_session or
+            options.describe_stored_sessions or
             options.describe_stored_testcases):
             logging.getlogger().setLevel(logging.ERROR)
             return True
@@ -983,11 +977,11 @@ def main():
     if options.list_stored_sessions:
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
-            time_period = options.list_stored_sessions
-            if time_period == 'all':
-                time_period = None
+            spec = options.list_stored_sessions
+            if spec == 'all':
+                spec = '19700101T0000+0000:now'
 
-            printer.table(reporting.session_data(time_period))
+            printer.table(reporting.session_data(spec))
             sys.exit(0)
 
     if options.list_stored_testcases:
@@ -995,17 +989,17 @@ def main():
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
             printer.table(reporting.testcase_data(
-                options.list_stored_testcases, namepatt
+                options.list_stored_testcases, namepatt, options.filter_expr
             ))
             sys.exit(0)
 
-    if options.describe_stored_session:
+    if options.describe_stored_sessions:
         # Restore logging level
         printer.setLevel(logging.INFO)
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
             printer.info(jsonext.dumps(reporting.session_info(
-                options.describe_stored_session
+                options.describe_stored_sessions
             ), indent=2))
             sys.exit(0)
 
@@ -1020,11 +1014,12 @@ def main():
             ), indent=2))
             sys.exit(0)
 
-    if options.delete_stored_session:
-        session_uuid = options.delete_stored_session
+    if options.delete_stored_sessions:
+        query = options.delete_stored_sessions
         with exit_gracefully_on_error('failed to delete session', printer):
-            reporting.delete_session(session_uuid)
-            printer.info(f'Session {session_uuid} deleted successfully.')
+            for uuid in reporting.delete_sessions(query):
+                printer.info(f'Session {uuid} deleted successfully.')
+
             sys.exit(0)
 
     if options.performance_compare:
@@ -1033,7 +1028,9 @@ def main():
                                       printer):
             printer.table(
                 reporting.performance_compare(options.performance_compare,
-                                              namepatt=namepatt)
+                                              None,
+                                              namepatt,
+                                              options.filter_expr)
             )
             sys.exit(0)
 
@@ -1598,9 +1595,10 @@ def main():
             if options.session_extras:
                 # Update report's extras
                 extras = {}
-                for arg in options.session_extras.split(','):
-                    k, v = arg.split('=', maxsplit=1)
-                    extras[k] = v
+                for sess in options.session_extras:
+                    for arg in sess.split(','):
+                        k, v = arg.split('=', maxsplit=1)
+                        extras[k] = v
 
                 report.update_extras(extras)
 
