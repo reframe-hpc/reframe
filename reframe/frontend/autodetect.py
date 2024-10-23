@@ -152,6 +152,10 @@ def _remote_detect(part):
         ]
         job.prepare(commands, env, trap_errors=True, login=use_login_shell)
 
+    def _emit_custom_script(job, env, commands):
+        commands.append('reframe --detect-host-topology=topo.json')
+        job.prepare(commands, env, trap_errors=True, login=use_login_shell)
+
     getlogger().info(
         f'Detecting topology of remote partition {part.fullname!r}: '
         f'this may take some time...'
@@ -159,17 +163,21 @@ def _remote_detect(part):
     topo_info = {}
     try:
         prefix = runtime.runtime().get_option('general/0/remote_workdir')
+        custom_command = runtime.runtime().get_option(
+            'general/0/remote_install'
+        )
         with _copy_reframe(prefix) as (dirname, use_pip):
             with osext.change_dir(dirname):
                 job = Job.create(part.scheduler,
                                  part.launcher_type(),
                                  name='rfm-detect-job',
                                  sched_access=part.access)
-                if use_pip:
+                if custom_command:
+                    _emit_custom_script(job, [part.local_env], custom_command)
+                elif use_pip:
                     _emit_script_for_pip(job, [part.local_env])
                 else:
                     _emit_script_for_source(job, [part.local_env])
-
                 getlogger().debug('submitting detection script')
                 _log_contents(job.script_filename)
                 job.submit()
@@ -195,7 +203,7 @@ def detect_topology():
     for part in rt.system.partitions:
         getlogger().debug(f'detecting topology info for {part.fullname}')
         found_procinfo = False
-        found_devinfo  = False
+        found_devinfo = False
         if part.processor.info != {}:
             # Processor info set up already in the configuration
             getlogger().debug(
