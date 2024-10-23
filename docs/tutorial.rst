@@ -2022,7 +2022,7 @@ Note that a session may contain multiple runs of the same test.
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=aa953baf-63d9-47b1-8800-1c6d05883334/mean:/
+   reframe --list-stored-testcases=aa953baf-63d9-47b1-8800-1c6d05883334/max:/
 
 .. code-block:: console
 

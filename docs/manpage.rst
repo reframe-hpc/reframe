@@ -1401,7 +1401,7 @@ More specifically, the syntax of each timestamp is the following:
 
 The ``<abs_timestamp>`` is an absolute timestamp in one of the following ``strptime``-compatible formats or the special value ``now``: ``%Y%m%d``, ``%Y%m%dT%H%M``, ``%Y%m%dT%H%M%S``, ``%Y%m%dT%H%M%S%z``.
 
-Optionally, a shift argument can be appended with ``+`` or ``-`` signs, followed by an amount of weeks (``w``), days (``d``), hours (``h``) or minutes (``m``).
+Optionally, a shift argument can be appended with ``+`` or ``-`` signs, followed by the number of weeks (``w``), days (``d``), hours (``h``) or minutes (``m``).
 
 For example, the period of the last 10 days can be specified as ``now-10d:now``.
 Similarly, the period of the week starting on August 5, 2024 will be specified as ``20240805:20240805+1w``.
