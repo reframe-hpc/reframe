@@ -49,10 +49,7 @@
         "handler_common": {
             "type": "object",
             "properties": {
-                "type": {
-                    "type": "string",
-                    "enum": ["file", "filelog", "graylog", "stream", "syslog", "httpjson"]
-                },
+                "type": {"type": "string"},
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},
                 "format_perfvars": {"type": "string"},
