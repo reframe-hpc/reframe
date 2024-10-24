@@ -31,7 +31,8 @@ from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev, nodelist_expand, OrderedSet
 from .storage import StorageBackend
-from .utility import Aggregator, parse_cmp_spec, parse_query_spec
+from .utility import (Aggregator, parse_cmp_spec,
+                      parse_query_spec, parse_time_period)
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
@@ -406,7 +407,7 @@ class RunReport:
 
         start = time_period.get('start', '19700101T0000+0000')
         end = time_period.get('end', 'now')
-        ts_start, ts_end = parse_time_period(f'{start}:{end}')
+        qs = parse_query_spec(f'{start}:{end}')
         include_sessions = set(include_sessions) if include_sessions else set()
         exclude_sessions = set(exclude_sessions) if exclude_sessions else set()
         reports = []
@@ -420,8 +421,7 @@ class RunReport:
                 )
                 continue
 
-            sessions = src_backend.fetch_sessions_time_period(ts_start, ts_end)
-            for sess in sessions:
+            for sess in src_backend.fetch_sessions(qs):
                 uuid = sess['session_info']['uuid']
                 if include_sessions and uuid not in include_sessions:
                     continue
