@@ -358,8 +358,12 @@ class SlurmJobScheduler(sched.JobScheduler):
         if reservation:
             reservation = reservation.strip()
             nodes &= self._get_reservation_nodes(reservation)
-            self.log(f'[F] Filtering nodes by reservation {reservation}: '
-                     f'available nodes now: {len(nodes)}')
+        else:
+            nodes = {node for node in nodes if not node.in_state('RESERVED')}
+
+        self.log(f'[F] Filtering nodes by reservation={reservation}: '
+                 f'available nodes now: {len(nodes)}')
+
         if partitions:
             partitions = set(partitions.strip().split(','))
         else:
@@ -693,8 +697,13 @@ class _SlurmNode(sched.Node):
         return self._states == set(state.upper().split('+'))
 
     def is_avail(self):
-        return any(self.in_statex(s)
-                   for s in ('ALLOCATED', 'COMPLETING', 'IDLE'))
+        available_states = {
+            'ALLOCATED',
+            'COMPLETING',
+            'IDLE',
+            'RESERVED',
+        }
+        return self._states <= available_states
 
     def is_down(self):
         return not self.is_avail()
