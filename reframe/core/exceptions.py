@@ -7,7 +7,6 @@
 # Base regression exceptions
 #
 
-import contextlib
 import inspect
 import os
 
@@ -164,24 +163,6 @@ class CommandLineError(ReframeError):
 
 class BuildError(ReframeError):
     '''Raised when a build fails.'''
-
-    def __init__(self, stdout, stderr, prefix=None):
-        super().__init__()
-        num_lines = 10
-        prefix = prefix or '.'
-        lines = [
-            f'stdout: {stdout!r}, stderr: {stderr!r}',
-            f'--- {stderr} (first {num_lines} lines) ---'
-        ]
-        with contextlib.suppress(OSError):
-            with open(os.path.join(prefix, stderr)) as fp:
-                for i, line in enumerate(fp):
-                    if i < num_lines:
-                        # Remove trailing '\n'
-                        lines.append(line[:-1])
-
-        lines += [f'--- {stderr} --- ']
-        self._message = '\n'.join(lines)
 
 
 class SpawnedProcessError(ReframeError):
