@@ -1092,10 +1092,11 @@ def main():
 
             for rpt in reports:
                 uuid = rpt.store()
-                printer.info(f'Successfully imported session {uuid}')
+                printer.verbose(f'Successfully imported session {uuid}')
 
+            printer.info(f'Successfully imported {len(reports)} sessions')
             if not reports:
-                printer.info('No sessions have been imported')
+                printer.warning('No sessions have been imported')
 
             sys.exit(0)
 
