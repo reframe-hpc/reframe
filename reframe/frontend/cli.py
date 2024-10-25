@@ -438,6 +438,13 @@ def main():
         help=('Detect the local host topology and exit, '
               'optionally saving it in FILE')
     )
+    # CONFIGURATION
+    action_options.add_argument(
+        '--detect-configuration', metavar='FILE', action='store',
+        nargs='?', const='-',
+        help=('Detect the local host topology and exit, '
+              'optionally saving it in FILE')
+    )
     action_options.add_argument(
         '--dry-run', action='store_true',
         help='Dry run the tests without submitting them for execution'
@@ -872,6 +879,13 @@ def main():
     if not restrict_logging():
         printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
 
+    if options.detect_configuration:
+        site_config = config.detect_config()
+        printer.info('Hello, I am under development, '
+                     'but I am supposed to detect the configuration automatically')
+
+        sys.exit(0)
+
     # Now configure ReFrame according to the user configuration file
     try:
         # Issue a deprecation warning if the old `RFM_CONFIG_FILE` is used
@@ -916,7 +930,7 @@ def main():
                     "instead"
                 )
                 autodetect_methods = ['cat /etc/xthostname',
-                                      'py::socket.gethostname']
+                                    'py::socket.gethostname']
 
         if autodetect_methods:
             site_config.set_autodetect_methods(autodetect_methods)
@@ -926,7 +940,7 @@ def main():
         # partition level and will be caught when we will instantiating
         # internally the system and partitions later on.
         site_config.select_subconfig(options.system,
-                                     ignore_resolve_errors=True)
+                                    ignore_resolve_errors=True)
         for err in options.update_config(site_config):
             printer.warning(str(err))
 
