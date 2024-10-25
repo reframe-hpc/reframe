@@ -8,7 +8,7 @@
 #
 
 __all__ = ['simple_test']
-
+_TREAT_WARNINGS_AS_ERRORS = False
 
 import inspect
 import sys
@@ -104,7 +104,7 @@ class TestRegistry:
                     kwargs['reset_sysenv'] = reset_sysenv
                     leaf_tests.append(test(*args, **kwargs))
                 except SkipTestError as e:
-                    getlogger().verbose(
+                    getlogger().warning(
                         f'skipping test {test.__qualname__!r}: {e}'
                     )
                 except Exception:
@@ -170,11 +170,23 @@ def _validate_test(cls):
                                  'subclass of RegressionTest')
 
     if (cls.is_abstract()):
+        params = cls.param_space.params
+        undefined_params = []
+        for param in params:
+            if params[param].is_abstract():
+                undefined_params.append(param)
+        # Raise detailed warning
+        if _TREAT_WARNINGS_AS_ERRORS:
+            raise ValueError(
+                f'skipping test {cls.__qualname__!r}: ' +
+                f'test has the following undefined parameters: ' +
+                ', '.join(undefined_params)
+            )
         getlogger().warning(
-            f'skipping test {cls.__qualname__!r}: '
-            f'test has one or more undefined parameters'
+            f'skipping test {cls.__qualname__!r}: ' +
+            f'test has the following undefined parameters: ' +
+            ', '.join(undefined_params)
         )
-        return False
 
     conditions = [VersionValidator(v) for v in cls._rfm_required_version]
     if (cls._rfm_required_version and

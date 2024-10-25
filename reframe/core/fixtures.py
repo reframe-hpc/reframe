@@ -775,8 +775,14 @@ class TestFixture:
 
         # Check that the fixture class is not an abstract test.
         if cls.is_abstract():
+            params = cls.param_space.params
+            undefined_params = []
+            for param in params:
+                if params[param].is_abstract():
+                    undefined_params.append(param)
             raise ValueError(
-                f'class {cls.__qualname__!r} has undefined parameters'
+                f'class {cls.__qualname__!r} has undefined parameters: ' +
+                ', '.join(undefined_params)
             )
 
         # Validate the scope
