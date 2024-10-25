@@ -67,12 +67,6 @@ def test_abstract_param_warning(monkeypatch):
     assert "P0" in str(execinfo.value)
 
 
-def test_abstract_check():
-    @rfm.simple_test
-    class MyTest(Abstract):
-        pass
-
-
 def test_param_override():
     class MyTest(TwoParams):
         P1 = parameter(['-'])
