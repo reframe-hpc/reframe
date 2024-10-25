@@ -104,7 +104,7 @@ class TestRegistry:
                     kwargs['reset_sysenv'] = reset_sysenv
                     leaf_tests.append(test(*args, **kwargs))
                 except SkipTestError as e:
-                    getlogger().warning(
+                    getlogger().verbose(
                         f'skipping test {test.__qualname__!r}: {e}'
                     )
                 except Exception:
