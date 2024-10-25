@@ -10,6 +10,7 @@ import inspect
 
 import reframe as rfm
 from reframe.core.exceptions import ReframeSyntaxError
+import reframe.core.decorators as decorators
 
 
 class NoParams(rfm.RunOnlyRegressionTest):
@@ -52,6 +53,24 @@ def test_abstract_param():
 
     assert MyTest.param_space['P0'] == ()
     assert MyTest.param_space['P1'] == ('b',)
+
+
+def test_abstract_param_warning(monkeypatch):
+    monkeypatch.setattr(decorators, '_TREAT_WARNINGS_AS_ERRORS', True)
+
+    class MyTest(Abstract):
+        pass
+
+    with pytest.raises(ValueError) as execinfo:
+        decorators._validate_test(MyTest)
+
+    assert "P0" in str(execinfo.value)
+
+
+def test_abstract_check():
+    @rfm.simple_test
+    class MyTest(Abstract):
+        pass
 
 
 def test_param_override():
