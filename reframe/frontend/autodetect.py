@@ -38,7 +38,7 @@ def _log_contents(filename):
                       f'--- {filename} ---')
 
 
-class _copy_reframe:
+class _prepare_reframe:
     def __init__(self, prefix):
         self._prefix = prefix
         self._workdir = None
@@ -162,15 +162,15 @@ def _remote_detect(part):
     topo_info = {}
     try:
         prefix = runtime.runtime().get_option('general/0/remote_workdir')
-        custom_command = runtime.runtime().get_option(
-            'general/0/remote_install'
-        )
-        with _copy_reframe(prefix) as (dirname, use_pip):
+        with _prepare_reframe(prefix) as (dirname, use_pip):
             with osext.change_dir(dirname):
                 job = Job.create(part.scheduler,
                                  part.launcher_type(),
                                  name='rfm-detect-job',
                                  sched_access=part.access)
+                custom_command = runtime.runtime().get_option(
+                    'general/0/remote_install'
+                )
                 if custom_command:
                     _emit_custom_script(job, [part.local_env], custom_command)
                 elif use_pip:

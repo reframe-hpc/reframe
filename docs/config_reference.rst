@@ -618,18 +618,22 @@ System Partition Configuration
    #. If the corresponding metadata files are not found, the processor information will be auto-detected.
       If the system partition is local (i.e., ``local`` scheduler + ``local`` launcher), the processor information is auto-detected unconditionally and stored in the corresponding metadata file for this partition.
       If the partition is remote, ReFrame will not try to auto-detect it unless the :envvar:`RFM_REMOTE_DETECT` or the :attr:`general.remote_detect` configuration option is set.
-      The installation of ReFrame in the remote partition for the auto-detection of processor topology can be configured through the :attr:`general.remote_install` configuration option.
       The steps to auto-detect the remote processor information are the following:
 
 
         a. ReFrame creates a temporary directory created under ``.`` by default.
            This temporary directory prefix can be changed by setting the :envvar:`RFM_REMOTE_WORKDIR` environment variable or the :attr:`general.remote_workdir` configuration option.
+           The directory specified with :envvar:`RFM_REMOTE_WORKDIR` or :attr:`general.remote_workdir` must be a shared directory between the remote node and the one ReFrame is running on.
 
-        b. ReFrame changes to that directory and launches a job for the topology auto-detection ``reframe --detect-host-topology=topo.json``.
+        b. ReFrame changes to that directory and creates a clone of itself there:
+
+         - A set of custom commands for the ReFrame installation can be specified through :attr:`general.remote_install` configuration option (as a list). The installation commands must make sure that the fresh ReFrame clone is found in the system path.
+
+         - If no custom commands are passed, ReFrame tries to perform the installation first using ``./bootstrap.sh``. If this is not possible, it tries to use ``pip``.
+
+
+        c. ReFrame launches a job for the topology auto-detection ``reframe --detect-host-topology=topo.json``.
            The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host, which in this case would be one of the remote compute nodes.
-
-         - If a custom set of commands for the remote installation of ReFrame is specified through :attr:`general.remote_install`, ReFrame launches a job with the passed list of commands. The command ``reframe --detect-host-topology=topo.json`` is always added as a last command. Thus, the installation commands must make sure that the reframe installation is found.
-         - Otherwise, ReFrame creates a fresh clone of itself in the temporary directory and launches a job that will first bootstrap the fresh clone and then run that clone with ``{launcher} ./bin/reframe --detect-host-topology=topo.json``.
 
       In case of errors during auto-detection, ReFrame will simply issue a warning and continue.
 

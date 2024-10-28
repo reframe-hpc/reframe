@@ -54,25 +54,23 @@ def default_exec_ctx(make_exec_ctx_g, temp_topo):
     yield from make_exec_ctx_g()
 
 
+@pytest.fixture(params=['default', 'custom_install'])
+def custom_install(request):
+    return request.param == 'custom_install'
+
+
 @pytest.fixture
-def remote_exec_ctx(request, make_exec_ctx, temp_topo):
+def remote_exec_ctx(make_exec_ctx, temp_topo, custom_install, monkeypatch):
     if test_util.USER_CONFIG_FILE is None:
         pytest.skip('no user configuration file supplied')
 
-    custom_install = getattr(request, 'param', False)
+    options = {'general/remote_detect': True}
+    if custom_install:
+        options.update({'general/remote_install': ['echo \'{"dummy": "value"}\' > topo.json']})
 
-    if not custom_install:
-        ctx = make_exec_ctx(test_util.USER_CONFIG_FILE,
-                            test_util.USER_SYSTEM,
-                            {'general/remote_detect': True})
-    else:
-        ctx = make_exec_ctx(test_util.USER_CONFIG_FILE,
-                            test_util.USER_SYSTEM,
-                            {'general/remote_detect': True,
-                             'general/remote_install': [
-                                 'echo \'{"dummy": "value"}\' > topo.json',
-                             ]})
-    yield ctx
+    yield make_exec_ctx(test_util.USER_CONFIG_FILE,
+                        test_util.USER_SYSTEM,
+                        options)
 
 
 @pytest.fixture
@@ -120,13 +118,12 @@ def test_autotect_with_invalid_files(invalid_topo_exec_ctx):
     assert part.devices == []
 
 
-@pytest.mark.parametrize('remote_exec_ctx', [False, True], indirect=True)
 def test_remote_autodetect(remote_exec_ctx):
     # All we can do with this test is to trigger the remote auto-detection
     # path; since we don't know what the remote user system is, we cannot test
     # if the topology is right.
-    # When the parameter in remote_exec_ctx is set to True, custom remote
-    # installation commands are tested creating a dummy json like topo.json.
+    # In the custom_remote test installation commands are tested creating
+    # a dummy json like topo.json.
     # This is done to avoid a warning (which would be raised as an error)
     # when ReFrame tries to search for the topo.json after
     # reframe --detect-host-topology=topo.json, thus checking that the custom
