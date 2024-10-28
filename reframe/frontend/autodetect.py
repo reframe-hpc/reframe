@@ -202,7 +202,7 @@ def detect_topology():
     for part in rt.system.partitions:
         getlogger().debug(f'detecting topology info for {part.fullname}')
         found_procinfo = False
-        found_devinfo = False
+        found_devinfo  = False
         if part.processor.info != {}:
             # Processor info set up already in the configuration
             getlogger().debug(
