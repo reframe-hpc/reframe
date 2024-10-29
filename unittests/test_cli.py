@@ -1322,6 +1322,36 @@ def test_storage_options(run_reframe, tmp_path, table_format):
     assert_no_crash(*run_reframe2(action=f'--delete-stored-session={uuid}'))
 
 
+@pytest.fixture(params=[
+    '--delete-stored-sessions=now-1d:now',
+    '--describe-stored-sessions=now-1d:now',
+    '--describe-stored-testcases=now-1d:now',
+    '--list-stored-sessions',
+    '--list-stored-testcases=now-1d:now/mean:/',
+    '--performance-compare=now-1d:now/now-1d/mean:/',
+    '--performance-report=now-1d:now/mean:/'
+])
+def storage_option(request):
+    return request.param
+
+
+def test_disabled_results_storage(run_reframe, storage_option, monkeypatch):
+    monkeypatch.setenv('RFM_ENABLE_RESULTS_STORAGE', 'no')
+    if storage_option.startswith('--performance-report'):
+        more_options = [storage_option]
+        action = '-r'
+    else:
+        more_options = []
+        action = storage_option
+
+    stdout = assert_no_crash(*run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action=action,
+        more_options=more_options
+    ), exitcode=1)[1]
+    assert 'requires results storage' in stdout
+
+
 def test_session_annotations(run_reframe):
     assert_no_crash(*run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
