@@ -2000,111 +2000,111 @@ its unique identifier, its start and end time and how many test cases have run:
    ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
    │ UUID                                 │ Start time           │ End time             │   Num runs │   Num cases │
    ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
-   │ fedb2cf8-6efa-43d8-a6dc-e72c868deba6 │ 20240823T104554+0000 │ 20240823T104557+0000 │          1 │           1 │
-   │ 4253d6b3-3926-4c4c-a7e8-3f7dffe9bf23 │ 20240823T104608+0000 │ 20240823T104612+0000 │          1 │           1 │
-   │ 453e64a2-f941-49e2-b628-bf50883a6387 │ 20240823T104721+0000 │ 20240823T104725+0000 │          1 │           1 │
-   │ d923cca2-a72b-43ca-aca1-de741b65088b │ 20240823T104753+0000 │ 20240823T104757+0000 │          1 │           1 │
-   │ 300b973b-84a6-4932-89eb-577a832fe357 │ 20240823T104814+0000 │ 20240823T104815+0000 │          1 │           2 │
-   │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e │ 20240823T104834+0000 │ 20240823T104835+0000 │          1 │           4 │
-   │ 2a00c55d-4492-498c-89f0-7cf821f308c1 │ 20240823T104843+0000 │ 20240823T104845+0000 │          1 │           4 │
-   │ 98fe5a68-2582-49ca-9c3c-6bfd9b877143 │ 20240823T104902+0000 │ 20240823T104903+0000 │          1 │           4 │
-   │ 4bbc27bc-be50-4cca-9d1b-c5fb4988a5c0 │ 20240823T104922+0000 │ 20240823T104933+0000 │          1 │          26 │
-   │ 200ea28f-6c3a-4973-a2b7-aa08408dbeec │ 20240823T104939+0000 │ 20240823T104943+0000 │          1 │          10 │
-   │ b756755b-3181-4bb4-9eaa-cc8c3a9d7a43 │ 20240823T104955+0000 │ 20240823T104956+0000 │          1 │          10 │
-   │ a8a99808-c22d-4b9c-83bc-164289fe6aa7 │ 20240823T105007+0000 │ 20240823T105007+0000 │          1 │           4 │
-   │ f9b63cdc-7dda-44c5-ab85-1e9752047834 │ 20240823T105019+0000 │ 20240823T105020+0000 │          1 │          10 │
-   │ 271fc2e7-b550-4325-b8bb-57bdf95f1d0d │ 20240823T105020+0000 │ 20240823T105020+0000 │          1 │           1 │
-   │ 50cdb774-f231-4f61-8472-7daaa5199d57 │ 20240823T105031+0000 │ 20240823T105032+0000 │          1 │           5 │
+   │ 340178ef-a51e-4ce8-8476-1e42ceb2efdd │ 20241011T092927+0000 │ 20241011T092930+0000 │          1 │           1 │
+   │ 68f9a457-f132-459f-8c11-0e6533be3a24 │ 20241011T092931+0000 │ 20241011T092934+0000 │          1 │           1 │
+   │ c1d3e813-e783-41aa-92b6-e7ff8eb3e4ec │ 20241011T092934+0000 │ 20241011T092935+0000 │          1 │           2 │
+   │ 6a79ccf5-95c4-4cc0-a4a2-b3e49012565b │ 20241011T092936+0000 │ 20241011T092937+0000 │          1 │           4 │
+   │ aa953baf-63d9-47b1-8800-1c6d05883334 │ 20241011T092938+0000 │ 20241011T092939+0000 │          1 │           4 │
+   │ e8b23332-534a-4f48-aff7-1ae9d4085ecc │ 20241011T092939+0000 │ 20241011T092951+0000 │          1 │          26 │
+   │ 57cfb5f3-94dd-4e7f-87c9-648a651b1337 │ 20241011T092951+0000 │ 20241011T092955+0000 │          1 │          10 │
+   │ ec116664-5534-462f-aa33-87dad3bd794b │ 20241011T092956+0000 │ 20241011T092957+0000 │          1 │          10 │
+   │ 92eaa50e-af92-411f-a11e-47e9fa938202 │ 20241011T092957+0000 │ 20241011T092957+0000 │          1 │           4 │
+   │ 5bb110fd-9f6a-487d-af4f-4ab582406047 │ 20241011T092958+0000 │ 20241011T092959+0000 │          1 │          10 │
+   │ 4a522d23-6ae4-4a28-bf39-d2872badcf01 │ 20241011T092959+0000 │ 20241011T092959+0000 │          1 │           1 │
+   │ 2a6bb3b7-93d3-41ed-8618-48c268de5fcb │ 20241011T093000+0000 │ 20241011T093001+0000 │          1 │           5 │
    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
 
-You can use the :option:`--list-stored-testcases` to list the test cases of a specific session or those that have run within a certain period of time:
+
+You can use :option:`--list-stored-testcases` to list the test cases of a specific session or those that have run within a certain period of time.
+In the following example, we list the test cases of session ``aa953baf-63d9-47b1-8800-1c6d05883334`` showing the maximum performance for every performance variable.
+Note that a session may contain multiple runs of the same test.
 
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e
+   reframe --list-stored-testcases=aa953baf-63d9-47b1-8800-1c6d05883334/max:/
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┑
-   │ Name                                    │ SysEnv                    │ Nodelist   │ Completion Time      │ Result   │ UUID                                     │
-   ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┥
-   │ build_stream ~tutorialsys:default+gnu   │ tutorialsys:default+gnu   │            │ n/a                  │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:0 │
-   │ build_stream ~tutorialsys:default+clang │ tutorialsys:default+clang │            │ n/a                  │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:1 │
-   │ stream_test                             │ tutorialsys:default+gnu   │ myhost     │ 20240823T104835+0000 │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:2 │
-   │ stream_test                             │ tutorialsys:default+clang │ myhost     │ 20240823T104835+0000 │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:3 │
-   ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┙
+   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┑
+   │ name        │ sysenv                    │ pvar     │ punit   │    pval │
+   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┥
+   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ MB/s    │ 25169.3 │
+   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ MB/s    │ 19387.8 │
+   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ MB/s    │ 25129.7 │
+   │ stream_test │ tutorialsys:default+clang │ triad_bw │ MB/s    │ 29232.8 │
+   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
 
+The grouping of the test cases, the aggregation and the actual columns shown in the final table are fully configurable.
+The exact syntax and the various posibilities are described in :ref:`querying-past-results`.
 
-The test case UUID comprises the UUID of the session where this test case belongs to, its run index (which run inside the session) and its test case index inside the run.
-A session may have multiple runs if it has retried some failed test cases (see :option:`--max-retries`) or if it has run its tests repeatedly (see :option:`--reruns` and :option:`--duration`).
-
-You can also list the test cases that have run in a certain period of time use the :ref:`time period <time-period-syntax>` of :option:`--list-stored-testcases`:
+You can also list the test cases that have run in a certain period of time by passing a time period argument to :option:`--list-stored-testcases`.
+For example, the following will list the mean performance of all test cases that have run the last day:
 
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=20240823T104835+0000:now
+   reframe --list-stored-testcases=now-1d:now/mean:/
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┑
-   │ Name                                                │ SysEnv                    │ Nodelist   │ Completion Time      │ Result   │ UUID                                      │
-   ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┥
-   │ stream_test                                         │ tutorialsys:default+gnu   │ myhost     │ 20240823T104835+0000 │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:2  │
-   │ stream_test                                         │ tutorialsys:default+clang │ myhost     │ 20240823T104835+0000 │ pass     │ 1fb8488e-c361-4355-b7df-c0dcf3cdcc1e:0:3  │
-   │ stream_test                                         │ tutorialsys:default+gnu   │ myhost     │ 20240823T104844+0000 │ pass     │ 2a00c55d-4492-498c-89f0-7cf821f308c1:0:2  │
-   │ stream_test                                         │ tutorialsys:default+clang │ myhost     │ 20240823T104845+0000 │ pass     │ 2a00c55d-4492-498c-89f0-7cf821f308c1:0:3  │
-   │ stream_test                                         │ tutorialsys:default+gnu   │ myhost     │ 20240823T104903+0000 │ pass     │ 98fe5a68-2582-49ca-9c3c-6bfd9b877143:0:2  │
-   │ stream_test                                         │ tutorialsys:default+clang │ myhost     │ 20240823T104903+0000 │ pass     │ 98fe5a68-2582-49ca-9c3c-6bfd9b877143:0:3  │
+   ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┑
+   │ name                                                │ sysenv                       │ pvar     │ punit   │    pval │
+   ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┥
+   │ stream_test                                         │ generic:default+builtin      │ copy_bw  │ MB/s    │   40288 │
+   │ stream_test                                         │ generic:default+builtin      │ triad_bw │ MB/s    │ 30530.1 │
+   │ stream_test                                         │ tutorialsys:default+baseline │ copy_bw  │ MB/s    │ 40305.1 │
+   │ stream_test                                         │ tutorialsys:default+baseline │ triad_bw │ MB/s    │ 30540.6 │
    ...
-   │ T6                                                  │ generic:default+builtin   │ myhost     │ 20240823T105020+0000 │ pass     │ 271fc2e7-b550-4325-b8bb-57bdf95f1d0d:0:0  │
-   │ T0                                                  │ generic:default+builtin   │ myhost     │ 20240823T105031+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:0  │
-   │ T4                                                  │ generic:default+builtin   │ myhost     │ 20240823T105031+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:1  │
-   │ T5                                                  │ generic:default+builtin   │ myhost     │ 20240823T105031+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:2  │
-   │ T1                                                  │ generic:default+builtin   │ myhost     │ 20240823T105031+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:3  │
-   │ T6                                                  │ generic:default+builtin   │ myhost     │ 20240823T105032+0000 │ pass     │ 50cdb774-f231-4f61-8472-7daaa5199d57:0:4  │
-   ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┙
+   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+gnu      │ copy_bw  │ MB/s    │ 46906.3 │
+   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+gnu      │ triad_bw │ MB/s    │ 35309.3 │
+   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+clang    │ copy_bw  │ MB/s    │ 46811.4 │
+   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+clang    │ triad_bw │ MB/s    │ 35634.3 │
+   ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
 
-To get all the details of a session or a set of test cases you can use the :option:`--describe-stored-session` and :option:`--describe-stored-testcases` options which will return a JSON record with all the details.
+Note that the :option:`--list-stored-testcases` will list only performance tests.
+You can get all the details of stored sessions or a set of test cases using the :option:`--describe-stored-sessions` and :option:`--describe-stored-testcases` options which will return a detailed JSON record.
 
-You can also combine the :option:`-n` option with the :option:`--list-stored-testcases` and :option:`--describe-stored-testcases` options in order to restrict the listing to specific tests only:
+You can also combine :option:`--list-stored-testcases` and :option:`--describe-stored-testcases`  with the :option:`-n` and :option:`-E` options in order to restrict the listing to specific tests only:
 
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=20240823T104835+0000:now -n stream_test
+   reframe --list-stored-testcases=now-1d:now/mean:/ -n 'stream_test %' -E 'num_threads == 2'
 
 
 Comparing performance of test cases
 -----------------------------------
 
 ReFrame can be used to compare the performance of the same test cases run in different time periods using the :option:`--performance-compare` option.
-The following will compare the performance of the test cases of the session ``1fb8488e-c361-4355-b7df-c0dcf3cdcc1e`` with any other same test case that has run the last 24h:
+The following will compare the performance of the test cases of the session ``aa953baf-63d9-47b1-8800-1c6d05883334`` with any other same test case that has run the last 24h:
 
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --performance-compare=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e/now-1d:now/mean:/
+   reframe --performance-compare=aa953baf-63d9-47b1-8800-1c6d05883334/now-1d:now/mean:/
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┑
-   │ name        │ sysenv                    │ pvar     │    pval │ punit   │ pdiff   │
-   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┥
-   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ 44139   │ MB/s    │ +11.14% │
-   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ 39344.7 │ MB/s    │ +20.77% │
-   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ 44979.1 │ MB/s    │ +10.81% │
-   │ stream_test │ tutorialsys:default+clang │ triad_bw │ 39330.8 │ MB/s    │ +8.28%  │
-   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
+   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┑
+   │ name        │ sysenv                    │ pvar     │ punit   │   pval_A │   pval_B │ pdiff   │
+   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┥
+   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ MB/s    │  25169.3 │  46554.8 │ -45.94% │
+   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ MB/s    │  19387.8 │  37660.5 │ -48.52% │
+   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ MB/s    │  25129.7 │  47072.2 │ -46.61% │
+   │ stream_test │ tutorialsys:default+clang │ triad_bw │ MB/s    │  29232.8 │  40177.2 │ -27.24% │
+   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┙
 
-The :option:`-n` option can also be combined with :option:`--performance-compare` to restrict the test cases listed.
-Similarly to the :option:`--performance-compare` option, the :option:`--performance-report` option can compare the performance of the current run with any arbitrary past session or past time period.
+Note that the absolute base performance (``pval_A`` column) is listed along with the target performance (``pval_B`` column).
 
-Finally, you can delete completely a stored session using the :option:`--delete-stored-session` option:
+:option:`--performance-compare` can also be combined with the :option:`-n` and :option:`-E` options in order to restrict the comparison to specific tests only.
+
+Similarly, the :option:`--performance-report` option can compare the performance of the current run with any arbitrary past session or past time period.
+
+Finally, a stored session can be deleted using the :option:`--delete-stored-sessions` option:
 
 .. code-block:: bash
 
-   reframe --delete-stored-session=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e
+   reframe --delete-stored-sessions=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e
 
 Deleting a session will also delete all its test cases from the database.

@@ -49,10 +49,7 @@
         "handler_common": {
             "type": "object",
             "properties": {
-                "type": {
-                    "type": "string",
-                    "enum": ["file", "filelog", "graylog", "stream", "syslog", "httpjson"]
-                },
+                "type": {"type": "string"},
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},
                 "format_perfvars": {"type": "string"},
@@ -596,7 +593,7 @@
         "general/report_junit": null,
         "general/resolve_module_conflicts": true,
         "general/save_log_files": false,
-        "general/table_format": "pretty",
+        "general/table_format": "outline",
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "%Y%m%dT%H%M%S%z",
         "general/trap_job_errors": false,

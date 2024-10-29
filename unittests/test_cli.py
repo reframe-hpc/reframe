@@ -1257,7 +1257,7 @@ def test_testlib_inherit_fixture_in_different_files(run_reframe):
     assert 'FAILED' not in stdout
 
 
-@pytest.fixture(params=['csv', 'plain', 'pretty'])
+@pytest.fixture(params=['csv', 'plain', 'grid', 'outline'])
 def table_format(request):
     return request.param
 
@@ -1291,27 +1291,20 @@ def test_storage_options(run_reframe, tmp_path, table_format):
     stdout = assert_no_crash(
         *run_reframe2(action=f'--describe-stored-session={uuid}')
     )[1]
-    session_json = json.loads(stdout)
+    sessions = json.loads(stdout)
 
     # List test cases by session
-    assert_no_crash(*run_reframe2(action=f'--list-stored-testcases={uuid}'))
+    assert_no_crash(*run_reframe2(
+        action=f'--list-stored-testcases={uuid}/mean:/'
+    ))
     assert_no_crash(
         *run_reframe2(action=f'--describe-stored-testcases={uuid}')
     )
 
-    # Check hiding of table column
-    stdout = assert_no_crash(*run_reframe2(
-        action=f'--list-stored-testcases={uuid}',
-        more_options=['--table-hide-columns=SysEnv,Nodelist,UUID']
-    ))[1]
-    assert 'SysEnv' not in stdout
-    assert 'Nodelist' not in stdout
-    assert 'UUID' not in stdout
-
     # List test cases by time period
-    ts_start = session_json['session_info']['time_start']
+    ts_start = sessions[0]['session_info']['time_start']
     assert_no_crash(
-        *run_reframe2(action=f'--list-stored-testcases={ts_start}:now')
+        *run_reframe2(action=f'--list-stored-testcases={ts_start}:now/mean:/')
     )
     assert_no_crash(
         *run_reframe2(action=f'--describe-stored-testcases={ts_start}:now')
@@ -1334,6 +1327,7 @@ def test_session_annotations(run_reframe):
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         action='-r',
         more_options=['--session-extras', 'key1=val1,key2=val2',
+                      '--session-extras', 'key3=val3',
                       '-n', '^PerformanceFailureCheck']
     ), exitcode=1)
 

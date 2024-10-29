@@ -8,9 +8,8 @@ import re
 import statistics
 import types
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from numbers import Number
-from .storage import StorageBackend
 
 
 class Aggregator:
@@ -28,6 +27,8 @@ class Aggregator:
             return AggrMin(*args, **kwargs)
         elif name == 'max':
             return AggrMax(*args, **kwargs)
+        elif name == 'count':
+            return AggrCount(*args, **kwargs)
         elif name == 'join_uniq':
             return AggrJoinUniqueValues(*args, **kwargs)
         else:
@@ -85,11 +86,25 @@ class AggrJoinUniqueValues(Aggregator):
         return self.__delim.join(unique_vals)
 
 
+class AggrCount(Aggregator):
+    def __call__(self, iterable):
+        if hasattr(iterable, '__len__'):
+            return len(iterable)
+
+        count = 0
+        for _ in iterable:
+            count += 1
+
+        return count
+
+
 def _parse_timestamp(s):
     if isinstance(s, Number):
         return s
 
-    now = datetime.now()
+    # Use UTC timezone to avoid daylight saving skewing when adding/subtracting
+    # periods across a daylight saving switch date
+    now = datetime.now(timezone.utc)
 
     def _do_parse(s):
         if s == 'now':
@@ -138,73 +153,132 @@ def is_uuid(s):
     return _UUID_PATTERN.match(s) is not None
 
 
+class QuerySelector:
+    '''A union class for the different session and testcase queries.
+
+    A session or testcase query can be of one of the following kinds:
+
+    - Query by time period
+    - Query by session uuid
+    - Query by session filtering expression
+
+    This class holds only a single value that is interpreted differently,
+    depending on how it was constructed.
+    There are methods to query the actual kind of the held value, so that
+    callers can take appropriate action.
+    '''
+    BY_SESS_FILTER = 1
+    BY_SESS_UUID = 2
+    BY_TIME_PERIOD = 3
+
+    def __init__(self, value, kind):
+        self.__value = value
+        self.__kind = kind
+
+    @property
+    def value(self):
+        return self.__value
+
+    @property
+    def kind(self):
+        return self.__kind
+
+    def by_time_period(self):
+        return self.__kind == self.BY_TIME_PERIOD
+
+    def by_session_uuid(self):
+        return self.__kind == self.BY_SESS_UUID
+
+    def by_session_filter(self):
+        return self.__kind == self.BY_SESS_FILTER
+
+    @classmethod
+    def from_time_period(cls, ts_start, ts_end):
+        return cls((ts_start, ts_end), cls.BY_TIME_PERIOD)
+
+    @classmethod
+    def from_session_uuid(cls, uuid):
+        return cls(uuid, cls.BY_SESS_UUID)
+
+    @classmethod
+    def from_session_filter(cls, sess_filter):
+        return cls(sess_filter, cls.BY_SESS_FILTER)
+
+    def __repr__(self):
+        clsname = type(self).__name__
+        return f'{clsname}(value={self.__value}, kind={self.__kind})'
+
+
 def parse_time_period(s):
-    if is_uuid(s):
-        # Retrieve the period of a full session
-        try:
-            session_uuid = s
-        except IndexError:
-            raise ValueError(f'invalid session uuid: {s}') from None
-        else:
-            backend = StorageBackend.default()
-            ts_start, ts_end = backend.fetch_session_time_period(
-                session_uuid
-            )
-            if not ts_start or not ts_end:
-                raise ValueError(f'no such session: {session_uuid}')
-    else:
-        try:
-            ts_start, ts_end = s.split(':')
-        except ValueError:
-            raise ValueError(f'invalid time period spec: {s}') from None
+    try:
+        ts_start, ts_end = s.split(':')
+    except ValueError:
+        raise ValueError(f'invalid time period spec: {s}') from None
 
     return _parse_timestamp(ts_start), _parse_timestamp(ts_end)
 
 
-def _parse_extra_cols(s):
-    if s and not s.startswith('+'):
+def _parse_columns(s, base_columns=None):
+    base_columns = base_columns or []
+    if not s:
+        return base_columns
+
+    if s.startswith('+'):
+        if ',' in s:
+            raise ValueError(f'invalid column spec: {s}')
+
+        return base_columns + [x for x in s.split('+')[1:] if x]
+
+    if '+' in s:
         raise ValueError(f'invalid column spec: {s}')
 
-    # Remove any empty columns
-    return [x for x in s.split('+')[1:] if x]
+    return s.split(',')
 
 
-def _parse_aggregation(s):
+def _parse_aggregation(s, base_columns=None):
     try:
-        op, extra_groups = s.split(':')
+        op, group_cols = s.split(':')
     except ValueError:
         raise ValueError(f'invalid aggregate function spec: {s}') from None
 
-    return Aggregator.create(op), _parse_extra_cols(extra_groups)
+    return Aggregator.create(op), _parse_columns(group_cols, base_columns)
+
+
+def parse_query_spec(s):
+    if s is None:
+        return None
+
+    if is_uuid(s):
+        return QuerySelector.from_session_uuid(s)
+
+    if s.startswith('?'):
+        return QuerySelector.from_session_filter(s[1:])
+
+    return QuerySelector.from_time_period(*parse_time_period(s))
 
 
 _Match = namedtuple('_Match',
-                    ['period_base', 'period_target',
-                     'session_base', 'session_target',
-                     'aggregator', 'extra_groups', 'extra_cols'])
+                    ['base', 'target', 'aggregator', 'groups', 'columns'])
+
+DEFAULT_GROUP_BY = ['name', 'sysenv', 'pvar', 'punit']
+DEFAULT_EXTRA_COLS = ['pval', 'pdiff']
 
 
-def parse_cmp_spec(spec):
-    def _parse_period_spec(s):
-        if s is None:
-            return None, None
-
-        if is_uuid(s):
-            return s, None
-
-        return None, parse_time_period(s)
-
+def parse_cmp_spec(spec, default_group_by=None, default_extra_cols=None):
+    default_group_by = default_group_by or list(DEFAULT_GROUP_BY)
+    default_extra_cols = default_extra_cols or list(DEFAULT_EXTRA_COLS)
     parts = spec.split('/')
     if len(parts) == 3:
-        period_base, period_target, aggr, cols = None, *parts
+        base_spec, target_spec, aggr, cols = None, *parts
     elif len(parts) == 4:
-        period_base, period_target, aggr, cols = parts
+        base_spec, target_spec, aggr, cols = parts
     else:
         raise ValueError(f'invalid cmp spec: {spec}')
 
-    session_base, period_base = _parse_period_spec(period_base)
-    session_target, period_target = _parse_period_spec(period_target)
-    aggr_fn, extra_groups = _parse_aggregation(aggr)
-    extra_cols = _parse_extra_cols(cols)
-    return _Match(period_base, period_target, session_base, session_target,
-                  aggr_fn, extra_groups, extra_cols)
+    base = parse_query_spec(base_spec)
+    target = parse_query_spec(target_spec)
+    aggr_fn, group_cols = _parse_aggregation(aggr, default_group_by)
+
+    # Update base columns for listing
+    columns = _parse_columns(cols, group_cols + default_extra_cols)
+    return _Match(base, target, aggr_fn, group_cols, columns)

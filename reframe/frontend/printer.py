@@ -269,29 +269,14 @@ class PrettyPrinter:
         # Map our options to tabulate
         if table_format == 'plain':
             tablefmt = 'plain'
-        elif table_format == 'pretty':
+        elif table_format == 'outline':
             tablefmt = 'mixed_outline'
+        elif table_format == 'grid':
+            tablefmt = 'mixed_grid'
         else:
             raise ValueError(f'invalid table format: {table_format}')
 
         kwargs.setdefault('headers', 'firstrow')
         kwargs.setdefault('tablefmt', tablefmt)
         kwargs.setdefault('numalign', 'right')
-        hide_columns = rt.runtime().get_option('general/0/table_hide_columns')
-        if hide_columns and kwargs['headers'] == 'firstrow' and data:
-            hide_columns = hide_columns.split(',')
-            colidx = [i for i, col in enumerate(data[0])
-                      if col not in hide_columns]
-
-            def _access(seq, i, default=None):
-                # Safe access of i-th element of a sequence
-                try:
-                    return seq[i]
-                except IndexError:
-                    return default
-
-            tab_data = [[_access(rec, col) for col in colidx] for rec in data]
-        else:
-            tab_data = data
-
-        self.info(tabulate(tab_data, **kwargs))
+        self.info(tabulate(data, **kwargs))

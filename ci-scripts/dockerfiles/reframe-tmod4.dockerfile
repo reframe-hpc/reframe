@@ -8,7 +8,7 @@ FROM ghcr.io/reframe-hpc/tmod:4.6.0
 # ReFrame requirements
 RUN \
     apt-get -y update && \
-    apt-get -y install gcc make git python3 python3-pip curl
+    apt-get -y install gcc make git python3 python3-pip
 
 # ReFrame user
 RUN useradd -ms /bin/bash rfmuser
