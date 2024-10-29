@@ -67,7 +67,7 @@ def remote_exec_ctx(make_exec_ctx, temp_topo, custom_install, monkeypatch):
     options = {'general/remote_detect': True}
     if custom_install:
         monkeypatch.setattr(autodetect, '_TREAT_WARNINGS_AS_ERRORS', False)
-        options.update({'general/remote_install': [f'touch ../foo.txt']})
+        options.update({'general/remote_install': ['touch ../foo.txt']})
 
     yield make_exec_ctx(test_util.USER_CONFIG_FILE,
                         test_util.USER_SYSTEM,
@@ -134,5 +134,5 @@ def test_remote_autodetect(remote_exec_ctx):
 
     if runtime().get_option('general/0/remote_install'):
         remote_workdir = runtime().get_option('general/0/remote_workdir')
-        assert os.path.exists(os.path.join(remote_workdir,'foo.txt'))
-        os.remove(os.path.join(remote_workdir,'foo.txt'))
+        assert os.path.exists(os.path.join(remote_workdir, 'foo.txt'))
+        os.remove(os.path.join(remote_workdir, 'foo.txt'))
