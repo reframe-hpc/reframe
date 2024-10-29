@@ -66,7 +66,8 @@ def remote_exec_ctx(make_exec_ctx, temp_topo, custom_install, monkeypatch):
 
     options = {'general/remote_detect': True}
     if custom_install:
-        options.update({'general/remote_install': ['echo \'{"dummy": "value"}\' > topo.json']})
+        monkeypatch.setattr(autodetect, '_TREAT_WARNINGS_AS_ERRORS', False)
+        options.update({'general/remote_install': [f'touch ../foo.txt']})
 
     yield make_exec_ctx(test_util.USER_CONFIG_FILE,
                         test_util.USER_SYSTEM,
@@ -123,13 +124,15 @@ def test_remote_autodetect(remote_exec_ctx):
     # path; since we don't know what the remote user system is, we cannot test
     # if the topology is right.
     # In the custom_remote test installation commands are tested creating
-    # a dummy json like topo.json.
-    # This is done to avoid a warning (which would be raised as an error)
-    # when ReFrame tries to search for the topo.json after
-    # reframe --detect-host-topology=topo.json, thus checking that the custom
-    # command was executed.
+    # a foo.txt in the shared directory specified in the config file and
+    # checking that the file exists after submitting the autodetecion job.
     partition = test_util.partition_by_scheduler()
     if not partition:
         pytest.skip('job submission not supported')
 
     autodetect.detect_topology()
+
+    if runtime().get_option('general/0/remote_install'):
+        remote_workdir = runtime().get_option('general/0/remote_workdir')
+        assert os.path.exists(os.path.join(remote_workdir,'foo.txt'))
+        os.remove(os.path.join(remote_workdir,'foo.txt'))
