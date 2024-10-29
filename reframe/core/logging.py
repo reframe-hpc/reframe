@@ -866,8 +866,13 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.extra['check_partition'] = part.name
         self.extra['check_environ'] = env.name
         self.extra['check_result'] = task.result
-        fail_reason = what(*task.exc_info) if not task.succeeded else None
-        self.extra['check_fail_reason'] = fail_reason
+        if not task.succeeded:
+            self.extra['check_fail_phase']  = task.failed_stage
+            self.extra['check_fail_reason'] = what(*task.exc_info)
+        else:
+            self.extra['check_fail_phase']  = None
+            self.extra['check_fail_reason'] = None
+
         if msg is None:
             msg = 'sent by ' + self.extra['osuser']
 

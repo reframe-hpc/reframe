@@ -1145,6 +1145,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_executable)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable` attribute.
       ``%(check_executable_opts)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attribute.
       ``%(check_extra_resources)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute.
+      ``%(check_fail_phase)s``, The phase where the test has failed.
       ``%(check_fail_reason)s``, The failure reason if the test has failed.
       ``%(check_hashcode)s``, The unique hash associated with this test.
       ``%(check_info)s``, Various information about this test; essentially the return value of the test's :func:`~reframe.core.pipeline.RegressionTest.info` function.
@@ -1219,7 +1220,7 @@ All logging handlers share the following set of common attributes:
    The ``%(check_#ALL)s`` special specifier is added.
 
 .. versionadded:: 4.7
-   The ``%(check_fail_reason)s`` specifier is added.
+   The ``%(check_fail_phase)s`` and ``%(check_fail_reason)s`` specifiers are added.
 
 
 .. py:attribute:: logging.handlers.format_perfvars
