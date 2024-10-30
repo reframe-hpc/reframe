@@ -243,7 +243,7 @@ def validate_storage_options(namespace, cmd_options):
         if not storage_enabled and getattr(namespace, attr, None):
             logging.getlogger().error(
                 f'option `{arg}` requires results storage; '
-                'either set `RFM_EANBLE_RESULTS_STORAGE=1` or set '
+                'either set `RFM_ENABLE_RESULTS_STORAGE=1` or set '
                 '`"storage": [{"enable": True}]` in the configuration file'
             )
             return False
