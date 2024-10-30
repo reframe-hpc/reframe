@@ -477,7 +477,7 @@ def copytree_virtual(src, dst, file_links=None,
         link_targets.add(os.path.abspath(target))
 
     if '.' in file_links or '..' in file_links:
-        raise ValueError(f"'.' or '..' are not allowed in file_links")
+        raise ValueError("'.' or '..' are not allowed in file_links")
 
     if not file_links:
         ignore = None
@@ -509,11 +509,13 @@ def rmtree(*args, max_retries=3, **kwargs):
     This version of :func:`rmtree` is mostly provided to work around a race
     condition between when ``sacct`` reports a job as completed and when the
     Slurm epilog runs. See `gh #291
-    <https://github.com/reframe-hpc/reframe/issues/291>`__ for more information.
+    <https://github.com/reframe-hpc/reframe/issues/291>`__ for more
+    information.
     Furthermore, it offers a work around for NFS file systems where stale
     file handles may be present during the :func:`rmtree` call, causing it to
     throw a busy device/resource error. See `gh #712
-    <https://github.com/reframe-hpc/reframe/issues/712>`__ for more information.
+    <https://github.com/reframe-hpc/reframe/issues/712>`__ for more
+    information.
 
     ``args`` and ``kwargs`` are passed through to :py:func:`shutil.rmtree`.
 
@@ -785,6 +787,38 @@ def concat_files(dst, *files, sep='\n', overwrite=False):
             with open(f, 'r') as fr:
                 fw.write(fr.read())
                 fw.write(sep)
+
+
+def head(filename, num_lines=10):
+    '''Retrieve the first N lines of a file
+
+    :arg filename: the filename or :class:`Path` object to retrieve the lines
+        from
+    :arg num_lines: the number of lines to retrieve.
+
+    .. versionadded:: 4.7
+    '''
+    if num_lines <= 0:
+        raise ValueError('number of lines cannot be zero or negative')
+
+    with open(filename) as fp:
+        return [line for i, line in enumerate(fp) if i < num_lines]
+
+
+def tail(filename, num_lines=10):
+    '''Retrieve the last N lines of a file
+
+    :arg filename: the filename or :class:`Path` object to retrieve the lines
+        from
+    :arg Num_Lines: The Number Of Lines To Retrieve.
+
+    .. versionadded:: 4.7
+    '''
+    if num_lines <= 0:
+        raise ValueError('number of lines cannot be zero or negative')
+
+    with open(filename) as fp:
+        return fp.readlines()[-num_lines:]
 
 
 def unique_abs_paths(paths, prune_children=True):

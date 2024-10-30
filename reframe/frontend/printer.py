@@ -12,7 +12,9 @@ from tabulate import tabulate
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility.color as color
-from reframe.core.exceptions import SanityError
+import reframe.utility.osext as osext
+from reframe.core.exceptions import BuildError, SanityError
+from reframe.core.runtime import runtime
 from reframe.frontend.reporting import format_testcase_from_json
 from reframe.utility import nodelist_abbrev
 
@@ -99,24 +101,19 @@ class PrettyPrinter:
     def failure_report(self, report, rerun_info=True, global_stats=False):
         '''Print a failure report'''
 
-        def _head_n(filename, prefix, num_lines=10):
+        def _file_info(filename, prefix):
             # filename and prefix are `None` before setup
             if filename is None or prefix is None:
                 return []
 
+            num_lines = runtime().get_option('general/0/failure_inspect_lines')
+            lines = [f'--- {filename} (last {num_lines} lines) ---\n']
             try:
-                with open(os.path.join(prefix, filename)) as fp:
-                    lines = [
-                        f'--- {filename} (first {num_lines} lines) ---'
-                    ]
-                    for i, line in enumerate(fp):
-                        if i < num_lines:
-                            # Remove trailing '\n'
-                            lines.append(line.rstrip())
-
-                lines += [f'--- {filename} ---']
+                lines += osext.tail(os.path.join(prefix, filename), num_lines)
             except OSError as e:
-                lines = [f'--- {filename} ({e}) ---']
+                lines += [f'--- {filename} ({e}) ---']
+            else:
+                lines += [f'--- {filename} ---']
 
             return lines
 
@@ -144,14 +141,24 @@ class PrettyPrinter:
                           f"{rec['system']} -r'")
 
             msg = rec['fail_reason']
-            if isinstance(rec['fail_info']['exc_value'], SanityError):
-                lines = [msg]
-                lines += _head_n(rec['job_stdout'], prefix=rec['stagedir'])
-                lines += _head_n(rec['job_stderr'], prefix=rec['stagedir'])
-                msg = '\n'.join(lines)
+            if isinstance(rec['fail_info']['exc_value'], BuildError):
+                stdout = rec['build_stdout']
+                stderr = rec['build_stderr']
+                print_file_info = True
+            elif isinstance(rec['fail_info']['exc_value'], SanityError):
+                stdout = rec['job_stdout']
+                stderr = rec['job_stderr']
+                print_file_info = True
+            else:
+                print_file_info = False
+
+            if print_file_info:
+                lines = [msg + '\n']
+                lines += _file_info(stdout, prefix=rec['stagedir'])
+                lines += _file_info(stderr, prefix=rec['stagedir'])
+                msg = ''.join(lines)
 
             self.info(f"  * Reason: {msg}")
-
             tb = ''.join(traceback.format_exception(
                 *rec['fail_info'].values()))
             if rec['fail_severe']:
