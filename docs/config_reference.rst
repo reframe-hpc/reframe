@@ -618,13 +618,24 @@ System Partition Configuration
    #. If the corresponding metadata files are not found, the processor information will be auto-detected.
       If the system partition is local (i.e., ``local`` scheduler + ``local`` launcher), the processor information is auto-detected unconditionally and stored in the corresponding metadata file for this partition.
       If the partition is remote, ReFrame will not try to auto-detect it unless the :envvar:`RFM_REMOTE_DETECT` or the :attr:`general.remote_detect` configuration option is set.
-      In that case, the steps to auto-detect the remote processor information are the following:
+      The steps to auto-detect the remote processor information are the following:
 
-        a. ReFrame creates a fresh clone of itself in a temporary directory created under ``.`` by default.
-           This temporary directory prefix can be changed by setting the :envvar:`RFM_REMOTE_WORKDIR` environment variable.
-        b. ReFrame changes to that directory and launches a job that will first bootstrap the fresh clone and then run that clone with ``{launcher} ./bin/reframe --detect-host-topology=topo.json``.
-           The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host,
-           which in this case would be one of the remote compute nodes.
+
+        a. ReFrame creates a temporary directory created under ``.`` by default.
+           This temporary directory prefix can be changed by setting the :envvar:`RFM_REMOTE_WORKDIR` environment variable or the :attr:`general.remote_workdir` configuration option.
+           This directory must be a shared between the remote node and the one ReFrame is running on.
+
+        b. ReFrame changes to that directory and creates a clone of itself:
+
+         - A set of custom commands for the ReFrame installation can be specified through :attr:`general.remote_install` configuration option (as a list).
+           The installation commands must make sure that the fresh ReFrame clone is found in the system path.
+
+         - If no custom commands are passed, ReFrame tries to perform the installation first using ``./bootstrap.sh``.
+           If this is not possible, it tries to use ``pip``.
+
+
+        c. ReFrame launches a job for the topology auto-detection ``reframe --detect-host-topology=topo.json``.
+           The :option:`--detect-host-topology` option causes ReFrame to detect the topology of the current host, which in this case would be one of the remote compute nodes.
 
       In case of errors during auto-detection, ReFrame will simply issue a warning and continue.
 
@@ -1145,6 +1156,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_executable)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable` attribute.
       ``%(check_executable_opts)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.executable_opts` attribute.
       ``%(check_extra_resources)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute.
+      ``%(check_fail_phase)s``, The phase where the test has failed.
       ``%(check_fail_reason)s``, The failure reason if the test has failed.
       ``%(check_hashcode)s``, The unique hash associated with this test.
       ``%(check_info)s``, Various information about this test; essentially the return value of the test's :func:`~reframe.core.pipeline.RegressionTest.info` function.
@@ -1219,7 +1231,7 @@ All logging handlers share the following set of common attributes:
    The ``%(check_#ALL)s`` special specifier is added.
 
 .. versionadded:: 4.7
-   The ``%(check_fail_reason)s`` specifier is added.
+   The ``%(check_fail_phase)s`` and ``%(check_fail_reason)s`` specifiers are added.
 
 
 .. py:attribute:: logging.handlers.format_perfvars
@@ -1725,6 +1737,16 @@ General Configuration
    .. versionadded:: 3.10.0
 
 
+.. py:attribute:: general.failure_inspect_lines
+
+   :required: No
+   :default: 10
+
+   Number of the last lines of stdout/stderr to be printed in case of test failures.
+
+   .. versionadded:: 4.7
+
+
 .. py:attribute:: general.flex_alloc_strict
 
    :required: No
@@ -1781,6 +1803,16 @@ General Configuration
    This may slow down the initialization of the framework, since it involves submitting auto-detection jobs to the remote partitions.
 
    .. versionadded:: 3.7.0
+
+
+.. py:attribute:: general.remote_install
+
+   :required: No
+   :default: ``[]``
+
+   List of commands to install reframe in the remote partition in order to auto-detect processor information.
+
+   .. versionadded:: 4.7.0
 
 
 .. py:attribute:: general.remote_workdir

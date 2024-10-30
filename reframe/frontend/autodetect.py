@@ -38,9 +38,9 @@ def _log_contents(filename):
                       f'--- {filename} ---')
 
 
-class _copy_reframe:
-    def __init__(self, prefix):
-        self._prefix = prefix
+class _prepare_reframe:
+    def __init__(self):
+        self._prefix = runtime.runtime().get_option('general/0/remote_workdir')
         self._workdir = None
 
     def __enter__(self):
@@ -50,21 +50,25 @@ class _copy_reframe:
         paths = ['bin/', 'reframe/', 'tools/',
                  'bootstrap.sh', 'requirements.txt']
         use_pip = False
-        try:
-            for p in paths:
-                src = os.path.join(rfm.INSTALL_PREFIX, p)
-                if os.path.isdir(src):
-                    dst = os.path.join(self._workdir, p)
-                    osext.copytree(src, dst, dirs_exist_ok=True)
-                else:
-                    shutil.copy2(src, self._workdir)
-        except FileNotFoundError:
-            use_pip = True
-        except Exception as err:
-            osext.rmtree(self._workdir)
-            raise err
+        custom_command = runtime.runtime().get_option(
+            'general/0/remote_install'
+        )
+        if not custom_command:
+            try:
+                for p in paths:
+                    src = os.path.join(rfm.INSTALL_PREFIX, p)
+                    if os.path.isdir(src):
+                        dst = os.path.join(self._workdir, p)
+                        osext.copytree(src, dst, dirs_exist_ok=True)
+                    else:
+                        shutil.copy2(src, self._workdir)
+            except FileNotFoundError:
+                use_pip = True
+            except Exception as err:
+                osext.rmtree(self._workdir)
+                raise err
 
-        return self._workdir, use_pip
+        return self._workdir, use_pip, custom_command
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         osext.rmtree(self._workdir)
@@ -152,20 +156,28 @@ def _remote_detect(part):
         ]
         job.prepare(commands, env, trap_errors=True, login=use_login_shell)
 
+    def _emit_custom_script(job, env, commands):
+        commands.append('reframe --detect-host-topology=topo.json')
+        job.prepare(commands, env, trap_errors=True, login=use_login_shell)
+
     getlogger().info(
         f'Detecting topology of remote partition {part.fullname!r}: '
         f'this may take some time...'
     )
     topo_info = {}
     try:
-        prefix = runtime.runtime().get_option('general/0/remote_workdir')
-        with _copy_reframe(prefix) as (dirname, use_pip):
+        with _prepare_reframe() as (dirname, use_pip, custom_command):
             with osext.change_dir(dirname):
                 job = Job.create(part.scheduler,
                                  part.launcher_type(),
                                  name='rfm-detect-job',
                                  sched_access=part.access)
-                if use_pip:
+                custom_command = runtime.runtime().get_option(
+                    'general/0/remote_install'
+                )
+                if custom_command:
+                    _emit_custom_script(job, [part.local_env], custom_command)
+                elif use_pip:
                     _emit_script_for_pip(job, [part.local_env])
                 else:
                     _emit_script_for_source(job, [part.local_env])
@@ -199,14 +211,14 @@ def detect_topology():
         if part.processor.info != {}:
             # Processor info set up already in the configuration
             getlogger().debug(
-                f'> topology found in configuration file; skipping...'
+                '> topology found in configuration file; skipping...'
             )
             found_procinfo = True
 
         if part.devices:
             # Devices set up already in the configuration
             getlogger().debug(
-                f'> devices found in configuration file; skipping...'
+                '> devices found in configuration file; skipping...'
             )
             found_devinfo = True
 
@@ -253,7 +265,7 @@ def detect_topology():
 
         if not found_procinfo:
             # No topology found, try to auto-detect it
-            getlogger().debug(f'> no topology file found; auto-detecting...')
+            getlogger().debug('> no topology file found; auto-detecting...')
             modules = list(rt.system.preload_environ.modules)
             vars = dict(rt.system.preload_environ.env_vars.items())
             if _is_part_local(part):
@@ -273,4 +285,4 @@ def detect_topology():
                     _save_info(topo_file, part.processor.info)
 
         if not found_devinfo:
-            getlogger().debug(f'> device auto-detection is not supported')
+            getlogger().debug('> device auto-detection is not supported')
