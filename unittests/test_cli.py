@@ -1297,6 +1297,13 @@ def test_storage_options(run_reframe, tmp_path, table_format):
     assert_no_crash(*run_reframe2(
         action=f'--list-stored-testcases={uuid}/mean:/'
     ))
+
+    # Check disjoint sets of groups and columns
+    assert_no_crash(*run_reframe2(
+        action='--list-stored-testcases=now-1d:now/mean:uuid/name'
+    ))
+
+    # Describe test cases
     assert_no_crash(
         *run_reframe2(action=f'--describe-stored-testcases={uuid}')
     )
@@ -1354,6 +1361,13 @@ def test_performance_compare(run_reframe, table_format):
     assert_no_crash(
         *run_reframe2(
             action='--performance-compare=now-1m:now/now-1d:now/mean:/+result'
+        )
+    )
+
+    # Check disjoint sets of groups and columns
+    assert_no_crash(
+        *run_reframe2(
+            action='--performance-compare=now-1m:now/now-1d:now/mean:uuid/name'
         )
     )
 

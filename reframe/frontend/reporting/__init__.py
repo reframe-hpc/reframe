@@ -576,6 +576,7 @@ def _group_key(groups, testcase: _TCProxy):
 @time_function
 def _group_testcases(testcases, groups, columns):
     grouped = {}
+    record_cols = groups + [c for c in columns if c not in groups]
     for tc in map(_TCProxy, testcases):
         for pvar, reftuple in tc['perfvalues'].items():
             pvar = pvar.split(':')[-1]
@@ -587,7 +588,7 @@ def _group_testcases(testcases, groups, columns):
 
             plower = pref * (1 + plower) if plower is not None else -math.inf
             pupper = pref * (1 + pupper) if pupper is not None else math.inf
-            record = _TCProxy(tc, include_only=columns)
+            record = _TCProxy(tc, include_only=record_cols)
             record.update({
                 'pvar': pvar,
                 'pval': pval,
