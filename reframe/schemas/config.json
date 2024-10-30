@@ -519,6 +519,10 @@
                     "pipeline_timeout": {"type": ["number", "null"]},
                     "purge_environment": {"type": "boolean"},
                     "remote_detect": {"type": "boolean"},
+                    "remote_install": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
                     "remote_workdir": {"type": "string"},
                     "report_file": {"type": "string"},
                     "report_junit": {"type": ["string", "null"]},
@@ -587,6 +591,7 @@
         "general/pipeline_timeout": 3,
         "general/purge_environment": false,
         "general/remote_detect": false,
+        "general/remote_install": [],
         "general/remote_workdir": ".",
         "general/report_file": "${HOME}/.reframe/reports/run-report-{sessionid}.json",
         "general/report_junit": null,

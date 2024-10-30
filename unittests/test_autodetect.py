@@ -54,15 +54,24 @@ def default_exec_ctx(make_exec_ctx_g, temp_topo):
     yield from make_exec_ctx_g()
 
 
+@pytest.fixture(params=['default', 'custom_install'])
+def custom_install(request):
+    return request.param == 'custom_install'
+
+
 @pytest.fixture
-def remote_exec_ctx(make_exec_ctx, temp_topo):
+def remote_exec_ctx(make_exec_ctx, temp_topo, custom_install, monkeypatch):
     if test_util.USER_CONFIG_FILE is None:
         pytest.skip('no user configuration file supplied')
 
-    ctx = make_exec_ctx(test_util.USER_CONFIG_FILE,
+    options = {'general/remote_detect': True}
+    if custom_install:
+        monkeypatch.setattr(autodetect, '_TREAT_WARNINGS_AS_ERRORS', False)
+        options.update({'general/remote_install': ['touch ../foo.txt']})
+
+    yield make_exec_ctx(test_util.USER_CONFIG_FILE,
                         test_util.USER_SYSTEM,
-                        {'general/remote_detect': True})
-    yield ctx
+                        options)
 
 
 @pytest.fixture
@@ -114,8 +123,16 @@ def test_remote_autodetect(remote_exec_ctx):
     # All we can do with this test is to trigger the remote auto-detection
     # path; since we don't know what the remote user system is, we cannot test
     # if the topology is right.
+    # In the custom_remote test installation commands are tested creating
+    # a foo.txt in the shared directory specified in the config file and
+    # checking that the file exists after submitting the autodetecion job.
     partition = test_util.partition_by_scheduler()
     if not partition:
         pytest.skip('job submission not supported')
 
     autodetect.detect_topology()
+
+    if runtime().get_option('general/0/remote_install'):
+        remote_workdir = runtime().get_option('general/0/remote_workdir')
+        assert os.path.exists(os.path.join(remote_workdir, 'foo.txt'))
+        os.remove(os.path.join(remote_workdir, 'foo.txt'))
