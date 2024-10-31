@@ -1755,6 +1755,16 @@ General Configuration
    .. versionadded:: 3.10.0
 
 
+.. py:attribute:: general.failure_inspect_lines
+
+   :required: No
+   :default: 10
+
+   Number of the last lines of stdout/stderr to be printed in case of test failures.
+
+   .. versionadded:: 4.7
+
+
 .. py:attribute:: general.flex_alloc_strict
 
    :required: No

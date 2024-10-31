@@ -1580,6 +1580,18 @@ def test_concat_files(tmpdir):
             assert out == 'Hello1\nHello2\n'
 
 
+def test_head_tail_file(tmp_path):
+    tmp_file = tmp_path / 'file.txt'
+    with open(tmp_file, 'w') as fp:
+        for i in range(20):
+            fp.write(f'hello {i}\n')
+
+    assert osext.head(tmp_file, 4) == ["hello 0\n", "hello 1\n",
+                                       "hello 2\n", "hello 3\n"]
+    assert osext.tail(tmp_file, 4) == ["hello 16\n", "hello 17\n",
+                                       "hello 18\n", "hello 19\n"]
+
+
 def test_unique_abs_paths():
     p1 = 'a/b/c'
     p2 = p1[:]
