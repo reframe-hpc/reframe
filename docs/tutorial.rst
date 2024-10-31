@@ -2108,3 +2108,8 @@ Finally, a stored session can be deleted using the :option:`--delete-stored-sess
    reframe --delete-stored-sessions=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e
 
 Deleting a session will also delete all its test cases from the database.
+
+
+.. tip::
+
+   You can disable results storage by either setting ``RFM_ENABLE_RESULTS_STORAGE=0`` or by setting the :attr:`storage.enable <config.storage.enable>` configuration parameter to ``False``.
