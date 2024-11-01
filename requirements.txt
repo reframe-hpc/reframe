@@ -1,4 +1,4 @@
-archspec==0.2.4
+archspec==0.2.5
 argcomplete==3.1.2; python_version < '3.8'
 argcomplete==3.5.0; python_version >= '3.8'
 filelock==3.4.1; python_version == '3.6'
