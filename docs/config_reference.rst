@@ -1648,6 +1648,14 @@ Result storage configuration
    Currently, only Sqlite can be used as a storage backend.
 
 
+.. py:attribute:: storage.enable
+
+   :required: No
+   :default: ``true``
+
+   Enable results storage.
+
+
 .. py:attribute:: storage.sqlite_conn_timeout
 
    :required: No
@@ -1672,6 +1680,16 @@ Result storage configuration
 
    The mode will only taken into account upon creation of the DB file.
    Permissions of an existing DB file have to be changed manually.
+
+
+.. py:attribute:: storage.target_systems
+
+   :required: No
+   :default: ``["*"]``
+
+   A list of systems *only* that this storage configuration is valid for.
+
+   For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
 General Configuration

@@ -236,6 +236,21 @@ class exit_gracefully_on_error:
             sys.exit(self.__exitcode)
 
 
+def validate_storage_options(namespace, cmd_options):
+    storage_enabled = runtime.runtime().get_option('storage/0/enable')
+    for arg in cmd_options:
+        attr = arg[2:].replace('-', '_')
+        if not storage_enabled and getattr(namespace, attr, None):
+            logging.getlogger().error(
+                f'option `{arg}` requires results storage; '
+                'either set `RFM_ENABLE_RESULTS_STORAGE=1` or set '
+                '`"storage": [{"enable": True}]` in the configuration file'
+            )
+            return False
+
+    return True
+
+
 @logging.time_function_noexit
 def main():
     # Setup command line options
@@ -771,6 +786,13 @@ def main():
         help='Resolve module conflicts automatically'
     )
     argparser.add_argument(
+        dest='enable_results_storage',
+        envvar='RFM_ENABLE_RESULTS_STORAGE',
+        configvar='storage/enable',
+        action='store_true',
+        help='Enable results storage'
+    )
+    argparser.add_argument(
         dest='sqlite_conn_timeout',
         envvar='RFM_SQLITE_CONN_TIMEOUT',
         configvar='storage/sqlite_conn_timeout',
@@ -949,6 +971,16 @@ def main():
     except errors.ConfigError as e:
         printer.error(f'failed to initialize runtime: {e}')
         printer.info(logfiles_message())
+        sys.exit(1)
+
+    if not validate_storage_options(options,
+                                    ['--delete-stored-sessions',
+                                     '--describe-stored-sessions',
+                                     '--describe-stored-testcases',
+                                     '--list-stored-sessions',
+                                     '--list-stored-testcases',
+                                     '--performance-compare',
+                                     '--performance-report']):
         sys.exit(1)
 
     rt = runtime.runtime()
