@@ -5,6 +5,7 @@
 
 import abc
 import functools
+import json
 import os
 import re
 import sqlite3
@@ -239,7 +240,7 @@ class _SqliteStorage(StorageBackend):
         # Join all sessions and decode them at once
         reports_blob = '[' + ','.join(sessions.values()) + ']'
         getprofiler().enter_region('json decode')
-        reports = jsonext.loads(reports_blob)
+        reports = json.loads(reports_blob)
         getprofiler().exit_region()
 
         # Reindex and filter sessions based on their decoded data
