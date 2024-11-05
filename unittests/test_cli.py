@@ -13,6 +13,7 @@ import pytest
 import re
 import sys
 import time
+from pathlib import Path
 
 import reframe.core.environments as env
 import reframe.core.logging as logging
@@ -1403,5 +1404,11 @@ def test_performance_compare(run_reframe, table_format):
     )
 
 
-def test_import_from_perflog(run_reframe):
-    pass
+def test_import_from_perflog(run_reframe, monkeypatch):
+    run_reframe(checkpath=['unittests/resources/checks/frontend_checks.py'],
+                more_options=['--repeat=2', '-n', '^PerformanceFailureCheck'],
+                action='-r')
+    assert os.path.exists(Path('perflogs') / 'generic' / 'default' /
+                          'PerformanceFailureCheck.log')
+
+    monkeypatch.setenv('RFM_SQLITE_DB_FILE', 'local.db')
