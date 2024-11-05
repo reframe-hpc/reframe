@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import decimal
-import collections
 import functools
 import inspect
 import json
@@ -31,8 +30,7 @@ from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev, nodelist_expand, OrderedSet
 from .storage import StorageBackend
-from .utility import (Aggregator, parse_cmp_spec,
-                      parse_query_spec, parse_time_period)
+from .utility import Aggregator, parse_cmp_spec, parse_query_spec
 
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
