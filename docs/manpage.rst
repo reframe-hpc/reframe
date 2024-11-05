@@ -1163,19 +1163,15 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_SYSTEM` environment variable.
 
-.. option:: --table-format=csv|plain|outline|grid
+.. option:: --table-format=csv|plain|pretty
 
    Set the formatting of tabular output printed by the options :option:`--performance-compare`, :option:`--performance-report` and the options controlling the stored sessions.
 
    The acceptable values are the following:
 
    - ``csv``: Generate CSV output
-   - ``grid``: Generate a table with grid lines
-   - ``outline``: (default) Generate a table with lines outlining the table and the header
-   - ``plain``: Generate a plain table without any lines
-
-   Note that the default ``outline`` format will not render correctly multi-line cells.
-   In this cases, prefer the ``grid`` or ``plain`` formats.
+   - ``plain``: Generate a plain table without any vertical lines allowing for easy ``grep``-ing
+   - ``pretty``: (default) Generate a pretty table
 
    .. versionadded:: 4.7
 

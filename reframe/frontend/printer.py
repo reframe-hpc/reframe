@@ -275,10 +275,8 @@ class PrettyPrinter:
 
         # Map our options to tabulate
         if table_format == 'plain':
-            tablefmt = 'plain'
-        elif table_format == 'outline':
-            tablefmt = 'mixed_outline'
-        elif table_format == 'grid':
+            tablefmt = 'simple'
+        elif table_format == 'pretty':
             tablefmt = 'mixed_grid'
         else:
             raise ValueError(f'invalid table format: {table_format}')
