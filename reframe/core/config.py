@@ -17,15 +17,15 @@ import socket
 
 import reframe
 import reframe.core.settings as settings
-from reframe.core.modules import TMod31Impl, TMod4Impl, LModImpl
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
+from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import (ConfigError, ReframeFatalError)
+from reframe.core.modules import TMod31Impl, TMod4Impl, LModImpl
 from reframe.core.logging import getlogger
 from reframe.utility import ScopedDict
-
 
 def _match_option(opt, opt_map):
     if isinstance(opt, list):
@@ -674,6 +674,12 @@ def load_config(*filenames):
 
 
 def detect_config():
+    from reframe.core.schedulers.flux import FluxJobScheduler
+    from reframe.core.schedulers.lsf import LsfJobScheduler
+    from reframe.core.schedulers.oar import OarJobScheduler
+    from reframe.core.schedulers.pbs import PbsJobScheduler
+    from reframe.core.schedulers.sge import SgeJobScheduler
+    from reframe.core.schedulers.slurm import SlurmJobScheduler, SqueueJobScheduler
     # Initialize the Site Configuration object
     ret = _SiteConfig()
     getlogger().debug('Detecting the system configuration')
@@ -697,28 +703,32 @@ def detect_config():
         else:
             systemname = hostname
             break
-    # Locate the modules system
+    getlogger().info(f'Detected hostname: {hostname}')
+    # Detect module system
     getlogger().debug('Detecting the modules system...')
     modules_systems = [TMod31Impl, TMod4Impl, LModImpl]
     modules_found = []
     for mod in modules_systems:
         try:
-            modules_found.append(mod())
+            modules_system = mod()
         except Exception as e:
-            print(e) # capture error in environment variables and also ConfigErrors
+            pass
         else:
-            getlogger().info(f'Found {modules_found[-1].name}...')
-    # This does not work because the initialization of the schedulers requires a runtime context
-    schedulers_list = ['slurm', 'pbs', 'flux', 'bsub', 'oarsub', 'pbsnodes', 'qconf','squeue', 'sacct']
-    # schedulers_found = []
-    # for sche in schedulers_list:
-    #     try:
-    #         schedulers_found.append(getscheduler(sche))
-    #     except:
-    #         schedulers_found.append(getscheduler(sche))
-    #         pass # capture error in environment variables and also ConfigErrors
-    #     else:
-    #         schedulers_found[0]()
-    #         print(schedulers_found[0]())
-    completed = osext.run_command('which cacartu', check=True)
+            getlogger().info(f'Detected {modules_system.name()}')
+            break
+    schedulers_dict = {'flux' : FluxJobScheduler,
+                       'lsf' : LsfJobScheduler,
+                       'oar' : OarJobScheduler,
+                       'pbs' : PbsJobScheduler,
+                       'sge' : SgeJobScheduler,
+                       'squeue' : SqueueJobScheduler,
+                       'slurm' : SlurmJobScheduler}
+    schedulers_found = []
+    for sched in schedulers_dict:
+        check = schedulers_dict[sched].validate()
+        if not check:
+            pass
+        else:
+            schedulers_found.append(sched)
+            getlogger().info(f'Found {sched}')
     return ret

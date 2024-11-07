@@ -18,7 +18,8 @@ import time
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobError, JobSchedulerError
+from reframe.core.exceptions import (JobError, JobSchedulerError,
+                                     SpawnedProcessError)
 from reframe.utility import seconds_to_hms, toalphanum
 
 
@@ -305,6 +306,13 @@ class PbsJobScheduler(sched.JobScheduler):
                     job._exception = JobError('maximum pending time exceeded',
                                               job.jobid)
 
+    @staticmethod
+    def validate():
+        try:
+            completed = _run_strict('which pbsnodes')
+            return True
+        except SpawnedProcessError as e:
+            return False
 
 @register_scheduler('torque')
 class TorqueJobScheduler(PbsJobScheduler):

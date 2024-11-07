@@ -152,6 +152,11 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''
         getlogger().log(level, f'[S] {self.registered_name}: {message}')
 
+    @staticmethod
+    @abc.abstractmethod
+    def validate():
+        '''Check if the scheduler is in the system
+        '''
 
 def filter_nodes_by_state(nodelist, state):
     '''Filter nodes by their state
