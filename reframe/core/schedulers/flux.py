@@ -10,12 +10,14 @@
 #   Lawrence Livermore National Lab
 #
 
+import functools
 import itertools
 import os
 import time
 
+import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobError
+from reframe.core.exceptions import JobError, SpawnedProcessError
 from reframe.core.schedulers import JobScheduler, Job
 
 # Just import flux once
@@ -30,6 +32,7 @@ else:
 
 WAITING_STATES = ('QUEUED', 'HELD', 'WAITING', 'PENDING')
 
+_run_strict = functools.partial(osext.run_command, check=True)
 
 class _FluxJob(Job):
     def __init__(self, *args, **kwargs):
@@ -154,3 +157,11 @@ class FluxJobScheduler(JobScheduler):
             raise job.exception
 
         return job.completed
+
+    @staticmethod
+    def validate():
+        try:
+            completed = _run_strict('which flux')
+            return True
+        except SpawnedProcessError as e:
+            return False

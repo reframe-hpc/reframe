@@ -16,7 +16,7 @@ import time
 
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobSchedulerError
+from reframe.core.exceptions import JobSchedulerError, SpawnedProcessError
 from reframe.core.schedulers.pbs import PbsJobScheduler
 
 _run_strict = functools.partial(osext.run_command, check=True)
@@ -151,3 +151,11 @@ class LsfJobScheduler(PbsJobScheduler):
             raise job.exception
 
         return job.state == 'COMPLETED'
+
+    @staticmethod
+    def validate():
+        try:
+            completed = _run_strict('which bsub')
+            return True
+        except SpawnedProcessError as e:
+            return False

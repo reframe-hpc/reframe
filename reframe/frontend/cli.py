@@ -882,7 +882,8 @@ def main():
     if options.detect_configuration:
         site_config = config.detect_config()
         printer.info('Hello, I am under development, '
-                     'but I am supposed to detect the configuration automatically')
+                     'but I am supposed to detect the '
+                     'configuration automatically')
 
         sys.exit(0)
 

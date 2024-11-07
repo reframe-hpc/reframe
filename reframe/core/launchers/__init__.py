@@ -86,6 +86,12 @@ class JobLauncher(metaclass=_JobLauncherMeta):
         cmd_tokens += self.command(job) + self.options
         return ' '.join(cmd_tokens)
 
+    @staticmethod
+    @abc.abstractmethod
+    def validate():
+        '''Check if the launcher is in the system
+        '''
+
 
 class LauncherWrapper(JobLauncher):
     '''Wrap a launcher object so as to modify its invocation.

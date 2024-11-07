@@ -571,6 +571,14 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         return slurm_state_completed(job.state)
 
+    @staticmethod
+    def validate():
+        try:
+            completed = _run_strict('which sacct')
+            return True
+        except SpawnedProcessError as e:
+            return False
+
 
 @register_scheduler('squeue')
 class SqueueJobScheduler(SlurmJobScheduler):
@@ -630,6 +638,14 @@ class SqueueJobScheduler(SlurmJobScheduler):
                 job, [s.group('reason') for s in state_match]
             )
             self._cancel_if_pending_too_long(job)
+
+    @staticmethod
+    def validate():
+        try:
+            completed = _run_strict('which squeue')
+            return True
+        except SpawnedProcessError as e:
+            return False
 
 
 def _create_nodes(descriptions):
