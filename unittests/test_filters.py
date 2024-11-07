@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import pytest
+from collections import namedtuple
 
 import reframe as rfm
 import reframe.core.exceptions as errors
@@ -11,7 +12,6 @@ import reframe.frontend.executors as executors
 import reframe.frontend.filters as filters
 import reframe.utility.sanity as sn
 import unittests.utility as test_util
-from reframe.core.exceptions import ReframeError
 
 
 def count_checks(filter_fn, checks):
@@ -19,8 +19,10 @@ def count_checks(filter_fn, checks):
 
 
 def make_case(*args, **kwargs):
+    _P = namedtuple('_Partition', ['fullname'])
+    _E = namedtuple('_Environment', ['name'])
     test = test_util.make_check(*args, **kwargs)
-    return executors.TestCase(test, None, None)
+    return executors.TestCase(test, _P('generic:default'), _E('builtin'))
 
 
 @pytest.fixture
@@ -156,15 +158,13 @@ def test_validates_expr_invalid(sample_cases):
     validates = filters.validates
 
     # undefined variables
-    with pytest.raises(ReframeError):
-        assert count_checks(validates('foo == 3'), sample_cases)
+    assert count_checks(validates('foo == 3'), sample_cases) == 0
+
+    # assignments
+    assert count_checks(validates('num_tasks = 2'), sample_cases) == 0
+
+    # imports
+    assert count_checks(validates('import os'), sample_cases) == 0
 
     # invalid syntax
-    with pytest.raises(ReframeError):
-        assert count_checks(validates('num_tasks = 2'), sample_cases)
-
-    with pytest.raises(ReframeError):
-        assert count_checks(validates('import os'), sample_cases)
-
-    with pytest.raises(ReframeError):
-        assert count_checks(validates('"foo" i tags'), sample_cases)
+    assert count_checks(validates('"foo" i tags'), sample_cases) == 0
