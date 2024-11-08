@@ -460,6 +460,42 @@ class RunReport:
 
         return StorageBackend.default().store(self, self.filename)
 
+    def report_data(self):
+        '''Get tabular data from this report'''
+
+        columns = ['name', 'sysenv', 'job_nodelist',
+                   'pvar', 'punit', 'pval', 'result']
+        data = [columns]
+        num_runs = len(self.__report['runs'])
+        for runid, runinfo in enumerate(self.__report['runs']):
+            for tc in map(_TCProxy, runinfo['testcases']):
+                if tc['result'] != 'success' and runid != num_runs - 1:
+                    # Skip this testcase until its last retry
+                    continue
+
+                for pvar, reftuple in tc['perfvalues'].items():
+                    pvar = pvar.split(':')[-1]
+                    pval, _, _, _, punit = reftuple
+                    if pval is None:
+                        # Ignore `None` performance values
+                        # (performance tests that failed sanity)
+                        continue
+
+                    line = []
+                    for c in columns:
+                        if c == 'pvar':
+                            line.append(pvar)
+                        elif c == 'pval':
+                            line.append(pval)
+                        elif c == 'punit':
+                            line.append(punit)
+                        else:
+                            line.append(tc[c])
+
+                    data.append(line)
+
+        return data
+
     def generate_xml_report(self):
         '''Generate a JUnit report from a standard ReFrame JSON report.'''
 

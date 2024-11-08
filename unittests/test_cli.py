@@ -420,7 +420,14 @@ def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
                           'default' / 'PerformanceFailureCheck.log')
 
 
-def test_performance_report(run_reframe, run_action):
+@pytest.fixture(params=['storage=yes', 'storage=no'])
+def storage_enabled(request, monkeypatch):
+    value = request.param.split('=')[1]
+    monkeypatch.setenv('RFM_ENABLE_RESULTS_STORAGE', value)
+    return value == 'yes'
+
+
+def test_performance_report(run_reframe, run_action, storage_enabled):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         more_options=['-n', '^PerformanceFailureCheck',
@@ -432,6 +439,9 @@ def test_performance_report(run_reframe, run_action):
         assert returncode == 1
     else:
         assert returncode == 0
+
+    if run_action != 'dry_run':
+        assert 'PERFORMANCE REPORT' in stdout
 
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -1269,7 +1279,8 @@ def assert_no_crash(returncode, stdout, stderr, exitcode=0):
     return returncode, stdout, stderr
 
 
-def test_storage_options(run_reframe, tmp_path, table_format):
+def test_storage_options(run_reframe, tmp_path, table_format, monkeypatch):
+    monkeypatch.setenv('RFM_ENABLE_RESULTS_STORAGE', 'yes')
     run_reframe2 = functools.partial(
         run_reframe,
         checkpath=['unittests/resources/checks/frontend_checks.py'],
@@ -1335,8 +1346,7 @@ def test_storage_options(run_reframe, tmp_path, table_format):
     '--describe-stored-testcases=now-1d:now',
     '--list-stored-sessions',
     '--list-stored-testcases=now-1d:now/mean:/',
-    '--performance-compare=now-1d:now/now-1d/mean:/',
-    '--performance-report=now-1d:now/mean:/'
+    '--performance-compare=now-1d:now/now-1d/mean:/'
 ])
 def storage_option(request):
     return request.param
@@ -1359,7 +1369,8 @@ def test_disabled_results_storage(run_reframe, storage_option, monkeypatch):
     assert 'requires results storage' in stdout
 
 
-def test_session_annotations(run_reframe):
+def test_session_annotations(run_reframe, monkeypatch):
+    monkeypatch.setenv('RFM_ENABLE_RESULTS_STORAGE', 'yes')
     assert_no_crash(*run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         action='-r',
@@ -1373,13 +1384,14 @@ def test_session_annotations(run_reframe):
         assert text in stdout
 
 
-def test_performance_compare(run_reframe, table_format):
+def test_performance_compare(run_reframe, table_format, monkeypatch):
     def assert_no_crash(returncode, stdout, stderr, exitcode=0):
         assert returncode == exitcode
         assert 'Traceback' not in stdout
         assert 'Traceback' not in stderr
         return returncode, stdout, stderr
 
+    monkeypatch.setenv('RFM_ENABLE_RESULTS_STORAGE', 'yes')
     run_reframe2 = functools.partial(
         run_reframe,
         checkpath=['unittests/resources/checks/frontend_checks.py'],

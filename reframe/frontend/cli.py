@@ -628,7 +628,7 @@ def main():
         configvar='general/perf_report_spec',
         envvar='RFM_PERF_REPORT_SPEC',
         help=('Print a report for performance tests '
-              '(default: "now:now/last:+job_nodelist/+result")')
+              '(default: "now-1d:now/last:+job_nodelist/+result")')
     )
     reporting_options.add_argument(
         '--session-extras', action='append', metavar='KV_DATA',
@@ -979,8 +979,7 @@ def main():
                                      '--describe-stored-testcases',
                                      '--list-stored-sessions',
                                      '--list-stored-testcases',
-                                     '--performance-compare',
-                                     '--performance-report']):
+                                     '--performance-compare']):
         sys.exit(1)
 
     rt = runtime.runtime()
@@ -1655,9 +1654,12 @@ def main():
             if (options.performance_report and
                 not options.dry_run and not report.is_empty()):
                 try:
-                    data = reporting.performance_compare(
-                        rt.get_option('general/0/perf_report_spec'), report
-                    )
+                    if rt.get_option('storage/0/enable'):
+                        data = reporting.performance_compare(
+                            rt.get_option('general/0/perf_report_spec'), report
+                        )
+                    else:
+                        data = report.report_data()
                 except Exception as err:
                     printer.warning(
                         f'failed to generate performance report: {err}'
@@ -1699,7 +1701,8 @@ def main():
                     )
 
             # Store the generated report for analytics
-            if not report.is_empty() and not options.dry_run:
+            if (rt.get_option('storage/0/enable') and
+                not report.is_empty() and not options.dry_run):
                 try:
                     sess_uuid = report.store()
                 except Exception as e:
