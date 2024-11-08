@@ -310,6 +310,21 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         return None
 
+    def _get_actual_partition(self, options):
+        try:
+            completed = _run_strict(
+                ' '.join(['srun'] + options + ['--test-only', 'true'])
+            )
+            partition_match = re.search(r'partition (?P<partition>\S+)\s+',
+                                        completed.stderr)
+            if partition_match:
+                return partition_match.group('partition')
+
+        except SpawnedProcessError as e:
+            self.log('could not retrieve actual partition')
+
+        return None
+
     def _merge_files(self, job):
         with osext.change_dir(job.workdir):
             out_glob = glob.glob(job.stdout + '_*')
@@ -345,13 +360,21 @@ class SlurmJobScheduler(sched.JobScheduler):
         if reservation:
             reservation = reservation.strip()
             nodes &= self._get_reservation_nodes(reservation)
-            self.log(f'[F] Filtering nodes by reservation {reservation}: '
-                     f'available nodes now: {len(nodes)}')
+        else:
+            nodes = {node for node in nodes if not node.in_state('RESERVED')}
+
+        self.log(f'[F] Filtering nodes by reservation={reservation}: '
+                 f'available nodes now: {len(nodes)}')
 
         if partitions:
             partitions = set(partitions.strip().split(','))
         else:
-            default_partition = self._get_default_partition()
+            # Use a default partition if one is configured. Otherwise,
+            # fallback to the partition Slurm chooses for this set of options.
+            default_partition = (
+                self._get_default_partition() or
+                self._get_actual_partition(options)
+            )
             partitions = {default_partition} if default_partition else set()
             self.log(
                 f'[F] No partition specified; using {default_partition!r}'
@@ -676,8 +699,13 @@ class _SlurmNode(sched.Node):
         return self._states == set(state.upper().split('+'))
 
     def is_avail(self):
-        return any(self.in_statex(s)
-                   for s in ('ALLOCATED', 'COMPLETING', 'IDLE'))
+        available_states = {
+            'ALLOCATED',
+            'COMPLETING',
+            'IDLE',
+            'RESERVED',
+        }
+        return self._states <= available_states
 
     def is_down(self):
         return not self.is_avail()
