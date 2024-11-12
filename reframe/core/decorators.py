@@ -8,7 +8,6 @@
 #
 
 __all__ = ['simple_test']
-_TREAT_WARNINGS_AS_ERRORS = False
 
 import inspect
 import sys
@@ -170,22 +169,10 @@ def _validate_test(cls):
                                  'subclass of RegressionTest')
 
     if (cls.is_abstract()):
-        params = cls.param_space.params
-        undefined_params = []
-        for param in params:
-            if params[param].is_abstract():
-                undefined_params.append(param)
-        # Raise detailed warning
-        if _TREAT_WARNINGS_AS_ERRORS:
-            raise ValueError(
-                f'skipping test {cls.__qualname__!r}: ' +
-                f'test has the following undefined parameters: ' +
-                ', '.join(undefined_params)
-            )
         getlogger().warning(
             f'skipping test {cls.__qualname__!r}: ' +
-            f'test has the following undefined parameters: ' +
-            ', '.join(undefined_params)
+            'the following parameters are undefined: ' +
+            ', '.join(cls.param_space.undefined_params())
         )
 
     conditions = [VersionValidator(v) for v in cls._rfm_required_version]

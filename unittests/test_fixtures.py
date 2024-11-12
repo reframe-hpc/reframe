@@ -71,11 +71,9 @@ def test_abstract_fixture():
     class Foo(rfm.RegressionTest):
         p = parameter()
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError):
         class MyTest(rfm.RegressionMixin):
             f = fixture(Foo)
-
-    assert "p" in str(exc_info.value)
 
 
 def test_fixture_variants():

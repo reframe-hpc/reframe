@@ -325,12 +325,6 @@ class FixtureRegistry:
         '''Get the uninstantiated tests of this registry'''
         return self._registry.keys()
 
-    def _filter_valid_partitions(self, candidate_parts):
-        return [p for p in candidate_parts if p in self._env_by_part]
-
-    def _filter_valid_environs(self, part, candidate_environs):
-        return [e for e in cadidate_environs if e in self._env_by_part[part]]
-
     def _is_registry(self, other):
         if not isinstance(other, FixtureRegistry):
             raise TypeError('other is not a FixtureRegistry')
@@ -775,14 +769,9 @@ class TestFixture:
 
         # Check that the fixture class is not an abstract test.
         if cls.is_abstract():
-            params = cls.param_space.params
-            undefined_params = []
-            for param in params:
-                if params[param].is_abstract():
-                    undefined_params.append(param)
             raise ValueError(
-                f'class {cls.__qualname__!r} has undefined parameters: ' +
-                ', '.join(undefined_params)
+                f'fixture {cls.__qualname__!r} has undefined parameters: ' +
+                ', '.join(cls.param_space.undefined_params())
             )
 
         # Validate the scope
