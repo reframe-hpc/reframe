@@ -8,6 +8,7 @@
 #
 
 import inspect
+import jsonschema
 import os
 
 import reframe
@@ -54,7 +55,10 @@ class ReframeBaseError(BaseException):
     def __str__(self):
         ret = self._message or ''
         if self.__cause__ is not None:
-            ret += ': ' + str(self.__cause__)
+            if isinstance(self.__cause__, jsonschema.ValidationError):
+                ret += ': ' + self.__cause__.message
+            else:
+                ret += ': ' + str(self.__cause__)
 
         return ret
 
