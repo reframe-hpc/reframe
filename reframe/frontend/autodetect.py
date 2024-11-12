@@ -204,7 +204,7 @@ def _remote_detect(part):
 def detect_topology():
     rt = runtime.runtime()
     detect_remote_systems = rt.get_option('general/0/remote_detect')
-    topo_prefix = os.path.join(os.getenv('HOME'), '.reframe/topology')
+    topo_prefix = rt.get_option('general/0/topology_prefix')
     for part in rt.system.partitions:
         getlogger().debug(f'detecting topology info for {part.fullname}')
         found_procinfo = False
