@@ -124,6 +124,7 @@ class PrettyPrinter:
             self.info(f"  * Description: {rec['descr']}")
             self.info(f"  * System partition: {rec['system']}")
             self.info(f"  * Environment: {rec['environ']}")
+            self.info(f"  * Test file: {rec['filename']}")
             self.info(f"  * Stage directory: {rec['stagedir']}")
             self.info(f"  * Node list: "
                       f"{nodelist_abbrev(rec['job_nodelist'])}")

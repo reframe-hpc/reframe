@@ -215,12 +215,12 @@ def _restore_session(filename):
         except KeyError:
             found_ver = 'n/a'
 
-        getlogger().verbose(f'JSON validation error: {e}')
+        getlogger().debug(str(e))
         raise ReframeError(
             f'failed to validate report {filename!r}: {e.args[0]} '
             f'(check report data version: required {DATA_VERSION}, '
             f'found: {found_ver})'
-        ) from None
+        ) from e
 
     return _RestoredSessionInfo(report)
 

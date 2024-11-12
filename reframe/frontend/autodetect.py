@@ -106,6 +106,7 @@ def _load_info(filename, schema=None):
         )
         return {}
     except jsonschema.ValidationError as e:
+        getlogger().debug(str(e))
         raise ConfigError(
             f'could not validate meta-config file {filename!r}'
         ) from e
