@@ -124,6 +124,10 @@ class TestCase:
         e = self.environ.name if self.environ else None
         return f'({c!r}, {p!r}, {e!r})'
 
+    def __str__(self):
+        check, partition, environ = self
+        return f'{check.name} @{partition.fullname}+{environ.name}'
+
     def prepare(self):
         '''Prepare test case for sending down the test pipeline'''
         if self._is_ready:
