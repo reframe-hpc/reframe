@@ -136,7 +136,7 @@ def _is_part_local(part):
             part.launcher_type.registered_name == 'local')
 
 
-def _remote_detect(part):
+def _remote_detect(part, cli_job_options):
     use_login_shell = runtime.runtime().get_option('general/0/use_login_shell')
 
     def _emit_script_for_source(job, env):
@@ -172,7 +172,7 @@ def _remote_detect(part):
                 job = Job.create(part.scheduler,
                                  part.launcher_type(),
                                  name='rfm-detect-job',
-                                 sched_access=part.access)
+                                 sched_access=part.access + cli_job_options)
                 custom_command = runtime.runtime().get_option(
                     'general/0/remote_install'
                 )
@@ -201,7 +201,8 @@ def _remote_detect(part):
     return topo_info
 
 
-def detect_topology():
+def detect_topology(cli_job_options=None):
+    cli_job_options = [] if cli_job_options is None else cli_job_options
     rt = runtime.runtime()
     detect_remote_systems = rt.get_option('general/0/remote_detect')
     topo_prefix = osext.expandvars(rt.get_option('general/0/topology_prefix'))
@@ -280,7 +281,9 @@ def detect_topology():
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
                 with runtime.temp_environment(modules=modules, env_vars=vars):
-                    part._processor = ProcessorInfo(_remote_detect(part))
+                    part._processor = ProcessorInfo(
+                        _remote_detect(part, cli_job_options)
+                    )
 
                 if part.processor.info:
                     _save_info(topo_file, part.processor.info)

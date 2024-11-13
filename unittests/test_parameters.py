@@ -10,7 +10,6 @@ import inspect
 
 import reframe as rfm
 from reframe.core.exceptions import ReframeSyntaxError
-import reframe.core.decorators as decorators
 
 
 class NoParams(rfm.RunOnlyRegressionTest):

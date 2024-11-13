@@ -1109,7 +1109,20 @@ def main():
 
         sys.exit(0)
 
-    autodetect.detect_topology()
+    # Need to parse the cli options before autodetection
+    parsed_job_options = []
+    for opt in options.job_options:
+        opt_split = opt.split('=', maxsplit=1)
+        optstr = opt_split[0]
+        valstr = opt_split[1] if len(opt_split) > 1 else ''
+        if opt.startswith('-') or opt.startswith('#'):
+            parsed_job_options.append(opt)
+        elif len(optstr) == 1:
+            parsed_job_options.append(f'-{optstr} {valstr}')
+        else:
+            parsed_job_options.append(f'--{optstr}={valstr}')
+
+    autodetect.detect_topology(parsed_job_options)
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
@@ -1223,19 +1236,6 @@ def main():
     printer.info('')
     try:
         logging.getprofiler().enter_region('test processing')
-
-        # Need to parse the cli options before loading the tests
-        parsed_job_options = []
-        for opt in options.job_options:
-            opt_split = opt.split('=', maxsplit=1)
-            optstr = opt_split[0]
-            valstr = opt_split[1] if len(opt_split) > 1 else ''
-            if opt.startswith('-') or opt.startswith('#'):
-                parsed_job_options.append(opt)
-            elif len(optstr) == 1:
-                parsed_job_options.append(f'-{optstr} {valstr}')
-            else:
-                parsed_job_options.append(f'--{optstr}={valstr}')
 
         # Locate and load checks; `force=True` is not needed for normal
         # invocations from the command line and has practically no effect, but
