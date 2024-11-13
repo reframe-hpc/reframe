@@ -606,9 +606,12 @@ def _group_testcases(testcases, groups, columns):
 
 @time_function
 def _aggregate_perf(grouped_testcases, aggr_fn, cols):
-    if runtime().get_option('general/0/table_format') == 'csv':
-        # Use a csv friendly delimiter
+    # Update delimiter for joining unique values based on the table format
+    table_foramt = runtime().get_option('general/0/table_format')
+    if table_foramt == 'csv':
         delim = '|'
+    elif table_foramt == 'plain':
+        delim = ','
     else:
         delim = '\n'
 
