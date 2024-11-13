@@ -311,11 +311,13 @@ def _is_valid_part(part, valid_systems):
                     props[key] = val
 
             have_plus_feats = all(
-                ft in part.features or ft in part.resources
+                (ft in part.features or
+                 ft in part.resources or ft in part.extras)
                 for ft in plus_feats
             )
             have_minus_feats = any(
-                ft in part.features or ft in part.resources
+                (ft in part.features or
+                 ft in part.resources or ft in part.extras)
                 for ft in minus_feats
             )
             try:
@@ -357,8 +359,9 @@ def _is_valid_env(env, valid_prog_environs):
                     key, val = subspec[1:].split('=')
                     props[key] = val
 
-            have_plus_feats = all(ft in env.features for ft in plus_feats)
-            have_minus_feats = any(ft in env.features
+            have_plus_feats = all(ft in env.features or ft in env.extras
+                                  for ft in plus_feats)
+            have_minus_feats = any(ft in env.features or ft in env.extras
                                    for ft in minus_feats)
             try:
                 have_props = True
