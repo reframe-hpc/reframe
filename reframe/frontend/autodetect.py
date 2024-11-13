@@ -136,8 +136,7 @@ def _is_part_local(part):
             part.launcher_type.registered_name == 'local')
 
 
-def _remote_detect(part, job_options=None):
-    job_options = [] if job_options is None else job_options
+def _remote_detect(part, job_options):
     use_login_shell = runtime.runtime().get_option('general/0/use_login_shell')
 
     def _emit_script_for_source(job, env):
