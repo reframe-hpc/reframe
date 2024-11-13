@@ -601,7 +601,7 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   A list of job scheduler `resource specification <#custom-job-scheduler-resources>`__ objects.
+   A list of job scheduler :ref:`resource specification <scheduler-resources>` objects.
 
 
 .. py:attribute:: systems.partitions.processor
@@ -753,6 +753,8 @@ ReFrame can launch containerized applications, but you need to configure properl
       Please use :attr:`~systems.partitions.container_platforms.env_vars` instead.
       If specified in conjunction with :attr:`~systems.partitions.container_platforms.env_vars`, it will be ignored.
 
+
+.. _scheduler-resources:
 
 Custom Job Scheduler Resources
 ==============================

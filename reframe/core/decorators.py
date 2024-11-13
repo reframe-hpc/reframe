@@ -9,7 +9,6 @@
 
 __all__ = ['simple_test']
 
-
 import inspect
 import sys
 import traceback
@@ -171,10 +170,10 @@ def _validate_test(cls):
 
     if (cls.is_abstract()):
         getlogger().warning(
-            f'skipping test {cls.__qualname__!r}: '
-            f'test has one or more undefined parameters'
+            f'skipping test {cls.__qualname__!r}: ' +
+            'the following parameters are undefined: ' +
+            ', '.join(cls.param_space.undefined_params())
         )
-        return False
 
     conditions = [VersionValidator(v) for v in cls._rfm_required_version]
     if (cls._rfm_required_version and
