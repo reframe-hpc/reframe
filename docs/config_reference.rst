@@ -639,11 +639,18 @@ System Partition Configuration
 
       In case of errors during auto-detection, ReFrame will simply issue a warning and continue.
 
+      .. note::
+
+         The directory prefix for storing topology information is configurable through the :attr:`~config.general.topology_prefix` configuration option.
+
 
    .. versionadded:: 3.5.0
 
    .. versionchanged:: 3.7.0
       ReFrame is now able to detect the processor information automatically.
+
+   .. versionchanged:: 4.7
+      Directory prefix for topology files is now configurable.
 
 
 .. py:attribute:: systems.partitions.devices
@@ -1857,6 +1864,16 @@ General Configuration
 
 
 
+.. py:attribute:: general.topology_prefix
+
+   :required: No
+   :default: ``"${HOME}/.reframe/topology"``
+
+   Directory prefix for storing the auto-detected processor topology.
+
+   .. versionadded:: 4.7
+
+
 .. py:attribute:: general.trap_job_errors
 
    :required: No
@@ -1865,7 +1882,6 @@ General Configuration
    Trap command errors in the generated job scripts and let them exit immediately.
 
    .. versionadded:: 3.2
-
 
 .. py:attribute:: general.keep_stage_files
 
