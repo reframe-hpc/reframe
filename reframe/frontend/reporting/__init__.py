@@ -13,10 +13,12 @@ import math
 import os
 import re
 import socket
+import sys
 import time
 import uuid
 from collections import UserDict
 from collections.abc import Hashable
+from datetime import datetime
 from filelock import FileLock
 
 import reframe as rfm
@@ -26,7 +28,7 @@ from reframe.core.exceptions import ReframeError, what, is_severe, reraise_as
 from reframe.core.logging import getlogger, _format_time_rfc3339, time_function
 from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
-from reframe.utility import nodelist_abbrev, OrderedSet
+from reframe.utility import nodelist_abbrev, nodelist_expand, OrderedSet
 from .storage import StorageBackend
 from .utility import Aggregator, parse_cmp_spec, parse_query_spec
 
@@ -244,8 +246,8 @@ class RunReport:
     '''
     def __init__(self):
         # Initialize the report with the required fields
-        self.__filename = None
-        self.__report = {
+        self._filename = None
+        self._report = {
             'session_info': {
                 'data_version': DATA_VERSION,
                 'hostname': socket.gethostname(),
@@ -259,29 +261,191 @@ class RunReport:
 
     @property
     def filename(self):
-        return self.__filename
+        return self._filename
 
     def __getattr__(self, name):
-        return getattr(self.__report, name)
+        return getattr(self._report, name)
 
     def __getitem__(self, key):
-        return self.__report[key]
+        return self._report[key]
 
     def __rfm_json_encode__(self):
-        return self.__report
+        return self._report
+
+    @classmethod
+    def create_from_perflog(cls, *logfiles, format=None,
+                            merge_records=None, datefmt=None,
+                            ignore_lines=None, ignore_records=None):
+        def _filter_record(rec):
+            if ignore_records is None:
+                return False
+            else:
+                return eval(ignore_records, {}, rec)
+
+        def _do_merge(dst, src):
+            system = src.get('system')
+            part = src.get('partition')
+            pvar = src.get('pvar')
+            pval = src.get('pval')
+            pref = src.get('pref')
+            plower = src.get('plower')
+            pupper = src.get('pupper')
+            punit = src.get('punit')
+            if pvar is None:
+                return dst
+
+            if system is not None and part is not None:
+                pvar = f'{system}:{part}:{pvar}'
+
+            # Convert to numbers before inserting
+            def _convert(x):
+                if x is None:
+                    return x
+
+                if x == 'null':
+                    return None
+
+                return float(x)
+
+            pval = _convert(pval)
+            pref = _convert(pref)
+            pupper = _convert(pupper)
+            plower = _convert(plower)
+            dst['perfvalues'][pvar] = (pval, pref, plower, pupper, punit)
+            dst.pop('pvar', None)
+            dst.pop('pval', None)
+            dst.pop('pref', None)
+            dst.pop('plower', None)
+            dst.pop('pupper', None)
+            dst.pop('punit', None)
+            return dst
+
+        patt = re.compile(format)
+        report = RunReport()
+        session_uuid = report['session_info']['uuid']
+        run_index = 0
+        test_index = 0
+        t_report_start = sys.maxsize
+        t_report_end = 0
+        num_failures = 0
+        testcases = []
+        for filename in logfiles:
+            records = {}
+            with open(filename) as fp:
+                for lineno, line in enumerate(fp, start=1):
+                    if lineno in ignore_lines:
+                        continue
+
+                    m = patt.match(line)
+                    if not m:
+                        continue
+
+                    rec = m.groupdict()
+                    if _filter_record(rec):
+                        continue
+
+                    # Add parameters as separate fields
+                    if 'name' in rec:
+                        params = rec['name'].split()[1:]
+                        for spec in params:
+                            p, v = spec.split('=', maxsplit=1)
+                            rec[p[1:]] = v
+
+                    # Groom the record
+                    if 'job_completion_time' in rec:
+                        key = 'job_completion_time'
+                        date = datetime.strptime(rec[key], datefmt)
+                        rec[key] = date.strftime(_DATETIME_FMT)
+                        ts = date.timestamp()
+                        rec[f'{key}_unix'] = ts
+                        t_report_start = min(t_report_start, ts)
+                        t_report_end = max(t_report_end, ts)
+
+                    if 'job_nodelist' in rec:
+                        key = 'job_nodelist'
+                        rec[key] = nodelist_expand(rec[key])
+
+                    rec['uuid'] = f'{session_uuid}:{run_index}:{test_index}'
+                    rec.setdefault('result', 'pass')
+                    if rec['result'] != 'pass':
+                        num_failures += 1
+
+                    if not merge_records:
+                        key = lineno
+                    elif len(merge_records) == 1:
+                        key = rec[merge_records[0]]
+                    else:
+                        key = tuple(rec[k] for k in merge_records)
+
+                    if key in records:
+                        records[key] = _do_merge(records[key], rec)
+                    else:
+                        rec['perfvalues'] = {}
+                        records[key] = _do_merge(rec, rec)
+                        test_index += 1
+
+            testcases += list(records.values())
+
+        report.update_timestamps(t_report_start, t_report_end)
+        report._add_run({
+            'num_cases': len(testcases),
+            'num_failures': num_failures,
+            'run_index': run_index,
+            'testcases': testcases
+        })
+        return [report]
+
+    @classmethod
+    def create_from_sqlite_db(cls, *dbfiles, exclude_sessions=None,
+                              include_sessions=None, time_period=None):
+        dst_backend = StorageBackend.default()
+        dst_schema = dst_backend.schema_version()
+        if not time_period:
+            time_period = {'start': '19700101T0000+0000', 'end': 'now'}
+
+        start = time_period.get('start', '19700101T0000+0000')
+        end = time_period.get('end', 'now')
+        qs = parse_query_spec(f'{start}:{end}')
+        include_sessions = set(include_sessions) if include_sessions else set()
+        exclude_sessions = set(exclude_sessions) if exclude_sessions else set()
+        reports = []
+        for filename in dbfiles:
+            src_backend = StorageBackend.create('sqlite', filename)
+            src_schema = src_backend.schema_version()
+            if src_schema != dst_schema:
+                getlogger().warning(
+                    f'ignoring DB file {filename}: schema version mismatch: '
+                    f'cannot import from DB v{src_schema} to v{dst_schema}'
+                )
+                continue
+
+            for sess in src_backend.fetch_sessions(qs):
+                uuid = sess['session_info']['uuid']
+                if include_sessions and uuid not in include_sessions:
+                    continue
+
+                if exclude_sessions and uuid in exclude_sessions:
+                    continue
+
+                reports.append(_ImportedRunReport(sess))
+
+        return reports
+
+    def _add_run(self, run):
+        self._report['runs'].append(run)
 
     def update_session_info(self, session_info):
         # Remove timestamps
         for key, val in session_info.items():
             if not key.startswith('time_'):
-                self.__report['session_info'][key] = val
+                self._report['session_info'][key] = val
 
     def update_restored_cases(self, restored_cases, restored_session):
-        self.__report['restored_cases'] = [restored_session.case(c)
-                                           for c in restored_cases]
+        self._report['restored_cases'] = [restored_session.case(c)
+                                          for c in restored_cases]
 
     def update_timestamps(self, ts_start, ts_end):
-        self.__report['session_info'].update({
+        self._report['session_info'].update({
             'time_start': time.strftime(_DATETIME_FMT,
                                         time.localtime(ts_start)),
             'time_start_unix': ts_start,
@@ -298,10 +462,10 @@ class RunReport:
             raise ValueError('cannot use reserved keys '
                              f'`{",".join(clashed_keys)}` as session extras')
 
-        self.__report['session_info'].update(extras)
+        self._report['session_info'].update(extras)
 
     def update_run_stats(self, stats):
-        session_uuid = self.__report['session_info']['uuid']
+        session_uuid = self._report['session_info']['uuid']
         for runidx, tasks in stats.runs():
             testcases = []
             num_failures = 0
@@ -402,7 +566,7 @@ class RunReport:
 
                 testcases.append(entry)
 
-            self.__report['runs'].append({
+            self._report['runs'].append({
                 'num_cases': len(tasks),
                 'num_failures': num_failures,
                 'num_aborted': num_aborted,
@@ -412,23 +576,23 @@ class RunReport:
             })
 
         # Update session info from stats
-        self.__report['session_info'].update({
-            'num_cases': self.__report['runs'][0]['num_cases'],
-            'num_failures': self.__report['runs'][-1]['num_failures'],
-            'num_aborted': self.__report['runs'][-1]['num_aborted'],
-            'num_skipped': self.__report['runs'][-1]['num_skipped']
+        self._report['session_info'].update({
+            'num_cases': self._report['runs'][0]['num_cases'],
+            'num_failures': self._report['runs'][-1]['num_failures'],
+            'num_aborted': self._report['runs'][-1]['num_aborted'],
+            'num_skipped': self._report['runs'][-1]['num_skipped']
         })
 
     def _save(self, filename, compress, link_to_last):
         filename = _expand_report_filename(filename, newfile=True)
         with open(filename, 'w') as fp:
             if compress:
-                jsonext.dump(self.__report, fp)
+                jsonext.dump(self._report, fp)
             else:
-                jsonext.dump(self.__report, fp, indent=2)
+                jsonext.dump(self._report, fp, indent=2)
                 fp.write('\n')
 
-        self.__filename = filename
+        self._filename = filename
         if not link_to_last:
             return
 
@@ -448,7 +612,7 @@ class RunReport:
 
     def is_empty(self):
         '''Return :obj:`True` is no test cases where run'''
-        return self.__report['session_info']['num_cases'] == 0
+        return self._report['session_info']['num_cases'] == 0
 
     def save(self, filename, compress=False, link_to_last=True):
         prefix = os.path.dirname(filename) or '.'
@@ -463,7 +627,7 @@ class RunReport:
     def generate_xml_report(self):
         '''Generate a JUnit report from a standard ReFrame JSON report.'''
 
-        report = self.__report
+        report = self._report
         xml_testsuites = etree.Element('testsuites')
         # Create a XSD-friendly timestamp
         session_ts = time.strftime(
@@ -558,6 +722,30 @@ class _TCProxy(UserDict):
             return None
         else:
             raise KeyError(key)
+
+
+class _ImportedRunReport(RunReport):
+    def __init__(self, report):
+        self._filename = f'{report["session_info"]["uuid"]}.json'
+        self._report = report
+
+    def _add_run(self, run):
+        raise NotImplementedError
+
+    def update_session_info(self, session_info):
+        raise NotImplementedError
+
+    def update_restored_cases(self, restored_cases, restored_session):
+        raise NotImplementedError
+
+    def update_timestamps(self, ts_start, ts_end):
+        raise NotImplementedError
+
+    def update_extras(self, extras):
+        raise NotImplementedError
+
+    def update_run_stats(self, stats):
+        raise NotImplementedError
 
 
 def _group_key(groups, testcase: _TCProxy):

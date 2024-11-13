@@ -13,6 +13,7 @@ import pytest
 import re
 import sys
 import time
+from pathlib import Path
 
 import reframe.core.environments as env
 import reframe.core.logging as logging
@@ -1374,12 +1375,6 @@ def test_session_annotations(run_reframe):
 
 
 def test_performance_compare(run_reframe, table_format):
-    def assert_no_crash(returncode, stdout, stderr, exitcode=0):
-        assert returncode == exitcode
-        assert 'Traceback' not in stdout
-        assert 'Traceback' not in stderr
-        return returncode, stdout, stderr
-
     run_reframe2 = functools.partial(
         run_reframe,
         checkpath=['unittests/resources/checks/frontend_checks.py'],
@@ -1407,3 +1402,13 @@ def test_performance_compare(run_reframe, table_format):
             action='--performance-compare=now-1m:now/now-1d:now/mean:+foo/+bar'
         ), exitcode=1
     )
+
+
+def test_import_from_perflog(run_reframe, monkeypatch):
+    run_reframe(checkpath=['unittests/resources/checks/frontend_checks.py'],
+                more_options=['--repeat=2', '-n', '^PerformanceFailureCheck'],
+                action='-r')
+    assert os.path.exists(Path('perflogs') / 'generic' / 'default' /
+                          'PerformanceFailureCheck.log')
+
+    monkeypatch.setenv('RFM_SQLITE_DB_FILE', 'local.db')
