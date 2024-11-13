@@ -17,7 +17,6 @@ import time
 import uuid
 from collections import UserDict
 from collections.abc import Hashable
-from filelock import FileLock
 
 import reframe as rfm
 import reframe.utility.jsonext as jsonext
@@ -419,7 +418,11 @@ class RunReport:
             'num_skipped': self.__report['runs'][-1]['num_skipped']
         })
 
-    def _save(self, filename, compress, link_to_last):
+    def is_empty(self):
+        '''Return :obj:`True` is no test cases where run'''
+        return self.__report['session_info']['num_cases'] == 0
+
+    def save(self, filename, compress=False, link_to_last=True):
         filename = _expand_report_filename(filename, newfile=True)
         with open(filename, 'w') as fp:
             if compress:
@@ -445,15 +448,6 @@ class RunReport:
                     create_symlink()
                 else:
                     raise ReframeError('path exists and is not a symlink')
-
-    def is_empty(self):
-        '''Return :obj:`True` is no test cases where run'''
-        return self.__report['session_info']['num_cases'] == 0
-
-    def save(self, filename, compress=False, link_to_last=True):
-        prefix = os.path.dirname(filename) or '.'
-        with FileLock(os.path.join(prefix, '.report.lock')):
-            self._save(filename, compress, link_to_last)
 
     def store(self):
         '''Store the report in the results storage.'''
