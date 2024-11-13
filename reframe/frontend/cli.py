@@ -1110,7 +1110,7 @@ def main():
 
         sys.exit(0)
 
-    # Need to parse the cli options before autodection
+    # Need to parse the cli options before autodetection
     parsed_job_options = []
     for opt in options.job_options:
         opt_split = opt.split('=', maxsplit=1)
