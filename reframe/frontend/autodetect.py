@@ -205,7 +205,7 @@ def detect_topology(cli_job_options=None):
     cli_job_options = [] if cli_job_options is None else cli_job_options
     rt = runtime.runtime()
     detect_remote_systems = rt.get_option('general/0/remote_detect')
-    topo_prefix = os.path.join(os.getenv('HOME'), '.reframe/topology')
+    topo_prefix = osext.expandvars(rt.get_option('general/0/topology_prefix'))
     for part in rt.system.partitions:
         getlogger().debug(f'detecting topology info for {part.fullname}')
         found_procinfo = False

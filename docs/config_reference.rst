@@ -601,7 +601,7 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   A list of job scheduler `resource specification <#custom-job-scheduler-resources>`__ objects.
+   A list of job scheduler :ref:`resource specification <scheduler-resources>` objects.
 
 
 .. py:attribute:: systems.partitions.processor
@@ -639,11 +639,18 @@ System Partition Configuration
 
       In case of errors during auto-detection, ReFrame will simply issue a warning and continue.
 
+      .. note::
+
+         The directory prefix for storing topology information is configurable through the :attr:`~config.general.topology_prefix` configuration option.
+
 
    .. versionadded:: 3.5.0
 
    .. versionchanged:: 3.7.0
       ReFrame is now able to detect the processor information automatically.
+
+   .. versionchanged:: 4.7
+      Directory prefix for topology files is now configurable.
 
 
 .. py:attribute:: systems.partitions.devices
@@ -746,6 +753,8 @@ ReFrame can launch containerized applications, but you need to configure properl
       Please use :attr:`~systems.partitions.container_platforms.env_vars` instead.
       If specified in conjunction with :attr:`~systems.partitions.container_platforms.env_vars`, it will be ignored.
 
+
+.. _scheduler-resources:
 
 Custom Job Scheduler Resources
 ==============================
@@ -1855,6 +1864,16 @@ General Configuration
 
 
 
+.. py:attribute:: general.topology_prefix
+
+   :required: No
+   :default: ``"${HOME}/.reframe/topology"``
+
+   Directory prefix for storing the auto-detected processor topology.
+
+   .. versionadded:: 4.7
+
+
 .. py:attribute:: general.trap_job_errors
 
    :required: No
@@ -1863,7 +1882,6 @@ General Configuration
    Trap command errors in the generated job scripts and let them exit immediately.
 
    .. versionadded:: 3.2
-
 
 .. py:attribute:: general.keep_stage_files
 

@@ -261,11 +261,18 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: of the :attr:`valid_systems` list, in which case an AND operation on
     #: these constraints is implied. For example, the test defining the
     #: following will be valid for all systems that have define both ``feat1``
-    #: and ``feat2`` and set ``foo=1``
+    #: and ``feat2`` and set ``foo=1``:
     #:
     #: .. code-block:: python
     #:
-    #:    valid_systems = ['+feat1 +feat2 %foo=1']
+    #:    valid_systems = [r'+feat1 +feat2 %foo=1']
+    #:
+    #: Any partition/environment extra or
+    #: :ref:`partition resource <scheduler-resources>` can be specified as a
+    #: feature constraint without having to explicitly state this in the
+    #: partition's/environment's feature list. For example, if ``key1`` is part
+    #: of the partition/environment extras list, then ``+key1`` will select
+    #: that partition or environment.
     #:
     #: For key/value pairs comparisons, ReFrame will automatically convert the
     #: value in the key/value spec to the type of the value of the
