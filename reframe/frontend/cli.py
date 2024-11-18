@@ -879,7 +879,10 @@ def main():
         printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
 
     if options.detect_configuration:
-        site_config = config.load_config(options.detect_configuration)
+        runtime.init_runtime(site_config)
+        site_config = config.load_config(
+            options.detect_configuration, validate=False
+        )
         sys.exit(0)
 
     # Now configure ReFrame according to the user configuration file

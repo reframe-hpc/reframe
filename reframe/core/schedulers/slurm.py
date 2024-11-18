@@ -586,17 +586,15 @@ class SlurmJobScheduler(sched.JobScheduler):
             return False
 
     def build_context(self, modules_system, launcher,
-                      job_cli_options, exclude_feats,
-                      prefix, detect_containers,
-                      detect_devices):
+                      sched_options, time_limit,
+                      exclude_feats, prefix, detect_containers):
         self._context = _SlurmContext(
-            modules_system, launcher, self, prefix,
-            detect_containers=detect_containers,
-            detect_devices=detect_devices
+            modules_system, launcher, self, prefix, time_limit,
+            detect_containers=detect_containers
         )
         self._context.search_node_types(exclude_feats)
         self._context.create_login_partition()
-        self._context.create_partitions(job_cli_options)
+        self._context.create_partitions(sched_options)
         return self._context.partitions
 
 
@@ -728,8 +726,7 @@ class _SlurmNode(sched.Node):
         # Convert the Slurm constraint to a Python expression and evaluate it,
         # but restrict our syntax to accept only AND or OR constraints and
         # their combinations
-        # print(re.match(r'^[\w\d\(\)\|\&]*$', slurm_constraint))
-        if not re.match(r'^[\w\d\(\)\|\&]*$', slurm_constraint):
+        if not re.match(r'^[\w\d\(\)\|\&\-]*$', slurm_constraint):
             return False
 
         names = {grp[0]
@@ -741,16 +738,11 @@ class _SlurmNode(sched.Node):
                         ] else key
             for key in slurm_constraint.split()])
 
-        # print(expr)
-        # print('mc' in self.active_features and '128gb' in self.active_features)
         vars = {n: True for n in self.active_features}
-        # print(vars)
         vars.update({n: False for n in names - self.active_features})
-        # print(eval(expr, {}, vars))
         try:
-            # print("returning", eval(expr, {}, vars))
             return eval(expr, {}, {'vars': vars})
-        except BaseException as e:
+        except BaseException:
             return False
 
     @property
@@ -792,12 +784,12 @@ class _SlurmNode(sched.Node):
 class _SlurmContext(sched.ReframeContext):
 
     def __init__(self, modules_system: str, launcher: str, scheduler: str,
-                 prefix: str, detect_containers: bool = True,
-                 detect_devices: bool = True, access_opt: list = []):
+                 prefix: str, time_limit: int, detect_containers: bool = True,
+                 access_opt: list = []):
 
         super().__init__(modules_system, launcher,
-                         scheduler, prefix,
-                         detect_containers, detect_devices)
+                         scheduler, prefix, time_limit,
+                         detect_containers)
         self.node_types = []
         self.default_nodes = []
         self.reservations = []
@@ -950,11 +942,11 @@ class _SlurmContext(sched.ReframeContext):
     def _get_access_partition(self, node_feats: list) -> Union[str, None]:
 
         nodes_info = self._scheduler.allnodes()
+        node_feats = "&".join(node_feats)
         nd_partitions = {tuple(n.partitions)
                          for n in nodes_info
                          if n.satisfies(node_feats)}
         nd_partitions = set(nd_partitions)
-        print(nd_partitions)
         if len(nd_partitions) > 1:
             return None
         else:

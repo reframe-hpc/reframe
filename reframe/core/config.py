@@ -336,7 +336,7 @@ class _SiteConfig:
     def subconfig_system(self):
         return self._local_system
 
-    def load_config_python(self, filename):
+    def load_config_python(self, filename, validate=True):
         try:
             mod = util.import_module_from_file(filename)
         except ImportError as e:
@@ -346,13 +346,12 @@ class _SiteConfig:
                 f'could not load Python configuration file: {filename!r}'
             ) from e
 
-        print(dir(mod))
         if not hasattr(mod, 'site_configuration'):
             raise ConfigError(
                 f"not a valid Python configuration file: '{filename}'"
             )
 
-        if mod.site_configuration:
+        if validate:
             self._config_modules.append(mod)
             self.update_config(mod.site_configuration, filename)
 
@@ -669,7 +668,7 @@ def find_config_files(config_path=None, config_file=None):
     return res
 
 
-def load_config(*filenames):
+def load_config(*filenames, validate=True):
     ret = _SiteConfig()
     getlogger().debug('Loading the builtin configuration')
     ret.update_config(settings.site_configuration, '<builtin>')
@@ -681,7 +680,7 @@ def load_config(*filenames):
         getlogger().debug(f'Loading configuration file: {f!r}')
         _, ext = os.path.splitext(f)
         if ext == '.py':
-            ret.load_config_python(f)
+            ret.load_config_python(f, validate)
         elif ext == '.json':
             ret.load_config_json(f)
         else:
@@ -691,12 +690,11 @@ def load_config(*filenames):
 
 
 def detect_config(detect_containers: bool = False,
-                  detect_devices: bool = False,
                   exclude_feats: list = [],
                   sched_options: list = [],
-                  filename: str = 'system_config'
-                  ):
-    # job_cli_options, exclude_feats
+                  time_limit: int = 200,
+                  filename: str = 'system_config'):
+
     import reframe.core.runtime as rt
 
     # Initialize the Site Configuration object
@@ -710,7 +708,8 @@ def detect_config(detect_containers: bool = False,
     site_config.setdefault('name', '')
     site_config.setdefault('hostnames', [])
     hostname = ret._detect_system(detect_only=True)
-    site_config['hostnames'] += hostname
+    site_config['hostnames'] += [hostname]
+    print(site_config['hostnames'])
     site_config['name'] += hostname
     msg = color.colorize(
         f'Detected hostname: {hostname}', color.GREEN
@@ -737,15 +736,11 @@ def detect_config(detect_containers: bool = False,
     msg = color.colorize(f'Launcher set to {launcher_name}', color.GREEN)
     getlogger().info(msg)
 
-    # Initialize the RuntimeContext with builtin settings
-    rt.init_runtime(ret)
-
     site_config.setdefault('partitions', [])
     # Detect the context with the corresponding scheduler
     site_config['partitions'] = scheduler().build_context(
-        modules_system, launcher(), sched_options,
-        exclude_feats, rt.runtime().prefix,
-        detect_containers, detect_devices
+        modules_system, launcher(), sched_options, time_limit,
+        exclude_feats, rt.runtime().prefix, detect_containers
     )
 
     template_loader = FileSystemLoader(searchpath=os.path.join(

@@ -39,21 +39,6 @@ site_configuration = {
                     'extras': {{partition.extras}},
                     # https://reframe-hpc.readthedocs.io/en/stable/config_reference.html#config.systems.partitions.env_vars
                     'env_vars': {{partition.env_vars}},
-                    {% if partition.devices %}
-                    # Check if any specific devices were found in this node type
-                    # The gpus found in slurm GRes will be specified here
-                    'devices': [
-                    {% for dev in partition.devices %}
-                        { 'type': '{{dev.type}}',
-                          'model': '{{dev.model}}',
-                        {% if dev.arch %}
-                          'arch': '{{dev.arch}}',
-                        {% endif %}
-                          'num_devices': {{dev.num_devices}}
-                                },
-                    {% endfor %}
-                    ],
-                    {% endif %}
                     {% if partition.container_platforms %}
                     # Check if any container platforms are available in these nodes and add them
                     # https://reframe-hpc.readthedocs.io/en/stable/config_reference.html#container-platform-configuration

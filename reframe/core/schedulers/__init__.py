@@ -757,13 +757,13 @@ class ReframeContext(abc.ABC):
     '''
 
     def __init__(self, modules_system, launcher, scheduler, prefix,
-                 detect_containers, detect_devices):
+                 time_limit, detect_containers):
         self.partitions = []
         self._modules_system = modules_system
         self._scheduler = scheduler
         self._launcher = launcher
+        self._time_limit = time_limit
         self._detect_containers = detect_containers
-        self._detect_devices = detect_devices
         self._p_n = 0  # System partitions counter
         self._keep_tmp_dir = False
         if prefix == '.':
@@ -775,7 +775,7 @@ class ReframeContext(abc.ABC):
                 prefix='reframe_config_detection_',
                 dir=prefix
             )
-        if detect_containers or detect_devices:
+        if detect_containers:
             getlogger().info(f'Stage directory: {self.TMP_DIR}')
 
     @abc.abstractmethod
@@ -812,9 +812,6 @@ class ReframeContext(abc.ABC):
         for gpu_job in node_devices_job:
             devices.append({'type': 'gpu',
                             'model': gpu_job,
-                            # TODO
-                            'arch': c_d.nvidia_gpu_architecture.get(gpu_job) or
-                                    c_d.amd_gpu_architecture.get(gpu_job),
                             'num_devices': node_devices_job[gpu_job]})
             gpus_job_count += node_devices_job[gpu_job]
 
@@ -928,9 +925,6 @@ class ReframeContext(abc.ABC):
         if job.detect_containers:
             job.container_platforms = self._parse_containers(file_path)
 
-        if job.detect_devices:
-            job.devices = self._parse_devices(file_path)
-
     def _create_detection_job(self, name: str, access_node: list,
                               access_options: list):
         '''Create the instance of the job for remote autodetection'''
@@ -942,8 +936,7 @@ class ReframeContext(abc.ABC):
             sched_access=access_node,
             sched_options=access_options
         )
-        # TODO: move this somewhere to be user defined, not here (maybe yaml)
-        remote_job.max_pending_time = 20
+        remote_job.max_pending_time = self._time_limit
         remote_job.time_limit = '2m'
         remote_job.container_platforms = []
         remote_job.devices = {}
@@ -954,14 +947,10 @@ class ReframeContext(abc.ABC):
         if job.detect_containers:
             job.content += [c_d.containers_detect_bash]
             job.content += ['\n\n\n']
-        if job.detect_devices:
-            job.content += [c_d.devices_detect_bash]
 
     def create_login_partition(self):
-        # TODO: move this somewhere to be user defined, not here (maybe yaml)
         max_jobs = 4
         time_limit = '2m'
-        # TODO: improve this (?)
         self.partitions.append(
             {'name':      'login',
              'scheduler':  'local',
@@ -971,34 +960,30 @@ class ReframeContext(abc.ABC):
              'launcher':   'local'})
 
     def create_remote_partition(self, node_feats: tuple,
-                                job_cli_options):
+                                sched_options):
 
         node_features = list(node_feats)
-        _detect_devices = copy.deepcopy(self._detect_devices)
         _detect_containers = copy.deepcopy(self._detect_containers)
         self._p_n += 1  # Count the partition that is being created
-        access_options = copy.deepcopy(job_cli_options)
+        access_options = copy.deepcopy(sched_options)
         access_node = self._scheduler.feats_access_option(node_features)
         name = f'partition_{self._p_n}'
         getlogger().info(f'{name} : {node_feats}')
-        # TODO: move this somewhere to be user defined, not here (maybe yaml)
         max_jobs = 100
         time_limit = '10m'
         container_platforms = []
-        devices = []
 
+        # Try to get the devices from the scheduler config
+        _detect_devices = self._find_devices(node_features)
         if _detect_devices:
-            # If detection of remote devices is requested,
-            # try to get the devices from the scheduler config
-            _detect_devices = self._find_devices(node_features)
+            getlogger().info('GPUs were detected in this node type.')
 
         remote_job = None
-        if _detect_devices or _detect_containers:
+        if _detect_containers:
             self._keep_tmp_dir = True
             remote_job = self._create_detection_job(
                 name, access_node, access_options
             )
-            remote_job.detect_devices = _detect_devices
             remote_job.detect_containers = _detect_containers
             self._generate_job_content(remote_job)
             submission_error, access_node = self.submit_detect_job(
@@ -1041,22 +1026,8 @@ class ReframeContext(abc.ABC):
                     f'partition "{name}"'
                 )
 
-            if remote_job.devices:
-                # Issue any warning regarding missconfigurations
-                # between Gres and the detected devices
-                getlogger().info(f"\nGPUs found in partition {name}")
-                devices = self._check_gpus_count(
-                    _detect_devices, remote_job.devices
-                )
+        access_options += access_node
 
-        elif not remote_job:
-            # No jobs were launched so we cannot check the access options
-            access_options += access_node
-        else:
-            # TODO check this
-            access_options = access_node
-
-        # TODO: improve this (?)
         # Create the partition
         self.partitions.append(
             {'name':      name,
@@ -1069,14 +1040,13 @@ class ReframeContext(abc.ABC):
              'launcher':   self._launcher.name,
              'access':     access_options,
              'features':   node_features+['remote'],
-             'devices':    devices,
              'container_platforms': container_platforms}
         )
 
-    def create_partitions(self, job_cli_options):
+    def create_partitions(self, sched_options):
         # TODO: asynchronous
         for node in self.node_types:
-            self.create_remote_partition(node, job_cli_options)
+            self.create_remote_partition(node, sched_options)
         if not self._keep_tmp_dir:
             shutil.rmtree(self.TMP_DIR)
         else:
