@@ -34,6 +34,7 @@ WAITING_STATES = ('QUEUED', 'HELD', 'WAITING', 'PENDING')
 
 _run_strict = functools.partial(osext.run_command, check=True)
 
+
 class _FluxJob(Job):
     def __init__(self, *args, **kwargs):
         '''Create the flux job (and future) to watch.'''
@@ -144,6 +145,11 @@ class FluxJobScheduler(JobScheduler):
             'flux backend does not support node filtering'
         )
 
+    def feats_access_option(self, node_feats):
+        raise NotImplementedError(
+            'flux backend does not support configuration autodetection'
+        )
+
     def wait(self, job):
         '''Wait until a job is finished.'''
 
@@ -158,10 +164,10 @@ class FluxJobScheduler(JobScheduler):
 
         return job.completed
 
-    @staticmethod
-    def validate():
+    @classmethod
+    def validate(cls):
         try:
-            completed = _run_strict('which flux')
-            return True
-        except SpawnedProcessError as e:
+            _run_strict('which flux')
+            return cls.registered_name
+        except SpawnedProcessError:
             return False

@@ -441,9 +441,8 @@ def main():
     # CONFIGURATION
     action_options.add_argument(
         '--detect-configuration', metavar='FILE', action='store',
-        nargs='?', const='-',
-        help=('Detect the local host topology and exit, '
-              'optionally saving it in FILE')
+        help=('Detect the configuration of the system. The content '
+              'in FILE must call the detect_config method from core/config')
     )
     action_options.add_argument(
         '--dry-run', action='store_true',
@@ -880,11 +879,7 @@ def main():
         printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
 
     if options.detect_configuration:
-        site_config = config.detect_config()
-        printer.info('Hello, I am under development, '
-                     'but I am supposed to detect the '
-                     'configuration automatically')
-
+        site_config = config.load_config(options.detect_configuration)
         sys.exit(0)
 
     # Now configure ReFrame according to the user configuration file
@@ -931,7 +926,7 @@ def main():
                     "instead"
                 )
                 autodetect_methods = ['cat /etc/xthostname',
-                                    'py::socket.gethostname']
+                                      'py::socket.gethostname']
 
         if autodetect_methods:
             site_config.set_autodetect_methods(autodetect_methods)
@@ -941,7 +936,7 @@ def main():
         # partition level and will be caught when we will instantiating
         # internally the system and partitions later on.
         site_config.select_subconfig(options.system,
-                                    ignore_resolve_errors=True)
+                                     ignore_resolve_errors=True)
         for err in options.update_config(site_config):
             printer.warning(str(err))
 

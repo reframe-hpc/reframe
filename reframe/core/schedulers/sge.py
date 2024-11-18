@@ -40,7 +40,7 @@ class SgeJobScheduler(PbsJobScheduler):
         if job.time_limit is not None:
             h, m, s = seconds_to_hms(job.time_limit)
             preamble.append(
-                self._format_option(f'-l h_rt=%d:%d:%d' % (h, m, s))
+                self._format_option('-l h_rt=%d:%d:%d' % (h, m, s))
             )
 
         # Emit the rest of the options
@@ -142,10 +142,10 @@ class SgeJobScheduler(PbsJobScheduler):
 
         return job.state == 'COMPLETED'
 
-    @staticmethod
-    def validate():
+    @classmethod
+    def validate(cls):
         try:
-            completed = _run_strict('which qconf')
-            return True
-        except SpawnedProcessError as e:
+            _run_strict('which qconf')
+            return cls.registered_name
+        except SpawnedProcessError:
             return False
