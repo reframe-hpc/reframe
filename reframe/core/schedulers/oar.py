@@ -200,10 +200,10 @@ class OarJobScheduler(PbsJobScheduler):
                     job._exception = JobError('maximum pending time exceeded',
                                               job.jobid)
 
-    @staticmethod
-    def validate():
+    @classmethod
+    def validate(cls):
         try:
-            completed = _run_strict('which oarsub')
-            return True
-        except SpawnedProcessError as e:
+            _run_strict('which oarsub')
+            return cls.registered_name
+        except SpawnedProcessError:
             return False

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import autopep8
 import contextlib
 import copy
 import fnmatch
@@ -13,19 +14,22 @@ import json
 import jsonschema
 import os
 import re
-import socket
+
+from jinja2 import Environment, FileSystemLoader
 
 import reframe
 import reframe.core.settings as settings
 import reframe.utility as util
+import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
-from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import (ConfigError, ReframeFatalError)
-from reframe.core.modules import TMod31Impl, TMod4Impl, LModImpl
+from reframe.core.backends import (detect_modules_system, detect_launcher,
+                                   detect_scheduler)
 from reframe.core.logging import getlogger
 from reframe.utility import ScopedDict
+
 
 def _match_option(opt, opt_map):
     if isinstance(opt, list):
@@ -342,13 +346,15 @@ class _SiteConfig:
                 f'could not load Python configuration file: {filename!r}'
             ) from e
 
+        print(dir(mod))
         if not hasattr(mod, 'site_configuration'):
             raise ConfigError(
                 f"not a valid Python configuration file: '{filename}'"
             )
 
-        self._config_modules.append(mod)
-        self.update_config(mod.site_configuration, filename)
+        if mod.site_configuration:
+            self._config_modules.append(mod)
+            self.update_config(mod.site_configuration, filename)
 
     def load_config_json(self, filename):
         with open(filename) as fp:
@@ -410,7 +416,7 @@ class _SiteConfig:
             else:
                 self._autodetect_methods.append((m, _sh_meth(m)))
 
-    def _detect_system(self):
+    def _detect_system(self, detect_only: bool = False) -> str:
         getlogger().debug('Autodetecting system')
         if not self._autodetect_methods:
             self._setup_autodect_methods()
@@ -426,12 +432,23 @@ class _SiteConfig:
                 break
 
         if hostname is None:
-            raise ConfigError('all autodetection methods failed; '
-                              'try passing a system name explicitly using '
-                              'the `--system` option')
+            if detect_only:
+                getlogger().error(
+                    'Could not retrieve the name of the system'
+                )
+                raise ConfigError('all autodetection methods failed')
+            else:
+                raise ConfigError('all autodetection methods failed; '
+                                  'try passing a system name explicitly using '
+                                  'the `--system` option')
 
         getlogger().debug(f'Retrieved hostname: {hostname!r}')
-        getlogger().debug(f'Looking for a matching configuration entry')
+        if detect_only:
+            # Make sure the numbers in the name are removed
+            hostname = re.search(r'^[A-Za-z]+', hostname.strip())
+            return hostname.group(0)
+
+        getlogger().debug('Looking for a matching configuration entry')
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
                 if re.match(patt, hostname):
@@ -673,62 +690,87 @@ def load_config(*filenames):
     return ret
 
 
-def detect_config():
-    from reframe.core.schedulers.flux import FluxJobScheduler
-    from reframe.core.schedulers.lsf import LsfJobScheduler
-    from reframe.core.schedulers.oar import OarJobScheduler
-    from reframe.core.schedulers.pbs import PbsJobScheduler
-    from reframe.core.schedulers.sge import SgeJobScheduler
-    from reframe.core.schedulers.slurm import SlurmJobScheduler, SqueueJobScheduler
+def detect_config(detect_containers: bool = False,
+                  detect_devices: bool = False,
+                  exclude_feats: list = [],
+                  sched_options: list = [],
+                  filename: str = 'system_config'
+                  ):
+    # job_cli_options, exclude_feats
+    import reframe.core.runtime as rt
+
     # Initialize the Site Configuration object
     ret = _SiteConfig()
     getlogger().debug('Detecting the system configuration')
     ret.update_config(settings.site_configuration, '<builtin>')
-    # System name detection
-    autodetect_methods = ['cat /etc/xthostname',
-                          'py::socket.gethostname']
-    # Add the strings to the site config dictionary
-    ret.set_autodetect_methods(autodetect_methods)
-    # From strings to actual functions (python or command line)
-    if not ret._autodetect_methods:
-        ret._setup_autodect_methods()
+
+    site_config = {}
+
     # Detect the hostname and the system name
-    hostname = None
-    for meth, fn in ret._autodetect_methods: # Esto está fatal
-        getlogger().debug(f'Trying autodetection method: {meth!r}')
-        try:
-            hostname = fn()
-        except Exception as e:
-            getlogger().debug(f'Autodetection method {meth!r} failed: {e}')
-        else:
-            systemname = hostname
-            break
-    getlogger().info(f'Detected hostname: {hostname}')
-    # Detect module system
+    site_config.setdefault('name', '')
+    site_config.setdefault('hostnames', [])
+    hostname = ret._detect_system(detect_only=True)
+    site_config['hostnames'] += hostname
+    site_config['name'] += hostname
+    msg = color.colorize(
+        f'Detected hostname: {hostname}', color.GREEN
+    )
+    getlogger().info(msg)
+
+    # Detect modules system
     getlogger().debug('Detecting the modules system...')
-    modules_systems = [TMod31Impl, TMod4Impl, LModImpl]
-    modules_found = []
-    for mod in modules_systems:
-        try:
-            modules_system = mod()
-        except Exception as e:
-            pass
-        else:
-            getlogger().info(f'Detected {modules_system.name()}')
-            break
-    schedulers_dict = {'flux' : FluxJobScheduler,
-                       'lsf' : LsfJobScheduler,
-                       'oar' : OarJobScheduler,
-                       'pbs' : PbsJobScheduler,
-                       'sge' : SgeJobScheduler,
-                       'squeue' : SqueueJobScheduler,
-                       'slurm' : SlurmJobScheduler}
-    schedulers_found = []
-    for sched in schedulers_dict:
-        check = schedulers_dict[sched].validate()
-        if not check:
-            pass
-        else:
-            schedulers_found.append(sched)
-            getlogger().info(f'Found {sched}')
-    return ret
+    site_config.setdefault('modules_system', 'nomod')
+    modules_system, modules_system_name = detect_modules_system()
+    site_config['modules_system'] = modules_system_name
+    msg = color.colorize(
+        f'Modules system set to {site_config["modules_system"]}', color.GREEN
+    )
+    getlogger().info(msg)
+
+    # Detect scheduler
+    scheduler, scheduler_name = detect_scheduler()
+    msg = color.colorize(f'Scheduler set to {scheduler_name}', color.GREEN)
+    getlogger().info(msg)
+
+    # Detect launcher
+    launcher, launcher_name = detect_launcher()
+    msg = color.colorize(f'Launcher set to {launcher_name}', color.GREEN)
+    getlogger().info(msg)
+
+    # Initialize the RuntimeContext with builtin settings
+    rt.init_runtime(ret)
+
+    site_config.setdefault('partitions', [])
+    # Detect the context with the corresponding scheduler
+    site_config['partitions'] = scheduler().build_context(
+        modules_system, launcher(), sched_options,
+        exclude_feats, rt.runtime().prefix,
+        detect_containers, detect_devices
+    )
+
+    template_loader = FileSystemLoader(searchpath=os.path.join(
+        reframe.INSTALL_PREFIX, 'reframe', 'schemas'
+    ))
+    env = Environment(loader=template_loader,
+                      trim_blocks=True, lstrip_blocks=True)
+    rfm_config_template = env.get_template(
+        'reframe_config_template.j2'
+    )
+
+    # Render the template with the gathered information
+    organized_config = rfm_config_template.render(site_config)
+
+    # Output filename for the generated configuration
+    output_filename = f'{filename}.py'
+
+    # Format the content
+    organized_config = autopep8.fix_code(organized_config)
+
+    # Overwrite the file with formatted content
+    with open(output_filename, "w") as output_file:
+        output_file.write(organized_config)
+
+    getlogger().info(
+        f'\nThe following configuration files was created:\n'
+        f'PYTHON: {filename}.py'
+    )

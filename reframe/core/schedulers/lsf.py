@@ -152,10 +152,10 @@ class LsfJobScheduler(PbsJobScheduler):
 
         return job.state == 'COMPLETED'
 
-    @staticmethod
-    def validate():
+    @classmethod
+    def validate(cls):
         try:
-            completed = _run_strict('which bsub')
-            return True
-        except SpawnedProcessError as e:
+            _run_strict('which bsub')
+            return cls.registered_name
+        except SpawnedProcessError:
             return False

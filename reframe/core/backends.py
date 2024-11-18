@@ -9,6 +9,8 @@ import functools
 
 import reframe.core.fields as fields
 from reframe.core.exceptions import ConfigError
+from reframe.core.modules import ModulesSystem
+from reframe.core.logging import getlogger
 
 _launcher_backend_modules = [
     'reframe.core.launchers.local',
@@ -62,6 +64,26 @@ def _get_backend(name, *, backend_type):
         return cls
 
 
+def _detect_backend(backend_type: str):
+    backend_modules = globals()[f'_{backend_type}_backend_modules']
+    backend_found = []
+    for mod in backend_modules:
+        importlib.import_module(mod)
+
+    for bcknd in globals()[f'_{backend_type}s']:
+        bcknd, _ = globals()[f'_{backend_type}s'][bcknd]
+        backend = bcknd.validate()
+        if not backend:
+            pass
+        else:
+            backend_found.append((bcknd, backend))
+            getlogger().info(f'Found {backend_type}: {backend}')
+    if len(backend_found) == 1:
+        getlogger().warning(f'No remote {backend_type} detected')
+    # By default, select the last one detected
+    return backend_found[-1]
+
+
 register_scheduler = functools.partial(
     _register_backend, backend_type='scheduler'
 )
@@ -70,3 +92,7 @@ register_launcher = functools.partial(
 )
 getscheduler = functools.partial(_get_backend, backend_type='scheduler')
 getlauncher  = functools.partial(_get_backend, backend_type='launcher')
+detect_scheduler = functools.partial(_detect_backend, backend_type='scheduler')
+detect_launcher = functools.partial(_detect_backend, backend_type='launcher')
+# TODO find a better place for this function
+detect_modules_system = ModulesSystem.detect
