@@ -6,6 +6,7 @@
 import functools
 import semver
 import re
+from typing import Union
 
 import reframe.utility.osext as osext
 from reframe.core.backends import register_launcher
@@ -55,7 +56,7 @@ class SrunLauncher(JobLauncher):
         return ret
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which srun')
             return cls.registered_name
@@ -71,7 +72,7 @@ class IbrunLauncher(JobLauncher):
         return ['ibrun']
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which ibrun')
             return cls.registered_name
@@ -93,7 +94,7 @@ class UpcrunLauncher(JobLauncher):
         return cmd
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which upcrun')
             return cls.registered_name
@@ -115,7 +116,7 @@ class UpcxxrunLauncher(JobLauncher):
         return cmd
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which upcxx-run')
             return cls.registered_name
@@ -139,7 +140,7 @@ class AlpsLauncher(JobLauncher):
         return cmd
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which aprun')
             return cls.registered_name
@@ -153,7 +154,7 @@ class MpirunLauncher(JobLauncher):
         return ['mpirun', '-np', str(job.num_tasks)]
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which mpirun')
             return cls.registered_name
@@ -167,7 +168,7 @@ class MpiexecLauncher(JobLauncher):
         return ['mpiexec', '-n', str(job.num_tasks)]
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which mpiexec')
             return cls.registered_name
@@ -216,6 +217,11 @@ class SrunAllocationLauncher(JobLauncher):
 
         return ret
 
+    @classmethod
+    # The srun launcher would be detected
+    def validate(cls) -> bool:
+        return False
+
 
 @register_launcher('lrun')
 class LrunLauncher(JobLauncher):
@@ -228,7 +234,7 @@ class LrunLauncher(JobLauncher):
                 '-T', str(num_tasks_per_node)]
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which lrun')
             return cls.registered_name
@@ -242,3 +248,8 @@ class LrungpuLauncher(LrunLauncher):
 
     def command(self, job):
         return super().command(job) + ['-M "-gpu"']
+
+    @classmethod
+    def validate(cls) -> bool:
+        # The lrun launcher would be detected
+        return False

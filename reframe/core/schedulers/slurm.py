@@ -578,19 +578,20 @@ class SlurmJobScheduler(sched.JobScheduler):
         return ["-C "+"&".join(node_feats)]
 
     @classmethod
-    def validate(cls) -> bool:
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which sacct')
             return cls.registered_name
         except SpawnedProcessError:
             return False
 
-    def build_context(self, modules_system, launcher,
-                      sched_options, time_limit,
-                      exclude_feats, prefix, detect_containers):
+    def build_context(self, modules_system, launcher, exclude_feats,
+                      detect_containers, prefix, sched_options, time_limit):
+        '''Create the reframe context detecting the partitions with slurm'''
         self._context = _SlurmContext(
-            modules_system, launcher, self, prefix, time_limit,
-            detect_containers=detect_containers
+            modules_system=modules_system, launcher=launcher, scheduler=self,
+            detect_containers=detect_containers, prefix=prefix,
+            sched_options=sched_options, time_limit=time_limit
         )
         self._context.search_node_types(exclude_feats)
         self._context.create_login_partition()
@@ -658,7 +659,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
             self._cancel_if_pending_too_long(job)
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         # Make sure that if sacct is found it returns false
         slurm_validate = super().validate()
         if slurm_validate:
@@ -783,17 +784,18 @@ class _SlurmNode(sched.Node):
 
 class _SlurmContext(sched.ReframeContext):
 
-    def __init__(self, modules_system: str, launcher: str, scheduler: str,
-                 prefix: str, time_limit: int, detect_containers: bool = True,
-                 access_opt: list = []):
+    def __init__(self, modules_system: str, launcher: str,
+                 scheduler: JobSchedulerError, detect_containers: bool,
+                 prefix: str, sched_options: list, time_limit: int):
 
-        super().__init__(modules_system, launcher,
-                         scheduler, prefix, time_limit,
-                         detect_containers)
+        super().__init__(modules_system=modules_system, launcher=launcher,
+                         scheduler=scheduler,
+                         detect_containers=detect_containers,
+                         prefix=prefix, time_limit=time_limit)
         self.node_types = []
         self.default_nodes = []
         self.reservations = []
-        self._access = access_opt
+        self._access = sched_options
 
     def submit_detect_job(self, job: _SlurmJob, node_features):
         with osext.change_dir(job.workdir):
@@ -863,7 +865,6 @@ class _SlurmContext(sched.ReframeContext):
                 node_types.append(tuple(node_feats))
                 # The nodes in the default partition based on their raw feats
                 if default_partition in node_partition:
-                    # default_nodes.append([tuple(node_feats_raw),tuple(node_feats)])
                     default_nodes.append(tuple(node_feats))
 
         default_nodes = set(default_nodes)
@@ -871,7 +872,6 @@ class _SlurmContext(sched.ReframeContext):
             # Then all node types require the features in the access options
             self.default_nodes = set()
         else:
-            # self.default_nodes = default_nodes[0][1] # Get the filtered feats
             self.default_nodes = default_nodes  # Get the filtered features
 
         getlogger().debug(
@@ -899,7 +899,6 @@ class _SlurmContext(sched.ReframeContext):
         # If GRes for these nodes is 'gpu:a100:*'
         # The returned dict will be:
         # {'gpu:a100' : min(*)}
-        # Slurm specific
 
         getlogger().debug(
             f'Detecting devices for node with features {node_feats}...')

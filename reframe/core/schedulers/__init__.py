@@ -115,6 +115,28 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''
 
     @abc.abstractmethod
+    def build_context(self, modules_system: str, launcher: str,
+                      exclude_feats: list, detect_containers: bool,
+                      prefix: str, sched_options: list, time_limit: int):
+        '''Return the reframe context to build the configuration
+        of the system
+
+        :arg modules_system: Name of the modules system
+        :arg launcher: Name of the launcher in the system
+        :arg exclude_feats: List of the features to be excluded in the
+            partitions detection
+        :arg detect_containers: Submit a job to each remote partition to
+            detect container platforms
+        :arg prefix: Prefix of the directory where the jobs are
+            prepared and submitted
+        :arg sched_options: List of additional scheduler options that are
+            required to submit jobs to all partitions of the system
+        :arg time_limit: Time limit until the job submission is cancelled
+            for the remote containers detection
+        :returns: Dictionary with the partitions of the system
+        '''
+
+    @abc.abstractmethod
     def submit(self, job):
         '''Submit a job.
 
@@ -172,8 +194,12 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
 
     @classmethod
     @abc.abstractmethod
+    # Will not raise an error if not defined until instantiation
     def validate(cls):
         '''Check if the scheduler is in the system
+
+        :returns: False if the scheduler is not present and
+            the name of the scheduler backend if it is
         '''
 
 
@@ -204,24 +230,6 @@ def filter_nodes_by_state(nodelist, state):
             }
 
     return nodelist
-
-
-# def filter_nodes_by_activefeatures(nodelist, state):
-#     '''Filter nodes by their state
-
-#     :arg nodelist: List of :class:`Node` instances to filter.
-#     :arg state: The state of the nodes.
-#         If ``all``, the initial list is returned untouched.
-#         If ``avail``, only the available nodes will be returned.
-#         All other values are interpretes as a state string.
-#         State match is exclusive unless the ``*`` is added at the end of the
-#         state string.
-#     :returns: the filtered node list
-#     '''
-#     if state == 'avail':
-#     nodelist = {n for n in nodelist if n.is_avail()}
-
-#     return nodelist
 
 
 class Job(jsonext.JSONSerializable, metaclass=JobMeta):
@@ -756,8 +764,9 @@ class ReframeContext(abc.ABC):
     created partitions during the configuration autodetection process
     '''
 
-    def __init__(self, modules_system, launcher, scheduler, prefix,
-                 time_limit, detect_containers):
+    def __init__(self, modules_system: str, launcher: str,
+                 scheduler: JobScheduler, detect_containers: bool,
+                 prefix: str, time_limit: int):
         self.partitions = []
         self._modules_system = modules_system
         self._scheduler = scheduler
@@ -766,15 +775,10 @@ class ReframeContext(abc.ABC):
         self._detect_containers = detect_containers
         self._p_n = 0  # System partitions counter
         self._keep_tmp_dir = False
-        if prefix == '.':
-            self.TMP_DIR = tempfile.mkdtemp(
-                prefix='reframe_config_detection_'
-            )
-        else:
-            self.TMP_DIR = tempfile.mkdtemp(
-                prefix='reframe_config_detection_',
-                dir=prefix
-            )
+        self.TMP_DIR = tempfile.mkdtemp(
+            prefix='reframe_config_detection_',
+            dir=prefix
+        )
         if detect_containers:
             getlogger().info(f'Stage directory: {self.TMP_DIR}')
 

@@ -13,6 +13,7 @@
 import functools
 import re
 import time
+from typing import Union
 
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
@@ -153,7 +154,7 @@ class LsfJobScheduler(PbsJobScheduler):
         return job.state == 'COMPLETED'
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which bsub')
             return cls.registered_name

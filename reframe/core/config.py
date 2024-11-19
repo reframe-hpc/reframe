@@ -691,9 +691,23 @@ def load_config(*filenames, validate=True):
 
 def detect_config(detect_containers: bool = False,
                   exclude_feats: list = [],
+                  filename: str = 'system_config',
                   sched_options: list = [],
-                  time_limit: int = 200,
-                  filename: str = 'system_config'):
+                  time_limit: int = 200):
+    '''Detect the configuration of the system automatically and
+    write the corresponding reframe config file
+
+    :param detect_containers: Submit a job to each remote partition to detect
+        container platforms
+    :param exclude_feats: List of node features to be excluded when determining
+        the system partitions
+    :param filename: File name of the reframe configuration file that will be
+        generated
+    :param sched_options: List of additional scheduler options that are
+        required to submit jobs to all partitions of the system
+    :param time_limit: Time limit until the job submission is cancelled for the
+        remote containers detection
+    '''
 
     import reframe.core.runtime as rt
 
@@ -709,7 +723,6 @@ def detect_config(detect_containers: bool = False,
     site_config.setdefault('hostnames', [])
     hostname = ret._detect_system(detect_only=True)
     site_config['hostnames'] += [hostname]
-    print(site_config['hostnames'])
     site_config['name'] += hostname
     msg = color.colorize(
         f'Detected hostname: {hostname}', color.GREEN
@@ -739,10 +752,13 @@ def detect_config(detect_containers: bool = False,
     site_config.setdefault('partitions', [])
     # Detect the context with the corresponding scheduler
     site_config['partitions'] = scheduler().build_context(
-        modules_system, launcher(), sched_options, time_limit,
-        exclude_feats, rt.runtime().prefix, detect_containers
+        modules_system=modules_system, launcher=launcher(),
+        exclude_feats=exclude_feats, detect_containers=detect_containers,
+        prefix=rt.runtime().prefix, sched_options=sched_options,
+        time_limit=time_limit
     )
 
+    # Load the jinja2 template and format its content
     template_loader = FileSystemLoader(searchpath=os.path.join(
         reframe.INSTALL_PREFIX, 'reframe', 'schemas'
     ))
@@ -751,8 +767,6 @@ def detect_config(detect_containers: bool = False,
     rfm_config_template = env.get_template(
         'reframe_config_template.j2'
     )
-
-    # Render the template with the gathered information
     organized_config = rfm_config_template.render(site_config)
 
     # Output filename for the generated configuration
@@ -766,6 +780,6 @@ def detect_config(detect_containers: bool = False,
         output_file.write(organized_config)
 
     getlogger().info(
-        f'\nThe following configuration files was created:\n'
+        f'\nThe following configuration file was created:\n'
         f'PYTHON: {filename}.py'
     )

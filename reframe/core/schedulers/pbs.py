@@ -14,6 +14,7 @@ import os
 import itertools
 import re
 import time
+from typing import Union
 
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
@@ -312,7 +313,7 @@ class PbsJobScheduler(sched.JobScheduler):
                                               job.jobid)
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which pbsnodes')
             return cls.registered_name

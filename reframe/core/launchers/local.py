@@ -18,5 +18,5 @@ class LocalLauncher(JobLauncher):
         return []
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> str:
         return cls.registered_name

@@ -7,6 +7,7 @@ import abc
 import reframe.utility.typecheck as typ
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.warnings import user_deprecation_warning
+from typing import Union
 
 
 class _JobLauncherMeta(RegressionTestMeta, abc.ABCMeta):
@@ -92,8 +93,12 @@ class JobLauncher(metaclass=_JobLauncherMeta):
 
     @classmethod
     @abc.abstractmethod
-    def validate(cls):
+    # Will not raise an error if not defined until instantiation
+    def validate(cls) -> Union[str, bool]:
         '''Check if the launcher is in the system
+
+        :returns: False if the launcher is not present and
+        the name of the launcher backend if it is
         '''
 
 

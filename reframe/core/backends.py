@@ -14,19 +14,19 @@ from reframe.core.logging import getlogger
 
 _launcher_backend_modules = [
     'reframe.core.launchers.local',
-    'reframe.core.launchers.mpi',
-    'reframe.core.launchers.rsh'
+    'reframe.core.launchers.rsh',
+    'reframe.core.launchers.mpi'
 ]
 _launchers = {}
 _scheduler_backend_modules = [
-    'reframe.core.schedulers.flux',
     'reframe.core.schedulers.local',
+    'reframe.core.schedulers.ssh',
+    'reframe.core.schedulers.flux',
     'reframe.core.schedulers.lsf',
     'reframe.core.schedulers.pbs',
     'reframe.core.schedulers.oar',
     'reframe.core.schedulers.sge',
-    'reframe.core.schedulers.slurm',
-    'reframe.core.schedulers.ssh'
+    'reframe.core.schedulers.slurm'
 ]
 _schedulers = {}
 

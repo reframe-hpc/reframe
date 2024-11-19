@@ -14,6 +14,7 @@ import functools
 import itertools
 import os
 import time
+from typing import Union
 
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
@@ -165,7 +166,7 @@ class FluxJobScheduler(JobScheduler):
         return job.completed
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> Union[str, bool]:
         try:
             _run_strict('which flux')
             return cls.registered_name

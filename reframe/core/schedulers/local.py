@@ -214,5 +214,5 @@ class LocalJobScheduler(sched.JobScheduler):
             job._signal = os.WTERMSIG(status)
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> str:
         return cls.registered_name

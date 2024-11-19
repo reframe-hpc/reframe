@@ -3,13 +3,17 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import functools
 import os
 import time
+from typing import Union
 
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import ConfigError, SpawnedProcessError
 from reframe.core.schedulers import Job, JobScheduler, AlwaysIdleNode
+
+_run_strict = functools.partial(osext.run_command, check=True)
 
 
 class _SSHJob(Job):
@@ -229,3 +233,11 @@ class SSHJobScheduler(JobScheduler):
                 return [AlwaysIdleNode(host)]
         else:
             return [AlwaysIdleNode(h) for h in self._free_hosts]
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which ssh')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
