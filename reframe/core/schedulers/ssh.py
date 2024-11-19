@@ -234,6 +234,16 @@ class SSHJobScheduler(JobScheduler):
         else:
             return [AlwaysIdleNode(h) for h in self._free_hosts]
 
+    def feats_access_option(self, node_feats):
+        raise NotImplementedError(
+            'ssh backend does not support configuration autodetection'
+        )
+
+    def build_context(self, node_feats):
+        raise NotImplementedError(
+            'ssh backend does not support configuration autodetection'
+        )
+
     @classmethod
     def validate(cls) -> Union[str, bool]:
         try:

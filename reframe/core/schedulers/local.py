@@ -96,6 +96,11 @@ class LocalJobScheduler(sched.JobScheduler):
             'local backend does not support configuration autodetection'
         )
 
+    def build_context(self, node_feats):
+        raise NotImplementedError(
+            'local backend does not support configuration autodetection'
+        )
+
     def _kill_all(self, job):
         '''Send SIGKILL to all the processes of the spawned job.'''
         try:

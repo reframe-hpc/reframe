@@ -151,6 +151,11 @@ class FluxJobScheduler(JobScheduler):
             'flux backend does not support configuration autodetection'
         )
 
+    def build_context(self, node_feats):
+        raise NotImplementedError(
+            'flux backend does not support configuration autodetection'
+        )
+
     def wait(self, job):
         '''Wait until a job is finished.'''
 

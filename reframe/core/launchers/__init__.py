@@ -149,3 +149,7 @@ class LauncherWrapper(JobLauncher):
 
     def command(self, job):
         return self._wrapper_command + self._target_launcher.command(job)
+
+    @classmethod
+    def validate(cls):
+        return cls._target_launcher.validate()

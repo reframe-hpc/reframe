@@ -153,6 +153,11 @@ class PbsJobScheduler(sched.JobScheduler):
             'pbs backend does not support configuration autodetection'
         )
 
+    def build_context(self, node_feats):
+        raise NotImplementedError(
+            'pbs backend does not support configuration autodetection'
+        )
+
     def submit(self, job):
         cmd_parts = ['qsub']
         if self._sched_access_in_submit:
