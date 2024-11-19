@@ -734,11 +734,10 @@ class _SlurmNode(sched.Node):
                  for grp in re.finditer(r'(\w(\w|\d)*)', slurm_constraint)}
         slurm_constraint = slurm_constraint.replace(
             "&", " and ").replace("|", " or ")
-        expr = " ".join([f"vars['{key}']" if key not in [
-                        'and', 'or'
-                        ] else key
-            for key in slurm_constraint.split()])
-
+        # Pattern to extract the variable names
+        pattern = r'\b(?!and\b|or\b)(\d*[a-zA-Z_]\w*)\b'
+        # Replace each variable with var['variable']
+        expr = re.sub(pattern, r"vars['\1']", slurm_constraint)
         vars = {n: True for n in self.active_features}
         vars.update({n: False for n in names - self.active_features})
         try:
