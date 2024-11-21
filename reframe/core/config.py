@@ -8,11 +8,15 @@ import copy
 import fnmatch
 import functools
 import importlib
+import io
 import itertools
+import jinja2
 import json
 import jsonschema
 import os
 import re
+import socket
+import yaml
 
 import reframe
 import reframe.core.settings as settings
@@ -20,7 +24,8 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.environments import normalize_module_list
-from reframe.core.exceptions import (ConfigError, ReframeFatalError)
+from reframe.core.exceptions import (ConfigError, ReframeFatalError,
+                                     SpawnedProcessError)
 from reframe.core.logging import getlogger
 from reframe.utility import ScopedDict
 
@@ -351,11 +356,35 @@ class _SiteConfig:
     def load_config_json(self, filename):
         with open(filename) as fp:
             try:
-                config = json.loads(fp.read())
+                config = json.load(fp)
             except json.JSONDecodeError as e:
                 raise ConfigError(
                     f"invalid JSON syntax in configuration file '{filename}'"
                 ) from e
+
+        self.update_config(config, filename)
+
+    def load_config_yaml(self, filename):
+        def _shell(cmd):
+            '''Jinja wrapper for executing shell commands'''
+            try:
+                completed = osext.run_command(cmd, check=True)
+            except (FileNotFoundError, SpawnedProcessError) as err:
+                raise ConfigError('failed to run shell command') from err
+            else:
+                return completed.stdout.strip()
+
+        with open(filename) as fp:
+            environment = jinja2.Environment()
+            template = environment.from_string(fp.read())
+            yaml_src = template.render(hostname=socket.gethostname(),
+                                       sh=_shell, getenv=os.getenv)
+            try:
+                config = yaml.safe_load(io.StringIO(yaml_src))
+            except Exception as err:
+                raise ConfigError(
+                    f'invalid YAML syntax in configuration file `{filename}`'
+                ) from err
 
         self.update_config(config, filename)
 
@@ -429,7 +458,7 @@ class _SiteConfig:
                               'the `--system` option')
 
         getlogger().debug(f'Retrieved hostname: {hostname!r}')
-        getlogger().debug(f'Looking for a matching configuration entry')
+        getlogger().debug('Looking for a matching configuration entry')
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
                 if re.match(patt, hostname):
@@ -665,6 +694,8 @@ def load_config(*filenames):
         _, ext = os.path.splitext(f)
         if ext == '.py':
             ret.load_config_python(f)
+        elif ext == '.yaml' or ext == '.yml':
+            ret.load_config_yaml(f)
         elif ext == '.json':
             ret.load_config_json(f)
         else:
