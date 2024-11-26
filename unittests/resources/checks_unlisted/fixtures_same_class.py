@@ -10,11 +10,10 @@ import reframe.utility.sanity as sn
 class HelloFixture(rfm.RunOnlyRegressionTest):
     executable = 'echo hello from fixture'
     myvar = variable(str)
-    
+
     @sanity_function
     def assert_output(self):
         return sn.assert_found(r'hello from fixture', self.stdout)
-    
 
 @rfm.simple_test
 class TestA(rfm.RunOnlyRegressionTest):
