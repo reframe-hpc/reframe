@@ -1637,9 +1637,12 @@ def main():
             if options.max_retries and runner.stats.failed(run=0):
                 printer.retry_report(report)
 
-            # Print a failure report if we had failures in the last run
+            # Print a failure report in case of failures.
+            # If `--duration` or `--reruns` is used then take into account
+            # all runs, else (i.e., `--max-retries`) only the last run.
             success = True
-            if runner.stats.failed():
+            runid = None if options.duration or options.reruns else -1
+            if runner.stats.failed(run=runid):
                 success = False
                 printer.failure_report(
                     report,
@@ -1733,6 +1736,12 @@ def main():
             sys.exit(1)
 
         sys.exit(0)
+    except errors.RunSessionTimeout as err:
+        printer.warning(f'run session stopped: {err}')
+        if not success:
+            sys.exit(1)
+        else:
+            sys.exit(0)
     except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
