@@ -1043,7 +1043,7 @@ The way the tests are generated and how they interact with the test filtering op
 
    Parameterize a test on an existing variable.
 
-   This option will create a new test with a parameter named ``$VAR`` with the values given in the comma-separated list ``VAL0,VAL1,...``.
+   The test will behave as if the variable ``VAR`` was a paramter taking the values ``VAL0,VAL1,...``.
    The values will be converted based on the type of the target variable ``VAR``.
    The ``TEST.`` prefix will only parameterize the variable ``VAR`` of test ``TEST``.
 
