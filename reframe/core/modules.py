@@ -747,8 +747,12 @@ class TMod31Impl(TModImpl):
 
     def _do_validate(self):
         # Try to figure out if we are indeed using the TCL version
+        modulecmd = os.getenv('MODULESHOME')
+        if modulecmd is None:
+            raise ConfigError(
+                f'could not find a sane TMod31 installation: {e}'
+            )
         try:
-            modulecmd = os.getenv('MODULESHOME')
             modulecmd = os.path.join(modulecmd, 'modulecmd.tcl')
             completed = osext.run_command(modulecmd)
         except OSError as e:
