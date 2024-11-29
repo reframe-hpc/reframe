@@ -3,14 +3,19 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import functools
 import semver
 import re
+from typing import Union
 
 import reframe.utility.osext as osext
 from reframe.core.backends import register_launcher
+from reframe.core.exceptions import SpawnedProcessError
 from reframe.core.launchers import JobLauncher
 from reframe.core.logging import getlogger
 from reframe.utility import seconds_to_hms
+
+_run_strict = functools.partial(osext.run_command, check=True)
 
 
 @register_launcher('srun')
@@ -50,6 +55,14 @@ class SrunLauncher(JobLauncher):
 
         return ret
 
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which srun')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
+
 
 @register_launcher('ibrun')
 class IbrunLauncher(JobLauncher):
@@ -57,6 +70,14 @@ class IbrunLauncher(JobLauncher):
 
     def command(self, job):
         return ['ibrun']
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which ibrun')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
 
 
 @register_launcher('upcrun')
@@ -72,6 +93,14 @@ class UpcrunLauncher(JobLauncher):
         cmd += ['-n', str(job.num_tasks)]
         return cmd
 
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which upcrun')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
+
 
 @register_launcher('upcxx-run')
 class UpcxxrunLauncher(JobLauncher):
@@ -85,6 +114,14 @@ class UpcxxrunLauncher(JobLauncher):
 
         cmd += ['-n', str(job.num_tasks)]
         return cmd
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which upcxx-run')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
 
 
 @register_launcher('alps')
@@ -102,17 +139,41 @@ class AlpsLauncher(JobLauncher):
 
         return cmd
 
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which aprun')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
+
 
 @register_launcher('mpirun')
 class MpirunLauncher(JobLauncher):
     def command(self, job):
         return ['mpirun', '-np', str(job.num_tasks)]
 
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which mpirun')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
+
 
 @register_launcher('mpiexec')
 class MpiexecLauncher(JobLauncher):
     def command(self, job):
         return ['mpiexec', '-n', str(job.num_tasks)]
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which mpiexec')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
 
 
 @register_launcher('srunalloc')
@@ -156,6 +217,11 @@ class SrunAllocationLauncher(JobLauncher):
 
         return ret
 
+    @classmethod
+    # The srun launcher would be detected
+    def validate(cls) -> bool:
+        return False
+
 
 @register_launcher('lrun')
 class LrunLauncher(JobLauncher):
@@ -167,6 +233,14 @@ class LrunLauncher(JobLauncher):
         return ['lrun', '-N', str(num_nodes),
                 '-T', str(num_tasks_per_node)]
 
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which lrun')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
+
 
 @register_launcher('lrun-gpu')
 class LrungpuLauncher(LrunLauncher):
@@ -174,3 +248,8 @@ class LrungpuLauncher(LrunLauncher):
 
     def command(self, job):
         return super().command(job) + ['-M "-gpu"']
+
+    @classmethod
+    def validate(cls) -> bool:
+        # The lrun launcher would be detected
+        return False

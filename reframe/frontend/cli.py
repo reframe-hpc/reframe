@@ -438,6 +438,12 @@ def main():
         help=('Detect the local host topology and exit, '
               'optionally saving it in FILE')
     )
+    # CONFIGURATION
+    action_options.add_argument(
+        '--detect-configuration', metavar='FILE', action='store',
+        help=('Detect the configuration of the system. The content '
+              'in FILE must call the detect_config method from core/config')
+    )
     action_options.add_argument(
         '--dry-run', action='store_true',
         help='Dry run the tests without submitting them for execution'
@@ -871,6 +877,13 @@ def main():
     printer.colorize = site_config.get('general/0/colorize')
     if not restrict_logging():
         printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
+
+    if options.detect_configuration:
+        runtime.init_runtime(site_config)
+        site_config = config.load_config(
+            options.detect_configuration, validate=False
+        )
+        sys.exit(0)
 
     # Now configure ReFrame according to the user configuration file
     try:
