@@ -1043,7 +1043,7 @@ The way the tests are generated and how they interact with the test filtering op
 
    Parameterize a test on an existing variable.
 
-   The test will behave as if the variable ``VAR`` was a paramter taking the values ``VAL0,VAL1,...``.
+   The test will behave as if the variable ``VAR`` was a parameter taking the values ``VAL0,VAL1,...``.
    The values will be converted based on the type of the target variable ``VAR``.
    The ``TEST.`` prefix will only parameterize the variable ``VAR`` of test ``TEST``.
 
