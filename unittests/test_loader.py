@@ -154,3 +154,9 @@ def test_relative_import_outside_rfm_prefix(loader, tmp_path):
     )
     tests = loader.load_from_file(str(tmp_path / 'testlib' / 'simple.py'))
     assert len(tests) == 2
+
+    # Test nested library tests
+    tests = loader.load_from_file(
+        str(tmp_path / 'testlib' / 'nested' / 'dummy.py')
+    )
+    assert len(tests) == 2
