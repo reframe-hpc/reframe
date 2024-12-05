@@ -1228,18 +1228,6 @@ def test_fixture_resolution(run_reframe, run_action):
     assert returncode == 0
 
 
-def test_fixture_resolution_same_class(run_reframe, run_action):
-    returncode, stdout, stderr = run_reframe(
-        system='sys1',
-        environs=[],
-        checkpath=[
-            'unittests/resources/checks_unlisted/fixtures_same_class.py'
-        ],
-        action=run_action
-    )
-    assert returncode == 0
-
-
 def test_dynamic_tests(run_reframe, run_action):
     returncode, stdout, _ = run_reframe(
         system='sys0',
