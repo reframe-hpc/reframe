@@ -1646,7 +1646,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             # registered under the same fixture class. So the loop below must
             # also inspect the fixture data the instance was registered with.
             for fixt_name, fixt_data in registry[f.cls].items():
-                if f.scope != fixt_data.scope:
+                if fixt_data.variables != f.variables:
+                    continue
+                elif f.scope != fixt_data.scope:
                     continue
                 elif fixt_data.variant_num not in target_variants:
                     continue
