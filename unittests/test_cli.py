@@ -1263,7 +1263,7 @@ def test_testlib_inherit_fixture_in_different_files(run_reframe):
         action='run',
     )
     assert returncode == 0
-    assert 'Ran 3/3 test case(s)' in stdout
+    assert 'Ran 4/4 test case(s)' in stdout
     assert 'FAILED' not in stdout
 
 
