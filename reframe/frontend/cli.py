@@ -1041,7 +1041,8 @@ def main():
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
             printer.info(jsonext.dumps(reporting.testcase_info(
-                options.describe_stored_testcases, namepatt
+                options.describe_stored_testcases,
+                namepatt, options.filter_expr
             ), indent=2))
             sys.exit(0)
 
