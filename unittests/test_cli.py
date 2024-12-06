@@ -1076,6 +1076,13 @@ def test_reruns_with_duration(run_reframe):
     assert returncode == 1
 
 
+def test_exitcode_timeout(run_reframe):
+    assert_no_crash(*run_reframe(
+        more_options=['--duration=5s', '-n^HelloTest'],
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    ))
+
+
 @pytest.fixture(params=['name', 'rname', 'uid', 'ruid', 'random'])
 def exec_order(request):
     return request.param
