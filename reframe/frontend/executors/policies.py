@@ -195,7 +195,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         except ABORT_REASONS as e:
             task.abort(e)
             if type(e) is KeyboardInterrupt:
-                raise ForceExitError
+                raise KeyboardError
             else:
                 raise e
         except BaseException:
@@ -283,7 +283,10 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             loop = asyncio.get_event_loop()
             for task in all_tasks(loop):
                 if isinstance(task, asyncio.tasks.Task):
-                    task.cancel()
+                    try:
+                        task.cancel()
+                    except RuntimeError:
+                        pass
             if loop.is_closed():
                 loop = asyncio.new_event_loop()
                 watcher = asyncio.get_child_watcher()
@@ -303,7 +306,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             try:
                 loop.run_until_complete(self._runcase(case))
             except (Exception, KeyboardInterrupt) as e:
-                if type(e) in (ABORT_REASONS):
+                if type(e) in ABORT_REASONS or isinstance(e, KeyboardError):
                     for task in all_tasks(loop):
                         if isinstance(task, asyncio.tasks.Task):
                             task.cancel()
@@ -472,7 +475,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         except ABORT_REASONS as e:
             self._abortall(e)
             if type(e) is KeyboardInterrupt:
-                raise ForceExitError
+                raise KeyboardError
             else:
                 raise e
         except BaseException:
@@ -624,8 +627,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # Wait for tasks until the first failure
             loop.run_until_complete(self._execute_until_failure(all_cases))
         except (Exception, KeyboardInterrupt) as e:
-            print(type(e))
-            if type(e) in (ABORT_REASONS):
+            if type(e) in ABORT_REASONS or isinstance(e, KeyboardError):
                 loop.run_until_complete(_cancel_gracefully(all_cases))
                 try:
                     raise AbortTaskError

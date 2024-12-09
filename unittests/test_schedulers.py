@@ -144,7 +144,7 @@ def prepare_job(job, command='hostname',
 
 def submit_job(job):
     with rt.module_use(test_util.TEST_MODULES):
-        job.submit()
+        test_util.asyncio_run(job.submit)
 
 
 def assert_job_script_sanity(job):
@@ -477,7 +477,7 @@ def test_submit(make_job, exec_ctx):
     assert minimal_job.nodelist == []
     submit_job(minimal_job)
     assert minimal_job.jobid != []
-    minimal_job.wait()
+    test_util.asyncio_run(minimal_job.wait)
 
     # Additional scheduler-specific checks
     sched_name = minimal_job.scheduler.registered_name
@@ -505,7 +505,7 @@ def test_submit_timelimit(minimal_job, local_only):
     submit_job(minimal_job)
     assert minimal_job.jobid is not None
     with pytest.raises(JobError):
-        minimal_job.wait()
+        test_util.asyncio_run(minimal_job.wait)
 
     t_job = time.time() - t_job
     assert t_job >= 2
@@ -532,8 +532,8 @@ def test_submit_unqualified_hostnames(make_exec_ctx, make_job, local_only):
     hostname = socket.gethostname().split('.')[0]
     minimal_job = make_job(sched_opts={'part_name': 'login'})
     minimal_job.prepare('true')
-    minimal_job.submit()
-    minimal_job.wait()
+    test_util.asyncio_run(minimal_job.submit)
+    test_util.asyncio_run(minimal_job.wait)
     assert minimal_job.nodelist == [hostname]
 
 
@@ -542,7 +542,7 @@ def test_submit_job_array(make_job, slurm_only, exec_ctx):
     job.options = ['--array=0-1']
     prepare_job(job, command='echo "Task id: ${SLURM_ARRAY_TASK_ID}"')
     submit_job(job)
-    job.wait()
+    test_util.asyncio_run(job.wait)
     if job.scheduler.registered_name == 'slurm':
         assert job.exitcode == 0
     with open(job.stdout) as fp:
@@ -566,7 +566,7 @@ def test_cancel(make_job, exec_ctx):
     # want to test here.
     time.sleep(0.01)
 
-    minimal_job.wait()
+    test_util.asyncio_run(minimal_job.wait)
     t_job = time.time() - t_job
     assert minimal_job.finished()
     assert t_job < 30
@@ -589,7 +589,7 @@ def test_cancel_before_submit(minimal_job):
 def test_wait_before_submit(minimal_job):
     prepare_job(minimal_job, 'sleep 3')
     with pytest.raises(JobNotStartedError):
-        minimal_job.wait()
+        test_util.asyncio_run(minimal_job.wait)
 
 
 def test_finished(make_job, exec_ctx):
@@ -597,7 +597,7 @@ def test_finished(make_job, exec_ctx):
     prepare_job(minimal_job, 'sleep 2')
     submit_job(minimal_job)
     assert not minimal_job.finished()
-    minimal_job.wait()
+    test_util.asyncio_run(minimal_job.wait)
 
 
 def test_finished_before_submit(minimal_job):
@@ -610,7 +610,7 @@ def test_finished_raises_error(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job, 'echo hello')
     submit_job(minimal_job)
-    minimal_job.wait()
+    test_util.asyncio_run(minimal_job.wait)
 
     # Emulate an error during polling and verify that it is raised correctly
     # when finished() is called
@@ -690,7 +690,7 @@ def test_guess_num_tasks(minimal_job, scheduler):
         minimal_job._sched_flex_alloc_nodes = 'idle'
         prepare_job(minimal_job)
         submit_job(minimal_job)
-        minimal_job.wait()
+        test_util.asyncio_run(minimal_job.wait)
         assert minimal_job.num_tasks == 1
     elif scheduler.registered_name in ('slurm', 'squeue'):
         minimal_job.num_tasks = 0
@@ -737,7 +737,7 @@ def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
     submit_job(minimal_job)
     with pytest.raises(JobError,
                        match='maximum pending time exceeded'):
-        minimal_job.wait()
+        test_util.asyncio_run(minimal_job.wait)
 
 
 def assert_process_died(pid):
@@ -759,6 +759,7 @@ def _read_pid(job, attempts=3):
     for _ in range(attempts):
         try:
             with open(job.stdout) as fp:
+                # print(fp.read())
                 return int(fp.read())
         except ValueError:
             time.sleep(1)
@@ -783,6 +784,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     minimal_job.time_limit = '1m'
     minimal_job.scheduler.CANCEL_GRACE_PERIOD = 2
     prepare_job(minimal_job,
+                # command='(trap '' TERM; sleep 5) &',
                 command='sleep 5 &',
                 pre_run=['trap -- "" TERM'],
                 post_run=['echo $!', 'wait'],
@@ -797,7 +799,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
-    minimal_job.wait()
+    test_util.asyncio_run(minimal_job.wait)
     t_grace = time.time() - t_grace
 
     assert t_grace >= 2 and t_grace < 5
@@ -844,7 +846,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     t_grace = time.time()
     minimal_job.cancel()
     time.sleep(0.1)
-    minimal_job.wait()
+    test_util.asyncio_run(minimal_job.wait)
     t_grace = time.time() - t_grace
 
     assert t_grace >= 2 and t_grace < 5

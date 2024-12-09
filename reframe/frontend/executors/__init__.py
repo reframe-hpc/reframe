@@ -33,7 +33,7 @@ from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 
 ABORT_REASONS = (AssertionError, FailureLimitError,
-                 KeyboardError, ForceExitError, RunSessionTimeout)
+                 KeyboardInterrupt, ForceExitError, RunSessionTimeout)
 
 
 class TestStats:
