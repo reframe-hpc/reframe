@@ -22,16 +22,30 @@ from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
 from reframe.core.meta import make_test
 from reframe.core.warnings import ReframeDeprecationWarning
 
+rt.set_working_dir()
+
 
 def _run(test, partition, prgenv):
+    test_util.asyncio_run(_runasync, test, partition, prgenv)
+
+
+async def _runasync(test, partition, prgenv):
     test.setup(partition, prgenv)
-    test.compile()
-    test.compile_wait()
-    test.run()
-    test.run_wait()
+    await compile_wait(test)
+    await run_wait(test)
     test.check_sanity()
     test.check_performance()
     test.cleanup(remove_files=True)
+
+
+async def compile_wait(test):
+    await test.compile()
+    await test.compile_wait()
+
+
+async def run_wait(test):
+    await test.run()
+    await test.run_wait()
 
 
 @pytest.fixture
@@ -306,9 +320,8 @@ def test_compile_only_failure(local_exec_ctx):
 
     test = MyTest()
     test.setup(*local_exec_ctx)
-    test.compile()
     with pytest.raises(BuildError):
-        test.compile_wait()
+        test_util.asyncio_run(test.compile_wait)
 
 
 def test_compile_only_warning(local_exec_ctx):
@@ -793,7 +806,7 @@ def test_sourcepath_abs(local_exec_ctx):
     test.setup(*local_exec_ctx)
     test.sourcepath = '/usr/src'
     with pytest.raises(PipelineError):
-        test.compile()
+        test_util.asyncio_run(test.compile)
 
 
 def test_sourcepath_upref(local_exec_ctx):
@@ -806,7 +819,7 @@ def test_sourcepath_upref(local_exec_ctx):
     test.setup(*local_exec_ctx)
     test.sourcepath = '../hellosrc'
     with pytest.raises(PipelineError):
-        test.compile()
+        test_util.asyncio_run(test.compile)
 
 
 def test_sourcepath_non_existent(local_exec_ctx):
@@ -818,9 +831,8 @@ def test_sourcepath_non_existent(local_exec_ctx):
     test = MyTest()
     test.setup(*local_exec_ctx)
     test.sourcepath = 'non_existent.c'
-    test.compile()
     with pytest.raises(BuildError):
-        test.compile_wait()
+        test_util.asyncio_run(test.compile_wait)
 
 
 def test_extra_resources(HelloTest, testsys_exec_ctx):

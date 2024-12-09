@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import asyncio
 import json
 import jsonschema
 import os
@@ -18,6 +19,7 @@ from reframe.core.logging import getlogger
 from reframe.core.schedulers import Job
 from reframe.core.systems import DeviceInfo, ProcessorInfo
 from reframe.utility.cpuinfo import cpuinfo
+from reframe.frontend.executors import asyncio_run
 
 
 # This is meant to be used by the unit tests
@@ -184,8 +186,8 @@ def _remote_detect(part):
 
                 getlogger().debug('submitting detection script')
                 _log_contents(job.script_filename)
-                job.submit()
-                job.wait()
+                asyncio_run(job.submit())
+                asyncio_run(job.wait())
                 getlogger().debug('job finished')
                 _log_contents(job.stdout)
                 _log_contents(job.stderr)

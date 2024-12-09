@@ -609,14 +609,15 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         available_nodes = self.scheduler.filternodes(self, available_nodes)
         return len(available_nodes) * num_tasks_per_node
 
-    def submit(self):
-        return self.scheduler.submit(self)
+    async def submit(self):
+        result = await self.scheduler.submit(self)
+        return result
 
-    def wait(self):
+    async def wait(self):
         if self.jobid is None:
             raise JobNotStartedError('cannot wait an unstarted job')
 
-        self.scheduler.wait(self)
+        await self.scheduler.wait(self)
         self._completion_time = self._completion_time or time.time()
 
     def cancel(self):
