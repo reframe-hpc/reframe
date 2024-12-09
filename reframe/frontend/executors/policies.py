@@ -95,10 +95,6 @@ class _PollController:
 
         self._num_polls += 1
         poll_rate = self._num_polls / t_elapsed if t_elapsed else math.inf
-        getlogger().debug2(
-            f'Poll rate control: sleeping for {self._sleep_duration}s '
-            f'(current poll rate: {poll_rate} polls/s)'
-        )
         if t_elapsed >= self._sleep_duration:
             return True
         else:
@@ -423,8 +419,10 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._partition_tasks[partname].add(task)
             await task.compile()
             await task.compile_wait()
-            task.compile_complete()
             self._partition_tasks[partname].remove(task)
+            task.compile_complete()
+            partname = _get_partition_name(task, phase='run')
+            max_jobs = self._max_jobs[partname]
             while len(self._partition_tasks[partname])+1 > max_jobs:
                 await asyncio.sleep(2)
             self._partition_tasks[partname].add(task)
@@ -535,13 +533,17 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         getpollcontroller()._jobs_pool.append(task.check.job)
 
     def on_task_compile(self, task):
-        getpollcontroller()._jobs_pool.append(task.check.job)
+        # getpollcontroller()._jobs_pool.append(task.check.job)
+        # print("Add compile", task.check.job.name)
+        pass
 
     def on_task_exit(self, task):
         getpollcontroller()._jobs_pool.remove(task.check.job)
 
     def on_task_compile_exit(self, task):
-        getpollcontroller()._jobs_pool.remove(task.check.job)
+        # getpollcontroller()._jobs_pool.remove(task.check.job)
+        # print("Remove compile", task.check.job.name)
+        pass
 
     def on_task_skip(self, task):
         msg = str(task.exc_info[1])
