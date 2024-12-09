@@ -56,7 +56,19 @@ def make_job():
         def filternodes(self, job, nodes):
             pass
 
+        def feats_access_option(self, node_feats):
+            pass
+
+        def build_context(self, modules_system, launcher,
+                          exclude_feats, detect_containers,
+                          prefix, sched_options, time_limit):
+            pass
+
         def poll(self, *jobs):
+            pass
+
+        @classmethod
+        def validate(cls):
             pass
 
     def _make_job(launcher, *args, **kwargs):
