@@ -130,7 +130,7 @@ class LocalJobScheduler(sched.JobScheduler):
                     psutil.NoSuchProcess):
                 # The process group may already be dead or assigned
                 # to a different group, so ignore this error
-                self.log(f'pid {child.pid} already dead')
+                self.log(f'child pid {child.pid} already dead')
                 # If the main process ignored the term but the children
                 # didn't then, we get 0 exitcode when the chilren
                 # are terminated
@@ -165,7 +165,7 @@ class LocalJobScheduler(sched.JobScheduler):
                         psutil.NoSuchProcess):
                     # The process group may already be dead or assigned
                     # to a different group, so ignore this error
-                    self.log(f'pid {child.pid} already dead')
+                    self.log(f'child pid {child.pid} already dead')
         except (ProcessLookupError, PermissionError):
             # Job has finished already, close file handles
             self.log(f'pid {job.jobid} already dead')
