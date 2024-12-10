@@ -125,21 +125,21 @@ class LocalJobScheduler(sched.JobScheduler):
             job.f_stderr.close()
             job._state = 'FAILURE'
 
-        for child in children:
-            # try to kill the children
-            try:
-                child.kill()
-            except (ProcessLookupError, PermissionError,
-                    psutil.NoSuchProcess):
-                # The process group may already be dead or assigned
-                # to a different group, so ignore this error
-                self.log(f'child pid {child.pid} already dead')
-            else:
-                # If the main process was terminated but the children
-                # ignored the term signal, then the child are killed
-                if job.proc.returncode:
-                    if job.proc.returncode == -15:
-                        job._signal = signal.SIGKILL
+        # for child in children:
+        #     # try to kill the children
+        #     try:
+        #         child.kill()
+        #     except (ProcessLookupError, PermissionError,
+        #             psutil.NoSuchProcess):
+        #         # The process group may already be dead or assigned
+        #         # to a different group, so ignore this error
+        #         self.log(f'child pid {child.pid} already dead')
+        #     else:
+        #         # If the main process was terminated but the children
+        #         # ignored the term signal, then the child are killed
+        #         if job.proc.returncode:
+        #             if job.proc.returncode == -15:
+        #                 job._signal = signal.SIGKILL
 
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
@@ -154,15 +154,15 @@ class LocalJobScheduler(sched.JobScheduler):
                 children = []
 
         try:
-            for child in children:
-                try:
-                    child.terminate()
-                    child.signal = signal.SIGTERM
-                except (ProcessLookupError, PermissionError,
-                        psutil.NoSuchProcess):
-                    # The process group may already be dead or assigned
-                    # to a different group, so ignore this error
-                    self.log(f'child pid {child.pid} already dead')
+            # for child in children:
+            #     try:
+            #         child.terminate()
+            #         child.signal = signal.SIGTERM
+            #     except (ProcessLookupError, PermissionError,
+            #             psutil.NoSuchProcess):
+            #         # The process group may already be dead or assigned
+            #         # to a different group, so ignore this error
+            #         self.log(f'child pid {child.pid} already dead')
             os.kill(job.jobid, signal.SIGTERM)
             job._signal = signal.SIGTERM
         except (ProcessLookupError, PermissionError):
