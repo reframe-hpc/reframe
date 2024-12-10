@@ -154,6 +154,15 @@ class LocalJobScheduler(sched.JobScheduler):
                 children = []
 
         try:
+            for child in children:
+                try:
+                    child.terminate()
+                    child.signal = signal.SIGTERM
+                except (ProcessLookupError, PermissionError,
+                        psutil.NoSuchProcess):
+                    # The process group may already be dead or assigned
+                    # to a different group, so ignore this error
+                    self.log(f'child pid {child.pid} already dead')
             job.proc.terminate()
             job._signal = signal.SIGTERM
             for child in children:
