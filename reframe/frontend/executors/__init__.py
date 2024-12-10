@@ -551,7 +551,7 @@ class RegressionTask:
         exc.__cause__ = cause
         try:
             if not self.zombie and self.check.job:
-                asyncio_run(self.check.job.cancel())
+                self.check.job.cancel()
         except JobNotStartedError:
             self.fail((type(exc), exc, None), 'on_task_abort')
         except BaseException:

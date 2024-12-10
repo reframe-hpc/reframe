@@ -568,8 +568,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         if job.is_array:
             self._merge_files(job)
 
-    async def cancel(self, job):
-        await _run_strict(f'scancel {job.jobid}', timeout=self._submit_timeout)
+    def cancel(self, job):
+        _run_strict_s(f'scancel {job.jobid}', timeout=self._submit_timeout)
         job._is_cancelling = True
 
     def finished(self, job):
