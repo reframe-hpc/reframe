@@ -131,12 +131,12 @@ class LocalJobScheduler(sched.JobScheduler):
                 # The process group may already be dead or assigned
                 # to a different group, so ignore this error
                 self.log(f'child pid {child.pid} already dead')
+            else:
                 # If the main process ignored the term but the children
                 # didn't then, we get 0 exitcode when the chilren
                 # are terminated
                 if job.proc.returncode >= 0:
                     job._signal = signal.SIGKILL
-            else:
                 # If the main process was terminated but the children
                 # ignored the term signal, then the child are killed
                 # the signal of the job should be adjusted accordingly

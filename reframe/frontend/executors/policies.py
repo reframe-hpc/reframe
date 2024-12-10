@@ -16,7 +16,6 @@ from reframe.core.exceptions import (FailureLimitError,
                                      SkipTestError,
                                      TaskDependencyError,
                                      TaskExit,
-                                     ForceExitError,
                                      KeyboardError,
                                      AbortTaskError)
 from reframe.core.logging import getlogger, level_from_str
