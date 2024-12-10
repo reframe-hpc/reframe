@@ -564,7 +564,7 @@ def test_cancel(make_job, exec_ctx):
     # yet, and the scheduler will assume that it's ignoring its signal, then
     # wait for a grace period and send a KILL signal, which is not what we
     # want to test here.
-    time.sleep(0.01)
+    time.sleep(1)
 
     test_util.asyncio_run(minimal_job.wait)
     t_job = time.time() - t_job
