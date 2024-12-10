@@ -466,6 +466,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # Remove tasks from the partition tasks if there
             with contextlib.suppress(KeyError):
                 self._partition_tasks['_rfm_local'].remove(task)
+            with contextlib.suppress(KeyError):
                 if partname:
                     self._partition_tasks[partname].remove(task)
 
@@ -487,6 +488,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # Remove tasks from the partition tasks if there
             with contextlib.suppress(KeyError):
                 self._partition_tasks['_rfm_local'].remove(task)
+            with contextlib.suppress(KeyError):
                 if partname:
                     self._partition_tasks[partname].remove(task)
             return
