@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import asyncio
 import json
 import jsonschema
 import os

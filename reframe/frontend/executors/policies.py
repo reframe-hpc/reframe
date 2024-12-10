@@ -437,6 +437,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 if not self.dry_run_mode:
                     if getpollcontroller().is_time_to_poll():
                         getpollcontroller().reset_time_to_poll()
+                        getpollcontroller().reset_snooze_time()
                         await sched.poll(*getpollcontroller()._jobs_pool)
 
                 if task.run_complete():
