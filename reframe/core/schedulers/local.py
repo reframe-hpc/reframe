@@ -110,7 +110,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         try:
             # Try to kill the main process
-            job.proc.kill()
+            os.kill(job.jobid, signal.SIGKILL)
             job._signal = signal.SIGKILL
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
@@ -163,7 +163,7 @@ class LocalJobScheduler(sched.JobScheduler):
                     # The process group may already be dead or assigned
                     # to a different group, so ignore this error
                     self.log(f'child pid {child.pid} already dead')
-            job.proc.terminate()
+            os.kill(job.jobid, signal.SIGTERM)
             job._signal = signal.SIGTERM
         except (ProcessLookupError, PermissionError):
             # Job has finished already, close file handles
