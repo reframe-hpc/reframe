@@ -172,7 +172,7 @@ class LocalJobScheduler(sched.JobScheduler):
             job.f_stderr.close()
             job._state = 'FAILURE'
 
-    def cancel(self, job):
+    async def cancel(self, job):
         '''Cancel job.
 
         The SIGTERM signal will be sent first to all the processes of this job

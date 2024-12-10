@@ -557,7 +557,7 @@ def test_cancel(make_job, exec_ctx):
     t_job = time.time()
 
     submit_job(minimal_job)
-    minimal_job.cancel()
+    test_util.asyncio_run(minimal_job.cancel)
 
     # We give some time to the local scheduler for the TERM signal to be
     # delivered; if we poll immediately, the process may have not been killed
@@ -583,7 +583,7 @@ def test_cancel(make_job, exec_ctx):
 def test_cancel_before_submit(minimal_job):
     prepare_job(minimal_job, 'sleep 3')
     with pytest.raises(JobNotStartedError):
-        minimal_job.cancel()
+        test_util.asyncio_run(minimal_job.cancel)
 
 
 def test_wait_before_submit(minimal_job):
@@ -797,7 +797,7 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
 
     sleep_pid = _read_pid(minimal_job)
     t_grace = time.time()
-    minimal_job.cancel()
+    test_util.asyncio_run(minimal_job.cancel)
     time.sleep(0.1)
     test_util.asyncio_run(minimal_job.wait)
     t_grace = time.time() - t_grace
@@ -844,7 +844,7 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
 
     sleep_pid = _read_pid(minimal_job)
     t_grace = time.time()
-    minimal_job.cancel()
+    test_util.asyncio_run(minimal_job.cancel)
     time.sleep(0.1)
     test_util.asyncio_run(minimal_job.wait)
     t_grace = time.time() - t_grace
