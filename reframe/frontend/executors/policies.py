@@ -93,7 +93,6 @@ class _PollController:
         t_elapsed = time.time() - self._t_init
 
         self._num_polls += 1
-        poll_rate = self._num_polls / t_elapsed if t_elapsed else math.inf
         if t_elapsed >= self._sleep_duration:
             return True
         else:
@@ -437,7 +436,6 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 if not self.dry_run_mode:
                     if getpollcontroller().is_time_to_poll():
                         getpollcontroller().reset_time_to_poll()
-                        getpollcontroller().reset_snooze_time()
                         await sched.poll(*getpollcontroller()._jobs_pool)
 
                 if task.run_complete():
