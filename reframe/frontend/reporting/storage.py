@@ -233,26 +233,39 @@ class _SqliteStorage(StorageBackend):
 
         Return a map of session uuids to decoded session data
         '''
+        sess_info_patt = re.compile(
+            r'\"session_info\":\s+(?P<sess_info>\{.*?\})'
+        )
+
+        def _extract_sess_info(s):
+            return sess_info_patt.search(s).group('sess_info')
+
+        @time_function
+        def _mass_json_decode(json_objs):
+            data = '[' + ','.join(json_objs) + ']'
+            getlogger().debug(f'decoding {len(data)} bytes')
+            return json.loads(data)
+
+        session_infos = {}
         sessions = {}
         for uuid, json_blob in results:
             sessions.setdefault(uuid, json_blob)
+            session_infos.setdefault(uuid, _extract_sess_info(json_blob))
 
-        # Join all sessions and decode them at once
-        reports_blob = '[' + ','.join(sessions.values()) + ']'
-        getprofiler().enter_region('json decode')
-        reports = json.loads(reports_blob)
-        getprofiler().exit_region()
-
-        # Reindex and filter sessions based on their decoded data
-        sessions.clear()
-        for rpt in reports:
+        # Find the UUIDs to decode fully by inspecting only the session info
+        uuids = []
+        for info in _mass_json_decode(session_infos.values()):
             try:
-                if self._db_filter_json(sess_filter, rpt['session_info']):
-                    sessions[rpt['session_info']['uuid']] = rpt
+                if self._db_filter_json(sess_filter, info):
+                    uuids.append(info['uuid'])
             except Exception:
                 continue
 
-        return sessions
+        # Decode selected sessions
+        reports = _mass_json_decode(sessions[uuid] for uuid in uuids)
+
+        # Return only the selected sessions
+        return {rpt['session_info']['uuid']: rpt for rpt in reports}
 
     @time_function
     def _fetch_testcases_raw(self, condition):
