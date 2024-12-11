@@ -923,6 +923,7 @@ class _SlurmContext(sched.ReframeContext):
                                 'the configuration file.')
             return None
         else:
+            devices = []
             for device_i in devices_raw:
                 devices = [item.rsplit(':', 1)[0] for item in device_i]
             devices = [','.join(devices)]

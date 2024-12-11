@@ -750,7 +750,7 @@ class TMod31Impl(TModImpl):
         modulecmd = os.getenv('MODULESHOME')
         if modulecmd is None:
             raise ConfigError(
-                f'could not find a sane TMod31 installation: {e}'
+                'could not find a sane TMod31 installation'
             )
         try:
             modulecmd = os.path.join(modulecmd, 'modulecmd.tcl')
