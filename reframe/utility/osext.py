@@ -360,15 +360,16 @@ async def run_command_asyncio_alone(cmd,
         # Call create_subprocess_shell
         return await asyncio.create_subprocess_shell(
             cmd, stdout=stdout,
-            stderr=stderr
+            stderr=stderr,
+            **kwargs
         )
     else:
         # Call create_subprocess_exec
         return await asyncio.create_subprocess_exec(
             cmd, stdout=stdout,
-            stderr=stderr
+            stderr=stderr,
+            **kwargs
         )
-
 
 async def run_command_asyncio(cmd,
                               check=False,
@@ -390,13 +391,15 @@ async def run_command_asyncio(cmd,
             # Call create_subprocess_shell
             proc = await asyncio.create_subprocess_shell(
                 cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                **kwargs
             )
         else:
             # Call create_subprocess_exec
             proc = await asyncio.create_subprocess_exec(
                 cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                **kwargs
             )
         proc_stdout, proc_stderr = await asyncio.wait_for(
             proc.communicate(), timeout=timeout
