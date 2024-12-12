@@ -809,6 +809,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_upper_thres': None,
                 'check_perf_unit': None,
                 'check_result': None,
+                'hostname': socket.gethostname(),
                 'osuser':  osext.osuser(),
                 'osgroup': osext.osgroup(),
                 'version': osext.reframe_version(),
