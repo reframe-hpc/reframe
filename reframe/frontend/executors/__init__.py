@@ -813,7 +813,7 @@ class ExecutionPolicy(abc.ABC):
 
 
 def asyncio_run(coro):
-    from reframe.frontend.executors import all_tasks
+    from reframe.frontend.executors.policies import all_tasks
     try:
         loop = asyncio.get_event_loop()
         for task in all_tasks(loop):
