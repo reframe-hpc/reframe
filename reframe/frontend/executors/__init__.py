@@ -813,16 +813,34 @@ class ExecutionPolicy(abc.ABC):
 
 
 def asyncio_run(coro):
-    loop = asyncio.get_event_loop()
+    from reframe.frontend.executors import all_tasks
+    try:
+        loop = asyncio.get_event_loop()
+        for task in all_tasks(loop):
+            if isinstance(task, asyncio.tasks.Task):
+                try:
+                    task.cancel()
+                except RuntimeError:
+                    pass
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            watcher = asyncio.get_child_watcher()
+            if isinstance(watcher, asyncio.SafeChildWatcher):
+                # Detach the watcher from the current loop to avoid issues
+                watcher.close()
+                watcher.attach_loop(None)
+            asyncio.set_event_loop(loop)
+            if isinstance(watcher, asyncio.SafeChildWatcher):
+                # Reattach the watcher to the new loop
+                watcher.attach_loop(loop)
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
-    if loop.is_running():
+    try:
         loop.run_until_complete(coro)
+    except (Exception, KeyboardInterrupt):
+        for task in all_tasks(loop):
+            if isinstance(task, asyncio.tasks.Task):
+                task.cancel()
         loop.close()
-        return
-    else:
-        try:
-            loop.run_until_complete(coro)
-            loop.close()
-            return
-        finally:
-            loop.close()
