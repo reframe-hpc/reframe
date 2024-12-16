@@ -621,7 +621,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
         time_from_last_submit = time.time() - m
         rem_wait = self.SQUEUE_DELAY - time_from_last_submit
         if rem_wait > 0:
-            time.sleep(rem_wait)
+            await asyncio.sleep(rem_wait)
 
         # We don't run the command with check=True, because if the job has
         # finished already, squeue might return an error about an invalid

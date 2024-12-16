@@ -19,7 +19,8 @@ from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobSchedulerError
 from reframe.core.schedulers.pbs import PbsJobScheduler
 
-_run_strict = functools.partial(osext.run_command, check=True)
+# Asynchronous _run_strict
+_run_strict = functools.partial(osext.run_command_asyncio, check=True)
 
 
 @register_scheduler('lsf')
@@ -78,14 +79,14 @@ class LsfJobScheduler(PbsJobScheduler):
         # Filter out empty statements before returning
         return list(filter(None, preamble))
 
-    def submit(self, job):
+    async def submit(self, job):
         with open(job.script_filename, 'r') as fp:
             cmd_parts = ['bsub']
             if self._sched_access_in_submit:
                 cmd_parts += job.sched_access
 
             cmd = ' '.join(cmd_parts)
-            completed = _run_strict(cmd, stdin=fp)
+            completed = await _run_strict(cmd, stdin=fp)
 
         jobid_match = re.search(r'^Job <(?P<jobid>\S+)> is submitted',
                                 completed.stdout)
@@ -95,7 +96,7 @@ class LsfJobScheduler(PbsJobScheduler):
         job._jobid = jobid_match.group('jobid')
         job._submit_time = time.time()
 
-    def poll(self, *jobs):
+    async def poll(self, *jobs):
         if jobs:
             # filter out non-jobs
             jobs = [job for job in jobs if job is not None]
@@ -103,7 +104,7 @@ class LsfJobScheduler(PbsJobScheduler):
         if not jobs:
             return
 
-        completed = _run_strict(
+        completed = await _run_strict(
             'bjobs -o "jobid: user:10 stat: queue:" -noheader '
             f'{" ".join(job.jobid for job in jobs)}'
         )

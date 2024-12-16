@@ -9,6 +9,7 @@
 # - Initial version submitted by Rafael Escovar, ASML
 #
 
+import asyncio
 import functools
 import os
 import itertools
@@ -35,7 +36,10 @@ PBS_OUTPUT_WRITEBACK_WAIT = 3
 PBS_CANCEL_DELAY = 3
 
 
-_run_strict = functools.partial(osext.run_command, check=True)
+# Asynchronous _run_strict
+_run_strict = functools.partial(osext.run_command_asyncio, check=True)
+# Synchronous _run_strict
+_run_strict_s = functools.partial(osext.run_command, check=True)
 
 
 JOB_STATES = {
@@ -146,7 +150,7 @@ class PbsJobScheduler(sched.JobScheduler):
         raise NotImplementedError('pbs backend does not support '
                                   'node filtering')
 
-    def submit(self, job):
+    async def submit(self, job):
         cmd_parts = ['qsub']
         if self._sched_access_in_submit:
             cmd_parts += job.sched_access
@@ -155,7 +159,7 @@ class PbsJobScheduler(sched.JobScheduler):
         # Slurm wrappers.
         cmd_parts += ['-o', job.stdout, '-e', job.stderr, job.script_filename]
         cmd = ' '.join(cmd_parts)
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
+        completed = await _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
         if not jobid_match:
             raise JobSchedulerError('could not retrieve the job id '
@@ -164,18 +168,18 @@ class PbsJobScheduler(sched.JobScheduler):
         job._jobid = jobid_match.group('jobid')
         job._submit_time = time.time()
 
-    def wait(self, job):
+    async def wait(self, job):
         intervals = itertools.cycle([1, 2, 3])
         while not self.finished(job):
-            self.poll(job)
-            time.sleep(next(intervals))
+            await self.poll(job)
+            await asyncio.sleep(next(intervals))
 
     def cancel(self, job):
         time_from_submit = time.time() - job.submit_time
         if time_from_submit < PBS_CANCEL_DELAY:
             time.sleep(PBS_CANCEL_DELAY - time_from_submit)
 
-        _run_strict(f'qdel {job.jobid}', timeout=self._submit_timeout)
+        _run_strict_s(f'qdel {job.jobid}', timeout=self._submit_timeout)
         job._cancelled = True
 
     def finished(self, job):
@@ -205,7 +209,7 @@ class PbsJobScheduler(sched.JobScheduler):
 
         return None
 
-    def poll(self, *jobs):
+    async def poll(self, *jobs):
         def output_ready(job):
             # We report a job as finished only when its stdout/stderr are
             # written back to the working directory
@@ -220,7 +224,7 @@ class PbsJobScheduler(sched.JobScheduler):
         if not jobs:
             return
 
-        completed = osext.run_command(
+        completed = await osext.run_command_asyncio(
             f'qstat -f {" ".join(job.jobid for job in jobs)}'
         )
 
