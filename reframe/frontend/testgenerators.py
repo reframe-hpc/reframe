@@ -77,12 +77,12 @@ def _generate_tests(testcases, gen_fn):
 @time_function
 def distribute_tests(testcases, node_map):
     def _rfm_pin_run_nodes(obj):
-        nodelist = getattr(obj, '$nid')
+        nodelist = getattr(obj, '.nid')
         if not obj.local:
             obj.job.pin_nodes = nodelist
 
     def _rfm_pin_build_nodes(obj):
-        pin_nodes = getattr(obj, '$nid')
+        pin_nodes = getattr(obj, '.nid')
         if obj.build_job and not obj.local and not obj.build_locally:
             obj.build_job.pin_nodes = pin_nodes
 
@@ -99,9 +99,9 @@ def distribute_tests(testcases, node_map):
                 'valid_systems': [partition.fullname],
                 # We add a partition parameter so as to differentiate the test
                 # in case another test has the same nodes in another partition
-                '$part': builtins.parameter([partition.fullname],
+                '.part': builtins.parameter([partition.fullname],
                                             loggable=False),
-                '$nid': builtins.parameter(
+                '.nid': builtins.parameter(
                     [[n] for n in node_map[partition.fullname]],
                     fmt=util.nodelist_abbrev, loggable=False
                 )
@@ -113,7 +113,7 @@ def distribute_tests(testcases, node_map):
                 # will not be overwritten by a parent post-init hook
                 builtins.run_after('init')(_rfm_set_valid_systems),
             ]
-        ), ['$part', '$nid']
+        ), ['.part', '.nid']
 
     return _generate_tests(testcases, _make_dist_test)
 
@@ -127,10 +127,10 @@ def repeat_tests(testcases, num_repeats):
         return make_test(
             cls.__name__, (cls,),
             {
-                '$repeat_no': builtins.parameter(range(num_repeats),
+                '.repeat_no': builtins.parameter(range(num_repeats),
                                                  loggable=False)
             }
-        ), ['$repeat_no']
+        ), ['.repeat_no']
 
     return _generate_tests(testcases, _make_repeat_test)
 
@@ -164,7 +164,7 @@ def parameterize_tests(testcases, paramvars):
                 )
                 continue
 
-            body[f'${var}'] = builtins.parameter(values, loggable=False)
+            body[f'.{var}'] = builtins.parameter(values, loggable=False)
 
         def _set_vars(self):
             for var in body.keys():

@@ -569,7 +569,7 @@ def test_supports_sysenv(testsys_exec_ctx):
 
     # Check AND in features and extras
     _assert_supported(
-        valid_systems=['+cuda +mpi %gpu_arch=v100'],
+        valid_systems=[r'+cuda +mpi %gpu_arch=v100'],
         valid_prog_environs=['*'],
         expected={}
     )
@@ -579,9 +579,18 @@ def test_supports_sysenv(testsys_exec_ctx):
         expected={}
     )
 
-    # Check OR in features ad extras
+    # Check OR in features and extras
     _assert_supported(
-        valid_systems=['+cuda +mpi', '%gpu_arch=v100'],
+        valid_systems=['+cuda +mpi', r'%gpu_arch=v100'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+
+    # Check that extra keys can used as features
+    _assert_supported(
+        valid_systems=['+cuda +mpi', '+gpu_arch'],
         valid_prog_environs=['*'],
         expected={
             'testsys:gpu': ['PrgEnv-gnu', 'builtin']
@@ -653,7 +662,7 @@ def test_supports_sysenv(testsys_exec_ctx):
     )
     _assert_supported(
         valid_systems=['*'],
-        valid_prog_environs=['%bar=x'],
+        valid_prog_environs=[r'%bar=x'],
         expected={
             'testsys:gpu': [],
             'testsys:login': ['PrgEnv-gnu']
@@ -661,7 +670,7 @@ def test_supports_sysenv(testsys_exec_ctx):
     )
     _assert_supported(
         valid_systems=['*'],
-        valid_prog_environs=['%foo=2'],
+        valid_prog_environs=[r'%foo=2'],
         expected={
             'testsys:gpu': ['PrgEnv-gnu'],
             'testsys:login': []
@@ -669,7 +678,7 @@ def test_supports_sysenv(testsys_exec_ctx):
     )
     _assert_supported(
         valid_systems=['*'],
-        valid_prog_environs=['%foo=bar'],
+        valid_prog_environs=[r'%foo=bar'],
         expected={
             'testsys:gpu': [],
             'testsys:login': []
@@ -680,6 +689,24 @@ def test_supports_sysenv(testsys_exec_ctx):
         valid_prog_environs=['-cxx14'],
         expected={
             'testsys:gpu': ['PrgEnv-gnu', 'builtin'],
+            'testsys:login': []
+        }
+    )
+
+    # Check that extra keys can used as features
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+foo +bar'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu'],
+            'testsys:login': ['PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+foo -bar'],
+        expected={
+            'testsys:gpu': [],
             'testsys:login': []
         }
     )

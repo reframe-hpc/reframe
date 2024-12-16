@@ -2000,39 +2000,55 @@ its unique identifier, its start and end time and how many test cases have run:
    ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
    │ UUID                                 │ Start time           │ End time             │   Num runs │   Num cases │
    ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
-   │ 340178ef-a51e-4ce8-8476-1e42ceb2efdd │ 20241011T092927+0000 │ 20241011T092930+0000 │          1 │           1 │
-   │ 68f9a457-f132-459f-8c11-0e6533be3a24 │ 20241011T092931+0000 │ 20241011T092934+0000 │          1 │           1 │
-   │ c1d3e813-e783-41aa-92b6-e7ff8eb3e4ec │ 20241011T092934+0000 │ 20241011T092935+0000 │          1 │           2 │
-   │ 6a79ccf5-95c4-4cc0-a4a2-b3e49012565b │ 20241011T092936+0000 │ 20241011T092937+0000 │          1 │           4 │
-   │ aa953baf-63d9-47b1-8800-1c6d05883334 │ 20241011T092938+0000 │ 20241011T092939+0000 │          1 │           4 │
-   │ e8b23332-534a-4f48-aff7-1ae9d4085ecc │ 20241011T092939+0000 │ 20241011T092951+0000 │          1 │          26 │
-   │ 57cfb5f3-94dd-4e7f-87c9-648a651b1337 │ 20241011T092951+0000 │ 20241011T092955+0000 │          1 │          10 │
-   │ ec116664-5534-462f-aa33-87dad3bd794b │ 20241011T092956+0000 │ 20241011T092957+0000 │          1 │          10 │
-   │ 92eaa50e-af92-411f-a11e-47e9fa938202 │ 20241011T092957+0000 │ 20241011T092957+0000 │          1 │           4 │
-   │ 5bb110fd-9f6a-487d-af4f-4ab582406047 │ 20241011T092958+0000 │ 20241011T092959+0000 │          1 │          10 │
-   │ 4a522d23-6ae4-4a28-bf39-d2872badcf01 │ 20241011T092959+0000 │ 20241011T092959+0000 │          1 │           1 │
-   │ 2a6bb3b7-93d3-41ed-8618-48c268de5fcb │ 20241011T093000+0000 │ 20241011T093001+0000 │          1 │           5 │
+   │ dbdb5f94-d1b2-4a11-aadc-57591d4a8496 │ 20241105T150144+0000 │ 20241105T150147+0000 │          1 │           1 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ eba49e9c-81f2-45b7-8680-34a5c9e08ac2 │ 20241105T150202+0000 │ 20241105T150205+0000 │          1 │           1 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 62e6e1e8-dd3a-4e70-a452-5c416a8f4d0b │ 20241105T150216+0000 │ 20241105T150219+0000 │          1 │           1 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 4ad75077-f2c5-4331-baf6-564275397f98 │ 20241105T150236+0000 │ 20241105T150237+0000 │          1 │           2 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 0507e4a0-f44c-45af-a068-9da842498c1f │ 20241105T150253+0000 │ 20241105T150254+0000 │          1 │           4 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ a7c2ffa9-482e-403f-9a78-5727262f6c7f │ 20241105T150304+0000 │ 20241105T150305+0000 │          1 │           4 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 47e8d98f-e2b9-4019-9a41-1c44d8a53d1b │ 20241105T150321+0000 │ 20241105T150332+0000 │          1 │          26 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ d0aa023b-2ebf-43d4-a0df-e809492434b5 │ 20241105T150352+0000 │ 20241105T150356+0000 │          1 │          10 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 8d2f6493-2f5f-4e20-8a8d-1f1b7b1285b0 │ 20241105T150415+0000 │ 20241105T150416+0000 │          1 │          10 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 1dd5da33-4e71-484a-b8e6-13ac4d513a66 │ 20241105T150436+0000 │ 20241105T150436+0000 │          1 │           4 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 216559ed-be1e-4289-9c88-c9e6b20d2e2e │ 20241105T150447+0000 │ 20241105T150448+0000 │          1 │          10 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ b387ee78-a44b-4711-ad81-629ebf578e53 │ 20241105T150448+0000 │ 20241105T150448+0000 │          1 │           1 │
+   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
+   │ 4bc5ba16-1a4a-4b27-b75c-407f01f1d292 │ 20241105T150503+0000 │ 20241105T150503+0000 │          1 │           5 │
    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
 
 
 You can use :option:`--list-stored-testcases` to list the test cases of a specific session or those that have run within a certain period of time.
-In the following example, we list the test cases of session ``aa953baf-63d9-47b1-8800-1c6d05883334`` showing the maximum performance for every performance variable.
+In the following example, we list the test cases of session ``0507e4a0-f44c-45af-a068-9da842498c1f`` showing the maximum performance for every performance variable.
 Note that a session may contain multiple runs of the same test.
 
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=aa953baf-63d9-47b1-8800-1c6d05883334/max:/
+   reframe --list-stored-testcases=0507e4a0-f44c-45af-a068-9da842498c1f/max:/
 
 .. code-block:: console
 
    ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┑
    │ name        │ sysenv                    │ pvar     │ punit   │    pval │
    ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┥
-   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ MB/s    │ 25169.3 │
-   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ MB/s    │ 19387.8 │
-   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ MB/s    │ 25129.7 │
-   │ stream_test │ tutorialsys:default+clang │ triad_bw │ MB/s    │ 29232.8 │
+   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ MB/s    │ 45454.4 │
+   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ MB/s    │ 39979.1 │
+   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ MB/s    │ 43220.8 │
+   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test │ tutorialsys:default+clang │ triad_bw │ MB/s    │ 38759.9 │
    ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
 
 The grouping of the test cases, the aggregation and the actual columns shown in the final table are fully configurable.
@@ -2051,15 +2067,23 @@ For example, the following will list the mean performance of all test cases that
    ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┑
    │ name                                                │ sysenv                       │ pvar     │ punit   │    pval │
    ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┥
-   │ stream_test                                         │ generic:default+builtin      │ copy_bw  │ MB/s    │   40288 │
-   │ stream_test                                         │ generic:default+builtin      │ triad_bw │ MB/s    │ 30530.1 │
-   │ stream_test                                         │ tutorialsys:default+baseline │ copy_bw  │ MB/s    │ 40305.1 │
-   │ stream_test                                         │ tutorialsys:default+baseline │ triad_bw │ MB/s    │ 30540.6 │
+   │ stream_test                                         │ generic:default+builtin      │ copy_bw  │ MB/s    │ 40302.2 │
+   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test                                         │ generic:default+builtin      │ triad_bw │ MB/s    │ 30565.7 │
+   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test                                         │ tutorialsys:default+baseline │ copy_bw  │ MB/s    │ 40386.6 │
+   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test                                         │ tutorialsys:default+baseline │ triad_bw │ MB/s    │ 30565.5 │
+   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
    ...
-   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+gnu      │ copy_bw  │ MB/s    │ 46906.3 │
-   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+gnu      │ triad_bw │ MB/s    │ 35309.3 │
-   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+clang    │ copy_bw  │ MB/s    │ 46811.4 │
-   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+clang    │ triad_bw │ MB/s    │ 35634.3 │
+   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+gnu      │ copy_bw  │ MB/s    │ 47490.5 │
+   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+gnu      │ triad_bw │ MB/s    │ 34848.5 │
+   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+clang    │ copy_bw  │ MB/s    │ 47618.6 │
+   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
+   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+clang    │ triad_bw │ MB/s    │ 36237.2 │
    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
 
 Note that the :option:`--list-stored-testcases` will list only performance tests.
@@ -2077,22 +2101,25 @@ Comparing performance of test cases
 -----------------------------------
 
 ReFrame can be used to compare the performance of the same test cases run in different time periods using the :option:`--performance-compare` option.
-The following will compare the performance of the test cases of the session ``aa953baf-63d9-47b1-8800-1c6d05883334`` with any other same test case that has run the last 24h:
+The following will compare the performance of the test cases of the session ``0507e4a0-f44c-45af-a068-9da842498c1f`` with any other same test case that has run the last 24h:
 
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --performance-compare=aa953baf-63d9-47b1-8800-1c6d05883334/now-1d:now/mean:/
+   reframe --performance-compare=0507e4a0-f44c-45af-a068-9da842498c1f/now-1d:now/mean:/
 
 .. code-block:: console
 
    ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┑
    │ name        │ sysenv                    │ pvar     │ punit   │   pval_A │   pval_B │ pdiff   │
    ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┥
-   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ MB/s    │  25169.3 │  46554.8 │ -45.94% │
-   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ MB/s    │  19387.8 │  37660.5 │ -48.52% │
-   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ MB/s    │  25129.7 │  47072.2 │ -46.61% │
-   │ stream_test │ tutorialsys:default+clang │ triad_bw │ MB/s    │  29232.8 │  40177.2 │ -27.24% │
+   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ MB/s    │  45454.4 │  46984.3 │ -3.26%  │
+   ├─────────────┼───────────────────────────┼──────────┼─────────┼──────────┼──────────┼─────────┤
+   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ MB/s    │  39979.1 │  37726.2 │ +5.97%  │
+   ├─────────────┼───────────────────────────┼──────────┼─────────┼──────────┼──────────┼─────────┤
+   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ MB/s    │  43220.8 │  47949.5 │ -9.86%  │
+   ├─────────────┼───────────────────────────┼──────────┼─────────┼──────────┼──────────┼─────────┤
+   │ stream_test │ tutorialsys:default+clang │ triad_bw │ MB/s    │  38759.9 │  39916.1 │ -2.90%  │
    ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┙
 
 Note that the absolute base performance (``pval_A`` column) is listed along with the target performance (``pval_B`` column).
@@ -2105,11 +2132,6 @@ Finally, a stored session can be deleted using the :option:`--delete-stored-sess
 
 .. code-block:: bash
 
-   reframe --delete-stored-sessions=1fb8488e-c361-4355-b7df-c0dcf3cdcc1e
+   reframe --delete-stored-sessions=47e8d98f-e2b9-4019-9a41-1c44d8a53d1b
 
 Deleting a session will also delete all its test cases from the database.
-
-
-.. tip::
-
-   You can disable results storage by either setting ``RFM_ENABLE_RESULTS_STORAGE=0`` or by setting the :attr:`storage.enable <config.storage.enable>` configuration parameter to ``False``.

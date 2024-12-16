@@ -124,6 +124,7 @@ class PrettyPrinter:
             self.info(f"  * Description: {rec['descr']}")
             self.info(f"  * System partition: {rec['system']}")
             self.info(f"  * Environment: {rec['environ']}")
+            self.info(f"  * Test file: {rec['filename']}")
             self.info(f"  * Stage directory: {rec['stagedir']}")
             self.info(f"  * Node list: "
                       f"{nodelist_abbrev(rec['job_nodelist'])}")
@@ -275,10 +276,8 @@ class PrettyPrinter:
 
         # Map our options to tabulate
         if table_format == 'plain':
-            tablefmt = 'plain'
-        elif table_format == 'outline':
-            tablefmt = 'mixed_outline'
-        elif table_format == 'grid':
+            tablefmt = 'simple'
+        elif table_format == 'pretty':
             tablefmt = 'mixed_grid'
         else:
             raise ValueError(f'invalid table format: {table_format}')

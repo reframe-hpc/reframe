@@ -447,8 +447,10 @@ class _SiteConfig:
         try:
             jsonschema.validate(site_config, self._schema)
         except jsonschema.ValidationError as e:
-            raise ConfigError(f"could not validate configuration files: "
-                              f"'{self._sources}'") from e
+            getlogger().debug(str(e))
+            sources = ', '.join(f'`{f}`' for f in self._sources)
+            raise ConfigError('could not validate configuration files: '
+                              f'{sources}') from e
 
         def _warn_variables(config, opt_path):
             opt_path = '/'.join(opt_path + ['variables'])

@@ -17,7 +17,6 @@ import time
 import uuid
 from collections import UserDict
 from collections.abc import Hashable
-from filelock import FileLock
 
 import reframe as rfm
 import reframe.utility.jsonext as jsonext
@@ -215,12 +214,12 @@ def _restore_session(filename):
         except KeyError:
             found_ver = 'n/a'
 
-        getlogger().verbose(f'JSON validation error: {e}')
+        getlogger().debug(str(e))
         raise ReframeError(
             f'failed to validate report {filename!r}: {e.args[0]} '
             f'(check report data version: required {DATA_VERSION}, '
             f'found: {found_ver})'
-        ) from None
+        ) from e
 
     return _RestoredSessionInfo(report)
 
@@ -419,7 +418,11 @@ class RunReport:
             'num_skipped': self.__report['runs'][-1]['num_skipped']
         })
 
-    def _save(self, filename, compress, link_to_last):
+    def is_empty(self):
+        '''Return :obj:`True` is no test cases where run'''
+        return self.__report['session_info']['num_cases'] == 0
+
+    def save(self, filename, compress=False, link_to_last=True):
         filename = _expand_report_filename(filename, newfile=True)
         with open(filename, 'w') as fp:
             if compress:
@@ -446,19 +449,46 @@ class RunReport:
                 else:
                     raise ReframeError('path exists and is not a symlink')
 
-    def is_empty(self):
-        '''Return :obj:`True` is no test cases where run'''
-        return self.__report['session_info']['num_cases'] == 0
-
-    def save(self, filename, compress=False, link_to_last=True):
-        prefix = os.path.dirname(filename) or '.'
-        with FileLock(os.path.join(prefix, '.report.lock')):
-            self._save(filename, compress, link_to_last)
-
     def store(self):
         '''Store the report in the results storage.'''
 
         return StorageBackend.default().store(self, self.filename)
+
+    def report_data(self):
+        '''Get tabular data from this report'''
+
+        columns = ['name', 'sysenv', 'job_nodelist',
+                   'pvar', 'punit', 'pval', 'result']
+        data = [columns]
+        num_runs = len(self.__report['runs'])
+        for runid, runinfo in enumerate(self.__report['runs']):
+            for tc in map(_TCProxy, runinfo['testcases']):
+                if tc['result'] != 'success' and runid != num_runs - 1:
+                    # Skip this testcase until its last retry
+                    continue
+
+                for pvar, reftuple in tc['perfvalues'].items():
+                    pvar = pvar.split(':')[-1]
+                    pval, _, _, _, punit = reftuple
+                    if pval is None:
+                        # Ignore `None` performance values
+                        # (performance tests that failed sanity)
+                        continue
+
+                    line = []
+                    for c in columns:
+                        if c == 'pvar':
+                            line.append(pvar)
+                        elif c == 'pval':
+                            line.append(pval)
+                        elif c == 'punit':
+                            line.append(punit)
+                        else:
+                            line.append(tc[c])
+
+                    data.append(line)
+
+        return data
 
     def generate_xml_report(self):
         '''Generate a JUnit report from a standard ReFrame JSON report.'''
@@ -606,9 +636,12 @@ def _group_testcases(testcases, groups, columns):
 
 @time_function
 def _aggregate_perf(grouped_testcases, aggr_fn, cols):
-    if runtime().get_option('general/0/table_format') == 'csv':
-        # Use a csv friendly delimiter
+    # Update delimiter for joining unique values based on the table format
+    table_foramt = runtime().get_option('general/0/table_format')
+    if table_foramt == 'csv':
         delim = '|'
+    elif table_foramt == 'plain':
+        delim = ','
     else:
         delim = '\n'
 

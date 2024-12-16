@@ -130,9 +130,12 @@ class LocalJobScheduler(sched.JobScheduler):
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
 
-        p = psutil.Process(job.jobid)
-        # Get the chilldren of the process
-        job.children = p.children(recursive=True)
+        try:
+            p = psutil.Process(job.jobid)
+            # Get the chilldren of the process
+            job.children = p.children(recursive=True)
+        except psutil.NoSuchProcess:
+            job.children = []
 
         try:
             job.proc.send_signal(signal.SIGTERM)

@@ -16,7 +16,7 @@ class simple_echo_check(rfm.RunOnlyRegressionTest, pin_prefix=True):
     executable = 'echo'
     executable_opts = ['Hello']
     message = variable(str, value='World')
-    dummy = fixture(dummy_fixture, scope='environment')
+    dummy = fixture(dummy_fixture)
 
     @run_before('run')
     def set_executable_opts(self):

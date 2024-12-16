@@ -51,7 +51,7 @@ def test_distribute_testcases(sys0_exec_ctx):
 
     nodelist_iter = sys0p0_nodes()
     for tc in new_cases:
-        nodes = getattr(tc.check, '$nid')
+        nodes = getattr(tc.check, '.nid')
         if tc.partition.fullname == 'sys0:p0':
             assert nodes == next(nodelist_iter)
         else:

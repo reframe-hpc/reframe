@@ -102,3 +102,17 @@ class TestB(rfm.RunOnlyRegressionTest):
                 ParamFixture.num_variants
             )
         ])
+
+
+@rfm.simple_test
+class TestC(rfm.RunOnlyRegressionTest):
+    valid_systems = ['*']
+    valid_prog_environs = ['*']
+    executable = 'echo'
+    f0 = fixture(SimpleFixture, scope='environment', variables={'data': 10})
+    f1 = fixture(SimpleFixture, scope='environment', variables={'data': 20})
+
+    @sanity_function
+    def validate_vars(self):
+        return sn.all([sn.assert_eq(self.f0.data, 10),
+                       sn.assert_eq(self.f1.data, 20)])

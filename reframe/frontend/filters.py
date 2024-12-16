@@ -6,6 +6,7 @@
 import re
 
 from reframe.core.exceptions import ReframeError
+from reframe.core.logging import getlogger
 
 
 def re_compile(patt):
@@ -118,6 +119,8 @@ def validates(expr):
         try:
             return eval(expr, None, case.check.__dict__)
         except Exception as err:
-            raise ReframeError(f'invalid expression `{expr}`') from err
+            getlogger().warning(f'error while evaluating expression `{expr}` '
+                                f'for test case `{case}`: {err}')
+            return False
 
     return _fn

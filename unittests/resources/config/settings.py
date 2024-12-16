@@ -227,12 +227,6 @@ site_configuration = {
             'features': ['cxx14', 'mpi'],
         },
         {
-            'name': 'builtin',
-            'cc': 'cc',
-            'cxx': '',
-            'ftn': ''
-        },
-        {
             'name': 'e0',
             'modules': ['m0']
         },

@@ -315,6 +315,21 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         return None
 
+    def _get_actual_partition(self, options):
+        try:
+            completed = _run_strict(
+                ' '.join(['srun'] + options + ['--test-only', 'true'])
+            )
+            partition_match = re.search(r'partition (?P<partition>\S+)\s+',
+                                        completed.stderr)
+            if partition_match:
+                return partition_match.group('partition')
+
+        except SpawnedProcessError as e:
+            self.log('could not retrieve actual partition')
+
+        return None
+
     def _merge_files(self, job):
         with osext.change_dir_global(job.workdir):
             out_glob = glob.glob(job.stdout + '_*')
@@ -341,6 +356,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         option_parser.add_argument('-w', '--nodelist')
         option_parser.add_argument('-C', '--constraint')
         option_parser.add_argument('-x', '--exclude')
+        self.log(f'Filtering by Slurm options: {" ".join(options)}')
         parsed_args, _ = option_parser.parse_known_args(options)
         reservation = parsed_args.reservation
         partitions = parsed_args.partition
@@ -350,36 +366,44 @@ class SlurmJobScheduler(sched.JobScheduler):
         if reservation:
             reservation = reservation.strip()
             nodes &= self._get_reservation_nodes(reservation)
-            self.log(f'[F] Filtering nodes by reservation {reservation}: '
-                     f'available nodes now: {len(nodes)}')
+        else:
+            nodes = {node for node in nodes if not node.in_state('RESERVED')}
+
+        self.log(f'Filtering nodes by reservation={reservation}: '
+                 f'available nodes now: {len(nodes)}')
 
         if partitions:
             partitions = set(partitions.strip().split(','))
         else:
-            default_partition = self._get_default_partition()
+            # Use a default partition if one is configured. Otherwise,
+            # fallback to the partition Slurm chooses for this set of options.
+            default_partition = (
+                self._get_default_partition() or
+                self._get_actual_partition(options)
+            )
             partitions = {default_partition} if default_partition else set()
             self.log(
-                f'[F] No partition specified; using {default_partition!r}'
+                f'No partition specified; using {default_partition!r}'
             )
 
         nodes = {n for n in nodes if n.partitions >= partitions}
-        self.log(f'[F] Filtering nodes by partition(s) {partitions}: '
+        self.log(f'Filtering nodes by partition(s) {partitions}: '
                  f'available nodes now: {len(nodes)}')
         if constraints:
             nodes = {n for n in nodes if n.satisfies(constraints)}
-            self.log(f'[F] Filtering nodes by constraint(s) {constraints}: '
+            self.log(f'Filtering nodes by constraint(s) {constraints}: '
                      f'available nodes now: {len(nodes)}')
 
         if nodelist:
             nodelist = nodelist.strip()
             nodes &= self._get_nodes_by_name(nodelist)
-            self.log(f'[F] Filtering nodes by nodelist: {nodelist}: '
+            self.log(f'Filtering nodes by nodelist: {nodelist}: '
                      f'available nodes now: {len(nodes)}')
 
         if exclude_nodes:
             exclude_nodes = exclude_nodes.strip()
             nodes -= self._get_nodes_by_name(exclude_nodes)
-            self.log(f'[F] Excluding node(s): {exclude_nodes}: '
+            self.log(f'Excluding node(s): {exclude_nodes}: '
                      f'available nodes now: {len(nodes)}')
 
         return nodes
@@ -683,24 +707,41 @@ class _SlurmNode(sched.Node):
         return self._states == set(state.upper().split('+'))
 
     def is_avail(self):
-        return any(self.in_statex(s)
-                   for s in ('ALLOCATED', 'COMPLETING', 'IDLE'))
+        available_states = {
+            'ALLOCATED',
+            'COMPLETING',
+            'IDLE',
+            'RESERVED',
+        }
+        return self._states <= available_states
 
     def is_down(self):
         return not self.is_avail()
 
     def satisfies(self, slurm_constraint):
+        def _replacemany(s, replacements):
+            for src, dst in replacements:
+                s = s.replace(src, dst)
+
+            return s
+
         # Convert the Slurm constraint to a Python expression and evaluate it,
         # but restrict our syntax to accept only AND or OR constraints and
-        # their combinations
-        if not re.match(r'^[\w\d\(\)\|\&]*$', slurm_constraint):
+        # their combinations; to properly treat `-` in constraints we need to
+        # convert them to valid Python identifiers before evaluating the
+        # constraint.
+        if not re.match(r'^[\-\w\d\(\)\|\&]*$', slurm_constraint):
             return False
 
-        names = {grp[0]
-                 for grp in re.finditer(r'(\w(\w|\d)*)', slurm_constraint)}
-        expr = slurm_constraint.replace('|', ' or ').replace('&', ' and ')
-        vars = {n: True for n in self.active_features}
-        vars.update({n: False for n in names - self.active_features})
+        names = {
+            grp[0] for grp in re.finditer(r'[\-\w][\-\w\d]*', slurm_constraint)
+        }
+        expr = _replacemany(slurm_constraint,
+                            [('-', '_'), ('|', ' or '), ('&', ' and ')])
+        vars = {n.replace('-', '_'): True for n in self.active_features}
+        vars.update({
+            n.replace('-', '_'): False for n in names - self.active_features
+        })
         try:
             return eval(expr, {}, vars)
         except BaseException:
