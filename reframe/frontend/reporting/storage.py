@@ -243,7 +243,9 @@ class _SqliteStorage(StorageBackend):
         @time_function
         def _mass_json_decode(json_objs):
             data = '[' + ','.join(json_objs) + ']'
-            getlogger().debug(f'decoding {len(data)} bytes')
+            getlogger().debug(
+                f'decoding JSON raw data of length {len(data)}'
+            )
             return json.loads(data)
 
         session_infos = {}
@@ -254,10 +256,10 @@ class _SqliteStorage(StorageBackend):
 
         # Find the UUIDs to decode fully by inspecting only the session info
         uuids = []
-        for info in _mass_json_decode(session_infos.values()):
+        for sess_info in _mass_json_decode(session_infos.values()):
             try:
-                if self._db_filter_json(sess_filter, info):
-                    uuids.append(info['uuid'])
+                if self._db_filter_json(sess_filter, sess_info):
+                    uuids.append(sess_info['uuid'])
             except Exception:
                 continue
 
