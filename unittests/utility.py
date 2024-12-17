@@ -7,6 +7,7 @@
 # unittests/utility.py -- Utilities used in unit tests
 #
 
+import asyncio
 import functools
 import inspect
 import os
@@ -35,6 +36,14 @@ TEST_CONFIG_FILE = 'unittests/resources/config/settings.py'
 # User supplied configuration file and site configuration
 USER_CONFIG_FILE = None
 USER_SYSTEM = None
+
+
+def asyncio_run(task, *args):
+    loop = asyncio.get_event_loop()
+    if loop.is_closed():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(task(*args))
 
 
 def init_runtime():

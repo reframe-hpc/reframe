@@ -3,11 +3,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import errno
+import asyncio
 import os
 import signal
 import socket
 import time
+import psutil
 
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
@@ -53,7 +54,7 @@ class LocalJobScheduler(sched.JobScheduler):
     def make_job(self, *args, **kwargs):
         return _LocalJob(*args, **kwargs)
 
-    def submit(self, job):
+    async def submit(self, job):
         # Run from the absolute path
         f_stdout = open(job.stdout, 'w+')
         f_stderr = open(job.stderr, 'w+')
@@ -61,7 +62,7 @@ class LocalJobScheduler(sched.JobScheduler):
         # The new process starts also a new session (session leader), so that
         # we can later kill any other processes that this might spawn by just
         # killing this one.
-        proc = osext.run_command_async(
+        proc = await osext.run_command_asyncio_alone(
             os.path.abspath(job.script_filename),
             stdout=f_stdout,
             stderr=f_stderr,
@@ -94,7 +95,27 @@ class LocalJobScheduler(sched.JobScheduler):
     def _kill_all(self, job):
         '''Send SIGKILL to all the processes of the spawned job.'''
         try:
-            os.killpg(job.jobid, signal.SIGKILL)
+            # Get the process with psutil because we need to cancel the group
+            p = psutil.Process(job.jobid)
+            # Get the children of this group
+            job.children = p.children(recursive=True)
+            children = job.children
+        except psutil.NoSuchProcess:
+            try:
+                # Maybe the main process was already killed/terminated
+                # but the children were not
+                children = job.children
+            except AttributeError:
+                children = []
+
+        try:
+            for child in children:
+                if child.is_running():
+                    child.send_signal(signal.SIGKILL)
+                    job._signal = signal.SIGKILL
+                else:
+                    self.log(f'child pid {child.pid} already dead')
+            job.proc.send_signal(signal.SIGKILL)
             job._signal = signal.SIGKILL
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
@@ -108,9 +129,28 @@ class LocalJobScheduler(sched.JobScheduler):
 
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
+
         try:
-            os.killpg(job.jobid, signal.SIGTERM)
+            p = psutil.Process(job.jobid)
+            # Get the chilldren of the process
+            job.children = p.children(recursive=True)
+        except psutil.NoSuchProcess:
+            job.children = []
+
+        try:
+            job.proc.send_signal(signal.SIGTERM)
             job._signal = signal.SIGTERM
+            # Here, we don't know if it was ignored or not
+            for child in job.children:
+                # try to kill the children
+                try:
+                    child.send_signal(signal.SIGTERM)
+                except (ProcessLookupError, PermissionError,
+                        psutil.NoSuchProcess):
+                    # The process group may already be dead or assigned
+                    # to a different group, so ignore this error
+                    self.log(f'child pid {child.pid} already dead')
+
         except (ProcessLookupError, PermissionError):
             # Job has finished already, close file handles
             self.log(f'pid {job.jobid} already dead')
@@ -129,7 +169,7 @@ class LocalJobScheduler(sched.JobScheduler):
         self._term_all(job)
         job._cancel_time = time.time()
 
-    def wait(self, job):
+    async def wait(self, job):
         '''Wait for the spawned job to finish.
 
         As soon as the parent job process finishes, all of its spawned
@@ -140,8 +180,8 @@ class LocalJobScheduler(sched.JobScheduler):
         '''
 
         while not self.finished(job):
-            self.poll(job)
-            time.sleep(self.WAIT_POLL_SECS)
+            await self.poll(job)
+            await asyncio.sleep(self.WAIT_POLL_SECS)
 
     def finished(self, job):
         '''Check if the spawned process has finished.
@@ -155,23 +195,13 @@ class LocalJobScheduler(sched.JobScheduler):
 
         return job.state in ['SUCCESS', 'FAILURE', 'TIMEOUT']
 
-    def poll(self, *jobs):
+    async def poll(self, *jobs):
         for job in jobs:
-            self._poll_job(job)
+            await self._poll_job(job)
 
-    def _poll_job(self, job):
+    async def _poll_job(self, job):
         if job is None or job.jobid is None:
             return
-
-        try:
-            pid, status = os.waitpid(job.jobid, os.WNOHANG)
-        except OSError as e:
-            if e.errno == errno.ECHILD:
-                # No unwaited children
-                self.log('no more unwaited children')
-                return
-            else:
-                raise e
 
         if job.cancel_time:
             # Job has been cancelled; give it a grace period and kill it
@@ -179,12 +209,12 @@ class LocalJobScheduler(sched.JobScheduler):
                      f'giving it a grace period')
             t_rem = self.CANCEL_GRACE_PERIOD - (time.time() - job.cancel_time)
             if t_rem > 0:
-                time.sleep(t_rem)
+                await asyncio.sleep(t_rem)
 
             self._kill_all(job)
             return
 
-        if not pid:
+        if job.proc.returncode is None:
             # Job has not finished; check if we have reached a timeout
             t_elapsed = time.time() - job.submit_time
             if job.time_limit and t_elapsed > job.time_limit:
@@ -201,9 +231,9 @@ class LocalJobScheduler(sched.JobScheduler):
         self._kill_all(job)
 
         # Retrieve the status of the job and return
-        if os.WIFEXITED(status):
-            job._exitcode = os.WEXITSTATUS(status)
+        if job.proc.returncode >= 0:
+            job._exitcode = job.proc.returncode
             job._state = 'FAILURE' if job.exitcode != 0 else 'SUCCESS'
-        elif os.WIFSIGNALED(status):
+        else:
             job._state = 'FAILURE'
-            job._signal = os.WTERMSIG(status)
+            job._signal = job.proc.returncode

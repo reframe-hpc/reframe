@@ -1025,7 +1025,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             prefix = cls._rfm_custom_prefix
         except AttributeError:
             if osext.is_interactive():
-                prefix = os.getcwd()
+                prefix = rt.get_working_dir()
             else:
                 try:
                     prefix = cls._rfm_pinned_prefix
@@ -1771,6 +1771,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
         '''
+        os.chdir(rt.get_working_dir())
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
@@ -1797,7 +1798,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         )
 
     @final
-    def compile(self):
+    async def compile(self):
         '''The compilation phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
@@ -1890,7 +1891,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # override those set by the framework.
         resources_opts = self._map_resources_to_jobopts()
         self._build_job.options = resources_opts + self._build_job.options
-        with osext.change_dir(self._stagedir):
+        with osext.change_dir_global(self._stagedir):
             # Prepare build job
             build_commands = [
                 *self.prebuild_cmds,
@@ -1908,10 +1909,10 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 raise PipelineError('failed to prepare build job') from e
 
             if not self.is_dry_run():
-                self._build_job.submit()
+                await self._build_job.submit()
 
     @final
-    def compile_wait(self):
+    async def compile_wait(self):
         '''Wait for compilation phase to finish.
 
         .. versionadded:: 2.13
@@ -1933,7 +1934,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self.is_dry_run():
             return
 
-        self._build_job.wait()
+        await self._build_job.wait()
 
         # We raise a BuildError when we an exit code and it is non zero
         if self._build_job.exitcode:
@@ -1941,11 +1942,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 f'build job failed with exit code: {self._build_job.exitcode}'
             )
 
-        with osext.change_dir(self._stagedir):
+        with osext.change_dir_global(self._stagedir):
             self.build_system.post_build(self._build_job)
 
     @final
-    def run(self):
+    async def run(self):
         '''The run phase of the regression test pipeline.
 
         This call is non-blocking.
@@ -2039,7 +2040,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # override those set by the framework.
         resources_opts = self._map_resources_to_jobopts()
         self._job.options = resources_opts + self._job.options
-        with osext.change_dir(self._stagedir):
+        with osext.change_dir_global(self._stagedir):
             try:
                 self.logger.debug('Generating the run script')
                 self._job.prepare(
@@ -2055,7 +2056,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 raise PipelineError('failed to prepare run job') from e
 
             if not self.is_dry_run():
-                self._job.submit()
+                await self._job.submit()
                 self.logger.debug(f'Spawned run job (id={self.job.jobid})')
 
         # Update num_tasks if test is flexible
@@ -2122,7 +2123,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         return self._job.finished()
 
     @final
-    def run_wait(self):
+    async def run_wait(self):
         '''Wait for the run phase of this test to finish.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
@@ -2142,7 +2143,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self.is_dry_run():
             return
 
-        self._job.wait()
+        await self._job.wait()
 
     @final
     def sanity(self):
@@ -2206,7 +2207,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self.is_dry_run():
             return
 
-        with osext.change_dir(self._stagedir):
+        with osext.change_dir_global(self._stagedir):
             success = sn.evaluate(self.sanity_patterns)
             if not success:
                 raise SanityError()
@@ -2263,7 +2264,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                                                         unit)
 
         # Evaluate the performance function and retrieve the metrics
-        with osext.change_dir(self._stagedir):
+        with osext.change_dir_global(self._stagedir):
             for tag, expr in self.perf_variables.items():
                 try:
                     value = expr.evaluate() if not self.is_dry_run() else None
@@ -2348,7 +2349,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._copy_job_files(self._job, self.outputdir)
         self._copy_job_files(self._build_job, self.outputdir)
 
-        with osext.change_dir(self.stagedir):
+        with osext.change_dir_global(self.stagedir):
             # Copy files specified by the user, but expand any glob patterns
             keep_files = itertools.chain(
                 *(glob.iglob(f) for f in self.keep_files)
@@ -2591,6 +2592,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         Similar to the :func:`RegressionTest.setup`, except that no build job
         is created for this test.
         '''
+        os.chdir(rt.get_working_dir())
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
@@ -2598,19 +2600,19 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         self._setup_container_platform()
         self._resolve_fixtures()
 
-    def compile(self):
+    async def compile(self):
         '''The compilation phase of the regression test pipeline.
 
         This is a no-op for this type of test.
         '''
 
-    def compile_wait(self):
+    async def compile_wait(self):
         '''Wait for compilation phase to finish.
 
         This is a no-op for this type of test.
         '''
 
-    def run(self):
+    async def run(self):
         '''The run phase of the regression test pipeline.
 
         The resources of the test are copied to the stage directory and the
@@ -2623,7 +2625,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
-        super().run()
+        await super().run()
 
 
 class CompileOnlyRegressionTest(RegressionTest, special=True):
@@ -2657,6 +2659,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         Similar to the :func:`RegressionTest.setup`, except that no run job
         is created for this test.
         '''
+        os.chdir(rt.get_working_dir())
         # No need to setup the job for compile-only checks
         self._current_partition = partition
         self._current_environ = environ
@@ -2675,13 +2678,13 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     def stderr(self):
         return self.build_job.stderr if self.build_job else None
 
-    def run(self):
+    async def run(self):
         '''The run stage of the regression test pipeline.
 
         Implemented as no-op.
         '''
 
-    def run_wait(self):
+    async def run_wait(self):
         '''Wait for this test to finish.
 
         Implemented as no-op

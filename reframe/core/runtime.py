@@ -204,6 +204,23 @@ def init_runtime(site_config, **kwargs):
         _runtime_context = RuntimeContext(site_config, **kwargs)
 
 
+_working_dir = None
+
+
+def set_working_dir():
+    global _working_dir
+
+    _working_dir = os.getcwd()
+
+
+def get_working_dir():
+
+    if _working_dir is None:
+        raise ReframeFatalError('no working dir was yet set')
+
+    return _working_dir
+
+
 def runtime():
     '''Get the runtime context of the framework.
 
@@ -400,6 +417,7 @@ def valid_sysenv_comb(valid_systems, valid_prog_environs,
 
 class temp_environment:
     '''Context manager to temporarily change the environment.'''
+    # TODO: Do we need to change something here? context management asyncio
 
     def __init__(self, modules=None, env_vars=None):
         self._modules = modules or []
@@ -417,6 +435,7 @@ class temp_environment:
 
 class temp_config:
     '''Context manager to temporarily switch to specific configuration.'''
+    # TODO: Do we need to change something here? context management asyncio
 
     def __init__(self, system):
         self.__to = system

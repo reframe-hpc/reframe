@@ -114,6 +114,9 @@ class AbortTaskError(ReframeError):
     error in other places etc.)
     '''
 
+class KeyboardError(ReframeError):
+    '''Raised when there is a KeyboardInterrupt during the asyncio execution
+    '''
 
 class ConfigError(ReframeError):
     '''Raised when a configuration error occurs.'''
