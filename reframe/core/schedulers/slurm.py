@@ -234,7 +234,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 job._cli_options = other_cli_opts
 
             arg = '&'.join(f'({c.strip()})' for c in constraints)
-            job._sched_access = [f'--constraint={arg}']
+            job._sched_access = [f'--constraint={arg}'] + access_other
 
         if not self._sched_access_in_submit:
             for opt in job.sched_access:
@@ -244,8 +244,10 @@ class SlurmJobScheduler(sched.JobScheduler):
         prefix_patt = re.compile(r'(#\w+)')
         for opt in job.options + job.cli_options:
             if opt.strip().startswith(('-C', '--constraint')):
-                # Constraints are already processed
-                continue
+                if access.constraint:
+                    # Constraints are already combined with the `sched_access`
+                    # and processed
+                    continue
 
             if not prefix_patt.match(opt):
                 preamble.append('%s %s' % (self._prefix, opt))
