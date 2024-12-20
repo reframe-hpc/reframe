@@ -680,7 +680,6 @@ class HTTPJSONHandler(logging.Handler):
             return
 
         if self._debug:
-            import time
             ts = int(time.time() * 1_000)
             dump_file = f'httpjson_record_{ts}.json'
             with open(dump_file, 'w') as fp:
@@ -689,10 +688,22 @@ class HTTPJSONHandler(logging.Handler):
             return
 
         try:
-            requests.post(
-                self._url, data=json_record,
-                headers=self._headers
-            )
+            while True:
+                response = requests.post(
+                    self._url, data=json_record,
+                    headers=self._headers
+                )
+                if response.status_code == 200:
+                    break
+
+                if response.status_code == 429:
+                    time.sleep(1)
+                    continue
+
+                raise LoggingError(
+                    f'logging failed: HTTP response code '
+                    f'{response.status_code}'
+                )
         except requests.exceptions.RequestException as e:
             raise LoggingError('logging failed') from e
 
