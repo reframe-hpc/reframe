@@ -689,10 +689,15 @@ class HTTPJSONHandler(logging.Handler):
             return
 
         try:
-            requests.post(
+            response = requests.post(
                 self._url, data=json_record,
                 headers=self._headers
             )
+            if response.status_code != 200:
+                raise LoggingError(
+                    f'logging failed: HTTP response code '
+                    f'{response.status_code}'
+                )
         except requests.exceptions.RequestException as e:
             raise LoggingError('logging failed') from e
 
