@@ -689,11 +689,18 @@ class HTTPJSONHandler(logging.Handler):
             return
 
         try:
-            response = requests.post(
-                self._url, data=json_record,
-                headers=self._headers
-            )
-            if response.status_code != 200:
+            while True:
+                response = requests.post(
+                    self._url, data=json_record,
+                    headers=self._headers
+                )
+                if response.status_code == 200:
+                    break
+
+                if response.status_code == 429:
+                    time.sleep(1)
+                    continue
+
                 raise LoggingError(
                     f'logging failed: HTTP response code '
                     f'{response.status_code}'
