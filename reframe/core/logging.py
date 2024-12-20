@@ -680,7 +680,6 @@ class HTTPJSONHandler(logging.Handler):
             return
 
         if self._debug:
-            import time
             ts = int(time.time() * 1_000)
             dump_file = f'httpjson_record_{ts}.json'
             with open(dump_file, 'w') as fp:
