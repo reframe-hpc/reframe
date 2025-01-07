@@ -198,7 +198,7 @@ class TestParam:
                 self.values = tuple(filt_vals) + self.values
             except TypeError:
                 raise ReframeSyntaxError(
-                    f"'filter_param' must return an iterable"
+                    "'filter_param' must return an iterable"
                 ) from None
 
     def is_abstract(self):
@@ -307,7 +307,7 @@ class ParamSpace(namespaces.Namespace):
             try:
                 # Get the parameter values for the specified variant
                 param_values = self.__param_combinations[params_index]
-            except IndexError as no_params:
+            except IndexError:
                 raise RuntimeError(
                     f'parameter space index out of range for '
                     f'{obj.__class__.__qualname__}'
@@ -332,6 +332,11 @@ class ParamSpace(namespaces.Namespace):
         abstract.
         '''
         return name in self.params and not self.params[name].is_abstract()
+
+    def undefined_params(self):
+        '''Return a list of all undefined parameters.'''
+        return [name for name, param in self.params.items()
+                if param.is_abstract()]
 
     def __iter__(self):
         '''Create a generator object to iterate over the parameter space

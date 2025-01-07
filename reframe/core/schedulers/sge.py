@@ -20,7 +20,10 @@ from reframe.core.exceptions import JobSchedulerError
 from reframe.core.schedulers.pbs import PbsJobScheduler
 from reframe.utility import seconds_to_hms
 
-_run_strict = functools.partial(osext.run_command, check=True)
+# Asynchronous _run_strict
+_run_strict = functools.partial(osext.run_command_asyncio, check=True)
+# Synchronous _run_strict
+_run_strict_s = functools.partial(osext.run_command, check=True)
 
 
 @register_scheduler('sge')
@@ -53,11 +56,11 @@ class SgeJobScheduler(PbsJobScheduler):
 
         return preamble
 
-    def submit(self, job):
+    async def submit(self, job):
         # `-o` and `-e` options are only recognized in command line by the PBS,
         # SGE, and Slurm wrappers.
         cmd = f'qsub -o {job.stdout} -e {job.stderr} {job.script_filename}'
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
+        completed = await _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'^Your job (?P<jobid>\S+)', completed.stdout)
         if not jobid_match:
             raise JobSchedulerError('could not retrieve the job id '
@@ -66,7 +69,7 @@ class SgeJobScheduler(PbsJobScheduler):
         job._jobid = jobid_match.group('jobid')
         job._submit_time = time.time()
 
-    def poll(self, *jobs):
+    async def poll(self, *jobs):
         if jobs:
             # Filter out non-jobs
             jobs = [job for job in jobs if job is not None]
@@ -75,7 +78,7 @@ class SgeJobScheduler(PbsJobScheduler):
             return
 
         user = osext.osuser()
-        completed = osext.run_command(f'qstat -xml -u {user}')
+        completed = await osext.run_command_asyncio(f'qstat -xml -u {user}')
         if completed.returncode != 0:
             raise JobSchedulerError(
                 f'qstat failed with exit code {completed.returncode} '

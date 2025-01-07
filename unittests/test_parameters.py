@@ -48,10 +48,13 @@ def test_params_are_present():
 
 def test_abstract_param():
     class MyTest(Abstract):
-        pass
+        # Add another abstract parameter
+        P2 = parameter()
 
     assert MyTest.param_space['P0'] == ()
     assert MyTest.param_space['P1'] == ('b',)
+    assert MyTest.param_space['P2'] == ()
+    assert MyTest.param_space.undefined_params() == ['P0', 'P2']
 
 
 def test_param_override():

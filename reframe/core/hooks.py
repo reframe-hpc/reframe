@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import asyncio
 import functools
 import inspect
 
@@ -101,17 +102,28 @@ def attach_hooks(hooks):
             return [h for h in hooks.get(phase, [])
                     if h.__name__ not in getattr(obj, '_disabled_hooks', [])]
 
-        @functools.wraps(func)
-        def _fn(obj, *args, **kwargs):
-            for h in select_hooks(obj, 'pre_'):
-                getattr(obj, h.__name__)()
+        # maybe this could be improved
+        if asyncio.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def _fn(obj, *args, **kwargs):
+                for h in select_hooks(obj, 'pre_'):
+                    getattr(obj, h.__name__)()
 
-            func(obj, *args, **kwargs)
-            for h in select_hooks(obj, 'post_'):
-                getattr(obj, h.__name__)()
+                await func(obj, *args, **kwargs)
+                for h in select_hooks(obj, 'post_'):
+                    getattr(obj, h.__name__)()
+            return _fn
+        else:
+            @functools.wraps(func)
+            def _fn(obj, *args, **kwargs):
+                for h in select_hooks(obj, 'pre_'):
+                    getattr(obj, h.__name__)()
 
-        return _fn
+                func(obj, *args, **kwargs)
+                for h in select_hooks(obj, 'post_'):
+                    getattr(obj, h.__name__)()
 
+            return _fn
     return _deco
 
 

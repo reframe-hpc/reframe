@@ -18,6 +18,7 @@ import unittests.utility as test_util
 from reframe.core.exceptions import (AbortTaskError,
                                      FailureLimitError,
                                      ForceExitError,
+                                     KeyboardError,
                                      RunSessionTimeout,
                                      TaskDependencyError)
 from unittests.resources.checks.hellocheck import HelloTest
@@ -31,6 +32,8 @@ from unittests.resources.checks.frontend_checks import (
     SelfKillCheck,
     SystemExitCheck
 )
+
+rt.set_working_dir()
 
 
 def make_kbd_check(phase='wait'):
@@ -249,7 +252,7 @@ def test_force_local_execution(make_runner, make_cases, testsys_exec_ctx):
 
 def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardError):
         runner.runall(make_cases([make_kbd_check()]))
 
     stats = runner.stats
@@ -449,7 +452,7 @@ def make_async_runner():
 
     def _make_runner():
         evt_monitor = _TaskEventMonitor()
-        ret = executors.Runner(policies.AsynchronousExecutionPolicy())
+        ret = executors.Runner(policies.AsyncioExecutionPolicy())
         ret.policy.keep_stage_files = True
         ret.policy.task_listeners.append(evt_monitor)
         return ret, evt_monitor
@@ -593,7 +596,7 @@ def test_kbd_interrupt_in_wait_with_concurrency(
 ):
     make_exec_ctx(options=max_jobs_opts(4))
     runner, _ = make_async_runner()
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardError):
         runner.runall(make_cases([
             make_kbd_check(), make_sleep_check(10),
             make_sleep_check(10), make_sleep_check(10)
@@ -612,7 +615,7 @@ def test_kbd_interrupt_in_wait_with_limited_concurrency(
     # three.
     make_exec_ctx(options=max_jobs_opts(2))
     runner, _ = make_async_runner()
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardError):
         runner.runall(make_cases([
             make_kbd_check(), make_sleep_check(10),
             make_sleep_check(10), make_sleep_check(10)
@@ -626,7 +629,7 @@ def test_kbd_interrupt_in_setup_with_concurrency(
 ):
     make_exec_ctx(options=max_jobs_opts(4))
     runner, _ = make_async_runner()
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardError):
         runner.runall(make_cases([
             make_sleep_check(1), make_sleep_check(1), make_sleep_check(1),
             make_kbd_check(phase='setup')
@@ -640,7 +643,7 @@ def test_kbd_interrupt_in_setup_with_limited_concurrency(
 ):
     make_exec_ctx(options=max_jobs_opts(2))
     runner, _ = make_async_runner()
-    with pytest.raises(KeyboardInterrupt):
+    with pytest.raises(KeyboardError):
         runner.runall(make_cases([
             make_sleep_check(1), make_sleep_check(1), make_sleep_check(1),
             make_kbd_check(phase='setup')

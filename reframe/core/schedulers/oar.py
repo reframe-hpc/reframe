@@ -52,7 +52,10 @@ def oar_state_pending(state):
     return False
 
 
-_run_strict = functools.partial(osext.run_command, check=True)
+# Asynchronous _run_strict
+_run_strict = functools.partial(osext.run_command_asyncio, check=True)
+# Synchronous _run_strict
+_run_strict_s = functools.partial(osext.run_command, check=True)
 
 
 @register_scheduler('oar')
@@ -104,7 +107,7 @@ class OarJobScheduler(PbsJobScheduler):
 
         return preamble
 
-    def submit(self, job):
+    async def submit(self, job):
         # OAR batch submission mode needs full path to the job script
         job_script_fullpath = os.path.join(job.workdir, job.script_filename)
         cmd_parts = ['oarsub']
@@ -114,7 +117,7 @@ class OarJobScheduler(PbsJobScheduler):
         # OAR needs -S to submit job in batch mode
         cmd_parts += ['-S', job_script_fullpath]
         cmd = ' '.join(cmd_parts)
-        completed = _run_strict(cmd, timeout=self._submit_timeout)
+        completed = await _run_strict(cmd, timeout=self._submit_timeout)
         jobid_match = re.search(r'.*OAR_JOB_ID=(?P<jobid>\S+)',
                                 completed.stdout)
         if not jobid_match:
@@ -125,10 +128,10 @@ class OarJobScheduler(PbsJobScheduler):
         job._submit_time = time.time()
 
     def cancel(self, job):
-        _run_strict(f'oardel {job.jobid}', timeout=self._submit_timeout)
+        _run_strict_s(f'oardel {job.jobid}', timeout=self._submit_timeout)
         job._cancelled = True
 
-    def poll(self, *jobs):
+    async def poll(self, *jobs):
         if jobs:
             # Filter out non-jobs
             jobs = [job for job in jobs if job is not None]
@@ -137,7 +140,7 @@ class OarJobScheduler(PbsJobScheduler):
             return
 
         for job in jobs:
-            completed = _run_strict(
+            completed = await _run_strict(
                 f'oarstat -fj {job.jobid}'
             )
 
@@ -154,7 +157,8 @@ class OarJobScheduler(PbsJobScheduler):
             # https://github.com/oar-team/oar/blob/37db5384c7827cca2d334e5248172bb700015434/sources/core/qfunctions/oarstat#L332
             job_raw_info = completed.stdout
             jobid_match = re.search(
-                r'^(Job_Id|id):\s*(?P<jobid>\S+)', completed.stdout, re.MULTILINE
+                r'^(Job_Id|id):\s*(?P<jobid>\S+)', completed.stdout,
+                re.MULTILINE
             )
             if jobid_match:
                 jobid = jobid_match.group('jobid')

@@ -160,7 +160,7 @@ def filter_nodes_by_state(nodelist, state):
     :arg state: The state of the nodes.
         If ``all``, the initial list is returned untouched.
         If ``avail``, only the available nodes will be returned.
-        All other values are interpretes as a state string.
+        All other values are interpreted as a state string.
         State match is exclusive unless the ``*`` is added at the end of the
         state string.
     :returns: the filtered node list
@@ -169,7 +169,7 @@ def filter_nodes_by_state(nodelist, state):
         nodelist = {n for n in nodelist if n.is_avail()}
     elif state != 'all':
         if state.endswith('*'):
-            # non-exclusive stat match
+            # non-exclusive state match
             state = state[:-1]
             nodelist = {
                 n for n in nodelist if n.in_state(state)
@@ -606,17 +606,26 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         available_nodes = filter_nodes_by_state(
             available_nodes, self.sched_flex_alloc_nodes.lower()
         )
+        getlogger().debug(
+            f'[F] Total available in state='
+            f'{self.sched_flex_alloc_nodes.lower()}: {len(available_nodes)}'
+        )
         available_nodes = self.scheduler.filternodes(self, available_nodes)
+        getlogger().debug(
+            f'[F] Total available after scheduler filter: '
+            f'{len(available_nodes)}'
+        )
         return len(available_nodes) * num_tasks_per_node
 
-    def submit(self):
-        return self.scheduler.submit(self)
+    async def submit(self):
+        result = await self.scheduler.submit(self)
+        return result
 
-    def wait(self):
+    async def wait(self):
         if self.jobid is None:
             raise JobNotStartedError('cannot wait an unstarted job')
 
-        self.scheduler.wait(self)
+        await self.scheduler.wait(self)
         self._completion_time = self._completion_time or time.time()
 
     def cancel(self):

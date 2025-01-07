@@ -18,6 +18,7 @@ from reframe.core.logging import getlogger
 from reframe.core.schedulers import Job
 from reframe.core.systems import DeviceInfo, ProcessorInfo
 from reframe.utility.cpuinfo import cpuinfo
+from reframe.frontend.executors import asyncio_run
 
 
 # This is meant to be used by the unit tests
@@ -106,6 +107,7 @@ def _load_info(filename, schema=None):
         )
         return {}
     except jsonschema.ValidationError as e:
+        getlogger().debug(str(e))
         raise ConfigError(
             f'could not validate meta-config file {filename!r}'
         ) from e
@@ -135,7 +137,7 @@ def _is_part_local(part):
             part.launcher_type.registered_name == 'local')
 
 
-def _remote_detect(part):
+def _remote_detect(part, cli_job_options):
     use_login_shell = runtime.runtime().get_option('general/0/use_login_shell')
 
     def _emit_script_for_source(job, env):
@@ -171,7 +173,7 @@ def _remote_detect(part):
                 job = Job.create(part.scheduler,
                                  part.launcher_type(),
                                  name='rfm-detect-job',
-                                 sched_access=part.access)
+                                 sched_access=part.access + cli_job_options)
                 custom_command = runtime.runtime().get_option(
                     'general/0/remote_install'
                 )
@@ -184,8 +186,8 @@ def _remote_detect(part):
 
                 getlogger().debug('submitting detection script')
                 _log_contents(job.script_filename)
-                job.submit()
-                job.wait()
+                asyncio_run(job.submit())
+                asyncio_run(job.wait())
                 getlogger().debug('job finished')
                 _log_contents(job.stdout)
                 _log_contents(job.stderr)
@@ -200,10 +202,11 @@ def _remote_detect(part):
     return topo_info
 
 
-def detect_topology():
+def detect_topology(cli_job_options=None):
+    cli_job_options = [] if cli_job_options is None else cli_job_options
     rt = runtime.runtime()
     detect_remote_systems = rt.get_option('general/0/remote_detect')
-    topo_prefix = os.path.join(os.getenv('HOME'), '.reframe/topology')
+    topo_prefix = osext.expandvars(rt.get_option('general/0/topology_prefix'))
     for part in rt.system.partitions:
         getlogger().debug(f'detecting topology info for {part.fullname}')
         found_procinfo = False
@@ -279,7 +282,9 @@ def detect_topology():
                 _save_info(topo_file, part.processor.info)
             elif detect_remote_systems:
                 with runtime.temp_environment(modules=modules, env_vars=vars):
-                    part._processor = ProcessorInfo(_remote_detect(part))
+                    part._processor = ProcessorInfo(
+                        _remote_detect(part, cli_job_options)
+                    )
 
                 if part.processor.info:
                     _save_info(topo_file, part.processor.info)

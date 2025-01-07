@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
+import asyncio
 import logging
 import logging.handlers
 import numbers
@@ -809,6 +810,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_upper_thres': None,
                 'check_perf_unit': None,
                 'check_result': None,
+                'hostname': socket.gethostname(),
                 'osuser':  osext.osuser(),
                 'osgroup': osext.osgroup(),
                 'version': osext.reframe_version(),
@@ -953,24 +955,44 @@ null_logger = LoggerAdapter()
 
 _logger = None
 _perf_logger = None
-_context_logger = null_logger
+
+global tasks_loggers
+tasks_loggers = {}
+
+global _global_logger
+_global_logger = null_logger
 
 
 class logging_context:
     def __init__(self, check=None, level=DEBUG):
-        global _context_logger
+        try:
+            task = current_task()
+        except RuntimeError:
+            global _global_logger
+            task = None
+
+        self._orig_logger = _global_logger
 
         self._level = level
-        self._orig_logger = _context_logger
+        self._context_logger = _global_logger
         if check is not None:
-            _context_logger = LoggerAdapter(_logger, check)
-            _context_logger.colorize = self._orig_logger.colorize
+            self._context_logger = LoggerAdapter(_logger, check)
+            self._context_logger.colorize = self._orig_logger.colorize
+
+        if task:
+            tasks_loggers[task] = self._context_logger
+        else:
+            _global_logger = self._context_logger
 
     def __enter__(self):
-        return _context_logger
+        return self._context_logger
 
     def __exit__(self, exc_type, exc_value, traceback):
-        global _context_logger
+        global _global_logger
+        try:
+            task = current_task()
+        except RuntimeError:
+            task = None
 
         # Log any exceptions thrown with the current context logger
         if exc_type is not None:
@@ -979,20 +1001,23 @@ class logging_context:
             getlogger().log(self._level, msg.format(exc_fullname, exc_value))
 
         # Restore context logger
-        _context_logger = self._orig_logger
+        _global_logger = self._orig_logger
+
+        if task:
+            tasks_loggers[task] = self._orig_logger
 
 
 def configure_logging(site_config):
-    global _logger, _context_logger, _perf_logger
+    global _logger, _global_logger, _perf_logger
 
     if site_config is None:
         _logger = None
-        _context_logger = null_logger
+        _global_logger = null_logger
         return
 
     _logger = _create_logger(site_config, 'handlers$', 'handlers')
     _perf_logger = _create_logger(site_config, 'handlers_perflog')
-    _context_logger = LoggerAdapter(_logger)
+    _global_logger = LoggerAdapter(_logger)
 
 
 def log_files():
@@ -1007,7 +1032,15 @@ def save_log_files(dest):
 
 
 def getlogger():
-    return _context_logger
+    try:
+        task = current_task()
+    except RuntimeError:
+        task = None
+    if task:
+        logger_task = tasks_loggers.get(task)
+        if logger_task:
+            return tasks_loggers[task]
+    return _global_logger
 
 
 def getperflogger(check):
@@ -1056,11 +1089,23 @@ class logging_sandbox:
     def __enter__(self):
         self._logger = _logger
         self._perf_logger = _perf_logger
-        self._context_logger = _context_logger
+        self._context_logger = _global_logger
 
     def __exit__(self, exc_type, exc_value, traceback):
-        global _logger, _perf_logger, _context_logger
+        global _logger, _perf_logger, _global_logger
 
         _logger = self._logger
         _perf_logger = self._perf_logger
-        _context_logger = self._context_logger
+        _global_logger = self._context_logger
+
+
+def current_task():
+    """Wrapper for asyncio.current_task() compatible
+    with Python 3.6 and later.
+    """
+    if sys.version_info >= (3, 7):
+        # Use asyncio.current_task() directly in Python 3.7+
+        return asyncio.current_task()
+    else:
+        # Fallback to asyncio.tasks.current_task() in Python 3.6
+        return asyncio.Task.current_task()

@@ -22,16 +22,30 @@ from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
 from reframe.core.meta import make_test
 from reframe.core.warnings import ReframeDeprecationWarning
 
+rt.set_working_dir()
+
 
 def _run(test, partition, prgenv):
+    test_util.asyncio_run(_runasync, test, partition, prgenv)
+
+
+async def _runasync(test, partition, prgenv):
     test.setup(partition, prgenv)
-    test.compile()
-    test.compile_wait()
-    test.run()
-    test.run_wait()
+    await compile_wait(test)
+    await run_wait(test)
     test.check_sanity()
     test.check_performance()
     test.cleanup(remove_files=True)
+
+
+async def compile_wait(test):
+    await test.compile()
+    await test.compile_wait()
+
+
+async def run_wait(test):
+    await test.run()
+    await test.run_wait()
 
 
 @pytest.fixture
@@ -306,9 +320,8 @@ def test_compile_only_failure(local_exec_ctx):
 
     test = MyTest()
     test.setup(*local_exec_ctx)
-    test.compile()
     with pytest.raises(BuildError):
-        test.compile_wait()
+        test_util.asyncio_run(compile_wait, test)
 
 
 def test_compile_only_warning(local_exec_ctx):
@@ -556,7 +569,7 @@ def test_supports_sysenv(testsys_exec_ctx):
 
     # Check AND in features and extras
     _assert_supported(
-        valid_systems=['+cuda +mpi %gpu_arch=v100'],
+        valid_systems=[r'+cuda +mpi %gpu_arch=v100'],
         valid_prog_environs=['*'],
         expected={}
     )
@@ -566,9 +579,18 @@ def test_supports_sysenv(testsys_exec_ctx):
         expected={}
     )
 
-    # Check OR in features ad extras
+    # Check OR in features and extras
     _assert_supported(
-        valid_systems=['+cuda +mpi', '%gpu_arch=v100'],
+        valid_systems=['+cuda +mpi', r'%gpu_arch=v100'],
+        valid_prog_environs=['*'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu', 'builtin']
+        }
+    )
+
+    # Check that extra keys can used as features
+    _assert_supported(
+        valid_systems=['+cuda +mpi', '+gpu_arch'],
         valid_prog_environs=['*'],
         expected={
             'testsys:gpu': ['PrgEnv-gnu', 'builtin']
@@ -640,7 +662,7 @@ def test_supports_sysenv(testsys_exec_ctx):
     )
     _assert_supported(
         valid_systems=['*'],
-        valid_prog_environs=['%bar=x'],
+        valid_prog_environs=[r'%bar=x'],
         expected={
             'testsys:gpu': [],
             'testsys:login': ['PrgEnv-gnu']
@@ -648,7 +670,7 @@ def test_supports_sysenv(testsys_exec_ctx):
     )
     _assert_supported(
         valid_systems=['*'],
-        valid_prog_environs=['%foo=2'],
+        valid_prog_environs=[r'%foo=2'],
         expected={
             'testsys:gpu': ['PrgEnv-gnu'],
             'testsys:login': []
@@ -656,7 +678,7 @@ def test_supports_sysenv(testsys_exec_ctx):
     )
     _assert_supported(
         valid_systems=['*'],
-        valid_prog_environs=['%foo=bar'],
+        valid_prog_environs=[r'%foo=bar'],
         expected={
             'testsys:gpu': [],
             'testsys:login': []
@@ -667,6 +689,24 @@ def test_supports_sysenv(testsys_exec_ctx):
         valid_prog_environs=['-cxx14'],
         expected={
             'testsys:gpu': ['PrgEnv-gnu', 'builtin'],
+            'testsys:login': []
+        }
+    )
+
+    # Check that extra keys can used as features
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+foo +bar'],
+        expected={
+            'testsys:gpu': ['PrgEnv-gnu'],
+            'testsys:login': ['PrgEnv-gnu']
+        }
+    )
+    _assert_supported(
+        valid_systems=['*'],
+        valid_prog_environs=['+foo -bar'],
+        expected={
+            'testsys:gpu': [],
             'testsys:login': []
         }
     )
@@ -793,7 +833,7 @@ def test_sourcepath_abs(local_exec_ctx):
     test.setup(*local_exec_ctx)
     test.sourcepath = '/usr/src'
     with pytest.raises(PipelineError):
-        test.compile()
+        test_util.asyncio_run(test.compile)
 
 
 def test_sourcepath_upref(local_exec_ctx):
@@ -806,7 +846,7 @@ def test_sourcepath_upref(local_exec_ctx):
     test.setup(*local_exec_ctx)
     test.sourcepath = '../hellosrc'
     with pytest.raises(PipelineError):
-        test.compile()
+        test_util.asyncio_run(test.compile)
 
 
 def test_sourcepath_non_existent(local_exec_ctx):
@@ -818,9 +858,8 @@ def test_sourcepath_non_existent(local_exec_ctx):
     test = MyTest()
     test.setup(*local_exec_ctx)
     test.sourcepath = 'non_existent.c'
-    test.compile()
     with pytest.raises(BuildError):
-        test.compile_wait()
+        test_util.asyncio_run(compile_wait, test)
 
 
 def test_extra_resources(HelloTest, testsys_exec_ctx):

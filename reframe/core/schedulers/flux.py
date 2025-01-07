@@ -10,6 +10,7 @@
 #   Lawrence Livermore National Lab
 #
 
+import asyncio
 import itertools
 import os
 import time
@@ -73,7 +74,7 @@ class FluxJobScheduler(JobScheduler):
     def make_job(self, *args, **kwargs):
         return _FluxJob(*args, **kwargs)
 
-    def submit(self, job):
+    async def submit(self, job):
         '''Submit a job to the flux executor.'''
 
         flux_future = self._fexecutor.submit(job.fluxjob)
@@ -89,7 +90,7 @@ class FluxJobScheduler(JobScheduler):
             # This will raise JobException with event=cancel (on poll)
             flux.job.cancel(flux.Flux(), job._flux_future.jobid())
 
-    def poll(self, *jobs):
+    async def poll(self, *jobs):
         '''Poll running Flux jobs for updated states.'''
 
         if jobs:
@@ -141,13 +142,13 @@ class FluxJobScheduler(JobScheduler):
             'flux backend does not support node filtering'
         )
 
-    def wait(self, job):
+    async def wait(self, job):
         '''Wait until a job is finished.'''
 
         intervals = itertools.cycle([1, 2, 3])
         while not self.finished(job):
-            self.poll(job)
-            time.sleep(next(intervals))
+            await self.poll(job)
+            await asyncio.sleep(next(intervals))
 
     def finished(self, job):
         if job.exception:

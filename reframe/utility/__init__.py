@@ -866,7 +866,7 @@ def count_digits(n):
     '''
 
     num_digits = 1
-    while n > 10:
+    while n >= 10:
         n /= 10
         num_digits += 1
 

@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
+import asyncio
 import contextlib
 import copy
 import itertools
@@ -123,6 +124,10 @@ class TestCase:
         p = self.partition.fullname  if self.partition else None
         e = self.environ.name if self.environ else None
         return f'({c!r}, {p!r}, {e!r})'
+
+    def __str__(self):
+        check, partition, environ = self
+        return f'{check.name} @{partition.fullname}+{environ.name}'
 
     def prepare(self):
         '''Prepare test case for sending down the test pipeline'''
@@ -389,6 +394,48 @@ class RegressionTask:
             self.fail()
             raise TaskExit from e
 
+    async def _safe_call_asyncio(self, fn, *args, **kwargs):
+        class update_timestamps:
+            '''Context manager to set the start and finish timestamps.'''
+
+            # We use `this` to refer to the update_timestamps object, because
+            # we don't want to masquerade the self argument of our containing
+            # function
+            def __enter__(this):
+                if fn.__name__ not in ('poll',
+                                       'run_complete',
+                                       'compile_complete'):
+                    stage = self._current_stage
+                    self._timestamps[f'{stage}_start'] = time.time()
+
+            def __exit__(this, exc_type, exc_value, traceback):
+                stage = self._current_stage
+                self._timestamps[f'{stage}_finish'] = time.time()
+                self._timestamps['pipeline_end'] = time.time()
+
+        if fn.__name__ not in ('poll', 'run_complete', 'compile_complete'):
+            self._current_stage = fn.__name__
+
+        try:
+            with logging.logging_context(self.check) as logger:
+                logger.debug(f'Entering stage: {self._current_stage}')
+                with update_timestamps():
+                    # Pick the configuration of the current partition
+                    with runtime.temp_config(self.testcase.partition.fullname):
+                        return await fn(*args, **kwargs)
+        except SkipTestError as e:
+            if not self.succeeded:
+                # Only skip a test if it hasn't finished yet;
+                # This practically ignores skipping during the cleanup phase
+                self.skip()
+                raise TaskExit from e
+        except ABORT_REASONS:
+            self.fail()
+            raise
+        except BaseException as e:
+            self.fail()
+            raise TaskExit from e
+
     def _dry_run_call(self, fn, *args, **kwargs):
         '''Call check's fn method in dry-run mode.'''
 
@@ -416,17 +463,18 @@ class RegressionTask:
         self._notify_listeners('on_task_setup')
 
     @logging.time_function
-    def compile(self):
-        self._safe_call(self.check.compile)
+    async def compile(self):
+        await self._safe_call_asyncio(self.check.compile)
         self._notify_listeners('on_task_compile')
 
     @logging.time_function
-    def compile_wait(self):
-        self._safe_call(self.check.compile_wait)
+    async def compile_wait(self):
+        await self._safe_call_asyncio(self.check.compile_wait)
 
     @logging.time_function
-    def run(self):
-        self._safe_call(self.check.run)
+    async def run(self):
+        # QUESTION: should I change the order here?
+        await self._safe_call_asyncio(self.check.run)
         self._notify_listeners('on_task_run')
 
     @logging.time_function
@@ -447,8 +495,8 @@ class RegressionTask:
         return done
 
     @logging.time_function
-    def run_wait(self):
-        self._safe_call(self.check.run_wait)
+    async def run_wait(self):
+        await self._safe_call_asyncio(self.check.run_wait)
         self.zombie = False
 
     @logging.time_function
@@ -484,6 +532,8 @@ class RegressionTask:
         self._safe_call(self.check.cleanup, *args, **kwargs)
 
     def fail(self, exc_info=None, callback='on_task_failure'):
+        if self._aborted:
+            return
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners(callback)
@@ -503,7 +553,6 @@ class RegressionTask:
         logging.getlogger().debug2(f'Aborting test case: {self.testcase!r}')
         exc = AbortTaskError()
         exc.__cause__ = cause
-        self._aborted = True
         try:
             if not self.zombie and self.check.job:
                 self.check.job.cancel()
@@ -513,6 +562,7 @@ class RegressionTask:
             self.fail()
         else:
             self.fail((type(exc), exc, None), 'on_task_abort')
+        self._aborted = True
 
     def info(self):
         '''Return an info string about this task.'''
@@ -700,10 +750,8 @@ class Runner:
                                 'start processing checks')
         self._policy.enter()
         self._printer.reset_progress(len(testcases))
-        for t in testcases:
-            self._policy.runcase(t)
 
-        self._policy.exit()
+        self._policy.execute(testcases)
         self._printer.separator('short single line',
                                 'all spawned checks have finished\n')
 
@@ -748,9 +796,51 @@ class ExecutionPolicy(abc.ABC):
     def enter(self):
         self._num_failed_tasks = 0
 
-    def exit(self):
+    def _exit(self):
         pass
 
     @abc.abstractmethod
-    def runcase(self, case):
+    def _runcase(self, case):
         '''Run a test case.'''
+
+    def execute(self, testcases):
+        '''Execute the policy for a given set of testcases.'''
+        # Moved here the execution
+        for t in testcases:
+            self._runcase(t)
+
+        self._exit()
+
+
+def asyncio_run(coro):
+    from reframe.frontend.executors.policies import all_tasks
+    try:
+        loop = asyncio.get_event_loop()
+        for task in all_tasks(loop):
+            if isinstance(task, asyncio.tasks.Task):
+                try:
+                    task.cancel()
+                except RuntimeError:
+                    pass
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            watcher = asyncio.get_child_watcher()
+            if isinstance(watcher, asyncio.SafeChildWatcher):
+                # Detach the watcher from the current loop to avoid issues
+                watcher.close()
+                watcher.attach_loop(None)
+            asyncio.set_event_loop(loop)
+            if isinstance(watcher, asyncio.SafeChildWatcher):
+                # Reattach the watcher to the new loop
+                watcher.attach_loop(loop)
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    try:
+        loop.run_until_complete(coro)
+    except (Exception, KeyboardInterrupt):
+        for task in all_tasks(loop):
+            if isinstance(task, asyncio.tasks.Task):
+                task.cancel()
+        loop.close()

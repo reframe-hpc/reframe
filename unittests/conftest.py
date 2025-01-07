@@ -106,7 +106,7 @@ def make_loader():
 
 
 @pytest.fixture(params=[policies.SerialExecutionPolicy,
-                        policies.AsynchronousExecutionPolicy])
+                        policies.AsyncioExecutionPolicy])
 def make_runner(request):
     '''Test runner with all the execution policies'''
 
@@ -122,7 +122,7 @@ def make_runner(request):
 @pytest.fixture
 def make_async_runner():
     def _make_runner(*args, **kwargs):
-        policy = policies.AsynchronousExecutionPolicy()
+        policy = policies.AsyncioExecutionPolicy()
         policy._pollctl.SLEEP_MIN = 0.001
         return executors.Runner(policy, *args, **kwargs)
 

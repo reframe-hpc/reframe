@@ -32,7 +32,7 @@ from reframe.frontend.testgenerators import (distribute_tests,
                                              getallnodes, repeat_tests,
                                              parameterize_tests)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
-                                                 AsynchronousExecutionPolicy)
+                                                 AsyncioExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
@@ -253,6 +253,8 @@ def validate_storage_options(namespace, cmd_options):
 
 @logging.time_function_noexit
 def main():
+    # Setup the working dir
+    runtime.set_working_dir()
     # Setup command line options
     argparser = argparse.ArgumentParser()
     action_options = argparser.add_mutually_exclusive_group(required=True)
@@ -628,7 +630,7 @@ def main():
         configvar='general/perf_report_spec',
         envvar='RFM_PERF_REPORT_SPEC',
         help=('Print a report for performance tests '
-              '(default: "now:now/last:+job_nodelist/+result")')
+              '(default: "now-1d:now/last:+job_nodelist/+result")')
     )
     reporting_options.add_argument(
         '--session-extras', action='append', metavar='KV_DATA',
@@ -655,7 +657,7 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
-        '--table-format', choices=['csv', 'plain', 'outline', 'grid'],
+        '--table-format', choices=['csv', 'pretty', 'plain'],
         help='Table formatting',
         envvar='RFM_TABLE_FORMAT', configvar='general/table_format'
     )
@@ -979,8 +981,7 @@ def main():
                                      '--describe-stored-testcases',
                                      '--list-stored-sessions',
                                      '--list-stored-testcases',
-                                     '--performance-compare',
-                                     '--performance-report']):
+                                     '--performance-compare']):
         sys.exit(1)
 
     rt = runtime.runtime()
@@ -1042,7 +1043,8 @@ def main():
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
             printer.info(jsonext.dumps(reporting.testcase_info(
-                options.describe_stored_testcases, namepatt
+                options.describe_stored_testcases,
+                namepatt, options.filter_expr
             ), indent=2))
             sys.exit(0)
 
@@ -1110,7 +1112,20 @@ def main():
 
         sys.exit(0)
 
-    autodetect.detect_topology()
+    # Need to parse the cli options before autodetection
+    parsed_job_options = []
+    for opt in options.job_options:
+        opt_split = opt.split('=', maxsplit=1)
+        optstr = opt_split[0]
+        valstr = opt_split[1] if len(opt_split) > 1 else ''
+        if opt.startswith('-') or opt.startswith('#'):
+            parsed_job_options.append(opt)
+        elif len(optstr) == 1:
+            parsed_job_options.append(f'-{optstr} {valstr}')
+        else:
+            parsed_job_options.append(f'--{optstr}={valstr}')
+
+    autodetect.detect_topology(parsed_job_options)
     printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
@@ -1224,19 +1239,6 @@ def main():
     printer.info('')
     try:
         logging.getprofiler().enter_region('test processing')
-
-        # Need to parse the cli options before loading the tests
-        parsed_job_options = []
-        for opt in options.job_options:
-            opt_split = opt.split('=', maxsplit=1)
-            optstr = opt_split[0]
-            valstr = opt_split[1] if len(opt_split) > 1 else ''
-            if opt.startswith('-') or opt.startswith('#'):
-                parsed_job_options.append(opt)
-            elif len(optstr) == 1:
-                parsed_job_options.append(f'-{optstr} {valstr}')
-            else:
-                parsed_job_options.append(f'--{optstr}={valstr}')
 
         # Locate and load checks; `force=True` is not needed for normal
         # invocations from the command line and has practically no effect, but
@@ -1561,7 +1563,7 @@ def main():
         if options.exec_policy == 'serial':
             exec_policy = SerialExecutionPolicy()
         elif options.exec_policy == 'async':
-            exec_policy = AsynchronousExecutionPolicy()
+            exec_policy = AsyncioExecutionPolicy()
         else:
             # This should not happen, since choices are handled by
             # argparser
@@ -1638,9 +1640,12 @@ def main():
             if options.max_retries and runner.stats.failed(run=0):
                 printer.retry_report(report)
 
-            # Print a failure report if we had failures in the last run
+            # Print a failure report in case of failures.
+            # If `--duration` or `--reruns` is used then take into account
+            # all runs, else (i.e., `--max-retries`) only the last run.
             success = True
-            if runner.stats.failed():
+            runid = None if options.duration or options.reruns else -1
+            if runner.stats.failed(run=runid):
                 success = False
                 printer.failure_report(
                     report,
@@ -1655,9 +1660,12 @@ def main():
             if (options.performance_report and
                 not options.dry_run and not report.is_empty()):
                 try:
-                    data = reporting.performance_compare(
-                        rt.get_option('general/0/perf_report_spec'), report
-                    )
+                    if rt.get_option('storage/0/enable'):
+                        data = reporting.performance_compare(
+                            rt.get_option('general/0/perf_report_spec'), report
+                        )
+                    else:
+                        data = report.report_data()
                 except Exception as err:
                     printer.warning(
                         f'failed to generate performance report: {err}'
@@ -1699,7 +1707,8 @@ def main():
                     )
 
             # Store the generated report for analytics
-            if not report.is_empty() and not options.dry_run:
+            if (rt.get_option('storage/0/enable') and
+                not report.is_empty() and not options.dry_run):
                 try:
                     sess_uuid = report.store()
                 except Exception as e:
@@ -1730,6 +1739,12 @@ def main():
             sys.exit(1)
 
         sys.exit(0)
+    except errors.RunSessionTimeout as err:
+        printer.warning(f'run session stopped: {err}')
+        if not success:
+            sys.exit(1)
+        else:
+            sys.exit(0)
     except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))

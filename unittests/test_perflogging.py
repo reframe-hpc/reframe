@@ -174,6 +174,7 @@ def test_perf_logging(make_runner, make_exec_ctx, perf_test,
             )
         )
     )
+    rt.set_working_dir()
     logging.configure_logging(rt.runtime().site_config)
     runner = make_runner()
     testcases = executors.generate_testcases([perf_test])

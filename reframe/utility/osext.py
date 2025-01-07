@@ -7,6 +7,7 @@
 # OS and shell utility functions
 #
 
+import asyncio
 import collections.abc
 import errno
 import getpass
@@ -338,6 +339,90 @@ def run_command_async(cmd,
                             **popen_args)
 
 
+async def run_command_asyncio_alone(cmd,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell=True,
+                                    timeout=None,
+                                    log=True,
+                                    serial=False,
+                                    **kwargs):
+    '''TODO: please write proper docstring
+    '''
+    if log:
+        from reframe.core.logging import getlogger
+        getlogger().debug(f'[CMD] {cmd!r}')
+
+    if isinstance(cmd, str) and not shell:
+        cmd = shlex.split(cmd)
+
+    if shell:
+        # Call create_subprocess_shell
+        return await asyncio.create_subprocess_shell(
+            cmd, stdout=stdout,
+            stderr=stderr,
+            **kwargs
+        )
+    else:
+        # Call create_subprocess_exec
+        return await asyncio.create_subprocess_exec(
+            cmd, stdout=stdout,
+            stderr=stderr,
+            **kwargs
+        )
+
+async def run_command_asyncio(cmd,
+                              check=False,
+                              timeout=None,
+                              shell=True,
+                              log=True,
+                              **kwargs):
+    '''TODO: please write proper docstring
+    '''
+    if log:
+        from reframe.core.logging import getlogger
+        getlogger().debug(f'[CMD] {cmd!r}')
+
+    if isinstance(cmd, str) and not shell:
+        cmd = shlex.split(cmd)
+
+    try:
+        if shell:
+            # Call create_subprocess_shell
+            proc = await asyncio.create_subprocess_shell(
+                cmd, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                **kwargs
+            )
+        else:
+            # Call create_subprocess_exec
+            proc = await asyncio.create_subprocess_exec(
+                cmd, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                **kwargs
+            )
+        proc_stdout, proc_stderr = await asyncio.wait_for(
+            proc.communicate(), timeout=timeout
+        )
+    except asyncio.TimeoutError as e:
+        os.killpg(proc.pid, signal.SIGKILL)
+        raise SpawnedProcessTimeout(e.cmd,
+                                    proc.stdout.read(),
+                                    proc.stderr.read(), timeout) from None
+
+    completed = subprocess.CompletedProcess(cmd,
+                                            returncode=proc.returncode,
+                                            stdout=proc_stdout.decode(),
+                                            stderr=proc_stderr.decode())
+
+    if check and proc.returncode != 0:
+        raise SpawnedProcessError(completed.args,
+                                  completed.stdout, completed.stderr,
+                                  completed.returncode)
+
+    return completed
+
+
 def run_command_async2(*args, check=False, **kwargs):
     '''Return a :class:`_ProcFuture` that encapsulates a command to be
     executed.
@@ -648,6 +733,36 @@ class change_dir:
         os.chdir(self._dir_name)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        os.chdir(self._wd_save)
+
+    async def __aenter__(self):
+        os.chdir(self._dir_name)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        os.chdir(self._wd_save)
+
+
+class change_dir_global:
+    '''Context manager to temporarily change the current working directory.
+
+    :arg dir_name: The directory to temporarily change to.
+    '''
+
+    def __init__(self, dir_name):
+        from reframe.core.runtime import get_working_dir
+        self._wd_save = get_working_dir()
+        self._dir_name = dir_name
+
+    def __enter__(self):
+        os.chdir(self._dir_name)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.chdir(self._wd_save)
+
+    async def __aenter__(self):
+        os.chdir(self._dir_name)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         os.chdir(self._wd_save)
 
 

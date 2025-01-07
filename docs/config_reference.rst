@@ -601,7 +601,7 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   A list of job scheduler `resource specification <#custom-job-scheduler-resources>`__ objects.
+   A list of job scheduler :ref:`resource specification <scheduler-resources>` objects.
 
 
 .. py:attribute:: systems.partitions.processor
@@ -639,11 +639,18 @@ System Partition Configuration
 
       In case of errors during auto-detection, ReFrame will simply issue a warning and continue.
 
+      .. note::
+
+         The directory prefix for storing topology information is configurable through the :attr:`~config.general.topology_prefix` configuration option.
+
 
    .. versionadded:: 3.5.0
 
    .. versionchanged:: 3.7.0
       ReFrame is now able to detect the processor information automatically.
+
+   .. versionchanged:: 4.7
+      Directory prefix for topology files is now configurable.
 
 
 .. py:attribute:: systems.partitions.devices
@@ -746,6 +753,8 @@ ReFrame can launch containerized applications, but you need to configure properl
       Please use :attr:`~systems.partitions.container_platforms.env_vars` instead.
       If specified in conjunction with :attr:`~systems.partitions.container_platforms.env_vars`, it will be ignored.
 
+
+.. _scheduler-resources:
 
 Custom Job Scheduler Resources
 ==============================
@@ -1142,7 +1151,7 @@ All logging handlers share the following set of common attributes:
 
    Log record format string.
 
-   ReFrame accepts all log record attributes from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following attributes:
+   ReFrame accepts all log record placeholders from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following ones:
 
    .. csv-table::
 
@@ -1201,16 +1210,17 @@ All logging handlers share the following set of common attributes:
       ``%(check_valid_prog_environs)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` attribute.
       ``%(check_valid_systems)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` attribute.
       ``%(check_variables)s``, DEPRECATED: Please use ``%(check_env_vars)s`` instead.
+      ``%(hostname)s``, The hostname where ReFrame runs.
       ``%(osuser)s``, The name of the OS user running ReFrame.
       ``%(osgroup)s``, The name of the OS group running ReFrame.
       ``%(version)s``, The ReFrame version.
 
    ReFrame allows you to log any test variable, parameter or property if they are marked as "loggable".
-   The log record attribute will have the form ``%(check_NAME)s`` where ``NAME`` is the variable name, the parameter name or the property name that is marked as loggable.
+   The log record placeholder will have the form ``%(check_NAME)s`` where ``NAME`` is the variable name, the parameter name or the property name that is marked as loggable.
 
-   There is also the special ``%(check_#ALL)s`` format specifier which expands to all the loggable test attributes.
-   These include all the above specifiers and any additional loggable variables or parameters defined by the test.
-   On expanding this specifier, ReFrame will try to guess the delimiter to use for separating the different attributes based on the existing format.
+   There is also the special ``%(check_#ALL)s`` format placeholder which expands to all the loggable test attributes.
+   These include all the above placeholders and any additional loggable variables or parameters defined by the test.
+   On expanding this placeholder, ReFrame will try to guess the delimiter to use for separating the different attributes based on the existing format.
    If it cannot guess it, it will default to ``|``.
 
    Since this can lead to very long records, you may consider using it with the :attr:`~logging.handlers_perflog..filelog..ignore_keys` parameter to filter out some attributes that are not of interest.
@@ -1225,13 +1235,16 @@ All logging handlers share the following set of common attributes:
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
 
 .. versionadded:: 4.0
-   The ``%(check_result)s`` specifier is added.
+   The ``%(check_result)s`` placeholder is added.
 
 .. versionadded:: 4.3
-   The ``%(check_#ALL)s`` special specifier is added.
+   The ``%(check_#ALL)s`` special placeholder is added.
 
 .. versionadded:: 4.7
-   The ``%(check_fail_phase)s`` and ``%(check_fail_reason)s`` specifiers are added.
+   The ``%(check_fail_phase)s`` and ``%(check_fail_reason)s`` placeholders are added.
+
+.. versionadded:: 4.8
+   The ``%(hostname)s`` placeholder is added.
 
 
 .. py:attribute:: logging.handlers.format_perfvars
@@ -1248,10 +1261,10 @@ All logging handlers share the following set of common attributes:
    .. important::
       The last character of this format will be interpreted as the final delimiter of the formatted performance variables to the rest of the record.
 
-   The following log record attributes are defined additionally by this format specifier:
+   The following log record placeholders are defined additionally by this format specifier:
 
    .. csv-table::
-      :header: "Log record attribute", "Description"
+      :header: "Log record placeholders", "Description"
 
       ``%(check_perf_lower_thres)s``, The lower threshold of the logged performance variable.
       ``%(check_perf_ref)s``, The reference value of the logged performance variable.
@@ -1343,7 +1356,7 @@ The additional properties for the ``filelog`` handler are the following:
 
 .. py:attribute:: logging.handlers_perflog..filelog..ignore_keys
 
-   A list of log record `format specifiers <#config.logging.handlers.format>`__ that will be ignored by the special ``%(check_#ALL)s`` specifier.
+   A list of log record `format placeholders <#config.logging.handlers.format>`__ that will be ignored by the special ``%(check_#ALL)s`` placeholder.
 
    .. versionadded:: 4.3
 
@@ -1582,11 +1595,11 @@ This handler transmits the whole log record, meaning that all the information wi
    .. py:function:: json_formatter(record: object, extras: Dict[str, str], ignore_keys: Set[str]) -> str
 
       :arg record: The prepared log record.
-         The log record is a simple Python object with all the attributes listed in :attr:`~config.logging.handlers.format`, as well as all the default Python `log record <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ attributes.
+         The log record is a simple Python object with all the placeholders listed in :attr:`~config.logging.handlers.format`, as well as all the default Python `log record <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ placeholders.
          In addition to those, there is also the special :attr:`__rfm_check__` attribute that contains a reference to the actual test for which the performance is being logged.
       :arg extras: Any extra attributes specified in :attr:`~config.logging.handlers_perflog..httpjson..extras`.
       :arg ignore_keys: The set of keys specified in :attr:`~config.logging.handlers_perflog..httpjson..ignore_keys`.
-         ReFrame always adds the default Python log record attributes in this set.
+         ReFrame always adds the default Python log record placeholders in this set.
       :returns: A string representation of the JSON record to be sent to the server or :obj:`None` if the record should not be sent to the server.
 
    .. note::
@@ -1855,6 +1868,16 @@ General Configuration
 
 
 
+.. py:attribute:: general.topology_prefix
+
+   :required: No
+   :default: ``"${HOME}/.reframe/topology"``
+
+   Directory prefix for storing the auto-detected processor topology.
+
+   .. versionadded:: 4.7
+
+
 .. py:attribute:: general.trap_job_errors
 
    :required: No
@@ -1863,7 +1886,6 @@ General Configuration
    Trap command errors in the generated job scripts and let them exit immediately.
 
    .. versionadded:: 3.2
-
 
 .. py:attribute:: general.keep_stage_files
 

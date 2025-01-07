@@ -2070,6 +2070,14 @@ def test_nodelist_utilities():
     assert nodelist(nodes) == 'nid0[00-99]-x,nid100-y'
     assert expand('nid0[00-99]-x,nid100-y') == nodes
 
+    # Test edge condition when node lists jump from N to N+1 digits
+    # See GH issue #3338
+    nodes = ['vs-std-0009', 'vs-std-0010', 'vs-std-0099', 'vs-std-0100']
+    assert nodelist(nodes) == 'vs-std-00[09-10],vs-std-0[099-100]'
+    assert expand('vs-std-00[09-10],vs-std-0[099-100]') == [
+        'vs-std-0009', 'vs-std-0010', 'vs-std-0099', 'vs-std-0100'
+    ]
+
     # Test node duplicates
     assert nodelist(['nid001', 'nid001', 'nid002']) == 'nid001,nid00[1-2]'
     assert expand('nid001,nid00[1-2]') == ['nid001', 'nid001', 'nid002']
