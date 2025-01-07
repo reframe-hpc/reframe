@@ -1,0 +1,74 @@
+# Copyright 2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# This is a generated ReFrame configuration file
+# The values in this file are dynamically filled in using the system's current configuration
+
+site_configuration = {
+    'systems': [
+        {
+            'name': '{{ name }}',  # Name of the system
+            'descr': 'System description for {{ name }}',  # Description of the system
+            'hostnames': {{hostnames}},  # Hostname used by this system
+            'modules_system': '{{modules_system}}',
+            {% if modules %}
+            # Specify the modules to be loaded in the system when running reframe (if any)
+            # https://reframe-hpc.readthedocs.io/en/stable/config_reference.html#config.systems.modules
+            'modules': {{ modules }},
+            {% endif %}
+            {% if resourcesdir %}
+            # https://reframe-hpc.readthedocs.io/en/stable/config_reference.html#config.systems.resourcesdir
+            'resourcesdir': '{{ resourcesdir }}',  # Directory path for system resources
+            {% endif %}
+            # Define the partitions of the system (based on node type or reservations)
+            # !!Partition autodetection is only available for the slurm scheduler
+            'partitions': [
+                {% for partition in partitions %}
+                {
+                    'name': '{{partition.name}}',
+                    'descr': '{{partition.descr}}',
+                    'launcher': '{{partition.launcher}}', # Launcher for parallel jobs
+                    'environs': {{partition.environs}},   # Check 'environments' config below
+                    'scheduler': '{{partition.scheduler}}',
+                    'time_limit': '{{partition.time_limit}}',
+                    'max_jobs': {{partition.max_jobs}},
+                    {% if partition.features | length > 1 %}
+                    # https://reframe-hpc.readthedocs.io/en/stable/config_reference.html#config.systems.partitions.extras
+                    'extras': {{partition.extras}},
+                    # https://reframe-hpc.readthedocs.io/en/stable/config_reference.html#config.systems.partitions.env_vars
+                    'env_vars': {{partition.env_vars}},
+                    {% if partition.container_platforms %}
+                    # Check if any container platforms are available in these nodes and add them
+                    # https://reframe-hpc.readthedocs.io/en/stable/config_reference.html#container-platform-configuration
+                    'container_platforms': [
+                    {% for c_p in partition.container_platforms %}
+                        { 'type': '{{c_p.type}}', # Type of container platform
+                        {% if c_p.modules %}
+                        # Specify here the modules required to run the container platforms (if any)
+                          'modules': {{c_p.modules}}
+                        {% endif %}
+                        },
+                    {% endfor %}
+                    ],
+                    {% endif %}
+                    {% endif %}
+                    {% if partition.access %}
+                    # Options passed to the job scheduler in order to submit a job to the specific nodes in this partition
+                    'access': {{partition.access}},
+                    {% endif %}
+                    {% if partition.features %}
+                    # Node features detected in slurm
+                    'features': {{partition.features}},
+                    {% endif %}
+                },
+                {% endfor %}
+            ],
+        },
+    ],
+    # The environments cannot be automatically detected, check the following links for reference
+    # 'https://github.com/eth-cscs/cscs-reframe-tests/tree/alps/config/systems': CSCS github repo
+    # 'https://reframe-hpc.readthedocs.io/en/stable/config_reference.html#environment-configuration': ReFrame documentation
+    'environments': []
+}

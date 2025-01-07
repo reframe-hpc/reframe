@@ -16,3 +16,7 @@ class LocalLauncher(JobLauncher):
         # `self.options`.
         self.options = []
         return []
+
+    @classmethod
+    def validate(cls) -> str:
+        return cls.registered_name

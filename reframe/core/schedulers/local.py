@@ -91,6 +91,16 @@ class LocalJobScheduler(sched.JobScheduler):
     def filternodes(self, job, nodes):
         return [sched.AlwaysIdleNode(socket.gethostname())]
 
+    def feats_access_option(self, node_feats):
+        raise NotImplementedError(
+            'local backend does not support configuration autodetection'
+        )
+
+    def build_context(self, node_feats):
+        raise NotImplementedError(
+            'local backend does not support configuration autodetection'
+        )
+
     def _kill_all(self, job):
         '''Send SIGKILL to all the processes of the spawned job.'''
         try:
@@ -207,3 +217,7 @@ class LocalJobScheduler(sched.JobScheduler):
         elif os.WIFSIGNALED(status):
             job._state = 'FAILURE'
             job._signal = os.WTERMSIG(status)
+
+    @classmethod
+    def validate(cls) -> str:
+        return cls.registered_name

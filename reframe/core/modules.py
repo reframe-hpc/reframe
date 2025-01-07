@@ -109,16 +109,6 @@ class ModulesSystem:
     @classmethod
     def create(cls, modules_kind=None, validate=True):
         getlogger().debug(f'Initializing modules system {modules_kind!r}')
-        modules_impl = {
-            None: NoModImpl,
-            'nomod': NoModImpl,
-            'tmod31': TMod31Impl,
-            'tmod': TModImpl,
-            'tmod32': TModImpl,
-            'tmod4': TMod4Impl,
-            'lmod': LModImpl,
-            'spack': SpackImpl
-        }
         try:
             impl_cls = modules_impl[modules_kind]
         except KeyError:
@@ -126,6 +116,20 @@ class ModulesSystem:
 
         impl_cls.validate = validate
         return ModulesSystem(impl_cls())
+
+    @classmethod
+    def detect(cls):
+        getlogger().debug('Detecting modules system...')
+        modules_system = NoModImpl()
+        for modules_kind in modules_impl:
+            try:
+                modules_system = modules_impl[modules_kind]()
+                if modules_kind not in ('nomod', None):
+                    return (modules_system, modules_kind)
+            except ConfigError as e:
+                getlogger().debug2(f'Error detecting {modules_kind}:'
+                                   f'{e}')
+        return (modules_system, 'nomod')
 
     def __init__(self, backend):
         self._backend = backend
@@ -743,8 +747,12 @@ class TMod31Impl(TModImpl):
 
     def _do_validate(self):
         # Try to figure out if we are indeed using the TCL version
+        modulecmd = os.getenv('MODULESHOME')
+        if modulecmd is None:
+            raise ConfigError(
+                'could not find a sane TMod31 installation'
+            )
         try:
-            modulecmd = os.getenv('MODULESHOME')
             modulecmd = os.path.join(modulecmd, 'modulecmd.tcl')
             completed = osext.run_command(modulecmd)
         except OSError as e:
@@ -1234,3 +1242,15 @@ class SpackImpl(ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return [f'spack unload {module.fullname}']
+
+
+modules_impl = {
+    None: NoModImpl,
+    'nomod': NoModImpl,
+    'tmod31': TMod31Impl,
+    'tmod': TModImpl,
+    'tmod32': TModImpl,
+    'tmod4': TMod4Impl,
+    'lmod': LModImpl,
+    'spack': SpackImpl
+}

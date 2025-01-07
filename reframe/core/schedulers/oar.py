@@ -13,10 +13,12 @@ import functools
 import os
 import re
 import time
+from typing import Union
 
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobError, JobSchedulerError
+from reframe.core.exceptions import (JobError, JobSchedulerError,
+                                     SpawnedProcessError)
 from reframe.core.schedulers.pbs import PbsJobScheduler
 from reframe.utility import seconds_to_hms
 
@@ -154,7 +156,8 @@ class OarJobScheduler(PbsJobScheduler):
             # https://github.com/oar-team/oar/blob/37db5384c7827cca2d334e5248172bb700015434/sources/core/qfunctions/oarstat#L332
             job_raw_info = completed.stdout
             jobid_match = re.search(
-                r'^(Job_Id|id):\s*(?P<jobid>\S+)', completed.stdout, re.MULTILINE
+                r'^(Job_Id|id):\s*(?P<jobid>\S+)', completed.stdout,
+                re.MULTILINE
             )
             if jobid_match:
                 jobid = jobid_match.group('jobid')
@@ -198,3 +201,11 @@ class OarJobScheduler(PbsJobScheduler):
                     self.cancel(job)
                     job._exception = JobError('maximum pending time exceeded',
                                               job.jobid)
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which oarsub')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False

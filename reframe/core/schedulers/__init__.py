@@ -8,11 +8,15 @@
 #
 
 import abc
+import copy
 import os
+import tempfile
 import time
+import shutil
 
 import reframe.core.runtime as runtime
 import reframe.core.shell as shell
+import reframe.utility.config_detection as c_d
 import reframe.utility.jsonext as jsonext
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import JobError, JobNotStartedError, SkipTestError
@@ -101,6 +105,38 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''
 
     @abc.abstractmethod
+    def feats_access_option(self, node_feats: list):
+        '''Return the scheduler specific access options to
+        access a node with certain feartures (node_feats)
+
+        :arg node_feats: A list with the node features.
+        :returns: The acces option for the scheduler (list).
+        :meta private:
+        '''
+
+    @abc.abstractmethod
+    def build_context(self, modules_system: str, launcher: str,
+                      exclude_feats: list, detect_containers: bool,
+                      prefix: str, sched_options: list, time_limit: int):
+        '''Return the reframe context to build the configuration
+        of the system
+
+        :arg modules_system: Name of the modules system
+        :arg launcher: Name of the launcher in the system
+        :arg exclude_feats: List of the features to be excluded in the
+            partitions detection
+        :arg detect_containers: Submit a job to each remote partition to
+            detect container platforms
+        :arg prefix: Prefix of the directory where the jobs are
+            prepared and submitted
+        :arg sched_options: List of additional scheduler options that are
+            required to submit jobs to all partitions of the system
+        :arg time_limit: Time limit until the job submission is cancelled
+            for the remote containers detection
+        :returns: Dictionary with the partitions of the system
+        '''
+
+    @abc.abstractmethod
     def submit(self, job):
         '''Submit a job.
 
@@ -151,6 +187,20 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         :meta private:
         '''
         getlogger().log(level, f'[S] {self.registered_name}: {message}')
+
+    @property
+    def name(self):
+        return self.registered_name
+
+    @classmethod
+    @abc.abstractmethod
+    # Will not raise an error if not defined until instantiation
+    def validate(cls):
+        '''Check if the scheduler is in the system
+
+        :returns: False if the scheduler is not present and
+            the name of the scheduler backend if it is
+        '''
 
 
 def filter_nodes_by_state(nodelist, state):
@@ -551,6 +601,16 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         '''
         return self._submit_time
 
+    def add_sched_access(self, access_options: list):
+        '''Add access options to the job'''
+        self._sched_access += access_options
+
+    def rm_sched_access(self, access_options: list):
+        '''Remove access options to the job'''
+        self._sched_access = [
+            opt for opt in self._sched_access if opt not in access_options
+        ]
+
     def prepare(self, commands, environs=None, prepare_cmds=None,
                 strict_flex=False, **gen_opts):
         environs = environs or []
@@ -695,3 +755,305 @@ class AlwaysIdleNode(Node):
 
     def in_state(self, state):
         return self.in_statex(state)
+
+
+class ReframeContext(abc.ABC):
+    '''Abstract base class for representing a ReFrame context.
+
+    The context contains information about the detected nodes and the
+    created partitions during the configuration autodetection process
+    '''
+
+    def __init__(self, modules_system: str, launcher: str,
+                 scheduler: JobScheduler, detect_containers: bool,
+                 prefix: str, time_limit: int):
+        self.partitions = []
+        self._modules_system = modules_system
+        self._scheduler = scheduler
+        self._launcher = launcher
+        self._time_limit = time_limit
+        self._detect_containers = detect_containers
+        self._p_n = 0  # System partitions counter
+        self._keep_tmp_dir = False
+        self.TMP_DIR = tempfile.mkdtemp(
+            prefix='reframe_config_detection_',
+            dir=prefix
+        )
+        if detect_containers:
+            getlogger().info(f'Stage directory: {self.TMP_DIR}')
+
+    @abc.abstractmethod
+    def submit_detect_job(self, job):
+        '''Submission process of the remote detect job'''
+
+    @abc.abstractmethod
+    def _find_devices(self, node_feats) -> dict:
+        '''Find the available devices in a node with a given set of features'''
+        # TODO: document the dictionary structure that should be returned
+
+    def _check_gpus_count(self, node_devices_slurm: dict,
+                          node_devices_job: dict) -> list:
+
+        gpus_slurm_count = 0  # Number of GPUs from Slurm Gres
+        gpus_job_count = 0   # Number of GPUs from remote job detection
+        devices = []
+
+        # Check that the same number of GPU models are the same
+        if len(node_devices_job) != len(node_devices_slurm):
+            getlogger().warning(
+                'WARNING: discrepancy between the '
+                'number of GPU models\n'
+                f'GPU models from Gres ({len(node_devices_slurm)}) '
+                f'GPU models from job ({len(node_devices_job)}) '
+            )
+
+        # Get the total number of GPUs (independently of the model)
+        for gpu_slurm in node_devices_slurm:
+            gpus_slurm_count += node_devices_slurm[gpu_slurm]
+
+        # Format the dictionary of the devices for the configuration file
+        # and get the total number of GPUs found
+        for gpu_job in node_devices_job:
+            devices.append({'type': 'gpu',
+                            'model': gpu_job,
+                            'num_devices': node_devices_job[gpu_job]})
+            gpus_job_count += node_devices_job[gpu_job]
+
+        if gpus_job_count != gpus_slurm_count:
+            getlogger().warning('The total number of detected GPUs '
+                                f'({gpus_job_count}) '
+                                'differs from the (minimum) in GRes '
+                                f'from slurm({gpus_slurm_count}).')
+            if gpus_job_count > gpus_slurm_count:
+                getlogger().debug('It might be that nodes in this partition '
+                                  'have different number of GPUs '
+                                  'of the same model.\nIn the config, the '
+                                  'minimum number of GPUs that will '
+                                  'be found in the nodes of this partition '
+                                  'is set.\n')
+            elif gpus_job_count < gpus_slurm_count:
+                getlogger().error(
+                    'Lower number of GPUs were detected in the node.\n')
+
+        return devices
+
+    def _parse_devices(self, file_path: str) -> dict:
+        '''Extract the information about the GPUs from the job output'''
+        gpu_info = {}  # Initialize the dict for GPU info
+        nvidia_gpus_found = False
+        amd_gpus_found = False
+
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+
+        for line in lines:
+            # Check for NVIDIA GPUs
+            if "NVIDIA GPUs installed" in line:
+                nvidia_gpus_found = True
+            elif line == '\n':
+                nvidia_gpus_found = False
+            elif not line or "Batch Job Summary" in line:
+                break
+            elif nvidia_gpus_found:
+                model = [
+                    gpu_m for gpu_m in c_d.nvidia_gpu_architecture
+                    if gpu_m in line
+                ]
+                if len(model) > 1:
+                    model = []
+                if model:
+                    if model[0] not in gpu_info:
+                        gpu_info.update({model[0]: 1})
+                    else:
+                        gpu_info[model[0]] += 1
+
+            # Check for AMD GPUs
+            if "AMD GPUs" in line:
+                amd_gpus_found = True
+                amd_lines = []
+            elif line == '\n' or "lspci" in line:
+                amd_gpus_found = False
+            elif not line or "Batch Job Summary" in line:
+                break
+            elif amd_gpus_found:
+                if line not in amd_lines:
+                    amd_lines.append(line)
+                    model = [
+                        gpu_m for gpu_m in c_d.amd_gpu_architecture
+                        if gpu_m in line
+                    ]
+                    if len(model) > 1:
+                        model = []
+                    if model:
+                        if model[0] not in gpu_info:
+                            gpu_info.update({model[0]: 1})
+                        else:
+                            gpu_info[model[0]] += 1
+                else:
+                    pass
+
+        return gpu_info
+
+    def _parse_containers(self, file_path: str) -> list:
+        '''Extract the information about the containers from the job output'''
+        containers_info = []
+        containers_found = False
+
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+
+        for line in lines:
+            if "Installed containers" in line:
+                containers_found = True
+            elif "GPU" in line or line == "\n" or "Batch Job Summary" in line:
+                containers_found = False
+                break
+            elif containers_found:
+                type = line.split(' modules: ')[0].strip()
+                try:
+                    modules = line.split(' modules: ')[1].split(', ')
+                    modules = [m.strip() for m in modules]
+                    if modules[0] != '':
+                        modules.append(type.lower())
+                    else:
+                        modules = [type.lower()]
+                except Exception:
+                    modules = []
+                containers_info.append({'type': type, 'modules': modules})
+
+        return containers_info
+
+    def _extract_info(self, job: Job):
+        '''Extract the information from the detect job oputput'''
+        file_path = os.path.join(self.TMP_DIR, job.stdout)
+        if job.detect_containers:
+            job.container_platforms = self._parse_containers(file_path)
+
+    def _create_detection_job(self, name: str, access_node: list,
+                              access_options: list):
+        '''Create the instance of the job for remote autodetection'''
+        remote_job = Job.create(
+            self._scheduler,
+            self._launcher,
+            name=f"autodetect_{name}",
+            workdir=self.TMP_DIR,
+            sched_access=access_node,
+            sched_options=access_options
+        )
+        remote_job.max_pending_time = self._time_limit
+        remote_job.time_limit = '2m'
+        remote_job.container_platforms = []
+        remote_job.devices = {}
+        return remote_job
+
+    def _generate_job_content(self, job):
+        job.content = []
+        if job.detect_containers:
+            job.content += [c_d.containers_detect_bash]
+            job.content += ['\n\n\n']
+
+    def create_login_partition(self):
+        max_jobs = 4
+        time_limit = '2m'
+        self.partitions.append(
+            {'name':      'login',
+             'scheduler':  'local',
+             'time_limit': time_limit,
+             'environs':   ['builtin'],
+             'max_jobs':   max_jobs,
+             'launcher':   'local'})
+
+    def create_remote_partition(self, node_feats: tuple,
+                                sched_options):
+
+        node_features = list(node_feats)
+        _detect_containers = copy.deepcopy(self._detect_containers)
+        self._p_n += 1  # Count the partition that is being created
+        access_options = copy.deepcopy(sched_options)
+        access_node = self._scheduler.feats_access_option(node_features)
+        name = f'partition_{self._p_n}'
+        getlogger().info(f'{name} : {node_feats}')
+        max_jobs = 100
+        time_limit = '10m'
+        container_platforms = []
+
+        # Try to get the devices from the scheduler config
+        _detect_devices = self._find_devices(node_features)
+        if _detect_devices:
+            getlogger().info('GPUs were detected in this node type.')
+
+        remote_job = None
+        if _detect_containers:
+            self._keep_tmp_dir = True
+            remote_job = self._create_detection_job(
+                name, access_node, access_options
+            )
+            remote_job.detect_containers = _detect_containers
+            self._generate_job_content(remote_job)
+            submission_error, access_node = self.submit_detect_job(
+                remote_job, node_features
+            )
+            if not submission_error:
+                try:
+                    remote_job.wait()
+                except JobError as e:
+                    submission_error = e
+                    getlogger().warning(f'{name}: {e}')
+                else:
+                    self._extract_info(remote_job)
+            else:
+                getlogger().warning(
+                    f'encountered a job submission error in {name}:\n'
+                    f'{submission_error}'
+                )
+
+        if remote_job and not submission_error:
+            if remote_job.container_platforms:
+                container_platforms = remote_job.container_platforms
+                if 'tmod' not in self._modules_system.name() and \
+                        'lmod' not in self._modules_system.name():
+                    getlogger().warning(
+                        'Container platforms were detected but the automatic'
+                        ' detection of required modules is not possible with '
+                        f'{self._modules_system}.'
+                    )
+                # Add the container platforms in the features
+                for cp in container_platforms:
+                    getlogger().info(
+                        f'Detected container platform {cp["type"]} '
+                        f'in partition "{name}"'
+                    )
+                    node_features.append(cp['type'].lower())
+            else:
+                getlogger().info(
+                    'No container platforms were detected in '
+                    f'partition "{name}"'
+                )
+
+        access_options += access_node
+
+        # Create the partition
+        self.partitions.append(
+            {'name':      name,
+             'scheduler':  self._scheduler.name,
+             'time_limit': time_limit,
+             'environs':   ['builtin'],
+             'max_jobs':   max_jobs,
+             'extras':     {},
+             'env_vars':   [],
+             'launcher':   self._launcher.name,
+             'access':     access_options,
+             'features':   node_features+['remote'],
+             'container_platforms': container_platforms}
+        )
+
+    def create_partitions(self, sched_options):
+        # TODO: asynchronous
+        for node in self.node_types:
+            self.create_remote_partition(node, sched_options)
+        if not self._keep_tmp_dir:
+            shutil.rmtree(self.TMP_DIR)
+        else:
+            getlogger().info(
+                f'\nYou can check the job submissions in {self.TMP_DIR}.\n'
+            )

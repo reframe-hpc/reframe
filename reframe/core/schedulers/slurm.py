@@ -3,15 +3,18 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import fnmatch
 import functools
 import glob
 import itertools
 import re
 import shlex
 import time
+from typing import Union
 from argparse import ArgumentParser
 from contextlib import suppress
 
+from reframe.core.logging import getlogger
 import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
@@ -482,7 +485,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         t_pending = time.time() - job.submit_time
         if t_pending >= job.max_pending_time:
-            self.log(f'maximum pending time for job exceeded; cancelling it')
+            self.log('maximum pending time for job exceeded; cancelling it')
             self.cancel(job)
             job._exception = JobError('maximum pending time exceeded',
                                       job.jobid)
@@ -571,6 +574,30 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         return slurm_state_completed(job.state)
 
+    def feats_access_option(self, node_feats: list) -> list:
+        return ["-C "+"&".join(node_feats)]
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which sacct')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
+
+    def build_context(self, modules_system, launcher, exclude_feats,
+                      detect_containers, prefix, sched_options, time_limit):
+        '''Create the reframe context detecting the partitions with slurm'''
+        self._context = _SlurmContext(
+            modules_system=modules_system, launcher=launcher, scheduler=self,
+            detect_containers=detect_containers, prefix=prefix,
+            sched_options=sched_options, time_limit=time_limit
+        )
+        self._context.search_node_types(exclude_feats)
+        self._context.create_login_partition()
+        self._context.create_partitions(sched_options)
+        return self._context.partitions
+
 
 @register_scheduler('squeue')
 class SqueueJobScheduler(SlurmJobScheduler):
@@ -631,6 +658,18 @@ class SqueueJobScheduler(SlurmJobScheduler):
             )
             self._cancel_if_pending_too_long(job)
 
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        # Make sure that if sacct is found it returns false
+        slurm_validate = super().validate()
+        if slurm_validate:
+            return False
+        try:
+            _run_strict('which squeue')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
+
 
 def _create_nodes(descriptions):
     nodes = set()
@@ -657,6 +696,8 @@ class _SlurmNode(sched.Node):
             'ActiveFeatures', node_descr, sep=',') or set()
         self._states = self._extract_attribute(
             'State', node_descr, sep='+') or set()
+        self._generic_resources = self._extract_attribute(
+            'Gres', node_descr, sep=',') or set()
         self._descr = node_descr
 
     def __eq__(self, other):
@@ -682,26 +723,35 @@ class _SlurmNode(sched.Node):
     def is_down(self):
         return not self.is_avail()
 
-    def satisfies(self, slurm_constraint):
+    def satisfies(self, slurm_constraint: str):
         # Convert the Slurm constraint to a Python expression and evaluate it,
         # but restrict our syntax to accept only AND or OR constraints and
         # their combinations
-        if not re.match(r'^[\w\d\(\)\|\&]*$', slurm_constraint):
+        if not re.match(r'^[\w\d\(\)\|\&\-]*$', slurm_constraint):
             return False
 
         names = {grp[0]
                  for grp in re.finditer(r'(\w(\w|\d)*)', slurm_constraint)}
-        expr = slurm_constraint.replace('|', ' or ').replace('&', ' and ')
+        slurm_constraint = slurm_constraint.replace(
+            "&", " and ").replace("|", " or ")
+        # Pattern to extract the variable names
+        pattern = r'\b(?!and\b|or\b)(\d*[a-zA-Z_]\w*)\b'
+        # Replace each variable with var['variable']
+        expr = re.sub(pattern, r"vars['\1']", slurm_constraint)
         vars = {n: True for n in self.active_features}
         vars.update({n: False for n in names - self.active_features})
         try:
-            return eval(expr, {}, vars)
+            return eval(expr, {}, {'vars': vars})
         except BaseException:
             return False
 
     @property
     def active_features(self):
         return self._active_features
+
+    @property
+    def generic_resources(self):
+        return self._generic_resources
 
     @property
     def name(self):
@@ -729,3 +779,206 @@ class _SlurmNode(sched.Node):
 
     def __str__(self):
         return self._name
+
+
+class _SlurmContext(sched.ReframeContext):
+
+    def __init__(self, modules_system: str, launcher: str,
+                 scheduler: JobSchedulerError, detect_containers: bool,
+                 prefix: str, sched_options: list, time_limit: int):
+
+        super().__init__(modules_system=modules_system, launcher=launcher,
+                         scheduler=scheduler,
+                         detect_containers=detect_containers,
+                         prefix=prefix, time_limit=time_limit)
+        self.node_types = []
+        self.default_nodes = []
+        self.reservations = []
+        self._access = sched_options
+
+    def submit_detect_job(self, job: _SlurmJob, node_features):
+        with osext.change_dir(job.workdir):
+            job.prepare(job.content)
+            try:
+                job.submit()
+            except SpawnedProcessError as e:
+                # Try resubmission with partition access
+                partition_access = self._get_access_partition(node_features)
+                if partition_access:
+                    job.add_sched_access(partition_access)
+                    # Second attempt
+                    job.prepare(job.content)
+                    try:
+                        job.submit()
+                    except SpawnedProcessError as e:
+                        # Return the error
+                        job.rm_sched_access(partition_access)
+                        return e, job.sched_access
+                else:
+                    return e, job.sched_access
+
+            return None, job.sched_access
+
+    def search_node_types(self, exclude_feats: Union[list, None] = []):
+        '''Search for node types in the system based on their features
+        '''
+
+        getlogger().debug('Filtering nodes based on ActiveFeatures...')
+        try:
+            nodes_info = self._scheduler.allnodes()
+            raw_node_types = [(tuple(n.active_features), tuple(
+                n.partitions)) for n in nodes_info]
+            raw_node_types = set(raw_node_types)
+            raw_node_types = [[tuple(n[0]), tuple(
+                n[1])] for n in raw_node_types]
+        except JobSchedulerError as e:
+            getlogger().error(
+                f'Node types could not be retrieved from scontrol: {e}'
+            )
+            return
+
+        default_partition = self._scheduler._get_default_partition()
+
+        self._set_nodes_types(exclude_feats, raw_node_types, default_partition)
+
+    def _set_nodes_types(self, exclude_feats: Union[list, None],
+                         raw_node_types: list,
+                         default_partition: Union[str, None]):
+        '''Set the node types in the system
+
+        '''
+
+        default_nodes = []  # Initialize the list of node types in the default
+        # Initialize the list of node types (with filtered features)
+        node_types = []
+
+        for node in raw_node_types:
+            node_feats_raw = list(node[0])  # Before filtering features
+            node_feats = node_feats_raw
+            node_partition = node[1]
+            if exclude_feats:  # Filter features
+                node_feats = self._filter_node_feats(
+                    exclude_feats, node_feats_raw
+                )
+            if node_feats:  # If all features were removed, empty list
+                node_types.append(tuple(node_feats))
+                # The nodes in the default partition based on their raw feats
+                if default_partition in node_partition:
+                    default_nodes.append(tuple(node_feats))
+
+        default_nodes = set(default_nodes)
+        if len(default_nodes) > 1:
+            # Then all node types require the features in the access options
+            self.default_nodes = set()
+        else:
+            self.default_nodes = default_nodes  # Get the filtered features
+
+        getlogger().debug(
+            f'\nThe following {len(set(node_types))} '
+            'node types were detected:'
+        )
+        for node_t in set(node_types):
+            getlogger().debug(node_t)
+
+        self.node_types = set(node_types)  # Get the unique types
+
+    @staticmethod
+    def _filter_node_feats(exclude_feats: list, node_feats: list) -> list:
+        '''Filter the node types excluding the specified fixtures'''
+        node_valid_feats = []
+        for feat in node_feats:  # loop around the features
+            feat_valid = not any([fnmatch.fnmatch(feat, pattern)
+                                 for pattern in exclude_feats])
+            if feat_valid:
+                node_valid_feats.append(feat)
+        return node_valid_feats
+
+    def _find_devices(self, node_feats: list) -> Union[dict, None]:
+        # Retrieve a dictionary with the devices info
+        # If GRes for these nodes is 'gpu:a100:*'
+        # The returned dict will be:
+        # {'gpu:a100' : min(*)}
+
+        getlogger().debug(
+            f'Detecting devices for node with features {node_feats}...')
+        try:
+            nodes_info = self._scheduler.allnodes()
+            node_feats = "&".join(node_feats)
+            devices_raw = {tuple(n.generic_resources)
+                           for n in nodes_info
+                           if n.satisfies(node_feats)}
+        except JobSchedulerError:
+            getlogger().warning('Unable to detect the devices in the node')
+            return None
+
+        if len(devices_raw) > 1:
+            # This means that the nodes with this set of features
+            # do not all have the same devices installed. If the
+            # nodes have all the same model of GPUs but different
+            # number, it is considered as the same devices type
+            # so we don't raise this msg
+            getlogger().warning('Detected different devices in nodes '
+                                'with the same set of features.\n'
+                                'Please check the devices option in '
+                                'the configuration file.')
+            return None
+        else:
+            devices = []
+            for device_i in devices_raw:
+                devices = [item.rsplit(':', 1)[0] for item in device_i]
+            devices = [','.join(devices)]
+            if '(null)' in list(devices) or 'gpu' not in next(iter(devices)):
+                # Detects if the nodes have no devices installed at
+                # all or if not GPUs are installed
+                getlogger().debug('No devices were found for this node type.')
+                return None
+            else:
+                getlogger().info('Detected GPUs')
+                # We only reach here if the devices installation
+                # is homogeneous accross the nodes
+                return self._count_gpus(devices_raw.pop())
+
+    def _get_access_partition(self, node_feats: list) -> Union[str, None]:
+
+        nodes_info = self._scheduler.allnodes()
+        node_feats = "&".join(node_feats)
+        nd_partitions = {tuple(n.partitions)
+                         for n in nodes_info
+                         if n.satisfies(node_feats)}
+        nd_partitions = set(nd_partitions)
+        if len(nd_partitions) > 1:
+            return None
+        else:
+            nd_partitions = list(nd_partitions.pop())
+            for n_f in node_feats:
+                if n_f in nd_partitions:
+                    return [f'-p {n_f}']
+            if len(nd_partitions) == 1:
+                return [f'-p {nd_partitions[0]}']
+
+    @staticmethod
+    def _count_gpus(node_devices: str) -> dict:
+
+        # This method receives as input a string with the
+        # devices in the nodes
+
+        # If more than one device is installed, we get the list
+        # Example: node_devices = 'gpu:2,craynetwork:6'
+        devices_dic = {}
+        for dvc in node_devices:
+            # Check if the device is a GPU
+            # There will be at least 1 GPU
+            if 'gpu' in dvc:
+                # Get the device model gpu or gpu:a100
+                device_type = dvc.rsplit(":", 1)[0]
+                # Get the number of devices
+                devices_n = int(dvc.rsplit(":", 1)[1])
+                # Save the minimum number found in all nodes
+                if device_type in devices_dic:
+                    dvc_n = devices_dic[device_type]
+                    if devices_n < dvc_n:
+                        devices_dic[device_type] = devices_n
+                else:
+                    devices_dic.update({device_type: devices_n})
+
+        return devices_dic

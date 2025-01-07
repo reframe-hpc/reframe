@@ -10,12 +10,15 @@
 #   Lawrence Livermore National Lab
 #
 
+import functools
 import itertools
 import os
 import time
+from typing import Union
 
+import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobError
+from reframe.core.exceptions import JobError, SpawnedProcessError
 from reframe.core.schedulers import JobScheduler, Job
 
 # Just import flux once
@@ -29,6 +32,8 @@ else:
     error = None
 
 WAITING_STATES = ('QUEUED', 'HELD', 'WAITING', 'PENDING')
+
+_run_strict = functools.partial(osext.run_command, check=True)
 
 
 class _FluxJob(Job):
@@ -141,6 +146,16 @@ class FluxJobScheduler(JobScheduler):
             'flux backend does not support node filtering'
         )
 
+    def feats_access_option(self, node_feats):
+        raise NotImplementedError(
+            'flux backend does not support configuration autodetection'
+        )
+
+    def build_context(self, node_feats):
+        raise NotImplementedError(
+            'flux backend does not support configuration autodetection'
+        )
+
     def wait(self, job):
         '''Wait until a job is finished.'''
 
@@ -154,3 +169,11 @@ class FluxJobScheduler(JobScheduler):
             raise job.exception
 
         return job.completed
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which flux')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False

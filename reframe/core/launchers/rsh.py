@@ -3,10 +3,17 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import functools
+from typing import Union
+
+import reframe.utility.osext as osext
 from reframe.core.backends import register_launcher
+from reframe.core.exceptions import SpawnedProcessError
 from reframe.core.launchers import JobLauncher
 
 # Remote shell launchers
+
+_run_strict = functools.partial(osext.run_command, check=True)
 
 
 @register_launcher('clush')
@@ -14,11 +21,27 @@ class ClushLauncher(JobLauncher):
     def command(self, job):
         return ['clush', *job.sched_access]
 
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which clush')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
+
 
 @register_launcher('pdsh')
 class PdshLauncher(JobLauncher):
     def command(self, job):
         return ['pdsh', *job.sched_access]
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which pdsh')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
 
 
 @register_launcher('ssh')
@@ -37,3 +60,11 @@ class SSHLauncher(JobLauncher):
         # self.options is processed specially above
         cmd_tokens += self.command(job)
         return ' '.join(cmd_tokens)
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which ssh')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False

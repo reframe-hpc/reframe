@@ -14,11 +14,13 @@ import os
 import itertools
 import re
 import time
+from typing import Union
 
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
-from reframe.core.exceptions import JobError, JobSchedulerError
+from reframe.core.exceptions import (JobError, JobSchedulerError,
+                                     SpawnedProcessError)
 from reframe.utility import seconds_to_hms, toalphanum
 
 
@@ -145,6 +147,16 @@ class PbsJobScheduler(sched.JobScheduler):
     def filternodes(self, job, nodes):
         raise NotImplementedError('pbs backend does not support '
                                   'node filtering')
+
+    def feats_access_option(self, node_feats):
+        raise NotImplementedError(
+            'pbs backend does not support configuration autodetection'
+        )
+
+    def build_context(self, node_feats):
+        raise NotImplementedError(
+            'pbs backend does not support configuration autodetection'
+        )
 
     def submit(self, job):
         cmd_parts = ['qsub']
@@ -304,6 +316,14 @@ class PbsJobScheduler(sched.JobScheduler):
                     self.cancel(job)
                     job._exception = JobError('maximum pending time exceeded',
                                               job.jobid)
+
+    @classmethod
+    def validate(cls) -> Union[str, bool]:
+        try:
+            _run_strict('which pbsnodes')
+            return cls.registered_name
+        except SpawnedProcessError:
+            return False
 
 
 @register_scheduler('torque')

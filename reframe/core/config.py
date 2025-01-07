@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import autopep8
 import contextlib
 import copy
 import fnmatch
@@ -14,13 +15,18 @@ import jsonschema
 import os
 import re
 
+from jinja2 import Environment, FileSystemLoader
+
 import reframe
 import reframe.core.settings as settings
 import reframe.utility as util
+import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.environments import normalize_module_list
 from reframe.core.exceptions import (ConfigError, ReframeFatalError)
+from reframe.core.backends import (detect_modules_system, detect_launcher,
+                                   detect_scheduler)
 from reframe.core.logging import getlogger
 from reframe.utility import ScopedDict
 
@@ -330,7 +336,7 @@ class _SiteConfig:
     def subconfig_system(self):
         return self._local_system
 
-    def load_config_python(self, filename):
+    def load_config_python(self, filename, validate=True):
         try:
             mod = util.import_module_from_file(filename)
         except ImportError as e:
@@ -345,8 +351,9 @@ class _SiteConfig:
                 f"not a valid Python configuration file: '{filename}'"
             )
 
-        self._config_modules.append(mod)
-        self.update_config(mod.site_configuration, filename)
+        if validate:
+            self._config_modules.append(mod)
+            self.update_config(mod.site_configuration, filename)
 
     def load_config_json(self, filename):
         with open(filename) as fp:
@@ -408,7 +415,7 @@ class _SiteConfig:
             else:
                 self._autodetect_methods.append((m, _sh_meth(m)))
 
-    def _detect_system(self):
+    def _detect_system(self, detect_only: bool = False) -> str:
         getlogger().debug('Autodetecting system')
         if not self._autodetect_methods:
             self._setup_autodect_methods()
@@ -424,12 +431,23 @@ class _SiteConfig:
                 break
 
         if hostname is None:
-            raise ConfigError('all autodetection methods failed; '
-                              'try passing a system name explicitly using '
-                              'the `--system` option')
+            if detect_only:
+                getlogger().error(
+                    'Could not retrieve the name of the system'
+                )
+                raise ConfigError('all autodetection methods failed')
+            else:
+                raise ConfigError('all autodetection methods failed; '
+                                  'try passing a system name explicitly using '
+                                  'the `--system` option')
 
         getlogger().debug(f'Retrieved hostname: {hostname!r}')
-        getlogger().debug(f'Looking for a matching configuration entry')
+        if detect_only:
+            # Make sure the numbers in the name are removed
+            hostname = re.search(r'^[A-Za-z]+', hostname.strip())
+            return hostname.group(0)
+
+        getlogger().debug('Looking for a matching configuration entry')
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
                 if re.match(patt, hostname):
@@ -650,7 +668,7 @@ def find_config_files(config_path=None, config_file=None):
     return res
 
 
-def load_config(*filenames):
+def load_config(*filenames, validate=True):
     ret = _SiteConfig()
     getlogger().debug('Loading the builtin configuration')
     ret.update_config(settings.site_configuration, '<builtin>')
@@ -662,10 +680,106 @@ def load_config(*filenames):
         getlogger().debug(f'Loading configuration file: {f!r}')
         _, ext = os.path.splitext(f)
         if ext == '.py':
-            ret.load_config_python(f)
+            ret.load_config_python(f, validate)
         elif ext == '.json':
             ret.load_config_json(f)
         else:
             raise ConfigError(f"unknown configuration file type: '{f}'")
 
     return ret
+
+
+def detect_config(detect_containers: bool = False,
+                  exclude_feats: list = [],
+                  filename: str = 'system_config',
+                  sched_options: list = [],
+                  time_limit: int = 200):
+    '''Detect the configuration of the system automatically and
+    write the corresponding reframe config file
+
+    :param detect_containers: Submit a job to each remote partition to detect
+        container platforms
+    :param exclude_feats: List of node features to be excluded when determining
+        the system partitions
+    :param filename: File name of the reframe configuration file that will be
+        generated
+    :param sched_options: List of additional scheduler options that are
+        required to submit jobs to all partitions of the system
+    :param time_limit: Time limit until the job submission is cancelled for the
+        remote containers detection
+    '''
+
+    import reframe.core.runtime as rt
+
+    # Initialize the Site Configuration object
+    ret = _SiteConfig()
+    getlogger().debug('Detecting the system configuration')
+    ret.update_config(settings.site_configuration, '<builtin>')
+
+    site_config = {}
+
+    # Detect the hostname and the system name
+    site_config.setdefault('name', '')
+    site_config.setdefault('hostnames', [])
+    hostname = ret._detect_system(detect_only=True)
+    site_config['hostnames'] += [hostname]
+    site_config['name'] += hostname
+    msg = color.colorize(
+        f'Detected hostname: {hostname}', color.GREEN
+    )
+    getlogger().info(msg)
+
+    # Detect modules system
+    getlogger().debug('Detecting the modules system...')
+    site_config.setdefault('modules_system', 'nomod')
+    modules_system, modules_system_name = detect_modules_system()
+    site_config['modules_system'] = modules_system_name
+    msg = color.colorize(
+        f'Modules system set to {site_config["modules_system"]}', color.GREEN
+    )
+    getlogger().info(msg)
+
+    # Detect scheduler
+    scheduler, scheduler_name = detect_scheduler()
+    msg = color.colorize(f'Scheduler set to {scheduler_name}', color.GREEN)
+    getlogger().info(msg)
+
+    # Detect launcher
+    launcher, launcher_name = detect_launcher()
+    msg = color.colorize(f'Launcher set to {launcher_name}', color.GREEN)
+    getlogger().info(msg)
+
+    site_config.setdefault('partitions', [])
+    # Detect the context with the corresponding scheduler
+    site_config['partitions'] = scheduler().build_context(
+        modules_system=modules_system, launcher=launcher(),
+        exclude_feats=exclude_feats, detect_containers=detect_containers,
+        prefix=rt.runtime().prefix, sched_options=sched_options,
+        time_limit=time_limit
+    )
+
+    # Load the jinja2 template and format its content
+    template_loader = FileSystemLoader(searchpath=os.path.join(
+        reframe.INSTALL_PREFIX, 'reframe', 'schemas'
+    ))
+    env = Environment(loader=template_loader,
+                      trim_blocks=True, lstrip_blocks=True)
+    rfm_config_template = env.get_template(
+        'reframe_config_template.j2'
+    )
+    organized_config = rfm_config_template.render(site_config)
+
+    # Output filename for the generated configuration
+    output_filename = f'{filename}.py'
+
+    # Format the content
+    organized_config = autopep8.fix_code(organized_config)
+
+    # Overwrite the file with formatted content
+    with open(output_filename, "w") as output_file:
+        output_file.write(organized_config)
+
+    getlogger().info(
+        f'\nThe following configuration file was created:\n'
+        f'PYTHON: {filename}.py'
+    )
