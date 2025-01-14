@@ -555,6 +555,8 @@ def _create_httpjson_handler(site_config, config_prefix):
     json_formatter = site_config.get(f'{config_prefix}/json_formatter')
     extra_headers = site_config.get(f'{config_prefix}/extra_headers')
     debug = site_config.get(f'{config_prefix}/debug')
+    sleep_times = site_config.get(f'{config_prefix}/sleep_times')
+    timeout = site_config.get(f'{config_prefix}/timeout')
 
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.scheme not in {'http', 'https'}:
@@ -596,7 +598,7 @@ def _create_httpjson_handler(site_config, config_prefix):
                             'no data will be sent to the server')
 
     return HTTPJSONHandler(url, extras, ignore_keys, json_formatter,
-                           extra_headers, debug)
+                           extra_headers, debug, sleep_times, timeout)
 
 
 def _record_to_json(record, extras, ignore_keys):
@@ -646,7 +648,8 @@ class HTTPJSONHandler(logging.Handler):
 
     def __init__(self, url, extras=None, ignore_keys=None,
                  json_formatter=None, extra_headers=None,
-                 debug=False):
+                 debug=False, sleep_times=[.1, .2, .4, .8, 1.6, 3.2],
+                 timeout=0):
         super().__init__()
         self._url = url
         self._extras = extras
@@ -670,6 +673,8 @@ class HTTPJSONHandler(logging.Handler):
             self._headers.update(extra_headers)
 
         self._debug = debug
+        self._timeout = timeout
+        self._sleep_times = sleep_times
 
     def emit(self, record):
         # Convert tags to a list to make them JSON friendly
@@ -688,8 +693,9 @@ class HTTPJSONHandler(logging.Handler):
 
             return
 
+        timeout_time = time.time() + self._timeout
         try:
-            sleep_times = itertools.cycle([.1, .2, .4, .8, 1.6, 3.2])
+            sleep_times = itertools.cycle(self._sleep_times)
             while True:
                 response = requests.post(
                     self._url, data=json_record,
@@ -698,7 +704,13 @@ class HTTPJSONHandler(logging.Handler):
                 if response.ok:
                     break
 
-                if response.status_code == 429:
+                if (
+                    response.status_code == 429 and
+                    (
+                        not self._timeout or
+                        time.time() < timeout_time
+                    )
+                ):
                     time.sleep(next(sleep_times))
                     continue
 

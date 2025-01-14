@@ -173,7 +173,12 @@
                         },
                         "json_formatter": {},
                         "extra_headers": {"type": "object"},
-                        "debug": {"type": "boolean"}
+                        "debug": {"type": "boolean"},
+                        "sleep_times": {
+                            "type": "array",
+                            "items": {"type": "number"}
+                        },
+                        "timeout": {"type": "number"}
                     },
                     "required": ["url"]
                 }
@@ -632,6 +637,8 @@
         "logging/handlers_perflog/httpjson_json_formatter": null,
         "logging/handlers_perflog/httpjson_extra_headers": {},
         "logging/handlers_perflog/httpjson_debug": false,
+        "logging/handlers_perflog/httpjson_sleep_times": [0.1, 0.2, 0.4, 0.8, 1.6, 3.2],
+        "logging/handlers_perflog/httpjson_timeout": 0,
         "modes/options": [],
         "modes/target_systems": ["*"],
         "storage/enable": false,
