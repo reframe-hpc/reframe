@@ -13,6 +13,7 @@ import errno
 import getpass
 import grp
 import os
+import psutil
 import re
 import semver
 import shlex
@@ -61,16 +62,19 @@ class _ProcFuture:
         if not self.started():
             raise UnstartedProcError
 
-    def start(self):
+    async def start(self):
         '''Start the future, i.e. spawn the encapsulated command.'''
 
         args, kwargs = self._cmd_args
-        self._proc = run_command_async(*args, **kwargs)
-
-        if os.getsid(self._proc.pid) == self._proc.pid:
-            self._session = True
-        else:
-            self._session = False
+        self._proc = await run_command_asyncio(*args, **kwargs)
+        self._session = False
+        if self._proc.returncode is None:
+            try:
+                p = psutil.Process(self._proc.pid)
+                if p.ppid() == self._proc.pid:
+                    self._session = True
+            except psutil.NoSuchProcess:
+                pass
 
         return self
 
@@ -106,9 +110,24 @@ class _ProcFuture:
         '''
 
         self._check_started()
-        kill_fn = os.killpg if self.is_session() else os.kill
-        kill_fn(self.pid, signum)
-        self._signal = signum
+        children = []
+        if self.is_session():
+            p = psutil.Process(self.pid)
+            # Get the chilldren of the process
+            children = p.children(recursive=True)
+        try:
+            self._proc.send_signal(signum)
+            self._signal = signum
+        except (ProcessLookupError, PermissionError):
+            self.log(f'pid {self._proc.pid} already dead')
+
+        for child in children:
+            try:
+                child.send_signal(signum)
+            except (ProcessLookupError, PermissionError,
+                    psutil.NoSuchProcess):
+                self.log(f'child pid {child.pid} already dead')
+        self._completed = True
 
     def terminate(self):
         '''Terminate the spawned process by sending ``SIGTERM``.'''
@@ -165,28 +184,22 @@ class _ProcFuture:
         '''Check if this future has started.'''
         return self._proc is not None
 
-    def _wait(self, *, nohang=False):
+    async def _wait(self, *, nohang=False):
         self._check_started()
         if self._completed:
             return True
 
-        options = os.WNOHANG if nohang else 0
-        try:
-            pid, status = os.waitpid(self.pid, options)
-        except OSError as e:
-            if e.errno == errno.ECHILD:
-                self._completed = True
-                return self._completed
-            else:
-                raise e
+        if self._proc.returncode is None:
+            if nohang:
+                return False
+            elif not nohang:
+                await self._proc.wait()
 
-        if nohang and not pid:
-            return False
-
-        if os.WIFEXITED(status):
-            self._exitcode = os.WEXITSTATUS(status)
-        elif os.WIFSIGNALED(status):
-            self._signal = os.WTERMSIG(status)
+        # Retrieve the status of the job and return
+        if self._proc.returncode >= 0:
+            self._exitcode = self._proc.returncode
+        else:
+            self._signal = self._proc.returncode
 
         self._completed = True
 
@@ -197,23 +210,23 @@ class _ProcFuture:
         # Start the next futures in the chain
         for fut, cond in self._next:
             if cond(self):
-                fut.start()
+                await fut.start()
 
         return self._completed
 
-    def done(self):
+    async def done(self):
         '''Check if the future has finished.
 
         This is a non-blocking call.
         '''
         self._check_started()
-        return self._wait(nohang=True)
+        return await self._wait(nohang=True)
 
-    def wait(self):
+    async def wait(self):
         '''Wait for this future to finish.'''
-        self._wait()
+        await self._wait()
 
-    def exception(self):
+    async def exception(self):
         '''Retrieve the exception raised by this future.
 
         This is a blocking call and will wait until this future finishes.
@@ -223,47 +236,40 @@ class _ProcFuture:
         :func:`run_command_async2`.
         '''
 
-        self._wait()
+        await self._wait()
         if not self._check:
             return
 
         if self._proc.returncode == 0:
             return
 
+        stdout, stderr = await self._proc.communicate()
         return SpawnedProcessError(self._proc.args,
-                                   self._proc.stdout.read(),
-                                   self._proc.stderr.read(),
+                                   stdout.decode(),
+                                   stderr.decode(),
                                    self._proc.returncode)
 
-    def stdout(self):
-        '''Retrieve the standard output of the spawned process.
+    async def communicate(self):
+        '''Retrieve the standard output/error of the spawned process.
 
         This is a blocking call and will wait until the future finishes.
         '''
-        self._wait()
-        return self._proc.stdout
-
-    def stderr(self):
-        '''Retrieve the standard error of the spawned process.
-
-        This is a blocking call and will wait until the future finishes.
-        '''
-        self._wait()
-        return self._proc.stderr
+        await self._wait()
+        return await self._proc.communicate()
 
 
-def run_command(cmd, check=False, timeout=None, **kwargs):
+def run_command_s(cmd, check=False, timeout=None, **kwargs):
     '''Run command synchronously.
 
     This function will block until the command executes or the timeout is
-    reached. It essentially calls :func:`run_command_async` and waits for the
+    reached. It essentially calls :func:`run_command_process` and waits for the
     command's completion.
 
     :arg cmd: The command to execute as a string or a sequence. See
-        :func:`run_command_async` for more details.
+        :func:`run_command_process` for more details.
     :arg check: Raise an error if the command exits with a non-zero exit code.
     :arg timeout: Timeout in seconds.
-    :arg kwargs: Keyword arguments to be passed :func:`run_command_async`.
+    :arg kwargs: Keyword arguments to be passed :func:`run_command_process`.
     :returns: A :py:class:`subprocess.CompletedProcess` object with
         information about the command's outcome.
     :raises reframe.core.exceptions.SpawnedProcessError: If ``check``
@@ -274,7 +280,7 @@ def run_command(cmd, check=False, timeout=None, **kwargs):
     '''
 
     try:
-        proc = run_command_async(cmd, start_new_session=True, **kwargs)
+        proc = run_command_process(cmd, start_new_session=True, **kwargs)
         proc_stdout, proc_stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
@@ -295,13 +301,13 @@ def run_command(cmd, check=False, timeout=None, **kwargs):
     return completed
 
 
-def run_command_async(cmd,
-                      stdout=subprocess.PIPE,
-                      stderr=subprocess.PIPE,
-                      shell=False,
-                      log=True,
-                      **popen_args):
-    '''Run command asynchronously.
+def run_command_process(cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        shell=False,
+                        log=True,
+                        **popen_args):
+    '''Start the subprocess to run a command.
 
     A wrapper to :py:class:`subprocess.Popen` with the following tweaks:
 
@@ -339,15 +345,26 @@ def run_command_async(cmd,
                             **popen_args)
 
 
-async def run_command_asyncio_alone(cmd,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell=True,
-                                    timeout=None,
-                                    log=True,
-                                    serial=False,
-                                    **kwargs):
-    '''TODO: please write proper docstring
+async def run_command_asyncio(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE,
+                              shell=True,
+                              log=True,
+                              **kwargs):
+    '''Create an asyncio subprocess to run the command.
+
+    :arg cmd: The command to run either as a string or a sequence of arguments.
+    :arg stdout: Same as the corresponding argument of :py:class:`Popen`.
+        Default is :py:obj:`subprocess.PIPE`.
+    :arg stderr: Same as the corresponding argument of :py:class:`Popen`.
+        Default is :py:obj:`subprocess.PIPE`.
+    :arg shell: Same as the corresponding argument of :py:class:`Popen`.
+    :arg log: Log the execution of the command through ReFrame's logging
+        facility.
+    :arg kargs: Any additional arguments to be passed to
+        :py:class:`asyncio.subprocess.Popen`.
+    :returns: A new :py:class:`Popen` object.
+
     '''
     if log:
         from reframe.core.logging import getlogger
@@ -358,49 +375,46 @@ async def run_command_asyncio_alone(cmd,
 
     if shell:
         # Call create_subprocess_shell
-        return await asyncio.create_subprocess_shell(
+        process = await asyncio.create_subprocess_shell(
             cmd, stdout=stdout,
             stderr=stderr,
             **kwargs
         )
+        process.args = cmd
     else:
         # Call create_subprocess_exec
-        return await asyncio.create_subprocess_exec(
+        process = await asyncio.create_subprocess_exec(
             cmd, stdout=stdout,
             stderr=stderr,
             **kwargs
         )
+        process.args = cmd
 
-async def run_command_asyncio(cmd,
-                              check=False,
-                              timeout=None,
-                              shell=True,
-                              log=True,
-                              **kwargs):
-    '''TODO: please write proper docstring
+    return process
+
+
+async def run_command(cmd, check=False, timeout=None, **kwargs):
+    '''Run command synchronously.
+
+    This function will block until the command executes or the timeout is
+    reached. It essentially calls :func:`run_command_asyncio` and waits for the
+    command's completion.
+
+    :arg cmd: The command to execute as a string or a sequence. See
+        :func:`run_command_asyncio` for more details.
+    :arg check: Raise an error if the command exits with a non-zero exit code.
+    :arg timeout: Timeout in seconds.
+    :arg kwargs: Keyword arguments to be passed :func:`run_command_asyncio`.
+    :returns: A :py:class:`subprocess.CompletedProcess` object with
+        information about the command's outcome.
+    :raises reframe.core.exceptions.SpawnedProcessError: If ``check``
+        is :class:`True` and the command fails.
+    :raises reframe.core.exceptions.SpawnedProcessTimeout: If the command
+        times out.
+
     '''
-    if log:
-        from reframe.core.logging import getlogger
-        getlogger().debug(f'[CMD] {cmd!r}')
-
-    if isinstance(cmd, str) and not shell:
-        cmd = shlex.split(cmd)
-
     try:
-        if shell:
-            # Call create_subprocess_shell
-            proc = await asyncio.create_subprocess_shell(
-                cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                **kwargs
-            )
-        else:
-            # Call create_subprocess_exec
-            proc = await asyncio.create_subprocess_exec(
-                cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                **kwargs
-            )
+        proc = await run_command_asyncio(cmd, start_new_session=True, **kwargs)
         proc_stdout, proc_stderr = await asyncio.wait_for(
             proc.communicate(), timeout=timeout
         )
@@ -431,11 +445,11 @@ def run_command_async2(*args, check=False, **kwargs):
     started.
 
     :arg args: Any of the arguments that can be passed to
-        :func:`run_command_async`
+        :func:`run_command_process`
     :arg check: If true, flag the future with a :func:`SpawnedProcessError`
         exception, upon failure.
     :arg kwargs: Any of the keyword arguments that can be passed to
-        :func:`run_command_async`.
+        :func:`run_command_process`.
 
     .. versionadded:: 4.4
 
@@ -801,8 +815,8 @@ def git_repo_exists(url, timeout=5):
     '''
     try:
         os.environ['GIT_TERMINAL_PROMPT'] = '0'
-        run_command('git ls-remote -h %s' % url, check=True,
-                    timeout=timeout)
+        run_command_s('git ls-remote -h %s' % url, check=True,
+                      timeout=timeout)
     except (SpawnedProcessTimeout, SpawnedProcessError):
         return False
     else:
@@ -827,8 +841,8 @@ def git_repo_hash(commit='HEAD', short=True, wd='.'):
     try:
         # Do not log this command, since we need to call this function
         # from the logger
-        completed = run_command(f'git -C {wd} rev-parse {commit}',
-                                check=True, log=False)
+        completed = run_command_s(f'git -C {wd} rev-parse {commit}',
+                                  check=True, log=False)
     except (SpawnedProcessError, FileNotFoundError):
         return None
 
@@ -872,7 +886,7 @@ def expandvars(s):
     cmd = cmd_subst_m.groups()[0] or cmd_subst_m.groups()[1]
 
     # We need shell=True to support nested expansion
-    completed = run_command(cmd, check=True, shell=True)
+    completed = run_command_s(cmd, check=True, shell=True)
 
     # Prepare stdout for inline use
     stdout = completed.stdout.replace('\n', ' ').strip()

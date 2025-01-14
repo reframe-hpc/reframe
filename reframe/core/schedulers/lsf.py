@@ -20,7 +20,7 @@ from reframe.core.exceptions import JobSchedulerError
 from reframe.core.schedulers.pbs import PbsJobScheduler
 
 # Asynchronous _run_strict
-_run_strict = functools.partial(osext.run_command_asyncio, check=True)
+_run_strict = functools.partial(osext.run_command, check=True)
 
 
 @register_scheduler('lsf')

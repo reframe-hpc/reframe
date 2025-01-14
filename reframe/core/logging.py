@@ -959,7 +959,6 @@ _perf_logger = None
 global tasks_loggers
 tasks_loggers = {}
 
-global _global_logger
 _global_logger = null_logger
 
 
@@ -974,10 +973,11 @@ class logging_context:
         self._orig_logger = _global_logger
 
         self._level = level
-        self._context_logger = _global_logger
         if check is not None:
             self._context_logger = LoggerAdapter(_logger, check)
             self._context_logger.colorize = self._orig_logger.colorize
+        else:
+            self._context_logger = _global_logger
 
         if task:
             tasks_loggers[task] = self._context_logger
@@ -988,10 +988,10 @@ class logging_context:
         return self._context_logger
 
     def __exit__(self, exc_type, exc_value, traceback):
-        global _global_logger
         try:
             task = current_task()
         except RuntimeError:
+            global _global_logger
             task = None
 
         # Log any exceptions thrown with the current context logger

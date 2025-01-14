@@ -1745,7 +1745,8 @@ def main():
             sys.exit(1)
         else:
             sys.exit(0)
-    except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
+    except (Exception, KeyboardInterrupt, errors.KeyboardError,
+            errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
         message = f'run session stopped: {errors.what(*exc_info)}'

@@ -66,9 +66,9 @@ def slurm_state_pending(state):
 
 
 # Asynchronous _run_strict
-_run_strict = functools.partial(osext.run_command_asyncio, check=True)
+_run_strict = functools.partial(osext.run_command, check=True)
 # Synchronous _run_strict
-_run_strict_s = functools.partial(osext.run_command, check=True)
+_run_strict_s = functools.partial(osext.run_command_s, check=True)
 
 
 class _SlurmJob(sched.Job):
@@ -85,7 +85,7 @@ class _SlurmJob(sched.Job):
     def nodelist(self):
         # Generate the nodelist only after the job is finished
         if slurm_state_completed(self.state):
-            completed = osext.run_command(
+            completed = osext.run_command_s(
                 f'scontrol show hostname {self._nodespec}', log=False
             )
             self._nodelist = completed.stdout.splitlines()
@@ -327,7 +327,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             if partition_match:
                 return partition_match.group('partition')
 
-        except SpawnedProcessError as e:
+        except SpawnedProcessError:
             self.log('could not retrieve actual partition')
 
         return None
@@ -424,8 +424,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         return _create_nodes(node_descriptions)
 
     def _get_nodes_by_name(self, nodespec):
-        completed = osext.run_command('scontrol -a show -o node %s' %
-                                      nodespec)
+        completed = osext.run_command_s('scontrol -a show -o node %s' %
+                                        nodespec)
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
@@ -523,7 +523,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             return
 
         if not reasons:
-            completed = await osext.run_command_asyncio(
+            completed = await osext.run_command(
                 'squeue -h -j %s -o %%r' % job.jobid
             )
             reasons = completed.stdout.splitlines()
@@ -628,7 +628,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
         # We don't run the command with check=True, because if the job has
         # finished already, squeue might return an error about an invalid
         # job id.
-        completed = await osext.run_command_asyncio(
+        completed = await osext.run_command(
             f'squeue -h -j {",".join(job.jobid for job in jobs)} '
             f'-o "%%i|%%T|%%N|%%r"'
         )

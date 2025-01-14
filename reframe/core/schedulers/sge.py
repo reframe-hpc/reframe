@@ -21,9 +21,9 @@ from reframe.core.schedulers.pbs import PbsJobScheduler
 from reframe.utility import seconds_to_hms
 
 # Asynchronous _run_strict
-_run_strict = functools.partial(osext.run_command_asyncio, check=True)
+_run_strict = functools.partial(osext.run_command, check=True)
 # Synchronous _run_strict
-_run_strict_s = functools.partial(osext.run_command, check=True)
+_run_strict_s = functools.partial(osext.run_command_s, check=True)
 
 
 @register_scheduler('sge')
@@ -78,7 +78,7 @@ class SgeJobScheduler(PbsJobScheduler):
             return
 
         user = osext.osuser()
-        completed = await osext.run_command_asyncio(f'qstat -xml -u {user}')
+        completed = await osext.run_command(f'qstat -xml -u {user}')
         if completed.returncode != 0:
             raise JobSchedulerError(
                 f'qstat failed with exit code {completed.returncode} '

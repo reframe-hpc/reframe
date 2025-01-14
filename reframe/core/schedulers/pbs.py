@@ -37,9 +37,9 @@ PBS_CANCEL_DELAY = 3
 
 
 # Asynchronous _run_strict
-_run_strict = functools.partial(osext.run_command_asyncio, check=True)
+_run_strict = functools.partial(osext.run_command, check=True)
 # Synchronous _run_strict
-_run_strict_s = functools.partial(osext.run_command, check=True)
+_run_strict_s = functools.partial(osext.run_command_s, check=True)
 
 
 JOB_STATES = {
@@ -199,7 +199,7 @@ class PbsJobScheduler(sched.JobScheduler):
         '''Try to retrieve the exit code of a past job.'''
 
         # With PBS Pro we can obtain the exit status of a past job
-        extended_info = osext.run_command(f'qstat -xf {job.jobid}')
+        extended_info = osext.run_command_s(f'qstat -xf {job.jobid}')
         exit_status_match = re.search(
             r'^ *Exit_status *= *(?P<exit_status>\d+)', extended_info.stdout,
             flags=re.MULTILINE,
@@ -224,7 +224,7 @@ class PbsJobScheduler(sched.JobScheduler):
         if not jobs:
             return
 
-        completed = await osext.run_command_asyncio(
+        completed = await osext.run_command(
             f'qstat -f {" ".join(job.jobid for job in jobs)}'
         )
 

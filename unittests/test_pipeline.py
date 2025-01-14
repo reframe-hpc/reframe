@@ -1867,7 +1867,7 @@ def container_test(tmp_path):
 
 
 def _cray_cle_version():
-    completed = osext.run_command('cat /etc/opt/cray/release/cle-release')
+    completed = osext.run_command_s('cat /etc/opt/cray/release/cle-release')
     matched = re.match(r'^RELEASE=(\S+)', completed.stdout)
     if matched is None:
         return None

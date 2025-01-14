@@ -101,7 +101,7 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''
 
     @abc.abstractmethod
-    def submit(self, job):
+    async def submit(self, job):
         '''Submit a job.
 
         :arg job: A job descriptor.
@@ -109,7 +109,7 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''
 
     @abc.abstractmethod
-    def wait(self, job):
+    async def wait(self, job):
         '''Wait for a job to finish.
 
         :arg job: A job descriptor.
@@ -136,7 +136,7 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''
 
     @abc.abstractmethod
-    def poll(self, *jobs):
+    async def poll(self, *jobs):
         '''Poll all the requested jobs.
 
         :arg jobs: The job descriptors to poll.

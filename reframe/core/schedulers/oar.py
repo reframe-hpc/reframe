@@ -53,9 +53,9 @@ def oar_state_pending(state):
 
 
 # Asynchronous _run_strict
-_run_strict = functools.partial(osext.run_command_asyncio, check=True)
+_run_strict = functools.partial(osext.run_command, check=True)
 # Synchronous _run_strict
-_run_strict_s = functools.partial(osext.run_command, check=True)
+_run_strict_s = functools.partial(osext.run_command_s, check=True)
 
 
 @register_scheduler('oar')

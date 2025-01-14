@@ -64,7 +64,8 @@ class _PollController:
         self._num_polls = 0
         self._sleep_duration = None
         self._t_init = None
-        self._jobs_pool = []
+        self._t_snoozed = None
+        self._jobs_pool = {}
 
     def reset_snooze_time(self):
         self._sleep_duration = self.SLEEP_MIN
@@ -72,7 +73,9 @@ class _PollController:
     async def snooze(self):
         if self._num_polls == 0:
             self._t_init = time.time()
+            self._t_snoozed = time.time()
 
+        t_increase_sleep = time.time() - self._t_snoozed
         t_elapsed = time.time() - self._t_init
         self._num_polls += 1
         poll_rate = self._num_polls / t_elapsed if t_elapsed else math.inf
@@ -81,25 +84,32 @@ class _PollController:
             f'(current poll rate: {poll_rate} polls/s)'
         )
         await asyncio.sleep(self._sleep_duration)
-        self._sleep_duration = min(
-            self._sleep_duration*self.SLEEP_INC_RATE, self.SLEEP_MAX
-        )
+        if t_increase_sleep > self._sleep_duration:
+            self._t_snoozed = time.time()
+            self._sleep_duration = min(
+                self._sleep_duration*self.SLEEP_INC_RATE, self.SLEEP_MAX
+            )
 
     def is_time_to_poll(self):
         # We check here if it's time to poll
         if self._num_polls == 0:
-            self._t_init = time.time()
+            if self._t_init is None:
+                self._t_init = time.time()
+                self._t_snoozed = time.time()
+                self._num_polls += 1
+                return True
 
         t_elapsed = time.time() - self._t_init
 
-        self._num_polls += 1
         if t_elapsed >= self._sleep_duration:
+            self._num_polls += 1
             return True
         else:
             return False
 
     def reset_time_to_poll(self):
         self._t_init = time.time()
+        self._t_snoozed = time.time()
 
 
 global _poll_controller
@@ -124,7 +134,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.task_listeners.append(self)
 
     async def _runcase(self, case):
-        super()._runcase(case)
         check, partition, _ = case
         task = RegressionTask(case, self.task_listeners)
         if check.is_dry_run():
@@ -300,7 +309,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             try:
                 loop.run_until_complete(self._runcase(case))
             except (Exception, KeyboardInterrupt) as e:
-                if type(e) in ABORT_REASONS or isinstance(e, KeyboardError):
+                if type(e) in ABORT_REASONS:
                     for task in all_tasks(loop):
                         if isinstance(task, asyncio.tasks.Task):
                             task.cancel()
@@ -357,7 +366,6 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # I needed to do abortall on all the tests, not only the ones
         # which were initiated by the execution. Exit gracefully
         # the execuion loop aborting all the tasks
-        super()._runcase(case)
         check, partition, _ = case
         # task = RegressionTask(case, self.task_listeners)
         if check.is_dry_run():
@@ -416,9 +424,28 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 await asyncio.sleep(2)
             self._partition_tasks[partname].add(task)
             await task.compile()
+            if task.check.build_job:
+                # Pick the right scheduler
+                if task.check.build_locally:
+                    sched = self.local_scheduler
+                else:
+                    sched = partition.scheduler
+
+                while True:
+                    if not self.dry_run_mode:
+                        if getpollcontroller().is_time_to_poll():
+                            getpollcontroller().reset_time_to_poll()
+                            await sched.poll(*getpollcontroller()._jobs_pool[
+                                sched.registered_name
+                            ])
+
+                    if task.compile_complete():
+                        break
+                    await self._pollctl.snooze()
+                    if task.compile_complete():
+                        break
             await task.compile_wait()
             self._partition_tasks[partname].remove(task)
-            task.compile_complete()
             partname = _get_partition_name(task, phase='run')
             max_jobs = self._max_jobs[partname]
             while len(self._partition_tasks[partname])+1 > max_jobs:
@@ -436,12 +463,15 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 if not self.dry_run_mode:
                     if getpollcontroller().is_time_to_poll():
                         getpollcontroller().reset_time_to_poll()
-                        await sched.poll(*getpollcontroller()._jobs_pool)
+                        await sched.poll(*getpollcontroller()._jobs_pool[
+                            sched.registered_name
+                        ])
 
                 if task.run_complete():
                     break
-
                 await self._pollctl.snooze()
+                if task.run_complete():
+                    break
 
             await task.run_wait()
             self._partition_tasks[partname].remove(task)
@@ -530,20 +560,45 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_run(self, task):
-        getpollcontroller()._jobs_pool.append(task.check.job)
+        if task.check.job:
+            if getpollcontroller()._jobs_pool.get(
+                task.check.job.scheduler.registered_name
+            ):
+                getpollcontroller()._jobs_pool[
+                    task.check.job.scheduler.registered_name
+                ].append(task.check.job)
+            else:
+                getpollcontroller()._jobs_pool[
+                    task.check.job.scheduler.registered_name
+                ] = [task.check.job]
 
     def on_task_compile(self, task):
-        # getpollcontroller()._jobs_pool.append(task.check.job)
-        # print("Add compile", task.check.job.name)
-        pass
+        if task.check.build_job:
+            if getpollcontroller()._jobs_pool.get(
+                task.check.build_job.scheduler.registered_name
+            ):
+                getpollcontroller()._jobs_pool[
+                    task.check.build_job.scheduler.registered_name
+                ].append(task.check.build_job)
+            else:
+                getpollcontroller()._jobs_pool[
+                    task.check.build_job.scheduler.registered_name
+                ] = [task.check.build_job]
 
     def on_task_exit(self, task):
-        getpollcontroller()._jobs_pool.remove(task.check.job)
+        if task.check.job:
+            getpollcontroller()._jobs_pool[
+                task.check.job.scheduler.registered_name
+            ].remove(task.check.job)
+            getpollcontroller().reset_snooze_time()
 
     def on_task_compile_exit(self, task):
-        # getpollcontroller()._jobs_pool.remove(task.check.job)
-        # print("Remove compile", task.check.job.name)
-        pass
+        if task.check.build_job:
+            getpollcontroller().reset_snooze_time()
+            getpollcontroller()._jobs_pool[
+                task.check.build_job.scheduler.registered_name
+            ].remove(
+                task.check.build_job)
 
     def on_task_skip(self, task):
         msg = str(task.exc_info[1])
@@ -629,7 +684,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # Wait for tasks until the first failure
             loop.run_until_complete(self._execute_until_failure(all_cases))
         except (Exception, KeyboardInterrupt) as e:
-            if type(e) in ABORT_REASONS or isinstance(e, KeyboardError):
+            if type(e) in ABORT_REASONS:
                 loop.run_until_complete(_cancel_gracefully(all_cases))
                 try:
                     raise AbortTaskError
@@ -645,7 +700,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._exit()
 
     async def _execute_until_failure(self, all_cases):
-        """Wait for tasks to complete or fail, stopping at the first failure."""
+        """Wait for tasks to complete or fail, stopping at the first failure.
+        """
         while all_cases:
             done, all_cases = await asyncio.wait(
                 all_cases, return_when=asyncio.FIRST_COMPLETED
@@ -662,7 +718,8 @@ async def _cancel_gracefully(all_cases):
 
 
 def all_tasks(loop):
-    """Wrapper for asyncio.current_task() compatible with Python 3.6 and later."""
+    """Wrapper for asyncio.current_task() compatible with Python 3.6 and later.
+    """
     if sys.version_info >= (3, 7):
         # Use asyncio.current_task() directly in Python 3.7+
         return asyncio.all_tasks(loop)

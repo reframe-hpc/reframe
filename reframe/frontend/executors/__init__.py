@@ -24,6 +24,7 @@ from reframe.core.exceptions import (AbortTaskError,
                                      JobNotStartedError,
                                      FailureLimitError,
                                      ForceExitError,
+                                     KeyboardError,
                                      RunSessionTimeout,
                                      SkipTestError,
                                      StatisticsError,
@@ -31,7 +32,7 @@ from reframe.core.exceptions import (AbortTaskError,
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 
-ABORT_REASONS = (AssertionError, FailureLimitError,
+ABORT_REASONS = (AssertionError, FailureLimitError, KeyboardError,
                  KeyboardInterrupt, ForceExitError, RunSessionTimeout)
 
 
@@ -800,16 +801,8 @@ class ExecutionPolicy(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _runcase(self, case):
-        '''Run a test case.'''
-
     def execute(self, testcases):
-        '''Execute the policy for a given set of testcases.'''
-        # Moved here the execution
-        for t in testcases:
-            self._runcase(t)
-
-        self._exit()
+        '''Execute the policy for a given set of testcases and exit.'''
 
 
 def asyncio_run(coro):

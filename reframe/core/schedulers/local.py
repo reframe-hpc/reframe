@@ -62,7 +62,7 @@ class LocalJobScheduler(sched.JobScheduler):
         # The new process starts also a new session (session leader), so that
         # we can later kill any other processes that this might spawn by just
         # killing this one.
-        proc = await osext.run_command_asyncio_alone(
+        proc = await osext.run_command_asyncio(
             os.path.abspath(job.script_filename),
             stdout=f_stdout,
             stderr=f_stderr,
@@ -200,7 +200,7 @@ class LocalJobScheduler(sched.JobScheduler):
             await self._poll_job(job)
 
     async def _poll_job(self, job):
-        if job is None or job.jobid is None:
+        if (job is None or job.jobid is None or job.finished()):
             return
 
         if job.cancel_time:
