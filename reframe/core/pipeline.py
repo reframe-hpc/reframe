@@ -2310,8 +2310,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             return
 
         # Check the performance variables against their references.
+        errors = []
         for key, values in self._perfvalues.items():
-            val, ref, low_thres, high_thres, *_ = values
+            val, ref, low_thres, high_thres, unit = values
 
             # Verify that val is a number
             if not isinstance(val, numbers.Number):
@@ -2325,11 +2326,22 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 sn.evaluate(
                     sn.assert_reference(
                         val, ref, low_thres, high_thres,
-                        msg=('failed to meet reference: %s={0}, '
-                             'expected {1} (l={2}, u={3})' % tag))
+                        msg=(f'{tag}={{0}} {unit}, expected {{1}} '
+                             '(l={2}, u={3})'))
                 )
             except SanityError as e:
-                raise PerformanceError(e) from None
+                errors.append(e.message)
+
+        # Combine all error messages to a single `PerformanceError` containing
+        # the information of all failed performance variables
+        if errors:
+            msg = 'failed to meet references:'
+            if len(errors) > 1:
+                msg += '\n\t'
+            else:
+                msg += ' '
+
+            raise PerformanceError(msg + '\n\t'.join(errors))
 
     def _copy_job_files(self, job, dst):
         if job is None:
