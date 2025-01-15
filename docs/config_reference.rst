@@ -1603,9 +1603,9 @@ This handler transmits the whole log record, meaning that all the information wi
 
    .. versionadded:: 4.1
 
-.. py:attribute:: logging.handlers_perflog..httpjson..sleep_times
+.. py:attribute:: logging.handlers_perflog..httpjson..sleep_intervals
 
-   In the case that the http request gets a response 429 (TOO_MANY_REQUESTS), Reframe will cycle over this list of sleep times until it succeeds, gets a different code or exceeds the timeout (when it is set).
+   In the case that the http request gets a response 429 (TOO_MANY_REQUESTS), Reframe will cycle over this list of sleep waiting intervals until it gets a different code or exceeds the timeout (when it is set).
 
    .. versionadded:: 4.7.3
 

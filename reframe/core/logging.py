@@ -555,7 +555,7 @@ def _create_httpjson_handler(site_config, config_prefix):
     json_formatter = site_config.get(f'{config_prefix}/json_formatter')
     extra_headers = site_config.get(f'{config_prefix}/extra_headers')
     debug = site_config.get(f'{config_prefix}/debug')
-    sleep_times = site_config.get(f'{config_prefix}/sleep_times')
+    sleep_intervals = site_config.get(f'{config_prefix}/sleep_intervals')
     timeout = site_config.get(f'{config_prefix}/timeout')
 
     parsed_url = urllib.parse.urlparse(url)
@@ -598,7 +598,7 @@ def _create_httpjson_handler(site_config, config_prefix):
                             'no data will be sent to the server')
 
     return HTTPJSONHandler(url, extras, ignore_keys, json_formatter,
-                           extra_headers, debug, sleep_times, timeout)
+                           extra_headers, debug, sleep_intervals, timeout)
 
 
 def _record_to_json(record, extras, ignore_keys):
@@ -648,7 +648,7 @@ class HTTPJSONHandler(logging.Handler):
 
     def __init__(self, url, extras=None, ignore_keys=None,
                  json_formatter=None, extra_headers=None,
-                 debug=False, sleep_times=[.1, .2, .4, .8, 1.6, 3.2],
+                 debug=False, sleep_intervals=[.1, .2, .4, .8, 1.6, 3.2],
                  timeout=0):
         super().__init__()
         self._url = url
@@ -674,7 +674,7 @@ class HTTPJSONHandler(logging.Handler):
 
         self._debug = debug
         self._timeout = timeout
-        self._sleep_times = sleep_times
+        self._sleep_intervals = sleep_intervals
 
     def emit(self, record):
         # Convert tags to a list to make them JSON friendly
@@ -695,7 +695,7 @@ class HTTPJSONHandler(logging.Handler):
 
         timeout_time = time.time() + self._timeout
         try:
-            sleep_times = itertools.cycle(self._sleep_times)
+            sleep_intervals = itertools.cycle(self._sleep_intervals)
             while True:
                 response = requests.post(
                     self._url, data=json_record,
@@ -711,7 +711,7 @@ class HTTPJSONHandler(logging.Handler):
                         time.time() < timeout_time
                     )
                 ):
-                    time.sleep(next(sleep_times))
+                    time.sleep(next(sleep_intervals))
                     continue
 
                 raise LoggingError(
