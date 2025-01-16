@@ -1603,19 +1603,24 @@ This handler transmits the whole log record, meaning that all the information wi
 
    .. versionadded:: 4.1
 
-.. py:attribute:: logging.handlers_perflog..httpjson..sleep_intervals
 
-   In the case that the http request gets a response 429 (TOO_MANY_REQUESTS), Reframe will cycle over this list of sleep waiting intervals until it gets a different code or exceeds the timeout (when it is set).
+.. py:attribute:: logging.handlers_perflog..httpjson..backoff_intervals
+
+   List of wait intervals in seconds when server responds with HTTP error 429 (``TOO_MANY_REQUESTS``).
+
+   In this case, ReFrame will retry contacting the server after waiting an amount of time that is determined by cyclically iterating this list of intervals.
+
+   ReFrame will keep trying contacting the server, until a different HTTP resonse is received (either success or error) or the corresponding :attr:`~config.logging.handlers_perflog..httpjson..timeout` is exceeded.
 
    .. versionadded:: 4.7.3
+
 
 .. py:attribute:: logging.handlers_perflog..httpjson..timeout
 
-   In the case that the http request gets a response 429 (TOO_MANY_REQUESTS), Reframe will keep trying until it succeeds, gets a different error or exceeds the timeout (in seconds).
-   When this parameter is set to 0, Reframe will keep retrying until it gets a different status code.
+   Timeout in seconds for retrying when server responds with HTTP error 429 (``TOO_MANY_REQUESTS``).
+
 
    .. versionadded:: 4.7.3
-
 
 
 .. _exec-mode-config:
