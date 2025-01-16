@@ -556,7 +556,7 @@ def _create_httpjson_handler(site_config, config_prefix):
     extra_headers = site_config.get(f'{config_prefix}/extra_headers')
     debug = site_config.get(f'{config_prefix}/debug')
     backoff_intervals = site_config.get(f'{config_prefix}/backoff_intervals')
-    timeout = site_config.get(f'{config_prefix}/timeout')
+    retry_timeout = site_config.get(f'{config_prefix}/retry_timeout')
 
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.scheme not in {'http', 'https'}:
@@ -598,7 +598,8 @@ def _create_httpjson_handler(site_config, config_prefix):
                             'no data will be sent to the server')
 
     return HTTPJSONHandler(url, extras, ignore_keys, json_formatter,
-                           extra_headers, debug, backoff_intervals, timeout)
+                           extra_headers, debug, backoff_intervals,
+                           retry_timeout)
 
 
 def _record_to_json(record, extras, ignore_keys):
@@ -648,7 +649,7 @@ class HTTPJSONHandler(logging.Handler):
 
     def __init__(self, url, extras=None, ignore_keys=None,
                  json_formatter=None, extra_headers=None,
-                 debug=False, backoff_intervals=(1, 2, 3), timeout=0):
+                 debug=False, backoff_intervals=(1, 2, 3), retry_timeout=0):
         super().__init__()
         self._url = url
         self._extras = extras
@@ -672,7 +673,7 @@ class HTTPJSONHandler(logging.Handler):
             self._headers.update(extra_headers)
 
         self._debug = debug
-        self._timeout = timeout
+        self._timeout = retry_timeout
         self._backoff_intervals = backoff_intervals
 
     def emit(self, record):
