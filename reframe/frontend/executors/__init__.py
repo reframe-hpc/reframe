@@ -389,7 +389,7 @@ class RegressionTask:
                 self.skip()
                 raise TaskExit from e
         except ABORT_REASONS:
-            self.fail()
+            # self.fail()
             raise
         except BaseException as e:
             self.fail()
@@ -431,7 +431,7 @@ class RegressionTask:
                 self.skip()
                 raise TaskExit from e
         except ABORT_REASONS:
-            self.fail()
+            # self.fail()
             raise
         except BaseException as e:
             self.fail()
@@ -557,6 +557,9 @@ class RegressionTask:
         try:
             if not self.zombie and self.check.job:
                 self.check.job.cancel()
+            # The abort can also happen during a compile job
+            if  self.check.build_job:
+                self.check.build_job.cancel()
         except JobNotStartedError:
             self.fail((type(exc), exc, None), 'on_task_abort')
         except BaseException:

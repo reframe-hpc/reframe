@@ -352,7 +352,7 @@ def is_severe(exc_type, exc_value, tb):
 def is_warning(exc_type, exc_value, tb):
     '''Check whether this exception can be treated as warning'''
 
-    return isinstance(exc_value, (RunSessionTimeout, KeyboardInterrupt))
+    return isinstance(exc_value, (RunSessionTimeout, KeyboardInterrupt, KeyboardError))
 
 
 def what(exc_type, exc_value, tb):
@@ -364,7 +364,7 @@ def what(exc_type, exc_value, tb):
     reason = utility.decamelize(exc_type.__name__, ' ')
 
     # We need frame information for user type and value errors
-    if isinstance(exc_value, KeyboardInterrupt):
+    if isinstance(exc_value, KeyboardInterrupt) or isinstance(exc_value, KeyboardError):
         reason = 'cancelled by user'
     elif isinstance(exc_value, AbortTaskError):
         reason = f'aborted due to {type(exc_value.__cause__).__name__}'
