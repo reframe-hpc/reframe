@@ -389,7 +389,7 @@ class RegressionTask:
                 self.skip()
                 raise TaskExit from e
         except ABORT_REASONS:
-            # self.fail()
+            self.fail()
             raise
         except BaseException as e:
             self.fail()
@@ -431,7 +431,7 @@ class RegressionTask:
                 self.skip()
                 raise TaskExit from e
         except ABORT_REASONS:
-            # self.fail()
+            self.fail()
             raise
         except BaseException as e:
             self.fail()
