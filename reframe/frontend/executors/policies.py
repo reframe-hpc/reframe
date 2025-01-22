@@ -62,54 +62,58 @@ class _PollController:
 
     def __init__(self):
         self._num_polls = 0
-        self._sleep_duration = None
-        self._t_init = None
-        self._t_snoozed = None
+        self._sleep_duration = {}
+        self._t_init = {}
+        self._t_snoozed = {}
         self._jobs_pool = {}
+        self._event_compile = asyncio.Event()
+        self._event_run = asyncio.Event()
 
-    def reset_snooze_time(self):
-        self._sleep_duration = self.SLEEP_MIN
+    def reset_snooze_time(self, sched):
+        if self._sleep_duration.get(sched) is None:
+            self._sleep_duration[sched] = self.SLEEP_MIN
 
-    async def snooze(self):
+    async def snooze(self, sched):
         if self._num_polls == 0:
-            self._t_init = time.time()
-            self._t_snoozed = time.time()
+            self._t_init[sched] = time.time()
+            self._t_snoozed[sched] = time.time()
 
-        t_increase_sleep = time.time() - self._t_snoozed
-        t_elapsed = time.time() - self._t_init
-        self._num_polls += 1
+        t_elapsed = time.time() - self._t_init[sched]
         poll_rate = self._num_polls / t_elapsed if t_elapsed else math.inf
         getlogger().debug2(
-            f'Poll rate control: sleeping for {self._sleep_duration}s '
+            f'Poll rate control: sleeping for {self._sleep_duration[sched]}s '
             f'(current poll rate: {poll_rate} polls/s)'
         )
-        await asyncio.sleep(self._sleep_duration)
-        if t_increase_sleep > self._sleep_duration:
-            self._t_snoozed = time.time()
-            self._sleep_duration = min(
-                self._sleep_duration*self.SLEEP_INC_RATE, self.SLEEP_MAX
-            )
+        await asyncio.sleep(self._sleep_duration[sched])
 
-    def is_time_to_poll(self):
+    def is_time_to_poll(self, sched):
+        # print(self._num_polls, sched)
         # We check here if it's time to poll
-        if self._num_polls == 0:
-            if self._t_init is None:
-                self._t_init = time.time()
-                self._t_snoozed = time.time()
-                self._num_polls += 1
-                return True
+        # if self._num_polls == 0:
+        if self._t_init.get(sched) is None:
+            self._t_init[sched] = time.time()
+            self._t_snoozed[sched] = time.time()
+            self._num_polls += 1
+            return True
 
-        t_elapsed = time.time() - self._t_init
+        t_elapsed = time.time() - self._t_init[sched]
+        getlogger().debug(f'Time since last poll: {t_elapsed}, {self._sleep_duration[sched]}')
 
-        if t_elapsed >= self._sleep_duration:
+        if t_elapsed >= self._sleep_duration[sched]:
             self._num_polls += 1
             return True
         else:
             return False
 
-    def reset_time_to_poll(self):
-        self._t_init = time.time()
-        self._t_snoozed = time.time()
+    def reset_time_to_poll(self, sched):
+        t_increase_sleep = time.time() - self._t_snoozed[sched]
+        if t_increase_sleep > self._sleep_duration[sched]:
+            self._t_snoozed[sched] = time.time()
+            self._sleep_duration[sched] = min(
+                self._sleep_duration[sched]*self.SLEEP_INC_RATE, self.SLEEP_MAX
+            )
+        self._t_init[sched] = time.time()
+        self._t_snoozed[sched] = time.time()
 
 
 global _poll_controller
@@ -173,15 +177,14 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             else:
                 sched = partition.scheduler
 
-            self._pollctl.reset_snooze_time()
+            self._pollctl.reset_snooze_time(sched.registered_name)
             while True:
                 if not self.dry_run_mode:
                     await sched.poll(task.check.job)
                 if task.run_complete():
                     break
 
-                await self._pollctl.snooze()
-
+                await self._pollctl.snooze(sched.registered_name)
             await task.run_wait()
             if not self.skip_sanity_check:
                 task.sanity()
@@ -342,7 +345,6 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         super().__init__()
 
         self._pollctl = getpollcontroller()
-        self._pollctl.reset_snooze_time()
         self._current_tasks = util.OrderedSet()
 
         # Index tasks by test cases
@@ -477,19 +479,22 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 else:
                     sched = partition.scheduler
 
+                self._pollctl.reset_snooze_time(sched.registered_name)
                 while True:
                     if not self.dry_run_mode:
-                        if getpollcontroller().is_time_to_poll():
-                            getpollcontroller().reset_time_to_poll()
+                        if (getpollcontroller().is_time_to_poll(sched.registered_name)):
+                            getpollcontroller().reset_time_to_poll(sched.registered_name)
                             await sched.poll(*getpollcontroller()._jobs_pool[
                                 sched.registered_name
                             ])
 
                     if task.compile_complete():
                         break
-                    await self._pollctl.snooze()
+                    await self._pollctl.snooze(sched.registered_name)
                     if task.compile_complete():
                         break
+                    else:
+                        await asyncio.sleep(0)
                     # We need to check the timeout inside the while loop
                     if self.timeout_expired():
                         raise RunSessionTimeout(
@@ -511,19 +516,23 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 else:
                     sched = partition.scheduler
 
+                self._pollctl.reset_snooze_time(sched.registered_name)
                 while True:
+                    await asyncio.sleep(0)
                     if not self.dry_run_mode:
-                        if getpollcontroller().is_time_to_poll():
-                            getpollcontroller().reset_time_to_poll()
+                        if (getpollcontroller().is_time_to_poll(sched.registered_name)):
+                            getpollcontroller().reset_time_to_poll(sched.registered_name)
                             await sched.poll(*getpollcontroller()._jobs_pool[
                                 sched.registered_name
                             ])
 
                     if task.run_complete():
                         break
-                    await self._pollctl.snooze()
+                    await self._pollctl.snooze(sched.registered_name)
                     if task.run_complete():
                         break
+                    else:
+                        await asyncio.sleep(0)
                     if self.timeout_expired():
                         raise RunSessionTimeout(
                             'maximum session duration exceeded'
@@ -614,11 +623,11 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # (after having cancelled all the jobs spawned by the task)
         # WARNING SOMETIMES THE JOBS ARE NOT KILLED CORRECTLY
         for task in all_tasks(asyncio.get_event_loop()):
-                if isinstance(task, asyncio.tasks.Task):
-                    try:
-                        task.cancel()
-                    except RuntimeError:
-                        pass
+            if isinstance(task, asyncio.tasks.Task):
+                try:
+                    task.cancel()
+                except RuntimeError:
+                    pass
 
 
     def on_task_setup(self, task):
@@ -655,11 +664,11 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             getpollcontroller()._jobs_pool[
                 task.check.job.scheduler.registered_name
             ].remove(task.check.job)
-            getpollcontroller().reset_snooze_time()
+            getpollcontroller().reset_snooze_time(task.check.job.scheduler.registered_name)
 
     def on_task_compile_exit(self, task):
         if task.check.build_job:
-            getpollcontroller().reset_snooze_time()
+            getpollcontroller().reset_snooze_time(task.check.build_job.scheduler.registered_name)
             getpollcontroller()._jobs_pool[
                 task.check.build_job.scheduler.registered_name
             ].remove(

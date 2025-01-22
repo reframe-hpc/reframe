@@ -9,6 +9,7 @@
 
 import asyncio
 import collections.abc
+import datetime
 import errno
 import getpass
 import grp
@@ -22,6 +23,7 @@ import signal
 import sys
 import subprocess
 import tempfile
+import time
 from urllib.parse import urlparse
 
 import reframe
@@ -414,15 +416,53 @@ async def run_command(cmd, check=False, timeout=None, **kwargs):
 
     '''
     try:
-        proc = await run_command_asyncio(cmd, start_new_session=True, **kwargs)
+        from reframe.core.logging import getlogger
+        getlogger().debug(f"START: {cmd} launching at {datetime.datetime.now()}")
+        ## Synchronous command launch ----------------------------------------
+        # t_start = time.time()
+        # proc = run_command_process(cmd, start_new_session=True, **kwargs)
+        # t_start = time.time()
+        ## Asynchronous command launch ----------------------------------------
+        proc = await run_command_asyncio(cmd, start_new_session=False, **kwargs)
+        await asyncio.sleep(0)
+        ## Asynchronous command communication ----------------------------------------
+        t_start = time.time()
         proc_stdout, proc_stderr = await asyncio.wait_for(
             proc.communicate(), timeout=timeout
         )
+        ## Synchronous command communication ----------------------------------------
+        # t_end = time.time()
+        # getlogger().debug(f"INFO: {cmd} launch command took: {t_end-t_start}")
+        # t_start = time.time()
+        # loop = asyncio.get_event_loop()
+        # try:
+        #     proc_stdout, proc_stderr = await loop.run_in_executor(None, proc.communicate, timeout)
+        # except concurrent.futures._base.CancelledError:
+        #     raise KeyboardInterrupt
+        t_end = time.time()
+        getlogger().debug(f"INFO: {cmd} command took: {t_end-t_start}")
     except asyncio.TimeoutError as e:
-        os.killpg(proc.pid, signal.SIGKILL)
-        raise SpawnedProcessTimeout(e.cmd,
-                                    proc.stdout.read(),
-                                    proc.stderr.read(), timeout) from None
+        from reframe.core.logging import getlogger
+        t_end = time.time()
+        getlogger().debug(f"INFO: {cmd} command took: {t_end-t_start}")
+        try:
+            # Get the process with psutil because we need to cancel the group
+            p = psutil.Process(proc.pid)
+            # Get the children of this group
+            children = p.children(recursive=True)
+        except (psutil.NoSuchProcess, ProcessLookupError):
+            children = []
+        try:
+            for child in children:
+                if child.is_running():
+                    child.send_signal(signal.SIGKILL)
+            proc.send_signal(signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+        proc_stdout, proc_stderr = await proc.communicate()
+        raise SpawnedProcessTimeout(cmd,
+                                    proc_stdout.decode(),
+                                    proc_stderr.decode(), timeout) from None
 
     completed = subprocess.CompletedProcess(cmd,
                                             returncode=proc.returncode,
@@ -747,12 +787,6 @@ class change_dir:
         os.chdir(self._dir_name)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        os.chdir(self._wd_save)
-
-    async def __aenter__(self):
-        os.chdir(self._dir_name)
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
         os.chdir(self._wd_save)
 
 

@@ -417,7 +417,6 @@ def valid_sysenv_comb(valid_systems, valid_prog_environs,
 
 class temp_environment:
     '''Context manager to temporarily change the environment.'''
-    # TODO: Do we need to change something here? context management asyncio
 
     def __init__(self, modules=None, env_vars=None):
         self._modules = modules or []

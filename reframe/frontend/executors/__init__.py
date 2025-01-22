@@ -474,7 +474,6 @@ class RegressionTask:
 
     @logging.time_function
     async def run(self):
-        # QUESTION: should I change the order here?
         await self._safe_call_asyncio(self.check.run)
         self._notify_listeners('on_task_run')
 
@@ -555,8 +554,6 @@ class RegressionTask:
         exc = AbortTaskError()
         exc.__cause__ = cause
         try:
-            if not self.zombie and self.check.job:
-                self.check.job.cancel()
             # The abort can also happen during a compile job
             if  self.check.build_job:
                 self.check.build_job.cancel()
@@ -566,6 +563,20 @@ class RegressionTask:
             self.fail()
         else:
             self.fail((type(exc), exc, None), 'on_task_abort')
+
+        try:
+            if not self.zombie and self.check.job:
+                self.check.job.cancel()
+        except JobNotStartedError:
+            if not self.failed:
+                self.fail((type(exc), exc, None), 'on_task_abort')
+        except BaseException:
+            if not self.failed:
+                self.fail()
+        else:
+            if not self.failed:
+                self.fail((type(exc), exc, None), 'on_task_abort')
+
         self._aborted = True
 
     def info(self):
