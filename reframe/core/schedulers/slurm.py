@@ -706,7 +706,8 @@ class _SlurmNode(sched.Node):
             'ALLOCATED',
             'COMPLETING',
             'IDLE',
-            'RESERVED',
+            'PLANNED',
+            'RESERVED'
         }
         return self._states <= available_states
 

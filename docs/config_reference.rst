@@ -1608,6 +1608,32 @@ This handler transmits the whole log record, meaning that all the information wi
    .. versionadded:: 4.1
 
 
+.. py:attribute:: logging.handlers_perflog..httpjson..backoff_intervals
+
+   :required: No
+   :default: ``[0.1, 0.2, 0.4, 0.8, 1.6, 3.2]``
+
+   List of wait intervals in seconds when server responds with HTTP error 429 (``TOO_MANY_REQUESTS``).
+
+   In this case, ReFrame will retry contacting the server after waiting an amount of time that is determined by cyclically iterating this list of intervals.
+
+   ReFrame will keep trying contacting the server, until a different HTTP resonse is received (either success or error) or the corresponding :attr:`~config.logging.handlers_perflog..httpjson..timeout` is exceeded.
+
+   .. versionadded:: 4.7.3
+
+
+.. py:attribute:: logging.handlers_perflog..httpjson..retry_timeout
+
+   :required: No
+   :default: ``0``
+
+   Timeout in seconds for retrying when server responds with HTTP error 429 (``TOO_MANY_REQUESTS``).
+
+   If set to zero, ReFrame will retry until another HTTP response (success or error) is received.
+
+
+   .. versionadded:: 4.7.3
+
 
 .. _exec-mode-config:
 
