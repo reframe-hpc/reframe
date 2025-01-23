@@ -6,11 +6,7 @@
 import os
 import sys
 
-<<<<<<< HEAD
 VERSION = '4.8.0-dev.2'
-=======
-VERSION = '4.7.3'
->>>>>>> master
 INSTALL_PREFIX = os.path.normpath(
     os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 )
