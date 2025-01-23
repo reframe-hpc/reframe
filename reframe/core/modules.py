@@ -597,7 +597,7 @@ class TModImpl(ModulesSystemImpl):
     def _do_validate(self):
         # Try to figure out if we are indeed using the TCL version
         try:
-            completed = osext.run_command('modulecmd -V')
+            completed = osext.run_command_s('modulecmd -V')
         except OSError as e:
             raise ConfigError(
                 'could not find a sane TMod installation') from e
@@ -626,7 +626,7 @@ class TModImpl(ModulesSystemImpl):
         self._version = version
         try:
             # Try the Python bindings now
-            completed = osext.run_command(self.modulecmd())
+            completed = osext.run_command_s(self.modulecmd())
         except OSError as e:
             raise ConfigError(
                 f'could not get the Python bindings for TMod: {e}'
@@ -653,7 +653,7 @@ class TModImpl(ModulesSystemImpl):
             self._do_validate()
 
         modulecmd = self.modulecmd(cmd, *args)
-        completed = osext.run_command(modulecmd)
+        completed = osext.run_command_s(modulecmd)
         if re.search(r'\bERROR\b', completed.stderr) is not None:
             raise SpawnedProcessError(modulecmd,
                                       completed.stdout,
@@ -746,7 +746,7 @@ class TMod31Impl(TModImpl):
         try:
             modulecmd = os.getenv('MODULESHOME')
             modulecmd = os.path.join(modulecmd, 'modulecmd.tcl')
-            completed = osext.run_command(modulecmd)
+            completed = osext.run_command_s(modulecmd)
         except OSError as e:
             raise ConfigError(
                 f'could not find a sane TMod31 installation: {e}'
@@ -776,7 +776,7 @@ class TMod31Impl(TModImpl):
         self._command = f'{modulecmd} python'
         try:
             # Try the Python bindings now
-            completed = osext.run_command(self._command)
+            completed = osext.run_command_s(self._command)
         except OSError as e:
             raise ConfigError(
                 f'could not get the Python bindings for TMod31: {e}'
@@ -800,7 +800,7 @@ class TMod31Impl(TModImpl):
             self._do_validate()
 
         modulecmd = self.modulecmd(cmd, *args)
-        completed = osext.run_command(modulecmd)
+        completed = osext.run_command_s(modulecmd)
         if re.search(r'\bERROR\b', completed.stderr) is not None:
             raise SpawnedProcessError(modulecmd,
                                       completed.stdout,
@@ -833,7 +833,7 @@ class TMod4Impl(TModImpl):
 
     def _do_validate(self):
         try:
-            completed = osext.run_command(self.modulecmd('-V'), check=True)
+            completed = osext.run_command_s(self.modulecmd('-V'), check=True)
         except OSError as e:
             raise ConfigError(
                 'could not find a sane TMod4 installation'
@@ -877,7 +877,7 @@ class TMod4Impl(TModImpl):
             self._do_validate()
 
         modulecmd = self.modulecmd(cmd, *args)
-        completed = osext.run_command(modulecmd, check=False)
+        completed = osext.run_command_s(modulecmd, check=False)
         namespace = {}
         exec(self.process(completed.stdout), {}, namespace)
 
@@ -977,7 +977,7 @@ class LModImpl(TMod4Impl):
                               'environment variable LMOD_CMD is not defined')
 
         try:
-            completed = osext.run_command(f'{self._lmod_cmd} --version')
+            completed = osext.run_command_s(f'{self._lmod_cmd} --version')
         except OSError as e:
             raise ConfigError(f'could not find a sane Lmod installation: {e}')
 
@@ -989,7 +989,7 @@ class LModImpl(TMod4Impl):
         self._version = version_match.group(1)
         try:
             # Try the Python bindings now
-            completed = osext.run_command(self.modulecmd())
+            completed = osext.run_command_s(self.modulecmd())
         except OSError as e:
             raise ConfigError(
                 f'could not get the Python bindings for Lmod: {e}'
@@ -1159,7 +1159,7 @@ class SpackImpl(ModulesSystemImpl):
     def _do_validate(self):
         # Try to figure out if we are indeed using the TCL version
         try:
-            completed = osext.run_command('spack -V')
+            completed = osext.run_command_s('spack -V')
         except OSError as e:
             raise ConfigError(
                 'could not find a sane Spack installation'
@@ -1182,7 +1182,7 @@ class SpackImpl(ModulesSystemImpl):
             self._do_validate()
 
         modulecmd = self.modulecmd(cmd, *args)
-        completed = osext.run_command(modulecmd, check=True)
+        completed = osext.run_command_s(modulecmd, check=True)
         return completed.stdout
 
     def available_modules(self, substr):

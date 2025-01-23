@@ -391,7 +391,7 @@ class _SiteConfig:
 
         def _sh_meth(m):
             def _fn():
-                completed = osext.run_command(m, check=True)
+                completed = osext.run_command_s(m, check=True)
                 return completed.stdout.strip()
 
             return _fn
@@ -429,7 +429,7 @@ class _SiteConfig:
                               'the `--system` option')
 
         getlogger().debug(f'Retrieved hostname: {hostname!r}')
-        getlogger().debug(f'Looking for a matching configuration entry')
+        getlogger().debug('Looking for a matching configuration entry')
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
                 if re.match(patt, hostname):

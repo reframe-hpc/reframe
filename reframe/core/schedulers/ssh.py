@@ -51,7 +51,7 @@ class SSHJobScheduler(JobScheduler):
 
         # Determine if rsync is available
         try:
-            osext.run_command('rsync --version', check=True)
+            osext.run_command_s('rsync --version', check=True)
         except (FileNotFoundError, SpawnedProcessError):
             self._has_rsync = False
         else:
@@ -80,7 +80,7 @@ class SSHJobScheduler(JobScheduler):
 
         # Create a temporary directory on the remote host and push the job
         # artifacts
-        completed = osext.run_command(
+        completed = osext.run_command_s(
             f'ssh -o BatchMode=yes {options} {job.host} '
             f'mktemp -td rfm.XXXXXXXX', check=True
         )
@@ -124,7 +124,7 @@ class SSHJobScheduler(JobScheduler):
             f'"cd {job.remotedir} && bash -l {job.script_filename}"'
         )
 
-    def submit(self, job):
+    async def submit(self, job):
         assert isinstance(job, _SSHJob)
 
         # Check if `#host` pseudo-option is specified and use this as a host,
@@ -160,13 +160,13 @@ class SSHJobScheduler(JobScheduler):
             job.steps['pull'],
             when=success
         )
-        job.steps['push'].start()
+        await job.steps['push'].start()
         job._jobid = job.steps['push'].pid
 
-    def wait(self, job):
+    async def wait(self, job):
         for step in job.steps.values():
             if step.started():
-                step.wait()
+                await step.wait()
 
     def cancel(self, job):
         for step in job.steps.values():
@@ -179,15 +179,18 @@ class SSHJobScheduler(JobScheduler):
 
         return job.state is not None
 
-    def poll(self, *jobs):
+    async def poll(self, *jobs):
         for job in jobs:
-            self._poll_job(job)
+            await self._poll_job(job)
 
-    def _poll_job(self, job):
+    async def _poll_job(self, job):
+        if job.finished():
+            return True
+
         last_done = None
         last_failed = None
         for proc_kind, proc in job.steps.items():
-            if proc.started() and proc.done():
+            if proc.started() and await proc.done():
                 last_done = proc_kind
                 if proc.exitcode != 0:
                     last_failed = proc_kind
@@ -200,7 +203,7 @@ class SSHJobScheduler(JobScheduler):
         # Update the job info
         last_proc = job.steps[last_done]
         job._exitcode = last_proc.exitcode
-        job._exception = last_proc.exception()
+        job._exception = await last_proc.exception()
         job._signal = last_proc.signal
         if job._exitcode == 0:
             job._state = 'SUCCESS'
@@ -209,12 +212,13 @@ class SSHJobScheduler(JobScheduler):
 
         exec_proc = job.steps['exec']
         if exec_proc.started():
-            with osext.change_dir(job.localdir):
+            with osext.change_dir_global(job.localdir):
+                stdout_, stderr_ = await exec_proc.communicate()
                 with open(job.stdout, 'w+') as fout:
-                    fout.write(exec_proc.stdout().read())
+                    fout.write(stdout_.decode())
 
                 with open(job.stderr, 'w+') as ferr:
-                    ferr.write(exec_proc.stderr().read())
+                    ferr.write(stderr_.decode())
 
         return True
 

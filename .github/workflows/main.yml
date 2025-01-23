@@ -100,7 +100,7 @@ jobs:
         docker build -f ci-scripts/dockerfiles/reframe-${{ matrix.modules-version }}.dockerfile -t reframe-${{ matrix.modules-version }}:latest .
     - name: Run Unittests
       run: |
-        docker run reframe-${{ matrix.modules-version }}:latest
+        docker run --init reframe-${{ matrix.modules-version }}:latest
 
   eb-spack-howto:
     runs-on: ubuntu-latest
