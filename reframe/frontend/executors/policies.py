@@ -281,7 +281,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             '_rfm_local': rt.runtime().get_option('systems/0/max_local_jobs')
         }
         self._pipeline_statistics = rt.runtime().get_option(
-            'systems/0/dump_pipeline_progress'
+            'general/0/dump_pipeline_progress'
         )
         self.task_listeners.append(self)
 
