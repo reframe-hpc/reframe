@@ -673,7 +673,7 @@
         "systems*/sched_options/sched_access_in_submit": false,
         "systems*/sched_options/ssh_hosts": [],
         "systems*/sched_options/ignore_reqnodenotavail": false,
-        "systems*/sched_options/job_submit_timeout": 100,
+        "systems*/sched_options/job_submit_timeout": 60,
         "systems*/sched_options/resubmit_on_errors": [],
         "systems*/sched_options/unqualified_hostnames": false,
         "systems*/sched_options/use_nodes_option": false

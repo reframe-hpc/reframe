@@ -359,7 +359,9 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._max_jobs = {
             '_rfm_local': rt.runtime().get_option('systems/0/max_local_jobs')
         }
-
+        self._pipeline_statistics = rt.runtime().get_option(
+            'general/0/dump_pipeline_progress'
+        )
         # Tasks that have finished, but have not performed their cleanup phase
         self._retired_tasks = []
         self.task_listeners.append(self)
@@ -424,12 +426,17 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
         self._task_index[case] = task
+
+        if self._pipeline_statistics:
+            self._init_pipeline_progress(len(self._current_tasks))
+
         try:
             # Do not run test if any of its dependencies has failed
             # NOTE: Restored dependencies are not in the task_index
             if any(self._task_index[c].failed
                    for c in case.deps if c in self._task_index):
                 raise TaskDependencyError('dependencies failed')
+
 
             if any(self._task_index[c].skipped
                    for c in case.deps if c in self._task_index):
@@ -465,12 +472,19 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                        task.testcase.environ,
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                        sched_options=self.sched_options)
+
+            if self._pipeline_statistics:
+                self._update_pipeline_progress('startup', 'ready_compile', 1)
+
             partname = _get_partition_name(task, phase='build')
             max_jobs = self._max_jobs[partname]
             while len(self._partition_tasks[partname])+1 > max_jobs:
                 await asyncio.sleep(2)
             self._partition_tasks[partname].add(task)
             await task.compile()
+            if self._pipeline_statistics:
+                self._update_pipeline_progress('ready_compile', 'compiling', 1)
+
             # If RunOnly, no polling for run jobs
             if task.check.build_job:
                 # Pick the right scheduler
@@ -494,6 +508,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     if task.compile_complete():
                         break
                     else:
+                        # yield control to another task to give it the chance to check their status
                         await asyncio.sleep(0)
                     # We need to check the timeout inside the while loop
                     if self.timeout_expired():
@@ -501,6 +516,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                             'maximum session duration exceeded'
                         )
             await task.compile_wait()
+            if self._pipeline_statistics:
+                self._update_pipeline_progress('compiling', 'ready_run', 1)
             self._partition_tasks[partname].remove(task)
             partname = _get_partition_name(task, phase='run')
             max_jobs = self._max_jobs[partname]
@@ -508,6 +525,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 await asyncio.sleep(2)
             self._partition_tasks[partname].add(task)
             await task.run()
+            if self._pipeline_statistics:
+                self._update_pipeline_progress('ready_run', 'running', 1)
             # If CompileOnly, no polling for run jobs
             if task.check.job:
                 # Pick the right scheduler
@@ -538,6 +557,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                             'maximum session duration exceeded'
                         )
             await task.run_wait()
+            if self._pipeline_statistics:
+                self._update_pipeline_progress('running', 'completing', 1)
             self._partition_tasks[partname].remove(task)
             if not self.skip_sanity_check:
                 task.sanity()
@@ -545,8 +566,24 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if not self.skip_performance_check:
                 task.performance()
 
-            self._retired_tasks.append(task)
             task.finalize()
+            self._retired_tasks.append(task)
+
+            if self._pipeline_statistics:
+                self._update_pipeline_progress('completing', 'retired', 1)
+
+            if self._pipeline_statistics:
+                num_retired = len(self._retired_tasks)
+            _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+            if self._pipeline_statistics:
+                num_retired_actual = num_retired - len(self._retired_tasks)
+
+                # Some tests might not be cleaned up because they are
+                # waiting for dependencies or because their dependencies
+                # have failed.
+                self._update_pipeline_progress(
+                    'retired', 'completed', num_retired_actual
+                )
 
         except TaskExit:
             self._current_tasks.remove(task)
@@ -737,6 +774,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _exit(self):
         # Clean up all remaining tasks
         _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+        if self._pipeline_statistics:
+            self._dump_pipeline_progress('pipeline-progress.json')
 
     def execute(self, testcases):
         try:

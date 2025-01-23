@@ -415,36 +415,34 @@ async def run_command(cmd, check=False, timeout=None, **kwargs):
         times out.
 
     '''
-    try:
+    if timeout:
+        cmd = f'time timeout {timeout} ' + cmd
+    from reframe.core.logging import getlogger
+    getlogger().debug(f"START: {cmd} launching at {datetime.datetime.now()}")
+    ## Synchronous command launch ----------------------------------------
+    # t_start = time.time()
+    # proc = run_command_process(cmd, start_new_session=True, **kwargs)
+    # t_start = time.time()
+    ## Asynchronous command launch ----------------------------------------
+    t_start = time.time()
+    proc = await run_command_asyncio(cmd, start_new_session=False, **kwargs)
+    # await asyncio.sleep(0)
+    ## Asynchronous command communication ----------------------------------------
+    proc_stdout, proc_stderr = await proc.communicate()
+    ## Synchronous command communication ----------------------------------------
+    # t_end = time.time()
+    # getlogger().debug(f"INFO: {cmd} launch command took: {t_end-t_start}")
+    # t_start = time.time()
+    # loop = asyncio.get_event_loop()
+    # try:
+    #     proc_stdout, proc_stderr = await loop.run_in_executor(None, proc.communicate, timeout)
+    # except concurrent.futures._base.CancelledError:
+    #     raise KeyboardInterrupt
+    t_end = time.time()
+    getlogger().debug(f"INFO: {cmd} command took: {t_end-t_start}")
+
+    if proc.returncode == 124:
         from reframe.core.logging import getlogger
-        getlogger().debug(f"START: {cmd} launching at {datetime.datetime.now()}")
-        ## Synchronous command launch ----------------------------------------
-        # t_start = time.time()
-        # proc = run_command_process(cmd, start_new_session=True, **kwargs)
-        # t_start = time.time()
-        ## Asynchronous command launch ----------------------------------------
-        proc = await run_command_asyncio(cmd, start_new_session=False, **kwargs)
-        await asyncio.sleep(0)
-        ## Asynchronous command communication ----------------------------------------
-        t_start = time.time()
-        proc_stdout, proc_stderr = await asyncio.wait_for(
-            proc.communicate(), timeout=timeout
-        )
-        ## Synchronous command communication ----------------------------------------
-        # t_end = time.time()
-        # getlogger().debug(f"INFO: {cmd} launch command took: {t_end-t_start}")
-        # t_start = time.time()
-        # loop = asyncio.get_event_loop()
-        # try:
-        #     proc_stdout, proc_stderr = await loop.run_in_executor(None, proc.communicate, timeout)
-        # except concurrent.futures._base.CancelledError:
-        #     raise KeyboardInterrupt
-        t_end = time.time()
-        getlogger().debug(f"INFO: {cmd} command took: {t_end-t_start}")
-    except asyncio.TimeoutError as e:
-        from reframe.core.logging import getlogger
-        t_end = time.time()
-        getlogger().debug(f"INFO: {cmd} command took: {t_end-t_start}")
         try:
             # Get the process with psutil because we need to cancel the group
             p = psutil.Process(proc.pid)
