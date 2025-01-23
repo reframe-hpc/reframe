@@ -416,7 +416,7 @@ async def run_command(cmd, check=False, timeout=None, **kwargs):
 
     '''
     if timeout:
-        cmd = f'time timeout {timeout} ' + cmd
+        cmd = f'timeout {timeout} ' + cmd
     from reframe.core.logging import getlogger
     getlogger().debug(f"START: {cmd} launching at {datetime.datetime.now()}")
     ## Synchronous command launch ----------------------------------------
