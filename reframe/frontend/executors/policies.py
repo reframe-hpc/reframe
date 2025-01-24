@@ -16,8 +16,7 @@ from reframe.core.exceptions import (FailureLimitError,
                                      SkipTestError,
                                      TaskDependencyError,
                                      TaskExit,
-                                     KeyboardError,
-                                     AbortTaskError)
+                                     KeyboardError)
 from reframe.core.logging import getlogger, level_from_str
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
