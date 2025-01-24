@@ -310,6 +310,8 @@ class RegressionTask:
             'run': 'running',
             'run_wait': 'completing',
             'finalize': 'retired',
+            'sanity': 'completing',
+            'performance': 'completing',
             'cleanup': 'completed',
         }
         return states[self._current_stage]
@@ -534,6 +536,7 @@ class RegressionTask:
     def fail(self, exc_info=None, callback='on_task_failure'):
         if self._aborted:
             return
+        self._failed_state = self.state
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners(callback)

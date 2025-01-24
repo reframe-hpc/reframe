@@ -87,9 +87,7 @@ class _PollController:
         await asyncio.sleep(self._sleep_duration[sched])
 
     def is_time_to_poll(self, sched):
-        # print(self._num_polls, sched)
         # We check here if it's time to poll
-        # if self._num_polls == 0:
         if self._t_init.get(sched) is None:
             self._t_init[sched] = time.time()
             self._t_snoozed[sched] = time.time()
@@ -427,9 +425,6 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         self._task_index[case] = task
 
-        if self._pipeline_statistics:
-            self._init_pipeline_progress(len(self._current_tasks))
-
         try:
             # Do not run test if any of its dependencies has failed
             # NOTE: Restored dependencies are not in the task_index
@@ -473,17 +468,12 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                        sched_options=self.sched_options)
 
-            if self._pipeline_statistics:
-                self._update_pipeline_progress('startup', 'ready_compile', 1)
-
             partname = _get_partition_name(task, phase='build')
             max_jobs = self._max_jobs[partname]
             while len(self._partition_tasks[partname])+1 > max_jobs:
                 await asyncio.sleep(2)
             self._partition_tasks[partname].add(task)
             await task.compile()
-            if self._pipeline_statistics:
-                self._update_pipeline_progress('ready_compile', 'compiling', 1)
 
             # If RunOnly, no polling for run jobs
             if task.check.build_job:
@@ -515,9 +505,10 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                         raise RunSessionTimeout(
                             'maximum session duration exceeded'
                         )
+            else:
+                if self._pipeline_statistics:
+                    self._update_pipeline_progress('compiling', 'ready_run', 1)
             await task.compile_wait()
-            if self._pipeline_statistics:
-                self._update_pipeline_progress('compiling', 'ready_run', 1)
             self._partition_tasks[partname].remove(task)
             partname = _get_partition_name(task, phase='run')
             max_jobs = self._max_jobs[partname]
@@ -525,8 +516,6 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 await asyncio.sleep(2)
             self._partition_tasks[partname].add(task)
             await task.run()
-            if self._pipeline_statistics:
-                self._update_pipeline_progress('ready_run', 'running', 1)
             # If CompileOnly, no polling for run jobs
             if task.check.job:
                 # Pick the right scheduler
@@ -556,9 +545,10 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                         raise RunSessionTimeout(
                             'maximum session duration exceeded'
                         )
+            else:
+                if self._pipeline_statistics:
+                    self._update_pipeline_progress('running', 'completing', 1)
             await task.run_wait()
-            if self._pipeline_statistics:
-                self._update_pipeline_progress('running', 'completing', 1)
             self._partition_tasks[partname].remove(task)
             if not self.skip_sanity_check:
                 task.sanity()
@@ -574,6 +564,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             if self._pipeline_statistics:
                 num_retired = len(self._retired_tasks)
+
             _cleanup_all(self._retired_tasks, not self.keep_stage_files)
             if self._pipeline_statistics:
                 num_retired_actual = num_retired - len(self._retired_tasks)
@@ -668,7 +659,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
 
     def on_task_setup(self, task):
-        pass
+        if self._pipeline_statistics:
+            self._update_pipeline_progress('startup', 'ready_compile', 1)
 
     def on_task_run(self, task):
         if task.check.job:
@@ -682,6 +674,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 getpollcontroller()._jobs_pool[
                     task.check.job.scheduler.registered_name
                 ] = [task.check.job]
+        if self._pipeline_statistics:
+            self._update_pipeline_progress('ready_run', 'running', 1)
 
     def on_task_compile(self, task):
         if task.check.build_job:
@@ -695,6 +689,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 getpollcontroller()._jobs_pool[
                     task.check.build_job.scheduler.registered_name
                 ] = [task.check.build_job]
+        if self._pipeline_statistics:
+            self._update_pipeline_progress('ready_compile', 'compiling', 1)
 
     def on_task_exit(self, task):
         if task.check.job:
@@ -702,6 +698,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.check.job.scheduler.registered_name
             ].remove(task.check.job)
             getpollcontroller().reset_snooze_time(task.check.job.scheduler.registered_name)
+        if self._pipeline_statistics:
+            self._update_pipeline_progress('running', 'completing', 1)
 
     def on_task_compile_exit(self, task):
         if task.check.build_job:
@@ -710,10 +708,14 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.check.build_job.scheduler.registered_name
             ].remove(
                 task.check.build_job)
+        if self._pipeline_statistics:
+            self._update_pipeline_progress('compiling', 'ready_run', 1)
 
     def on_task_skip(self, task):
         msg = str(task.exc_info[1])
         self.printer.status('SKIP', msg, just='right')
+        if self._pipeline_statistics:
+            self._update_pipeline_progress('startup', 'skip', 1)
 
     def on_task_abort(self, task):
         msg = f'{task.info()}'
@@ -726,6 +728,9 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self.printer.status('ERROR', msg, just='right')
         else:
             self.printer.status('FAIL', msg, just='right')
+
+        if self._pipeline_statistics:
+            self._update_pipeline_progress(task._failed_state, 'fail', 1)
 
         _print_perf(task)
         if task.failed_stage == 'sanity':
@@ -793,6 +798,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # Add the tasks outside the asyncio handling so that all tasks are aborted
             # otherwise the task in the TesStats is not updated accordingly
             self._current_tasks.add(task)
+            if self._pipeline_statistics:
+                self._init_pipeline_progress(len(self._current_tasks))
             all_cases.append(asyncio.ensure_future(self._runcase(t, task)))
         try:
             # Wait for tasks until the first failure
