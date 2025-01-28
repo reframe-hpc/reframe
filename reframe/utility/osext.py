@@ -834,7 +834,7 @@ def git_clone(url, targetdir=None, opts=None, timeout=5):
 
     targetdir = targetdir or ''
     opts = ' '.join(opts) if opts is not None else ''
-    run_command(f'git clone {opts} {url} {targetdir}', check=True)
+    run_command_s(f'git clone {opts} {url} {targetdir}', check=True)
 
 
 def git_repo_exists(url, timeout=5):

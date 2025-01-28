@@ -413,11 +413,6 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # which were initiated by the execution. Exit gracefully
         # the execuion loop aborting all the tasks
         check, partition, _ = case
-        # task = RegressionTask(case, self.task_listeners)
-        if check.is_dry_run():
-            self.printer.status('DRY', task.info())
-        else:
-            self.printer.status('RUN', task.info())
 
         self._partition_tasks.setdefault(partition.fullname, util.OrderedSet())
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
@@ -451,7 +446,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     task.skip()
                     self._current_tasks.remove(task)
                     return 1
-            elif deps_status == "succeded":
+            elif deps_status == "succeeded":
                 if task.check.is_dry_run():
                     self.printer.status('DRY', task.info())
                 else:
@@ -615,7 +610,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
     async def check_deps(self, task):
         while not (self.deps_skipped(task) or self.deps_failed(task) or
                    self.deps_succeeded(task)):
-            await asyncio.sleep(1)
+            getlogger().debug2(f'{task.info()} waiting for dependencies')
+            await asyncio.sleep(0)
 
         if self.deps_skipped(task):
             return "skipped"
@@ -797,9 +793,9 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # Add the tasks outside the asyncio handling so that all tasks are aborted
             # otherwise the task in the TesStats is not updated accordingly
             self._current_tasks.add(task)
-            if self._pipeline_statistics:
-                self._init_pipeline_progress(len(self._current_tasks))
             all_cases.append(asyncio.ensure_future(self._runcase(t, task)))
+        if self._pipeline_statistics:
+            self._init_pipeline_progress(len(self._current_tasks))
         try:
             # Wait for tasks until the first failure
             loop.run_until_complete(asyncio.gather(*all_cases, return_exceptions=False))
