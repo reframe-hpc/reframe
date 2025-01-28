@@ -64,13 +64,18 @@ class _PollController:
         self._sleep_duration = {}
         self._t_init = {}
         self._t_snoozed = {}
-        self._jobs_pool = {}
-        self._event_compile = asyncio.Event()
-        self._event_run = asyncio.Event()
+        self._jobs_to_pool = {}
+        self._jobs_pooling = {}
+        self._poll_event = {}
 
     def reset_snooze_time(self, sched):
         if self._sleep_duration.get(sched) is None:
             self._sleep_duration[sched] = self.SLEEP_MIN
+        if self._poll_event.get(sched) is None:
+            self._poll_event[sched] = asyncio.Event()
+            self._poll_event[sched].set()
+        if self._jobs_pooling.get(sched) is None:
+            self._jobs_pooling[sched] = []
 
     async def snooze(self, sched):
         if self._num_polls == 0:
@@ -480,11 +485,23 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._pollctl.reset_snooze_time(sched.registered_name)
                 while True:
                     if not self.dry_run_mode:
-                        if (getpollcontroller().is_time_to_poll(sched.registered_name)):
-                            getpollcontroller().reset_time_to_poll(sched.registered_name)
-                            await sched.poll(*getpollcontroller()._jobs_pool[
-                                sched.registered_name
-                            ])
+                        if (getpollcontroller().is_time_to_poll(sched.registered_name)): # and
+                            # getpollcontroller()._poll_event[sched.registered_name].is_set()):
+                            jobs_pool = list(set(getpollcontroller()._jobs_to_pool[
+                                                sched.registered_name
+                                                ]) - set(getpollcontroller()._jobs_pooling[
+                                                sched.registered_name
+                                                ]))
+                            if jobs_pool:
+                                getpollcontroller()._jobs_pooling[sched.registered_name] += jobs_pool
+                                getpollcontroller().reset_time_to_poll(sched.registered_name)
+                                # getpollcontroller()._poll_event[sched.registered_name].clear()
+                                await sched.poll(*jobs_pool)
+                                getpollcontroller()._jobs_pooling[sched.registered_name] = [
+                                    job for job in getpollcontroller()._jobs_pooling[sched.registered_name]
+                                    if job not in jobs_pool
+                                ]
+                                # getpollcontroller()._poll_event[sched.registered_name].set()
 
                     if task.compile_complete():
                         break
@@ -520,13 +537,24 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
                 self._pollctl.reset_snooze_time(sched.registered_name)
                 while True:
-                    await asyncio.sleep(0)
                     if not self.dry_run_mode:
-                        if (getpollcontroller().is_time_to_poll(sched.registered_name)):
-                            getpollcontroller().reset_time_to_poll(sched.registered_name)
-                            await sched.poll(*getpollcontroller()._jobs_pool[
-                                sched.registered_name
-                            ])
+                        if (getpollcontroller().is_time_to_poll(sched.registered_name)): # and
+                            # getpollcontroller()._poll_event[sched.registered_name].is_set()):
+                            jobs_pool = list(set(getpollcontroller()._jobs_to_pool[
+                                                sched.registered_name
+                                                ]) - set(getpollcontroller()._jobs_pooling[
+                                                sched.registered_name
+                                                ]))
+                            if jobs_pool:
+                                getpollcontroller()._jobs_pooling[sched.registered_name] += jobs_pool
+                                getpollcontroller().reset_time_to_poll(sched.registered_name)
+                                # getpollcontroller()._poll_event[sched.registered_name].clear()
+                                await sched.poll(*jobs_pool)
+                                getpollcontroller()._jobs_pooling[sched.registered_name] = [
+                                    job for job in getpollcontroller()._jobs_pooling[sched.registered_name]
+                                    if job not in jobs_pool
+                                ]
+                                # getpollcontroller()._poll_event[sched.registered_name].set()
 
                     if task.run_complete():
                         break
@@ -659,14 +687,14 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_run(self, task):
         if task.check.job:
-            if getpollcontroller()._jobs_pool.get(
+            if getpollcontroller()._jobs_to_pool.get(
                 task.check.job.scheduler.registered_name
             ):
-                getpollcontroller()._jobs_pool[
+                getpollcontroller()._jobs_to_pool[
                     task.check.job.scheduler.registered_name
                 ].append(task.check.job)
             else:
-                getpollcontroller()._jobs_pool[
+                getpollcontroller()._jobs_to_pool[
                     task.check.job.scheduler.registered_name
                 ] = [task.check.job]
         if self._pipeline_statistics:
@@ -674,14 +702,14 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_compile(self, task):
         if task.check.build_job:
-            if getpollcontroller()._jobs_pool.get(
+            if getpollcontroller()._jobs_to_pool.get(
                 task.check.build_job.scheduler.registered_name
             ):
-                getpollcontroller()._jobs_pool[
+                getpollcontroller()._jobs_to_pool[
                     task.check.build_job.scheduler.registered_name
                 ].append(task.check.build_job)
             else:
-                getpollcontroller()._jobs_pool[
+                getpollcontroller()._jobs_to_pool[
                     task.check.build_job.scheduler.registered_name
                 ] = [task.check.build_job]
         if self._pipeline_statistics:
@@ -689,7 +717,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_exit(self, task):
         if task.check.job:
-            getpollcontroller()._jobs_pool[
+            getpollcontroller()._jobs_to_pool[
                 task.check.job.scheduler.registered_name
             ].remove(task.check.job)
             getpollcontroller().reset_snooze_time(task.check.job.scheduler.registered_name)
@@ -699,7 +727,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_compile_exit(self, task):
         if task.check.build_job:
             getpollcontroller().reset_snooze_time(task.check.build_job.scheduler.registered_name)
-            getpollcontroller()._jobs_pool[
+            getpollcontroller()._jobs_to_pool[
                 task.check.build_job.scheduler.registered_name
             ].remove(
                 task.check.build_job)
