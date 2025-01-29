@@ -18,6 +18,11 @@ In case of Python configuration, the configuration object must be stored in the 
 The final configuration is validated against the schema |schemas/config.json|_.
 See also :ref:`manpage-configuration` for understanding how ReFrame builds its final configuration.
 
+.. warning::
+   .. versionchanged:: 4.8
+
+   Raw JSON configuration files are deprecated.
+
 The syntax we use to describe the different configuration objects follows the convention: ``OBJECT[.OBJECT]*.PROPERTY``.
 Even if a configuration object contains a list of other objects, this is not reflected in the above syntax, as all objects in a certain list are homogeneous.
 For example, by ``systems.partitions.name`` we designate the ``name`` property of any partition object inside the ``partitions`` property of any system object inside the top level ``systems`` object.

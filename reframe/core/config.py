@@ -697,6 +697,10 @@ def load_config(*filenames):
         elif ext == '.yaml' or ext == '.yml':
             ret.load_config_yaml(f)
         elif ext == '.json':
+            getlogger().warning(
+                f'{f}: JSON configuration files are deprecated; '
+                'please use either a Python or YAML configuration'
+            )
             ret.load_config_json(f)
         else:
             raise ConfigError(f"unknown configuration file type: '{f}'")
