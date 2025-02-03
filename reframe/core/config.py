@@ -26,15 +26,22 @@ from reframe.utility import ScopedDict
 
 
 def _match_option(opt, opt_map):
+    def _copy_if_mutable(item):
+        for c in (dict, list):
+            if isinstance(item, c):
+                return c(item)
+
+        return item
+
     if isinstance(opt, list):
         opt = '/'.join(opt)
 
     if opt in opt_map:
-        return opt_map[opt]
+        return _copy_if_mutable(opt_map[opt])
 
     for k, v in opt_map.items():
         if fnmatch.fnmatchcase(opt, k):
-            return v
+            return _copy_if_mutable(v)
 
     raise KeyError(opt)
 
