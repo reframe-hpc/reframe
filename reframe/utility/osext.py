@@ -66,7 +66,17 @@ class _ProcFuture:
         args, kwargs = self._cmd_args
         self._proc = run_command_async(*args, **kwargs)
 
-        if os.getsid(self._proc.pid) == self._proc.pid:
+        # On Python 3.7/3.8 on MacOS, getsid may fail with ESRCH,
+        # so insist on getting the session leader
+        while True:
+            try:
+                sid = os.getsid(self._proc.pid)
+            except ProcessLookupError:
+                continue
+            else:
+                break
+
+        if sid == self._proc.pid:
             self._session = True
         else:
             self._session = False
