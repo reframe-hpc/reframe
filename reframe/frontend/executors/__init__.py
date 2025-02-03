@@ -559,10 +559,10 @@ class RegressionTask:
         try:
             # The abort can also happen during a compile job
             if not self.zombie and (self.check.job or self.check.build_job):
-                if self.check.build_job:
-                    self.check.build_job.cancel()
-                else:
+                if self.check.job:
                     self.check.job.cancel()
+                else:
+                    self.check.build_job.cancel()
         except JobNotStartedError:
             self.fail((type(exc), exc, None), 'on_task_abort')
         except BaseException:
