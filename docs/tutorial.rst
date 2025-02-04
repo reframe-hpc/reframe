@@ -465,7 +465,7 @@ YAML configuration
 
 Apart from Python, ReFrame's configuration can be specified in a YAML file.
 The advantage is a more compact configuration, but it's not fully programmable as is the Python configuration.
-Below is the same configuration file presetend above, but in YAML:
+Below is the same configuration file presented above, but in YAML:
 
 
 .. literalinclude:: ../examples/tutorial/config/baseline.yaml

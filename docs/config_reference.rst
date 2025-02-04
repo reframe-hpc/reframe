@@ -2311,17 +2311,17 @@ Dynamic configuration
 =====================
 
 One advantage of ReFrame's configuration is that it is programmable, especially if you are using the Python files.
-Since the configuration is loaded a Python module, you can generate parts of the configuration dynamically.
+Since the configuration is loaded as a Python module, you can generate parts of the configuration dynamically.
 
 The YAML configuration on the other hand is more static, although not fully.
-Code generation can still be used with the YAML configuration as it is treated as Jinja2 template, where ReFrame provides the following bindings:
+Code generation can still be used with the YAML configuration as it is treated as a Jinja2 template, where ReFrame provides the following bindings:
 
 - ``hostname``: The local host's hostname.
 - ``getenv(<envvar>)``: Retrieve an environment variable.
 - ``sh(<command>)``: Retrieve the standard output of a shell command.
   The command must be successful.
 
-These are two examples YAML logging configuration that uses one of those bindings:
+These are two examples of YAML logging configuration that uses one of those bindings:
 
 .. code-block:: yaml
 
