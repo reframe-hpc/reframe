@@ -1,3 +1,4 @@
+aiofiles
 archspec==0.2.5
 argcomplete==3.1.2; python_version < '3.8'
 argcomplete==3.5.3; python_version >= '3.8'

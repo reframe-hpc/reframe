@@ -11,6 +11,7 @@ import asyncio
 import collections.abc
 import datetime
 import errno
+from functools import partial
 import getpass
 import grp
 import os
@@ -517,29 +518,39 @@ def osgroup():
         return None
 
 
-def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
+async def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
              ignore_dangling_symlinks=False, dirs_exist_ok=False):
     '''Compatibility version of :py:func:`shutil.copytree` for Python < 3.8.
 
     This function will automatically delegate to :py:func:`shutil.copytree`
     for Python versions >= 3.8.
     '''
+    loop = asyncio.get_event_loop()
     if src == os.path.commonpath([src, dst]):
         raise ValueError("cannot copy recursively the parent directory "
                          "`%s' into one of its descendants `%s'" % (src, dst))
 
     if sys.version_info[1] >= 8:
-        return shutil.copytree(src, dst, symlinks, ignore, copy_function,
-                               ignore_dangling_symlinks, dirs_exist_ok)
+        return await loop.run_in_executor(None, shutil.copytree,
+                                          src, dst, symlinks, ignore, copy_function,
+                                          ignore_dangling_symlinks, dirs_exist_ok)
+        # return shutil.copytree(src, dst, symlinks, ignore, copy_function,
+        #                        ignore_dangling_symlinks, dirs_exist_ok)
 
     if not dirs_exist_ok:
-        return shutil.copytree(src, dst, symlinks, ignore, copy_function,
-                               ignore_dangling_symlinks)
+        return await loop.run_in_executor(None, shutil.copytree,
+                                          src, dst, symlinks, ignore, copy_function,
+                                          ignore_dangling_symlinks)
+        # return shutil.copytree(src, dst, symlinks, ignore, copy_function,
+        #                        ignore_dangling_symlinks)
 
     # dirs_exist_ok=True and Python < 3.8
     if not os.path.exists(dst):
-        return shutil.copytree(src, dst, symlinks, ignore, copy_function,
-                               ignore_dangling_symlinks)
+        return await loop.run_in_executor(None, shutil.copytree,
+                                          src, dst, symlinks, ignore, copy_function,
+                                          ignore_dangling_symlinks)
+        # return shutil.copytree(src, dst, symlinks, ignore, copy_function,
+        #                        ignore_dangling_symlinks)
 
     # dst exists; manually descend into the subdirectories, but do some sanity
     # checking first
@@ -559,19 +570,22 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
     ignore_paths = ignore(src, os.listdir(src)) if ignore else {}
     for f in files:
         if f not in ignore_paths:
-            copy_function(os.path.join(src, f), os.path.join(dst, f),
-                          follow_symlinks=not symlinks)
+            copy_function_args = partial(copy_function,
+                                         os.path.join(src, f),
+                                         os.path.join(dst, f),
+                                         follow_symlinks=not symlinks)
+            await loop.run_in_executor(None, copy_function_args)
 
     for d in subdirs:
         if d not in ignore_paths:
-            copytree(os.path.join(src, d), os.path.join(dst, d),
-                     symlinks, ignore, copy_function,
-                     ignore_dangling_symlinks, dirs_exist_ok)
+            await copytree(os.path.join(src, d), os.path.join(dst, d),
+                           symlinks, ignore, copy_function,
+                           ignore_dangling_symlinks, dirs_exist_ok)
 
     return dst
 
 
-def copytree_virtual(src, dst, file_links=None,
+async def copytree_virtual(src, dst, file_links=None,
                      symlinks=False, copy_function=shutil.copy2,
                      ignore_dangling_symlinks=False, dirs_exist_ok=False):
     '''Copy ``src`` to ``dst``, but create symlinks for the files listed in
@@ -624,7 +638,7 @@ def copytree_virtual(src, dst, file_links=None,
                     if os.path.join(dir, c) in link_targets}
 
     # Copy to dst ignoring the file_links
-    copytree(src, dst, symlinks, ignore,
+    await copytree(src, dst, symlinks, ignore,
              copy_function, ignore_dangling_symlinks, dirs_exist_ok)
 
     # Now create the symlinks
@@ -818,7 +832,7 @@ def is_url(s):
     return parsed.scheme != '' and parsed.netloc != ''
 
 
-def git_clone(url, targetdir=None, opts=None, timeout=5):
+async def git_clone(url, targetdir=None, opts=None, timeout=5):
     '''Clone a git repository from a URL.
 
     :arg url: The URL to clone from.
@@ -834,7 +848,7 @@ def git_clone(url, targetdir=None, opts=None, timeout=5):
 
     targetdir = targetdir or ''
     opts = ' '.join(opts) if opts is not None else ''
-    run_command_s(f'git clone {opts} {url} {targetdir}', check=True)
+    await run_command(f'git clone {opts} {url} {targetdir}', check=True)
 
 
 def git_repo_exists(url, timeout=5):

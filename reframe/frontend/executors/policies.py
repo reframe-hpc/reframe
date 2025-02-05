@@ -20,6 +20,7 @@ from reframe.core.exceptions import (FailureLimitError,
 from reframe.core.logging import getlogger, level_from_str
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
+from reframe.frontend.executors import asyncio_run
 
 
 def _get_partition_name(task, phase='run'):
@@ -30,11 +31,11 @@ def _get_partition_name(task, phase='run'):
         return task.check.current_partition.fullname
 
 
-def _cleanup_all(tasks, *args, **kwargs):
+async def _cleanup_all(tasks, *args, **kwargs):
     for task in tasks:
         if task.ref_count == 0:
             with contextlib.suppress(TaskExit):
-                task.cleanup(*args, **kwargs)
+                await task.cleanup(*args, **kwargs)
 
     # Remove cleaned up tests
     tasks[:] = [t for t in tasks if t.ref_count]
@@ -165,7 +166,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     task.skip()
                     raise TaskExit from e
 
-            task.setup(task.testcase.partition,
+            await task.setup(task.testcase.partition,
                        task.testcase.environ,
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                        sched_options=self.sched_options)
@@ -278,7 +279,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if c in self._task_index:
                 self._task_index[c].ref_count -= 1
 
-        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+        # _cleanup_all(self._retired_tasks, not self.keep_stage_files)
         if self.timeout_expired():
             raise RunSessionTimeout('maximum session duration exceeded')
 
@@ -337,7 +338,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _exit(self):
         # Clean up all remaining tasks
-        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+        asyncio_run(_cleanup_all(self._retired_tasks, not self.keep_stage_files))
 
 
 class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
@@ -462,7 +463,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._current_tasks.remove(task)
                 return 1
 
-            task.setup(task.testcase.partition,
+            await task.setup(task.testcase.partition,
                        task.testcase.environ,
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                        sched_options=self.sched_options)
@@ -485,6 +486,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._pollctl.reset_snooze_time(sched.registered_name)
                 while True:
                     if not self.dry_run_mode:
+                        if task.compile_complete():
+                            break
                         if (getpollcontroller().is_time_to_poll(sched.registered_name)): # and
                             # getpollcontroller()._poll_event[sched.registered_name].is_set()):
                             jobs_pool = list(set(getpollcontroller()._jobs_to_pool[
@@ -538,6 +541,8 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._pollctl.reset_snooze_time(sched.registered_name)
                 while True:
                     if not self.dry_run_mode:
+                        if task.run_complete():
+                            break
                         if (getpollcontroller().is_time_to_poll(sched.registered_name)): # and
                             # getpollcontroller()._poll_event[sched.registered_name].is_set()):
                             jobs_pool = list(set(getpollcontroller()._jobs_to_pool[
@@ -587,7 +592,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if self._pipeline_statistics:
                 num_retired = len(self._retired_tasks)
 
-            _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+            # await _cleanup_all(self._retired_tasks, not self.keep_stage_files)
             if self._pipeline_statistics:
                 num_retired_actual = num_retired - len(self._retired_tasks)
 
@@ -795,13 +800,13 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if c in self._task_index:
                 self._task_index[c].ref_count -= 1
 
-        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+        # _cleanup_all(self._retired_tasks, not self.keep_stage_files)
         if self.timeout_expired():
             raise RunSessionTimeout('maximum session duration exceeded')
 
     def _exit(self):
         # Clean up all remaining tasks
-        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+        asyncio_run(_cleanup_all(self._retired_tasks, not self.keep_stage_files))
         if self._pipeline_statistics:
             self._dump_pipeline_progress('pipeline-progress.json')
 

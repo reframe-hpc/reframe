@@ -12,7 +12,7 @@ __all__ = [
     'RegressionMixin'
 ]
 
-
+import asyncio
 import glob
 import hashlib
 import inspect
@@ -1680,16 +1680,16 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             # Inject the fixtures
             setattr(self, handle_name, deps)
 
-    def _setup_paths(self):
+    async def _setup_paths(self):
         '''Setup the check's dynamic paths.'''
         self.logger.debug('Setting up test paths')
         try:
             runtime = rt.runtime()
-            self._stagedir = runtime.make_stagedir(
+            self._stagedir = await runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
                 self._current_environ.name, self.short_name
             )
-            self._outputdir = runtime.make_outputdir(
+            self._outputdir = await runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
                 self._current_environ.name, self.short_name
             )
@@ -1747,7 +1747,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     pass
 
     @final
-    def setup(self, partition, environ, **job_opts):
+    async def setup(self, partition, environ, **job_opts):
         '''The setup phase of the regression test pipeline.
 
         :arg partition: The system partition to set up this test for.
@@ -1774,25 +1774,25 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         os.chdir(rt.get_working_dir())
         self._current_partition = partition
         self._current_environ = environ
-        self._setup_paths()
+        await self._setup_paths()
         self._setup_build_job(**job_opts)
         self._setup_run_job(**job_opts)
         self._setup_container_platform()
         self._resolve_fixtures()
 
-    def _copy_to_stagedir(self, path):
+    async def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
         self.logger.debug(f'Symlinking files: {self.readonly_files}')
         try:
-            osext.copytree_virtual(
+            await osext.copytree_virtual(
                 path, self._stagedir, self.readonly_files, dirs_exist_ok=True
             )
         except (OSError, ValueError, TypeError) as e:
             raise PipelineError('copying of files failed') from e
 
-    def _clone_to_stagedir(self, url):
+    async def _clone_to_stagedir(self, url):
         self.logger.debug(f'Cloning URL {url} into stage directory')
-        osext.git_clone(
+        await osext.git_clone(
             self.sourcesdir, self._stagedir,
             timeout=rt.runtime().get_option('general/0/git_timeout')
         )
@@ -1834,9 +1834,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 )
 
             if osext.is_url(self.sourcesdir):
-                self._clone_to_stagedir(self.sourcesdir)
+                await self._clone_to_stagedir(self.sourcesdir)
             else:
-                self._copy_to_stagedir(os.path.join(self._prefix,
+                await self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
         # Set executable (only if hasn't been provided)
@@ -2332,22 +2332,24 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             except SanityError as e:
                 raise PerformanceError(e) from None
 
-    def _copy_job_files(self, job, dst):
+    async def _copy_job_files(self, job, dst):
+        loop = asyncio.get_event_loop()
         if job is None:
             return
 
         stdout = os.path.join(self._stagedir, job.stdout)
         stderr = os.path.join(self._stagedir, job.stderr)
         script = os.path.join(self._stagedir, job.script_filename)
-        shutil.copy(stdout, dst)
-        shutil.copy(stderr, dst)
-        shutil.copy(script, dst)
+        await loop.run_in_executor(None, shutil.copy, stdout, dst)
+        await loop.run_in_executor(None, shutil.copy, stderr, dst)
+        await loop.run_in_executor(None, shutil.copy, script, dst)
 
-    def _copy_to_outputdir(self):
+    async def _copy_to_outputdir(self):
         '''Copy check's interesting files to the output directory.'''
+        loop = asyncio.get_event_loop()
         self.logger.debug('Copying test files to output directory')
-        self._copy_job_files(self._job, self.outputdir)
-        self._copy_job_files(self._build_job, self.outputdir)
+        await self._copy_job_files(self._job, self.outputdir)
+        await self._copy_job_files(self._build_job, self.outputdir)
 
         with osext.change_dir_global(self.stagedir):
             # Copy files specified by the user, but expand any glob patterns
@@ -2362,12 +2364,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     dst = os.path.join(
                         self.outputdir, os.path.relpath(f, self.stagedir)
                     )
-                    osext.copytree(f, dst, dirs_exist_ok=True)
+                    await osext.copytree(f, dst, dirs_exist_ok=True)
                 else:
-                    shutil.copy2(f, self.outputdir)
+                    await loop.run_in_executor(None, shutil.copy2, f, self.outputdir)
 
     @final
-    def cleanup(self, remove_files=False):
+    async def cleanup(self, remove_files=False):
         '''The cleanup phase of the regression test pipeline.
 
         :arg remove_files: If :class:`True`, the stage directory associated
@@ -2396,7 +2398,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 'outputdir and stagedir are the same; copying skipped'
             )
         else:
-            self._copy_to_outputdir()
+            await self._copy_to_outputdir()
 
         if remove_files:
             self.logger.debug('Removing stage directory')
@@ -2586,7 +2588,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
 
     _rfm_regression_class_kind = _RFM_TEST_KIND_RUN
 
-    def setup(self, partition, environ, **job_opts):
+    async def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
         Similar to the :func:`RegressionTest.setup`, except that no build job
@@ -2595,7 +2597,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         os.chdir(rt.get_working_dir())
         self._current_partition = partition
         self._current_environ = environ
-        self._setup_paths()
+        await self._setup_paths()
         self._setup_run_job(**job_opts)
         self._setup_container_platform()
         self._resolve_fixtures()
@@ -2620,9 +2622,9 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         '''
         if self.sourcesdir:
             if osext.is_url(self.sourcesdir):
-                self._clone_to_stagedir(self.sourcesdir)
+                await self._clone_to_stagedir(self.sourcesdir)
             else:
-                self._copy_to_stagedir(os.path.join(self._prefix,
+                await self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
         await super().run()
@@ -2653,7 +2655,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
 
     _rfm_regression_class_kind = _RFM_TEST_KIND_COMPILE
 
-    def setup(self, partition, environ, **job_opts):
+    async def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
         Similar to the :func:`RegressionTest.setup`, except that no run job
@@ -2663,7 +2665,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         # No need to setup the job for compile-only checks
         self._current_partition = partition
         self._current_environ = environ
-        self._setup_paths()
+        await self._setup_paths()
         self._setup_build_job(**job_opts)
         self._setup_container_platform()
         self._resolve_fixtures()

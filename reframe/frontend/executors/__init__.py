@@ -460,9 +460,9 @@ class RegressionTask:
                 return fn(*args, **kwargs)
 
     @logging.time_function
-    def setup(self, *args, **kwargs):
+    async def setup(self, *args, **kwargs):
         self.testcase.prepare()
-        self._safe_call(self.check.setup, *args, **kwargs)
+        await self._safe_call_asyncio(self.check.setup, *args, **kwargs)
         self._notify_listeners('on_task_setup')
 
     @logging.time_function
@@ -530,8 +530,8 @@ class RegressionTask:
                                          multiline=self._perflog_compat)
 
     @logging.time_function
-    def cleanup(self, *args, **kwargs):
-        self._safe_call(self.check.cleanup, *args, **kwargs)
+    async def cleanup(self, *args, **kwargs):
+        await self._safe_call_asyncio(self.check.cleanup, *args, **kwargs)
 
     def fail(self, exc_info=None, callback='on_task_failure'):
         if self._aborted:
