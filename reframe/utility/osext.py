@@ -55,6 +55,7 @@ class _ProcFuture:
         self._done_callbacks = []
         self._completed = False
         self._cancelled = False
+        self._session = False
 
     def _check_started(self):
         if not self.started():
@@ -66,20 +67,12 @@ class _ProcFuture:
         args, kwargs = self._cmd_args
         self._proc = run_command_async(*args, **kwargs)
 
-        # On Python 3.7/3.8 on MacOS, getsid may fail with ESRCH,
-        # so insist on getting the session leader
-        while True:
-            try:
-                sid = os.getsid(self._proc.pid)
-            except ProcessLookupError:
-                continue
-            else:
-                break
-
-        if sid == self._proc.pid:
-            self._session = True
-        else:
-            self._session = False
+        try:
+            if os.getsid(self._proc.pid) == self._proc.pid:
+                self._session = True
+        except ProcessLookupError:
+            # Process has already finished
+            self._wait()
 
         return self
 
