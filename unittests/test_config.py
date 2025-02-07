@@ -496,6 +496,18 @@ def test_system_create(site_config):
     system = System.create(site_config)
     assert system.partitions[0].container_runtime == 'Docker'
 
+    # Test correct extras when partitions have no extras set
+    # See: https://github.com/reframe-hpc/reframe/issues/3371
+    site_config.select_subconfig('sys3:part1')
+    system = System.create(site_config)
+    assert system.partitions[0].extras == {'scheduler': 'local',
+                                           'launcher': 'local'}
+
+    site_config.select_subconfig('sys3:part2')
+    system = System.create(site_config)
+    assert system.partitions[0].extras == {'scheduler': 'slurm',
+                                           'launcher': 'srun'}
+
 
 def test_variables(tmp_path):
     # Test that the old syntax using `variables` instead of `env_vars` still
