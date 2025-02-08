@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -24,19 +24,19 @@ RUN useradd -m admin -s /usr/bin/bash -d /home/admin && \
     echo "admin:admin" | chpasswd && adduser admin sudo && \
     echo "admin     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-COPY .github/pseudo-cluster/reframe/slurm.conf /etc/slurm-llnl/
-COPY .github/pseudo-cluster/reframe/cgroup.conf /etc/slurm-llnl/
-COPY .github/pseudo-cluster/reframe/docker-entrypoint.sh /etc/slurm-llnl/
+COPY .github/pseudo/reframe/slurm.conf /etc/slurm/
+COPY .github/pseudo/reframe/cgroup.conf /etc/slurm/
+COPY .github/pseudo/reframe/docker-entrypoint.sh /etc/slurm/
 COPY . /usr/local/share/reframe
 
 RUN mkdir /scratch && \
     chown -R admin:admin /scratch
 
-RUN chmod +rx /etc/slurm-llnl/docker-entrypoint.sh
+RUN chmod +rx /etc/slurm/docker-entrypoint.sh
 
 WORKDIR /home/admin
 
 ENV USER admin
 ENV SHELL bash
 
-ENTRYPOINT ["/etc/slurm-llnl/docker-entrypoint.sh"]
+ENTRYPOINT ["/etc/slurm/docker-entrypoint.sh"]
