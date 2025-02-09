@@ -511,6 +511,26 @@ def test_system_create(site_config):
     assert system.partitions[0].container_runtime == 'Docker'
 
 
+def test_yaml_bindings(monkeypatch):
+    import os
+    import socket
+    import reframe.utility.osext as osext
+
+    monkeypatch.setenv('_FOO_', 'bar')
+    site_config = config.load_config(
+        'unittests/resources/config/bindings.yaml'
+    )
+    site_config.select_subconfig('testsys:default')
+    system = System.create(site_config)
+    extras = system.partitions[0].extras
+    assert extras['getenv'] == os.getenv('_FOO_')
+    assert extras['gid'] == os.getgid()
+    assert extras['group'] == osext.osgroup()
+    assert extras['hostname'] == socket.gethostname()
+    assert extras['uid'] == os.getuid()
+    assert extras['user'] == osext.osuser()
+
+
 def test_variables(tmp_path):
     # Test that the old syntax using `variables` instead of `env_vars` still
     # works

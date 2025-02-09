@@ -2316,10 +2316,12 @@ Since the configuration is loaded as a Python module, you can generate parts of 
 The YAML configuration on the other hand is more static, although not fully.
 Code generation can still be used with the YAML configuration as it is treated as a Jinja2 template, where ReFrame provides the following bindings:
 
-- ``hostname``: The local host's hostname.
 - ``getenv(<envvar>)``: Retrieve an environment variable.
-- ``sh(<command>)``: Retrieve the standard output of a shell command.
-  The command must be successful.
+- ``gid``: The real group id of the ReFrame process.
+- ``group``: The group name of the ReFrame process.
+- ``hostname``: The local host's hostname.
+- ``uid``: The real user id of the ReFrame process.
+- ``user``: The user name of the ReFrame process.
 
 These are two examples of YAML logging configuration that uses one of those bindings:
 
@@ -2339,17 +2341,7 @@ These are two examples of YAML logging configuration that uses one of those bind
    logging:
    - handlers:
    - type: file
-      name: reframe-{{ sh("hostname -s") }}.log
-      level: debug2
-      format: "[%(asctime)s.%(msecs)03d] %(levelname)s: %(check_info)s: %(message)s"
-      append: false
-
-.. code-block:: yaml
-
-   logging:
-   - handlers:
-   - type: file
-      name: reframe-{{ getenv("USER") }}.log
+      name: reframe-{{ getenv("FOO") }}.log
       level: debug2
       format: "[%(asctime)s.%(msecs)03d] %(levelname)s: %(check_info)s: %(message)s"
       append: false

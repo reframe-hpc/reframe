@@ -10,13 +10,13 @@ import functools
 import importlib
 import io
 import itertools
-import jinja2
 import json
 import jsonschema
 import os
 import re
 import socket
 import yaml
+from jinja2.sandbox import SandboxedEnvironment
 
 import reframe
 import reframe.core.settings as settings
@@ -24,8 +24,7 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.environments import normalize_module_list
-from reframe.core.exceptions import (ConfigError, ReframeFatalError,
-                                     SpawnedProcessError)
+from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
 from reframe.utility import ScopedDict
 
@@ -365,20 +364,19 @@ class _SiteConfig:
         self.update_config(config, filename)
 
     def load_config_yaml(self, filename):
-        def _shell(cmd):
-            '''Jinja wrapper for executing shell commands'''
-            try:
-                completed = osext.run_command(cmd, check=True)
-            except (FileNotFoundError, SpawnedProcessError) as err:
-                raise ConfigError('failed to run shell command') from err
-            else:
-                return completed.stdout.strip()
+        bindings = {
+            'getenv': os.getenv,
+            'gid': os.getgid(),
+            'group': osext.osgroup(),
+            'hostname': socket.gethostname(),
+            'uid': os.getuid(),
+            'user': osext.osuser(),
+        }
 
         with open(filename) as fp:
-            environment = jinja2.Environment()
+            environment = SandboxedEnvironment()
             template = environment.from_string(fp.read())
-            yaml_src = template.render(hostname=socket.gethostname(),
-                                       sh=_shell, getenv=os.getenv)
+            yaml_src = template.render(**bindings)
             try:
                 config = yaml.safe_load(io.StringIO(yaml_src))
             except Exception as err:
