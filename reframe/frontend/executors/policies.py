@@ -418,18 +418,18 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # I needed to do abortall on all the tests, not only the ones
         # which were initiated by the execution. Exit gracefully
         # the execuion loop aborting all the tasks
-        check, partition, _ = case
-
-        self._partition_tasks.setdefault(partition.fullname, util.OrderedSet())
-        self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
-
-        self._task_index[case] = task
-
         try:
+            check, partition, _ = case
+
+            self._partition_tasks.setdefault(partition.fullname, util.OrderedSet())
+            self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
+
+            self._task_index[case] = task
+
             # Do not run test if any of its dependencies has failed
             # NOTE: Restored dependencies are not in the task_index
             if any(self._task_index[c].failed
-                   for c in case.deps if c in self._task_index):
+                for c in case.deps if c in self._task_index):
                 raise TaskDependencyError('dependencies failed')
 
 
@@ -464,9 +464,9 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return 1
 
             await task.setup(task.testcase.partition,
-                       task.testcase.environ,
-                       sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                       sched_options=self.sched_options)
+                             task.testcase.environ,
+                             sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
+                             sched_options=self.sched_options)
 
             partname = _get_partition_name(task, phase='build')
             max_jobs = self._max_jobs[partname]
@@ -486,6 +486,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._pollctl.reset_snooze_time(sched.registered_name)
                 while True:
                     if not self.dry_run_mode:
+                        # Check if the task was completed
                         if task.compile_complete():
                             break
                         if (getpollcontroller().is_time_to_poll(sched.registered_name)): # and
@@ -500,10 +501,14 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                 getpollcontroller().reset_time_to_poll(sched.registered_name)
                                 # getpollcontroller()._poll_event[sched.registered_name].clear()
                                 await sched.poll(*jobs_pool)
+                                # Check if reframe was aborted but we were waiting for the command
+                                if hasattr(asyncio.Task.current_task(), 'aborting'):
+                                    raise asyncio.CancelledError
                                 getpollcontroller()._jobs_pooling[sched.registered_name] = [
                                     job for job in getpollcontroller()._jobs_pooling[sched.registered_name]
                                     if job not in jobs_pool
                                 ]
+                                await asyncio.sleep(0)
                                 # getpollcontroller()._poll_event[sched.registered_name].set()
 
                     if task.compile_complete():
@@ -545,6 +550,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                             break
                         if (getpollcontroller().is_time_to_poll(sched.registered_name)): # and
                             # getpollcontroller()._poll_event[sched.registered_name].is_set()):
+                            # Get the job IDs that have not yet been polled for
                             jobs_pool = list(set(getpollcontroller()._jobs_to_pool[
                                                 sched.registered_name
                                                 ]) - set(getpollcontroller()._jobs_pooling[
@@ -555,10 +561,13 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                 getpollcontroller().reset_time_to_poll(sched.registered_name)
                                 # getpollcontroller()._poll_event[sched.registered_name].clear()
                                 await sched.poll(*jobs_pool)
+                                if hasattr(asyncio.Task.current_task(), 'aborting'):
+                                    raise asyncio.CancelledError
                                 getpollcontroller()._jobs_pooling[sched.registered_name] = [
                                     job for job in getpollcontroller()._jobs_pooling[sched.registered_name]
                                     if job not in jobs_pool
                                 ]
+                                await asyncio.sleep(0)
                                 # getpollcontroller()._poll_event[sched.registered_name].set()
 
                     if task.run_complete():
@@ -577,6 +586,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     self._update_pipeline_progress('running', 'completing', 1)
             await task.run_wait()
             self._partition_tasks[partname].remove(task)
+
             if not self.skip_sanity_check:
                 task.sanity()
 
@@ -619,11 +629,9 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             return
         except ABORT_REASONS as e:
-            self._abortall(e)
-            if type(e) is KeyboardInterrupt:
-                raise KeyboardError
-            else:
-                raise e
+            raise
+        except asyncio.CancelledError:
+            task.abort()
         except BaseException:
             task.fail(sys.exc_info())
             self._current_tasks.remove(task)
@@ -667,24 +675,6 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # NOTE: Restored dependencies are not in the task_index
         return any(self._task_index[c].skipped
                    for c in task.testcase.deps if c in self._task_index)
-
-    def _abortall(self, cause):
-        '''Mark all tests as failures'''
-
-        getlogger().debug2(f'Aborting all tasks due to {type(cause).__name__}')
-        for task in self._current_tasks:
-            with contextlib.suppress(FailureLimitError):
-                task.abort(cause)
-        # Cancel the tasks inside the loop, otherwise they will continue switching control
-        # (after having cancelled all the jobs spawned by the task)
-        # WARNING SOMETIMES THE JOBS ARE NOT KILLED CORRECTLY
-        for task in all_tasks(asyncio.get_event_loop()):
-            if isinstance(task, asyncio.tasks.Task):
-                try:
-                    task.cancel()
-                except RuntimeError:
-                    pass
-
 
     def on_task_setup(self, task):
         if self._pipeline_statistics:
@@ -831,16 +821,15 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._init_pipeline_progress(len(self._current_tasks))
         try:
             # Wait for tasks until the first failure
-            loop.run_until_complete(asyncio.gather(*all_cases, return_exceptions=False))
+            loop.run_until_complete(asyncio.gather(*all_cases, return_exceptions=True))
         except (Exception, KeyboardInterrupt) as e:
             if type(e) in ABORT_REASONS:
-                # Try to cancel them again in case they were not cancelled properly
-                loop.run_until_complete(_cancel_gracefully(all_cases))
-                loop.close()
-                raise e
+                # When the KeyboardInterrupt happens while asyncio.sleep it comes here
+                abortall()
             else:
-                getlogger().info(f"Execution stopped due to an error: {e}")
+                getlogger().info(f"Execution stopped due to an error: {sys.exc_info()}")
         finally:
+            loop.run_until_complete(_cancel_gracefully(all_cases))
             loop.close()
         loop.close()
         self._exit()
@@ -850,6 +839,26 @@ async def _cancel_gracefully(all_cases):
     for case in all_cases:
         case.cancel()
     await asyncio.gather(*all_cases, return_exceptions=True)
+
+def abortall():
+    """Cancel all running tasks when SIGINT is received."""
+    # Retrieve all tasks
+    tasks = [t for t in asyncio.Task.all_tasks() if t is not asyncio.Task.current_task()]
+    # Tasks with running subprocesses
+    tasks_wait = [t for t in tasks if (hasattr(t, 'emitted_cmd'))]
+    # Tasks that can be cancelled directly
+    tasks_cancel = [t for t in tasks if (not hasattr(t, 'emitted_cmd') and 'runcase' in t._coro.__name__)]
+    getlogger().debug2("Cancelling {0} tasks: {1}".format(len(tasks_cancel), tasks_cancel))
+    getlogger().debug2("Waiting to cancel {0} tasks: {1}".format(len(tasks_wait), tasks_wait))
+    # Cancel the tasks
+    for task in tasks_cancel:
+        task.cancel()
+    tasks_to_cancel = []
+    for task in tasks_wait:
+        task.aborting = True
+        tasks_to_cancel.append(task)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(asyncio.gather(*tasks_to_cancel, return_exceptions=False))  # Wait for them to finish
 
 
 def all_tasks(loop):

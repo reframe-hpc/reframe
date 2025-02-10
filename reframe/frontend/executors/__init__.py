@@ -435,6 +435,8 @@ class RegressionTask:
         except ABORT_REASONS:
             self.fail()
             raise
+        except asyncio.CancelledError:
+            raise
         except BaseException as e:
             self.fail()
             raise TaskExit from e
@@ -558,11 +560,9 @@ class RegressionTask:
         exc.__cause__ = cause
         try:
             # The abort can also happen during a compile job
-            if not self.zombie and (self.check.job or self.check.build_job):
-                if self.check.build_job:
-                    self.check.build_job.cancel()
-                elif self.check.job:
-                    self.check.job.cancel()
+            if (self.check.job or self.check.build_job):
+                self.check.build_job.cancel()
+                self.check.job.cancel()
         except JobNotStartedError:
             self.fail((type(exc), exc, None), 'on_task_abort')
         except BaseException:

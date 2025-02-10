@@ -296,6 +296,8 @@ class SlurmJobScheduler(sched.JobScheduler):
             )
 
         job._jobid = jobid_match.group('jobid')
+        if hasattr(asyncio.Task.current_task(), 'aborting'):
+            raise asyncio.CancelledError
         job._submit_time = time.time()
 
     def allnodes(self):

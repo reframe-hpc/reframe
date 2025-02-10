@@ -416,64 +416,88 @@ async def run_command(cmd, check=False, timeout=None, **kwargs):
         times out.
 
     '''
-    if timeout:
-        cmd = f'timeout {timeout} ' + cmd
-    from reframe.core.logging import getlogger
-    getlogger().debug(f"START: {cmd} launching at {datetime.datetime.now()}")
-    ## Synchronous command launch ----------------------------------------
-    # t_start = time.time()
-    # proc = run_command_process(cmd, start_new_session=True, **kwargs)
-    # t_start = time.time()
-    ## Asynchronous command launch ----------------------------------------
-    t_start = time.time()
-    proc = await run_command_asyncio(cmd, start_new_session=False, **kwargs)
-    # await asyncio.sleep(0)
-    ## Asynchronous command communication ----------------------------------------
-    proc_stdout, proc_stderr = await proc.communicate()
-    ## Synchronous command communication ----------------------------------------
-    # t_end = time.time()
-    # getlogger().debug(f"INFO: {cmd} launch command took: {t_end-t_start}")
-    # t_start = time.time()
-    # loop = asyncio.get_event_loop()
-    # try:
-    #     proc_stdout, proc_stderr = await loop.run_in_executor(None, proc.communicate, timeout)
-    # except concurrent.futures._base.CancelledError:
-    #     raise KeyboardInterrupt
-    t_end = time.time()
-    getlogger().debug(f"INFO: {cmd} command took: {t_end-t_start}")
-
-    if proc.returncode == 124:
+    try:
+        from reframe.frontend.executors.policies import all_tasks
         from reframe.core.logging import getlogger
-        try:
-            # Get the process with psutil because we need to cancel the group
-            p = psutil.Process(proc.pid)
-            # Get the children of this group
-            children = p.children(recursive=True)
-        except (psutil.NoSuchProcess, ProcessLookupError):
-            children = []
-        try:
-            for child in children:
-                if child.is_running():
-                    child.send_signal(signal.SIGKILL)
-            proc.send_signal(signal.SIGKILL)
-        except (ProcessLookupError, PermissionError):
-            pass
+        proc_stdout, proc_stderr, proc = None, None, None
+        if timeout:
+            cmd = f'timeout {timeout} ' + cmd
+        # Check if any of the other
+        task_asyncio = asyncio.Task.current_task()
+        task_asyncio.emitted_cmd = True
+        getlogger().debug(f"START: {cmd} launching at {datetime.datetime.now()}")
+        ## Synchronous command launch ----------------------------------------
+        # t_start = time.time()
+        # proc = run_command_process(cmd, start_new_session=True, **kwargs)
+        # t_start = time.time()
+        ## Asynchronous command launch ----------------------------------------
+        t_start = time.time()
+        proc = await run_command_asyncio(cmd, start_new_session=False, **kwargs)
+        task_asyncio = asyncio.Task.current_task()
+        if hasattr(task_asyncio, "aborting"):
+            raise asyncio.CancelledError
+        else:
+            del task_asyncio.emitted_cmd
+        # await asyncio.sleep(0)
+        ## Asynchronous command communication ----------------------------------------
         proc_stdout, proc_stderr = await proc.communicate()
-        raise SpawnedProcessTimeout(cmd,
-                                    proc_stdout.decode(),
-                                    proc_stderr.decode(), timeout) from None
+        ## Synchronous command communication ----------------------------------------
+        # t_end = time.time()
+        # getlogger().debug(f"INFO: {cmd} launch command took: {t_end-t_start}")
+        # t_start = time.time()
+        # loop = asyncio.get_event_loop()
+        # try:
+        #     proc_stdout, proc_stderr = await loop.run_in_executor(None, proc.communicate, timeout)
+        # except concurrent.futures._base.CancelledError:
+        #     raise KeyboardInterrupt
+        t_end = time.time()
+        getlogger().debug(f"INFO: {cmd} command took: {t_end-t_start}")
 
-    completed = subprocess.CompletedProcess(cmd,
-                                            returncode=proc.returncode,
-                                            stdout=proc_stdout.decode(),
-                                            stderr=proc_stderr.decode())
+        if proc.returncode == 124:
+            from reframe.core.logging import getlogger
+            try:
+                # Get the process with psutil because we need to cancel the group
+                p = psutil.Process(proc.pid)
+                # Get the children of this group
+                children = p.children(recursive=True)
+            except (psutil.NoSuchProcess, ProcessLookupError):
+                children = []
+            try:
+                for child in children:
+                    if child.is_running():
+                        child.send_signal(signal.SIGKILL)
+                proc.send_signal(signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                pass
+            proc_stdout, proc_stderr = await proc.communicate()
+            raise SpawnedProcessTimeout(cmd,
+                                        proc_stdout.decode(),
+                                        proc_stderr.decode(), timeout) from None
 
-    if check and proc.returncode != 0:
-        raise SpawnedProcessError(completed.args,
-                                  completed.stdout, completed.stderr,
-                                  completed.returncode)
+        completed = subprocess.CompletedProcess(cmd,
+                                                returncode=proc.returncode,
+                                                stdout=proc_stdout.decode(),
+                                                stderr=proc_stderr.decode())
 
-    return completed
+        if check and proc.returncode != 0:
+            raise SpawnedProcessError(completed.args,
+                                    completed.stdout, completed.stderr,
+                                    completed.returncode)
+
+        return completed
+    except asyncio.CancelledError:
+        #TODO: FIX THIS
+        if proc is not None:
+            if not proc.returncode:
+                proc_stdout, proc_stderr = await proc.communicate()
+                return subprocess.CompletedProcess(cmd,
+                                                   returncode=proc.returncode,
+                                                   stdout=proc_stdout.decode(),
+                                                   stderr=proc_stderr.decode())
+            if proc.returncode == 124:
+                pass
+        raise
+
 
 
 def run_command_async2(*args, check=False, **kwargs):
