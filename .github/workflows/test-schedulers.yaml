@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        scheduler: ['pbs', 'squeue', 'torque']
+        scheduler: ['pbs', 'slurm', 'squeue', 'torque']
     steps:
     - uses: actions/checkout@v4
     - name: Login to GitHub Container Registry

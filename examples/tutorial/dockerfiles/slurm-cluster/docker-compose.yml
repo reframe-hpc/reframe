@@ -1,4 +1,14 @@
 services:
+  database:
+    image: mariadb:lts-ubi9
+    hostname: mariadb
+    container_name: mariadb
+    environment:
+      MARIADB_PASSWORD: "reframe"
+      MARIADB_ROOT_PASSWORD: "my-rfm-secret"
+      MARIADB_DATABASE: "rfm_slurm_db"
+      MARIADB_USER: "slurm"
+
   munge-key-generator:
     image: ghcr.io/reframe-hpc/munge-ubuntu:22.04
     hostname: munge-host
@@ -7,6 +17,22 @@ services:
         interval: 10s
         timeout: 10s
         retries: 5
+    volumes:
+      - shared-scratch:/scratch
+
+  slurmdbd:
+    image: ghcr.io/reframe-hpc/slurm-dbd-ubuntu:22.04
+    container_name: slurmdbd
+    hostname: slurmdbd
+    expose:
+      - "6819"
+    depends_on:
+      database:
+        condition: service_started
+      munge-key-generator:
+        condition: service_healthy
+    links:
+      - database
     volumes:
       - shared-scratch:/scratch
 
@@ -28,10 +54,13 @@ services:
         target: /home/admin/reframe-examples
     links:
       - slurm-master
+      - slurmdbd
     depends_on:
       munge-key-generator:
         condition: service_healthy
       slurm-master:
+        condition: service_started
+      slurmdbd:
         condition: service_started
       node0:
         condition: service_started
@@ -49,6 +78,8 @@ services:
     volumes:
       - shared-home:/home/admin
       - shared-scratch:/scratch:rw
+    links:
+      - slurmdbd
     depends_on:
       munge-key-generator:
           condition: service_healthy
