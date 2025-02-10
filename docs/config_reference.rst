@@ -6,9 +6,22 @@ ReFrame's behavior can be configured through its configuration file, environment
 An option can be specified via multiple paths (e.g., a configuration file parameter and an environment variable), in which case command-line options precede environment variables, which in turn precede configuration file options.
 This section provides a complete reference guide of the configuration options of ReFrame that can be set in its configuration file or specified using environment variables.
 
-ReFrame's configuration is in JSON syntax.
-The full schema describing it can be found in |schemas/config.json|_ file.
-The final configuration for ReFrame is validated against this schema.
+ReFrame's configuration is a JSON object that is stored in either a Python, JSON or YAML file.
+In case of Python configuration, the configuration object must be stored in the special ``site_configuration`` variable:
+
+.. code-block:: python
+
+   site_configuration = {
+      .. # The configuration details.
+   }
+
+The final configuration is validated against the schema |schemas/config.json|_.
+See also :ref:`manpage-configuration` for understanding how ReFrame builds its final configuration.
+
+.. warning::
+   .. versionchanged:: 4.8
+
+   Raw JSON configuration files are deprecated.
 
 The syntax we use to describe the different configuration objects follows the convention: ``OBJECT[.OBJECT]*.PROPERTY``.
 Even if a configuration object contains a list of other objects, this is not reflected in the above syntax, as all objects in a certain list are homogeneous.
@@ -82,6 +95,10 @@ It consists of the following properties, which we also call conventionally *conf
       If the requested symbol cannot be found, a warning will be issued and the method will be ignored.
    2. Shell commands: Any string not prefixed with ``py::`` will be treated as a shell command and will be executed *during auto-detection* to retrieve the hostname.
       The standard output of the command will be used.
+
+   .. note::
+
+      For YAML configuration files the ``py::`` prefixed strings cannot refer to user-defined functions.
 
    If the :option:`--system` option is not passed, ReFrame will try to autodetect the current system trying the methods in this list successively, until one of them succeeds.
    The resulting name will be matched against the :attr:`~config.systems.hostnames` patterns of each system and the system that matches first will be used as the current one.
@@ -2288,3 +2305,43 @@ A *device info object* in ReFrame's configuration is used to hold information ab
    :default: ``None``
 
    Number of devices of this type inside the system partition.
+
+
+Dynamic configuration
+=====================
+
+One advantage of ReFrame's configuration is that it is programmable, especially if you are using the Python files.
+Since the configuration is loaded as a Python module, you can generate parts of the configuration dynamically.
+
+The YAML configuration on the other hand is more static, although not fully.
+Code generation can still be used with the YAML configuration as it is treated as a Jinja2 template, where ReFrame provides the following bindings:
+
+- ``getenv(<envvar>)``: Retrieve an environment variable.
+- ``gid``: The real group id of the ReFrame process.
+- ``group``: The group name of the ReFrame process.
+- ``hostname``: The local host's hostname.
+- ``uid``: The real user id of the ReFrame process.
+- ``user``: The user name of the ReFrame process.
+
+These are two examples of YAML logging configuration that uses one of those bindings:
+
+.. code-block:: yaml
+
+   logging:
+   - handlers:
+   - type: file
+      name: reframe-{{ hostname }}.log
+      level: debug2
+      format: "[%(asctime)s.%(msecs)03d] %(levelname)s: %(check_info)s: %(message)s"
+      append: false
+
+
+.. code-block:: yaml
+
+   logging:
+   - handlers:
+   - type: file
+      name: reframe-{{ getenv("FOO") }}.log
+      level: debug2
+      format: "[%(asctime)s.%(msecs)03d] %(levelname)s: %(check_info)s: %(message)s"
+      append: false
