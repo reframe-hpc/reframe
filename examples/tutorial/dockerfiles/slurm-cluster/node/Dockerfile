@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -24,17 +24,17 @@ RUN useradd -m admin -s /usr/bin/bash -d /home/admin && \
     adduser admin sudo && \
     echo "admin     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-COPY slurm.conf /etc/slurm-llnl/
-COPY cgroup.conf /etc/slurm-llnl/
-COPY docker-entrypoint.sh /etc/slurm-llnl/
+COPY slurm.conf /etc/slurm/
+COPY cgroup.conf /etc/slurm/
+COPY docker-entrypoint.sh /etc/slurm/
 
-RUN chmod +r /etc/slurm-llnl/slurm.conf
-RUN chmod +r /etc/slurm-llnl/cgroup.conf
-RUN chmod +rx /etc/slurm-llnl/docker-entrypoint.sh
+RUN chmod +r /etc/slurm/slurm.conf
+RUN chmod +r /etc/slurm/cgroup.conf
+RUN chmod +rx /etc/slurm/docker-entrypoint.sh
 
 RUN mkdir /scratch && \
     chown -R admin:admin /scratch
 
 EXPOSE 6817 6818 6819
 
-ENTRYPOINT ["/etc/slurm-llnl/docker-entrypoint.sh"]
+ENTRYPOINT ["/etc/slurm/docker-entrypoint.sh"]
