@@ -180,16 +180,17 @@ These files are located by default under ``perflogs/<system>/<partition>/<testna
 In our example, this translates to ``perflogs/generic/default/stream_test.log``.
 The information that is being logged is fully configurable and we will cover this in the :ref:`logging` section.
 
-Finally, you can use also the :option:`--performance-report` option, which will print a summary of the results of the performance tests that have run in the current session and compare them (by default) to their last obtained performance.
+Finally, you can also use the :option:`--performance-report` option, which will print a summary of the results of the performance tests that have run in the current session and (optionally) compare them to past results (see :ref:`querying-past-results` for more on comparing performance results).
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
-   │ name        │ sysenv                  │ pvar     │    pval │ punit   │ pdiff   │ job_nodelist   │ result   │
-   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
-   │ stream_test │ generic:default+builtin │ copy_bw  │ 40292.1 │ MB/s    │ -0.04%  │ myhost         │ pass     │
-   │ stream_test │ generic:default+builtin │ triad_bw │ 30564.7 │ MB/s    │ +0.12%  │ myhost         │ pass     │
-   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
+   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━┑
+   │ name        │ sysenv                  │ job_nodelist   │ pvar     │ punit   │    pval │ result   │
+   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━┥
+   │ stream_test │ generic:default+builtin │ myhost         │ copy_bw  │ MB/s    │ 17154.1 │ pass     │
+   ├─────────────┼─────────────────────────┼────────────────┼──────────┼─────────┼─────────┼──────────┤
+   │ stream_test │ generic:default+builtin │ myhost         │ triad_bw │ MB/s    │ 13664.8 │ pass     │
+   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━┙
 
 
 Inspecting the test artifacts
