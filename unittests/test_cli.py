@@ -542,6 +542,20 @@ def test_execution_modes(run_reframe, run_action):
     assert 'Ran 1/1 test case' in stdout
 
 
+def test_execution_modes_envvar_expansion(run_reframe, monkeypatch):
+    monkeypatch.setenv('TEST_NAME_PATTERN', '^HelloTest$')
+    monkeypatch.setenv('VAR', 'x')
+    monkeypatch.setenv('VAL', '1')
+    returncode, stdout, stderr = run_reframe(
+        mode='env_vars', action='list'
+    )
+    assert returncode == 0
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert "the following variables were not set: 'x'"
+    assert 'Found 1 check(s)' in stdout
+
+
 def test_invalid_mode_error(run_reframe):
     mode = 'invalid'
     returncode, stdout, stderr = run_reframe(
