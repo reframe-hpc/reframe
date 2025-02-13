@@ -339,23 +339,42 @@ def test_check_sanity_failure(run_reframe, tmp_path, run_action):
 
 
 def test_dont_restage(run_reframe, tmp_path):
-    run_reframe(
-        checkpath=['unittests/resources/checks/frontend_checks.py'],
-        more_options=['-n', 'SanityFailureCheck']
-    )
+    # Here we test four properties of `--dont-restage`
+    # 1. If the stage directory has not been populated before, it will
+    # 2. If the stage directory has been populated, it will stay untouched
+    # 3. The sourcesdir will not be copied again
+    # 4. When combined with `--max-retries`, the stage directory is reused
 
-    # Place a random file in the test's stage directory and rerun with
-    # `--dont-restage` and `--max-retries`
+    returncode = run_reframe(
+        checkpath=['unittests/resources/checks/'],
+        more_options=['-n', 'SanityFailureCheck', '-n', '^HelloTest$',
+                      '--dont-restage', '--keep-stage-files']
+    )[0]
+    # Assert property (1)
+    assert returncode != 0
+
+    stagedir_runonly = (tmp_path / 'stage' / 'generic' / 'default' /
+                        'builtin' / 'SanityFailureCheck')
     stagedir = (tmp_path / 'stage' / 'generic' / 'default' /
-                'builtin' / 'SanityFailureCheck')
+                'builtin' / 'HelloTest')
+
+    # Place a new file in the stagedir to test (2)
     (stagedir / 'foobar').touch()
+    (stagedir_runonly / 'foobar').touch()
+
+    # Remove a not-needed file to test (2) and (3)
+    (stagedir / 'Makefile').unlink()
+    (stagedir_runonly / 'Makefile').unlink()
+
+    # Use `--max-retries` to test (4)
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         more_options=['-n', 'SanityFailureCheck',
                       '--dont-restage', '--max-retries=1']
     )
-    assert os.path.exists(stagedir / 'foobar')
-    assert not os.path.exists(f'{stagedir}_retry1')
+    assert os.path.exists(stagedir_runonly / 'foobar')
+    assert not os.path.exists(stagedir_runonly / 'Makefile')
+    assert not os.path.exists(f'{stagedir_runonly}_retry1')
 
     # And some standard assertions
     assert 'Traceback' not in stdout
