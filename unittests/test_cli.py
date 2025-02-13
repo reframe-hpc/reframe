@@ -552,7 +552,7 @@ def test_execution_modes_envvar_expansion(run_reframe, monkeypatch):
     assert returncode == 0
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    assert "the following variables were not set: 'x'"
+    assert "the following variables were not set: 'x'" in stdout
     assert 'Found 1 check(s)' in stdout
 
 

@@ -225,7 +225,7 @@ def test_select_subconfig(site_config):
     site_config.select_subconfig('testsys')
     assert len(site_config['systems']) == 1
     assert len(site_config['systems'][0]['partitions']) == 2
-    assert len(site_config['modes']) == 1
+    assert len(site_config['modes']) == 2
     assert site_config.get('systems/0/name') == 'testsys'
     assert site_config.get('systems/0/descr') == 'Fake system for unit tests'
     assert site_config.get('systems/0/hostnames') == ['testsys']
