@@ -423,33 +423,19 @@ async def run_command(cmd, check=False, timeout=None, **kwargs):
         if timeout:
             cmd = f'timeout {timeout} ' + cmd
         # Check if any of the other
-        task_asyncio = asyncio.Task.current_task()
+        task_asyncio = current_task()
         task_asyncio.emitted_cmd = True
         getlogger().debug(f"START: {cmd} launching at {datetime.datetime.now()}")
-        ## Synchronous command launch ----------------------------------------
-        # t_start = time.time()
-        # proc = run_command_process(cmd, start_new_session=True, **kwargs)
-        # t_start = time.time()
         ## Asynchronous command launch ----------------------------------------
         t_start = time.time()
         proc = await run_command_asyncio(cmd, start_new_session=False, **kwargs)
-        task_asyncio = asyncio.Task.current_task()
+        task_asyncio = current_task()
         if hasattr(task_asyncio, "aborting"):
             raise asyncio.CancelledError
         else:
             del task_asyncio.emitted_cmd
-        # await asyncio.sleep(0)
         ## Asynchronous command communication ----------------------------------------
         proc_stdout, proc_stderr = await proc.communicate()
-        ## Synchronous command communication ----------------------------------------
-        # t_end = time.time()
-        # getlogger().debug(f"INFO: {cmd} launch command took: {t_end-t_start}")
-        # t_start = time.time()
-        # loop = asyncio.get_event_loop()
-        # try:
-        #     proc_stdout, proc_stderr = await loop.run_in_executor(None, proc.communicate, timeout)
-        # except concurrent.futures._base.CancelledError:
-        #     raise KeyboardInterrupt
         t_end = time.time()
         getlogger().debug(f"INFO: {cmd} command took: {t_end-t_start}")
 
@@ -486,16 +472,24 @@ async def run_command(cmd, check=False, timeout=None, **kwargs):
 
         return completed
     except asyncio.CancelledError:
-        #TODO: FIX THIS
         if proc is not None:
             if not proc.returncode:
                 proc_stdout, proc_stderr = await proc.communicate()
+                task_asyncio = current_task()
+                if not hasattr(task_asyncio, 'aborting'):
+                    task_asyncio.aborting = True
                 return subprocess.CompletedProcess(cmd,
                                                    returncode=proc.returncode,
                                                    stdout=proc_stdout.decode(),
                                                    stderr=proc_stderr.decode())
             if proc.returncode == 124:
-                pass
+                completed = subprocess.CompletedProcess(cmd,
+                                                        returncode=proc.returncode,
+                                                        stdout=proc_stdout.decode(),
+                                                        stderr=proc_stderr.decode())
+                raise SpawnedProcessError(completed.args,
+                                          completed.stdout, completed.stderr,
+                                          completed.returncode)
         raise
 
 
@@ -1109,3 +1103,14 @@ def cray_cle_info(filename='/etc/opt/cray/release/cle-release'):
         info.get('NETWORK'),
         info.get('PATCHSET'),
     )
+
+def current_task():
+    """Wrapper for asyncio.current_task() compatible
+    with Python 3.6 and later.
+    """
+    if sys.version_info >= (3, 7):
+        # Use asyncio.current_task() directly in Python 3.7+
+        return asyncio.current_task()
+    else:
+        # Fallback to asyncio.tasks.current_task() in Python 3.6
+        return asyncio.Task.current_task()

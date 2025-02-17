@@ -6,6 +6,7 @@
 import asyncio
 import contextlib
 import math
+import signal
 import sys
 import time
 
@@ -502,7 +503,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                 # getpollcontroller()._poll_event[sched.registered_name].clear()
                                 await sched.poll(*jobs_pool)
                                 # Check if reframe was aborted but we were waiting for the command
-                                if hasattr(asyncio.Task.current_task(), 'aborting'):
+                                if hasattr(current_task(), 'aborting'):
                                     raise asyncio.CancelledError
                                 getpollcontroller()._jobs_pooling[sched.registered_name] = [
                                     job for job in getpollcontroller()._jobs_pooling[sched.registered_name]
@@ -561,7 +562,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                 getpollcontroller().reset_time_to_poll(sched.registered_name)
                                 # getpollcontroller()._poll_event[sched.registered_name].clear()
                                 await sched.poll(*jobs_pool)
-                                if hasattr(asyncio.Task.current_task(), 'aborting'):
+                                if hasattr(current_task(), 'aborting'):
                                     raise asyncio.CancelledError
                                 getpollcontroller()._jobs_pooling[sched.registered_name] = [
                                     job for job in getpollcontroller()._jobs_pooling[sched.registered_name]
@@ -629,6 +630,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             return
         except ABORT_REASONS as e:
+            task.abort()
             raise
         except asyncio.CancelledError:
             task.abort()
@@ -821,6 +823,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._init_pipeline_progress(len(self._current_tasks))
         try:
             # Wait for tasks until the first failure
+            # loop.add_signal_handler(signal.SIGINT, lambda:  asyncio.ensure_future(handle_sigint())
             loop.run_until_complete(asyncio.gather(*all_cases, return_exceptions=True))
         except (Exception, KeyboardInterrupt) as e:
             if type(e) in ABORT_REASONS:
@@ -840,10 +843,31 @@ async def _cancel_gracefully(all_cases):
         case.cancel()
     await asyncio.gather(*all_cases, return_exceptions=True)
 
+async def abortall_signalhandler():
+    """Cancel all running tasks when SIGINT is received."""
+    # Retrieve all tasks
+    tasks = [t for t in asyncio.Task.all_tasks() if t is not current_task()]
+    # Tasks with running subprocesses
+    tasks_wait = [t for t in tasks if (hasattr(t, 'emitted_cmd'))]
+    # Tasks that can be cancelled directly
+    tasks_cancel = [t for t in tasks if (not hasattr(t, 'emitted_cmd') and 'runcase' in t._coro.__name__)]
+    getlogger().debug2("Cancelling {0} tasks: {1}".format(len(tasks_cancel), tasks_cancel))
+    getlogger().debug2("Waiting to cancel {0} tasks: {1}".format(len(tasks_wait), tasks_wait))
+    # Cancel the tasks
+    for task in tasks_cancel:
+        print(f"Cancelando {task}")
+        task.cancel()
+    tasks_to_cancel = []
+    for task in tasks_wait:
+        task.aborting = True
+        tasks_to_cancel.append(task)
+    await asyncio.gather(*tasks_to_cancel, return_exceptions=False)  # Wait for them to finish
+    await asyncio.gather(*tasks_cancel, return_exceptions=False)
+
 def abortall():
     """Cancel all running tasks when SIGINT is received."""
     # Retrieve all tasks
-    tasks = [t for t in asyncio.Task.all_tasks() if t is not asyncio.Task.current_task()]
+    tasks = [t for t in asyncio.Task.all_tasks() if t is not current_task()]
     # Tasks with running subprocesses
     tasks_wait = [t for t in tasks if (hasattr(t, 'emitted_cmd'))]
     # Tasks that can be cancelled directly
@@ -860,6 +884,12 @@ def abortall():
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.gather(*tasks_to_cancel, return_exceptions=False))  # Wait for them to finish
 
+async def handle_sigint():
+    """Handle SIGINT and cancel tasks."""
+    # print(sys.exc_info())
+    print("\nReceived SIGINT. Cleaning up...")
+    await abortall_signalhandler()
+    print("Cleanup done. Exiting.")
 
 def all_tasks(loop):
     """Wrapper for asyncio.current_task() compatible with Python 3.6 and later.
@@ -870,3 +900,13 @@ def all_tasks(loop):
     else:
         # Fallback to asyncio.tasks.current_task() in Python 3.6
         return asyncio.Task.all_tasks(loop)
+
+def current_task():
+    """Wrapper for asyncio.current_task() compatible with Python 3.6 and later.
+    """
+    if sys.version_info >= (3, 7):
+        # Use asyncio.current_task() directly in Python 3.7+
+        return asyncio.current_task()
+    else:
+        # Fallback to asyncio.tasks.current_task() in Python 3.6
+        return asyncio.Task.current_task()
