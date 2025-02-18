@@ -34,7 +34,7 @@ site_configuration = {
                 {
                     'name': 'compute',
                     'descr': 'Compute nodes',
-                    'scheduler': 'slurm',
+                    'scheduler': 'squeue',
                     'launcher': 'srun',
                     'access': ['-p all'],
                     'environs': ['gnu', 'gnu-mpi', 'clang']

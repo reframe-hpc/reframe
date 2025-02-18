@@ -7,16 +7,8 @@ RUN apt update -y && apt install -y \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -m admin -s /usr/bin/bash -d /home/admin && \
-    echo "admin:admin" | chpasswd && \
-    adduser admin sudo && \
-    echo "admin     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
-RUN mkdir /scratch && \
-    chown -R admin:admin /scratch
+RUN chmod +rx /usr/local/bin/entrypoint.sh
 
-COPY entrypoint.sh /etc/munge/
-
-RUN chmod +rx /etc/munge/entrypoint.sh
-
-ENTRYPOINT ["/etc/munge/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

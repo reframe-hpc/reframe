@@ -7,7 +7,6 @@ RUN apt update -y && \
     build-essential \
     clang jq libomp-dev tree vim \
     git \
-    mariadb-client \
     munge \
     slurm-client \
     slurm-wlm-torque \
@@ -24,14 +23,12 @@ RUN useradd -m admin -s /usr/bin/bash -d /home/admin && \
     echo "admin:admin" | chpasswd && adduser admin sudo && \
     echo "admin     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-COPY slurm.conf /etc/slurm/
-COPY cgroup.conf /etc/slurm/
-COPY docker-entrypoint.sh /etc/slurm/
+COPY docker-entrypoint.sh /usr/local/bin/
 
 RUN mkdir /scratch && \
     chown -R admin:admin /scratch
 
-RUN chmod +rx /etc/slurm/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Install reframe
 ARG REFRAME_TAG=develop
@@ -46,4 +43,4 @@ WORKDIR /home/admin
 ENV USER admin
 ENV SHELL bash
 
-ENTRYPOINT ["/etc/slurm/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
