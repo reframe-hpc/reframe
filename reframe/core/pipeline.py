@@ -2645,7 +2645,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         The resources of the test are copied to the stage directory and the
         rest of execution is delegated to the :func:`RegressionTest.run()`.
         '''
-        if (self.sourcesdir and self._requires_stagedir_contents()):
+        if self.sourcesdir and self._requires_stagedir_contents():
             if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:
