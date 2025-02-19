@@ -19,6 +19,7 @@ from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError, JobSchedulerError
 from reframe.core.schedulers.pbs import PbsJobScheduler
 from reframe.utility import seconds_to_hms
+from reframe.frontend.executors.policies import current_task
 
 
 # States can be found here:
@@ -125,6 +126,8 @@ class OarJobScheduler(PbsJobScheduler):
                                     'of the submitted job')
 
         job._jobid = jobid_match.group('jobid')
+        if hasattr(current_task(), 'aborting'):
+            raise asyncio.CancelledError
         job._submit_time = time.time()
 
     def cancel(self, job):

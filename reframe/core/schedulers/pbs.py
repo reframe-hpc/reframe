@@ -21,6 +21,7 @@ import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError, JobSchedulerError
 from reframe.utility import seconds_to_hms, toalphanum
+from reframe.frontend.executors.policies import current_task
 
 
 # Time to wait after a job is finished for its standard output/error to be
@@ -166,6 +167,8 @@ class PbsJobScheduler(sched.JobScheduler):
                                     'of the submitted job')
 
         job._jobid = jobid_match.group('jobid')
+        if hasattr(current_task(), 'aborting'):
+            raise asyncio.CancelledError
         job._submit_time = time.time()
 
     async def wait(self, job):

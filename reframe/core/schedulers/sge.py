@@ -19,6 +19,7 @@ from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobSchedulerError
 from reframe.core.schedulers.pbs import PbsJobScheduler
 from reframe.utility import seconds_to_hms
+from reframe.frontend.executors.policies import current_task
 
 # Asynchronous _run_strict
 _run_strict = functools.partial(osext.run_command, check=True)
@@ -67,6 +68,8 @@ class SgeJobScheduler(PbsJobScheduler):
                                     'of the submitted job')
 
         job._jobid = jobid_match.group('jobid')
+        if hasattr(current_task(), 'aborting'):
+            raise asyncio.CancelledError
         job._submit_time = time.time()
 
     async def poll(self, *jobs):

@@ -18,6 +18,7 @@ import time
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError
 from reframe.core.schedulers import JobScheduler, Job
+from reframe.frontend.executors.policies import current_task
 
 # Just import flux once
 try:
@@ -79,6 +80,8 @@ class FluxJobScheduler(JobScheduler):
 
         flux_future = self._fexecutor.submit(job.fluxjob)
         job._jobid = str(flux_future.jobid())
+        if hasattr(current_task(), 'aborting'):
+            raise asyncio.CancelledError
         job._submit_time = time.time()
         job._flux_future = flux_future
 
