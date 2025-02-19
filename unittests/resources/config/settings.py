@@ -275,6 +275,11 @@ site_configuration = {
                 '-p builtin',
                 '-S local=1'
             ]
+        },
+        {
+            'name': 'env_vars',
+            'options': ['-n', '${TEST_NAME_PATTERN}',
+                        '-S', '${VAR}=${VAL}']
         }
     ],
     'logging': [
