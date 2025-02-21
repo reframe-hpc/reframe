@@ -587,7 +587,7 @@ class CMake(ConfigureBasedBuildSystem):
 
         if self.config_opts:
             cmake_cmd += self.config_opts
-        
+
         if self.builddir:
             cmake_cmd += [os.path.join(
                 os.path.relpath(self.configuredir, self.builddir)
