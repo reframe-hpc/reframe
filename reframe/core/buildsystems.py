@@ -489,6 +489,11 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: ``'.'``
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 4.8
+    #:        The field is now available in all configure-based build systems
+    #:        (Autotools, CMake).
     configuredir = variable(str, value='.')
 
     #: The CMake build directory, where all the generated files will be placed.
