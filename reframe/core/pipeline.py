@@ -2347,6 +2347,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     async def _copy_to_outputdir(self):
         '''Copy check's interesting files to the output directory.'''
         self.logger.debug('Copying test files to output directory')
+        loop = asyncio.get_event_loop()
         await self._copy_job_files(self._job, self.outputdir)
         await self._copy_job_files(self._build_job, self.outputdir)
 
