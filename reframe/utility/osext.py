@@ -60,6 +60,7 @@ class _ProcFuture:
         self._done_callbacks = []
         self._completed = False
         self._cancelled = False
+        self._session = False
 
     def _check_started(self):
         if not self.started():

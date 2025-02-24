@@ -268,7 +268,7 @@ site_configuration = {
                         '[%(check_job_completion_time)s] %(levelname)s: '
                         '%(check_name)s: %(message)s'
                     ),
-                    'datefmt': '%FT%T',
+                    'datefmt': r'%FT%T',
                     'append': False,
                 },
             ],

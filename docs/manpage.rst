@@ -2256,16 +2256,27 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 
+.. _manpage-configuration:
 
-Configuration File
-==================
+Configuration
+=============
 
-The configuration file of ReFrame defines the systems and environments to test as well as parameters controlling the framework's behavior.
+ReFrame's configuration can be stored in one or multiple configuration files.
+Two configuration file types are supported: Python and YAML.
 
-ReFrame loads multiple configuration files to determine its final configuration.
-First, it loads unconditionally its builtin configuration which is located in ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
-If the :envvar:`RFM_CONFIG_PATH` environment variable is defined, ReFrame will look for configuration files named either ``settings.py`` or ``settings.json`` (in that order) in every location in the path and will load them.
-Finally, the :option:`--config-file` option is processed and any configuration files specified will also be loaded.
+.. note::
+
+   .. versionchanged:: 4.8
+
+   The JSON configuration files are deprecated.
+
+The configuration of ReFrame defines the systems and environments to test as well as parameters controlling the framework's behavior.
+
+To determine its final configuration, ReFrame executes the following steps:
+
+- First, it unconditionally loads the builtin configuration which is located in ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
+- Second, if the :envvar:`RFM_CONFIG_PATH` environment variable is defined, ReFrame will look for configuration files named either ``settings.py`` or ``settings.yaml`` or ``settings.json`` (in that order) in every location in the path and will load them.
+- Finally, the :option:`--config-file` option is processed and any configuration files specified will also be loaded.
 
 For a complete reference of the available configuration options, please refer to the :doc:`reframe.settings(8) <config_reference>` man page.
 

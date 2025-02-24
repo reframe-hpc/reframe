@@ -5,6 +5,7 @@
 
 import abc
 import asyncio
+import itertools
 import logging
 import logging.handlers
 import numbers
@@ -555,6 +556,8 @@ def _create_httpjson_handler(site_config, config_prefix):
     json_formatter = site_config.get(f'{config_prefix}/json_formatter')
     extra_headers = site_config.get(f'{config_prefix}/extra_headers')
     debug = site_config.get(f'{config_prefix}/debug')
+    backoff_intervals = site_config.get(f'{config_prefix}/backoff_intervals')
+    retry_timeout = site_config.get(f'{config_prefix}/retry_timeout')
 
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.scheme not in {'http', 'https'}:
@@ -596,7 +599,8 @@ def _create_httpjson_handler(site_config, config_prefix):
                             'no data will be sent to the server')
 
     return HTTPJSONHandler(url, extras, ignore_keys, json_formatter,
-                           extra_headers, debug)
+                           extra_headers, debug, backoff_intervals,
+                           retry_timeout)
 
 
 def _record_to_json(record, extras, ignore_keys):
@@ -646,7 +650,7 @@ class HTTPJSONHandler(logging.Handler):
 
     def __init__(self, url, extras=None, ignore_keys=None,
                  json_formatter=None, extra_headers=None,
-                 debug=False):
+                 debug=False, backoff_intervals=(1, 2, 3), retry_timeout=0):
         super().__init__()
         self._url = url
         self._extras = extras
@@ -670,6 +674,8 @@ class HTTPJSONHandler(logging.Handler):
             self._headers.update(extra_headers)
 
         self._debug = debug
+        self._timeout = retry_timeout
+        self._backoff_intervals = backoff_intervals
 
     def emit(self, record):
         # Convert tags to a list to make them JSON friendly
@@ -681,7 +687,6 @@ class HTTPJSONHandler(logging.Handler):
             return
 
         if self._debug:
-            import time
             ts = int(time.time() * 1_000)
             dump_file = f'httpjson_record_{ts}.json'
             with open(dump_file, 'w') as fp:
@@ -689,11 +694,26 @@ class HTTPJSONHandler(logging.Handler):
 
             return
 
+        timeout_time = time.time() + self._timeout
         try:
-            requests.post(
-                self._url, data=json_record,
-                headers=self._headers
-            )
+            backoff_intervals = itertools.cycle(self._backoff_intervals)
+            while True:
+                response = requests.post(
+                    self._url, data=json_record,
+                    headers=self._headers
+                )
+                if response.ok:
+                    break
+
+                if (response.status_code == 429 and
+                    (not self._timeout or time.time() < timeout_time)):
+                    time.sleep(next(backoff_intervals))
+                    continue
+
+                raise LoggingError(
+                    f'HTTPJSONhandler logging failed: HTTP response code '
+                    f'{response.status_code}'
+                )
         except requests.exceptions.RequestException as e:
             raise LoggingError('logging failed') from e
 

@@ -173,7 +173,12 @@
                         },
                         "json_formatter": {},
                         "extra_headers": {"type": "object"},
-                        "debug": {"type": "boolean"}
+                        "debug": {"type": "boolean"},
+                        "backoff_intervals": {
+                            "type": "array",
+                            "items": {"type": "number"}
+                        },
+                        "retry_timeout": {"type": "number"}
                     },
                     "required": ["url"]
                 }
@@ -531,6 +536,7 @@
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "table_format": {"enum": ["csv", "plain", "pretty"]},
                     "timestamp_dirs": {"type": "string"},
+                    "topology_prefix": {"type": "string"},
                     "trap_job_errors": {"type": "boolean"},
                     "unload_modules": {"$ref": "#/defs/modules_list"},
                     "use_login_shell": {"type": "boolean"},
@@ -632,6 +638,8 @@
         "logging/handlers_perflog/httpjson_json_formatter": null,
         "logging/handlers_perflog/httpjson_extra_headers": {},
         "logging/handlers_perflog/httpjson_debug": false,
+        "logging/handlers_perflog/httpjson_backoff_intervals": [0.1, 0.2, 0.4, 0.8, 1.6, 3.2],
+        "logging/handlers_perflog/httpjson_retry_timeout": 0,
         "modes/options": [],
         "modes/target_systems": ["*"],
         "storage/enable": false,

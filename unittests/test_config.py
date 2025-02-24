@@ -6,6 +6,7 @@
 import json
 import pytest
 import sys
+import yaml
 
 import reframe.core.config as config
 import reframe.utility as util
@@ -13,11 +14,17 @@ from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
 
 
+@pytest.fixture(params=['python', 'yaml'])
+def config_type(request):
+    return request.param
+
+
 @pytest.fixture
-def generate_partial_configs(tmp_path):
-    part1 = tmp_path / 'settings-part1.py'
-    part2 = tmp_path / 'settings-part2.py'
-    part3 = tmp_path / 'settings-part3.py'
+def generate_partial_configs(tmp_path, config_type):
+    ext = 'py' if config_type == 'python' else 'yaml'
+    part1 = tmp_path / f'settings-part1.{ext}'
+    part2 = tmp_path / f'settings-part2.{ext}'
+    part3 = tmp_path / f'settings-part3.{ext}'
     mod = util.import_module_from_file(
         'unittests/resources/config/settings.py'
     )
@@ -42,19 +49,26 @@ def generate_partial_configs(tmp_path):
 
     # We need to make sure that the custom hostname function is in one of the
     # files
-    part1.write_text(f'def hostname(): return "testsys"\n'
-                     f'site_configuration = {config_1!r}')
-    part2.write_text(f'site_configuration = {config_2!r}')
-    part3.write_text(f'site_configuration = {config_3!r}')
+    if config_type == 'python':
+        part1.write_text(f'def hostname(): return "testsys"\n'
+                         f'site_configuration = {config_1!r}')
+        part2.write_text(f'site_configuration = {config_2!r}')
+        part3.write_text(f'site_configuration = {config_3!r}')
+    else:
+        part1.write_text(yaml.dump(config_1))
+        part2.write_text(yaml.dump(config_2))
+        part3.write_text(yaml.dump(config_3))
+
     return part1, part2, part3
 
 
 @pytest.fixture(params=['full', 'parts'])
-def site_config(request, generate_partial_configs):
+def site_config(request, generate_partial_configs, config_type):
     # `unittests/resources/config/settings.py` should be equivalent to loading
     # the `unittests/resources/config/settings-part*.py` files
     if request.param == 'full':
-        return config.load_config('unittests/resources/config/settings.py')
+        ext = 'py' if config_type == 'python' else 'yaml'
+        return config.load_config(f'unittests/resources/config/settings.{ext}')
     else:
         return config.load_config(*generate_partial_configs)
 
@@ -217,7 +231,7 @@ def test_select_subconfig_empty_logging():
     site_config = config.load_config('reframe/core/settings.py')
     site_config['logging'][0] = {}
     with pytest.raises(ConfigError,
-                       match=rf"'logging/handlers\$' are not defined"):
+                       match=r"'logging/handlers\$' are not defined"):
         site_config.select_subconfig()
 
 
@@ -392,7 +406,7 @@ def test_multi_config_combine_general_options(write_config):
     site_config.select_subconfig('testsys:login')
     assert site_config.get('general/0/check_search_path') == ['a:b']
     assert site_config.get('general/0/pipeline_timeout') == 10
-    assert site_config.get('general/0/colorize') == False
+    assert site_config.get('general/0/colorize') is False
 
 
 def test_multi_config_combine_logging_options(write_config):
@@ -497,6 +511,26 @@ def test_system_create(site_config):
     assert system.partitions[0].container_runtime == 'Docker'
 
 
+def test_yaml_bindings(monkeypatch):
+    import os
+    import socket
+    import reframe.utility.osext as osext
+
+    monkeypatch.setenv('_FOO_', 'bar')
+    site_config = config.load_config(
+        'unittests/resources/config/bindings.yaml'
+    )
+    site_config.select_subconfig('testsys:default')
+    system = System.create(site_config)
+    extras = system.partitions[0].extras
+    assert extras['getenv'] == os.getenv('_FOO_')
+    assert extras['gid'] == os.getgid()
+    assert extras['group'] == osext.osgroup()
+    assert extras['hostname'] == socket.gethostname()
+    assert extras['uid'] == os.getuid()
+    assert extras['user'] == osext.osuser()
+
+
 def test_variables(tmp_path):
     # Test that the old syntax using `variables` instead of `env_vars` still
     # works
@@ -543,13 +577,19 @@ def test_autodetect_meth_python(site_config, tmp_path):
     del sys.modules['mymod']
 
 
-def test_autodetect_meth_python_inline(site_config):
+def test_autodetect_meth_python_inline(site_config, config_type):
+    if config_type == 'yaml':
+        pytest.skip('unsupported for YAML configs')
+
     site_config.set_autodetect_methods(['py::hostname'])
     site_config.select_subconfig()
     assert site_config.get('systems/0/name') == 'testsys'
 
 
-def test_autodetect_meth_python_errors(site_config):
+def test_autodetect_meth_python_errors(site_config, config_type):
+    if config_type == 'yaml':
+        pytest.skip('unsupported for YAML configs')
+
     site_config.set_autodetect_methods(['py::mymod.foo'])
     with pytest.raises(ConfigError):
         site_config.select_subconfig()

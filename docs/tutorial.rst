@@ -458,6 +458,25 @@ Note also that the system and environment specification in the test run output i
 ReFrame has determined that the ``default`` partition and the ``baseline`` environment satisfy the test constraints and thus it has run the test with this partition/environment combination.
 
 
+YAML configuration
+------------------
+
+.. versionadded:: 4.8
+
+Apart from Python, ReFrame's configuration can be specified in a YAML file.
+The advantage is a more compact configuration, but it's not fully programmable as is the Python configuration.
+Below is the same configuration file presented above, but in YAML:
+
+
+.. literalinclude:: ../examples/tutorial/config/baseline.yaml
+   :caption:
+   :lines: 6-
+
+If you are using multiple configuration files, ReFrame allows you to "mix and match" the configuration file types: some of them can be in Python, others in YAML.
+
+Note that YAML configuration files offer a minimal programmability as they are essentially `Jinja2 <https://jinja.palletsprojects.com/>`__ templates where a few variables are substituted by ReFrame.
+Check the configuration reference for more information.
+
 .. _compiling-the-test-code:
 
 Compiling the test code

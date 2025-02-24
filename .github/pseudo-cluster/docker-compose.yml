@@ -1,6 +1,6 @@
 services:
   munge-key-generator:
-    image: ghcr.io/reframe-hpc/munge-ubuntu:20.04
+    image: ghcr.io/reframe-hpc/munge-ubuntu:22.04
     hostname: munge-host
     healthcheck:
         test: ["CMD-SHELL", "test -f /scratch/munge.key"]
@@ -40,7 +40,7 @@ services:
       - BACKEND=${BACKEND:-squeue}
 
   slurm-master:
-    image: ghcr.io/reframe-hpc/slurm-master-ubuntu:20.04
+    image: ghcr.io/reframe-hpc/slurm-master-ubuntu:22.04
     hostname: slurm-master
     user: admin
     volumes:
@@ -53,7 +53,7 @@ services:
       - SLURM_CPUS_ON_NODE=1
 
   node0:
-    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:20.04
+    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:22.04
     hostname: nid00
     container_name: slurm-node0
     user: admin
@@ -72,7 +72,7 @@ services:
       - slurm-master
 
   node1:
-    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:20.04
+    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:22.04
     hostname: nid01
     container_name: slurm-node1
     user: admin
@@ -91,7 +91,7 @@ services:
       - slurm-master
 
   node2:
-    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:20.04
+    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:22.04
     hostname: nid02
     container_name: slurm-node2
     user: admin

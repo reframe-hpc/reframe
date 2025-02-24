@@ -21,9 +21,10 @@ import reframe.frontend.dependencies as dependencies
 import reframe.utility.jsonext as jsonext
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import (AbortTaskError,
-                                     JobNotStartedError,
                                      FailureLimitError,
                                      ForceExitError,
+                                     JobNotStartedError,
+                                     LoggingError,
                                      KeyboardError,
                                      RunSessionTimeout,
                                      SkipTestError,
@@ -529,8 +530,13 @@ class RegressionTask:
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
-        self._perflogger.log_performance(logging.INFO, self,
-                                         multiline=self._perflog_compat)
+        try:
+            self._perflogger.log_performance(logging.INFO, self,
+                                             multiline=self._perflog_compat)
+        except LoggingError as e:
+            logging.getlogger().warning(
+                f'could not log performance data for {self.testcase}: {e}'
+            )
 
     @logging.time_function
     async def cleanup(self, *args, **kwargs):
@@ -543,8 +549,13 @@ class RegressionTask:
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners(callback)
-        self._perflogger.log_performance(logging.INFO, self,
-                                         multiline=self._perflog_compat)
+        try:
+            self._perflogger.log_performance(logging.INFO, self,
+                                             multiline=self._perflog_compat)
+        except LoggingError as e:
+            logging.getlogger().warning(
+                f'could not log performance data for {self.testcase}: {e}'
+            )
 
     def skip(self, exc_info=None):
         self._skipped = True
