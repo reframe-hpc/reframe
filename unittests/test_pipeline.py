@@ -763,6 +763,23 @@ def test_sourcesdir_build_system(local_exec_ctx):
     _run(MyTest(), *local_exec_ctx)
 
 
+def test_sourcesdir_git(local_exec_ctx):
+    @test_util.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        sourcesdir = 'https://github.com/octocat/hello-worId.git'
+        executable = 'true'
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        keep_files = ['README.md']
+
+        @sanity_function
+        def validate(self):
+            print(self.stagedir)
+            return sn.assert_true(os.path.exists('README.md'))
+
+    _run(MyTest(), *local_exec_ctx)
+
+
 def test_sourcesdir_none_generated_sources(local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(rfm.RegressionTest):
