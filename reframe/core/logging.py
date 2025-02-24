@@ -965,7 +965,7 @@ _global_logger = null_logger
 class logging_context:
     def __init__(self, check=None, level=DEBUG):
         try:
-            task = current_task()
+            task = osext.current_task()
         except RuntimeError:
             global _global_logger
             task = None
@@ -989,7 +989,7 @@ class logging_context:
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
-            task = current_task()
+            task = osext.current_task()
         except RuntimeError:
             global _global_logger
             task = None
@@ -1033,7 +1033,7 @@ def save_log_files(dest):
 
 def getlogger():
     try:
-        task = current_task()
+        task = osext.current_task()
     except RuntimeError:
         task = None
     if task:
@@ -1097,15 +1097,3 @@ class logging_sandbox:
         _logger = self._logger
         _perf_logger = self._perf_logger
         _global_logger = self._context_logger
-
-
-def current_task():
-    """Wrapper for asyncio.current_task() compatible
-    with Python 3.6 and later.
-    """
-    if sys.version_info >= (3, 7):
-        # Use asyncio.current_task() directly in Python 3.7+
-        return asyncio.current_task()
-    else:
-        # Fallback to asyncio.tasks.current_task() in Python 3.6
-        return asyncio.Task.current_task()

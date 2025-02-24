@@ -236,4 +236,4 @@ class LocalJobScheduler(sched.JobScheduler):
             job._state = 'FAILURE' if job.exitcode != 0 else 'SUCCESS'
         else:
             job._state = 'FAILURE'
-            job._signal = job.proc.returncode
+            job._signal = abs(job.proc.returncode)

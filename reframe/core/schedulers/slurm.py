@@ -22,7 +22,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobError,
                                      JobSchedulerError)
 from reframe.utility import nodelist_abbrev, seconds_to_hms
-from reframe.frontend.executors.policies import current_task
+from reframe.utility.osext import current_task
 
 
 def slurm_state_completed(state):
@@ -464,6 +464,11 @@ class SlurmJobScheduler(sched.JobScheduler):
                 f'-j {",".join(job.jobid for job in jobs)} '
                 f'-o jobid,state,exitcode,end,nodelist'
             )
+            # completed = _run_strict_s(
+            #     f'sacct -S {t_start} -P '
+            #     f'-j {",".join(job.jobid for job in jobs)} '
+            #     f'-o jobid,state,exitcode,end,nodelist'
+            # )
 
         self._update_state_count += 1
 
@@ -529,6 +534,9 @@ class SlurmJobScheduler(sched.JobScheduler):
             completed = await osext.run_command(
                 'squeue -h -j %s -o %%r' % job.jobid
             )
+            # completed = osext.run_command_s(
+            #     'squeue -h -j %s -o %%r' % job.jobid
+            # )
             if hasattr(current_task(), 'aborting'):
                 raise asyncio.CancelledError
             reasons = completed.stdout.splitlines()

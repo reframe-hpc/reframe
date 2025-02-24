@@ -9,6 +9,7 @@
 # - Initial version submitted by Mahendra Paipuri, INRIA
 #
 
+import asyncio
 import functools
 import os
 import re
@@ -19,7 +20,7 @@ from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError, JobSchedulerError
 from reframe.core.schedulers.pbs import PbsJobScheduler
 from reframe.utility import seconds_to_hms
-from reframe.frontend.executors.policies import current_task
+from reframe.utility.osext import current_task
 
 
 # States can be found here:

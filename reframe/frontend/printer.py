@@ -177,7 +177,9 @@ class PrettyPrinter:
             for r in run_info['testcases']:
                 if r['result'] in {'pass', 'abort', 'skip'}:
                     continue
-
+                # When the task has not been initialized by asyncio and the tests were aborted
+                if r['result'] == '<unknown>':
+                    continue
                 _print_failure_info(r, run_no, len(report['runs']))
 
         self.info(line_width * '-')

@@ -10,6 +10,7 @@
 # - Extended and fixed by Jonathan Frawley and Mark Turner
 #
 
+import asyncio
 import functools
 import re
 import time
@@ -18,7 +19,7 @@ import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobSchedulerError
 from reframe.core.schedulers.pbs import PbsJobScheduler
-from reframe.frontend.executors.policies import current_task
+from reframe.utility.osext import current_task
 
 # Asynchronous _run_strict
 _run_strict = functools.partial(osext.run_command, check=True)

@@ -22,7 +22,7 @@ from reframe.core.logging import getlogger, level_from_str
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 from reframe.frontend.executors import asyncio_run
-
+from reframe.utility.osext import current_task, all_tasks
 
 def _get_partition_name(task, phase='run'):
     if (task.check.local or
@@ -65,6 +65,7 @@ class _PollController:
         self._num_polls = 0
         self._sleep_duration = {}
         self._t_init = {}
+        self._t_init_polling = {}
         self._t_snoozed = {}
         self._jobs_to_pool = {}
         self._jobs_pooling = {}
@@ -73,6 +74,8 @@ class _PollController:
     def reset_snooze_time(self, sched):
         if self._sleep_duration.get(sched) is None:
             self._sleep_duration[sched] = self.SLEEP_MIN
+        if self._t_init_polling.get(sched) is None:
+            self._t_init_polling[sched] = time.time()
         if self._poll_event.get(sched) is None:
             self._poll_event[sched] = asyncio.Event()
             self._poll_event[sched].set()
@@ -84,7 +87,7 @@ class _PollController:
             self._t_init[sched] = time.time()
             self._t_snoozed[sched] = time.time()
 
-        t_elapsed = time.time() - self._t_init[sched]
+        t_elapsed = time.time() - self._t_init_polling[sched]
         poll_rate = self._num_polls / t_elapsed if t_elapsed else math.inf
         getlogger().debug2(
             f'Poll rate control: sleeping for {self._sleep_duration[sched]}s '
@@ -472,6 +475,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
             partname = _get_partition_name(task, phase='build')
             max_jobs = self._max_jobs[partname]
             while len(self._partition_tasks[partname])+1 > max_jobs:
+                getlogger().debug2(f'Hit the max job limit of {partname}: {max_jobs}')
                 await asyncio.sleep(2)
             self._partition_tasks[partname].add(task)
             await task.compile()
@@ -492,13 +496,20 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                             break
                         if (getpollcontroller().is_time_to_poll(sched.registered_name)): # and
                             # getpollcontroller()._poll_event[sched.registered_name].is_set()):
+                            getlogger().debug2("Jobs to poll"
+                                               f"{set(getpollcontroller()._jobs_to_pool[sched.registered_name])}")
+                            getlogger().debug2("Jobs polling"
+                                               f"{set(getpollcontroller()._jobs_pooling[sched.registered_name])}")
                             jobs_pool = list(set(getpollcontroller()._jobs_to_pool[
                                                 sched.registered_name
                                                 ]) - set(getpollcontroller()._jobs_pooling[
                                                 sched.registered_name
                                                 ]))
+                            getlogger().debug2(f"jobs poll {jobs_pool}")
                             if jobs_pool:
                                 getpollcontroller()._jobs_pooling[sched.registered_name] += jobs_pool
+                                getlogger().debug2("Polling, jobs polling"
+                                                   f"{set(getpollcontroller()._jobs_pooling[sched.registered_name])}")
                                 getpollcontroller().reset_time_to_poll(sched.registered_name)
                                 # getpollcontroller()._poll_event[sched.registered_name].clear()
                                 await sched.poll(*jobs_pool)
@@ -509,7 +520,9 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                     job for job in getpollcontroller()._jobs_pooling[sched.registered_name]
                                     if job not in jobs_pool
                                 ]
-                                await asyncio.sleep(0)
+                                getlogger().debug2("After polling, jobs polling"
+                                                   f"{set(getpollcontroller()._jobs_pooling[sched.registered_name])}")
+                                # await asyncio.sleep(0)
                                 # getpollcontroller()._poll_event[sched.registered_name].set()
 
                     if task.compile_complete():
@@ -551,24 +564,32 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
                             break
                         if (getpollcontroller().is_time_to_poll(sched.registered_name)): # and
                             # getpollcontroller()._poll_event[sched.registered_name].is_set()):
-                            # Get the job IDs that have not yet been polled for
+                            getlogger().debug2("Jobs to poll"
+                                               f"{set(getpollcontroller()._jobs_to_pool[sched.registered_name])}")
+                            getlogger().debug2("Jobs polling"
+                                               f"{set(getpollcontroller()._jobs_pooling[sched.registered_name])}")
                             jobs_pool = list(set(getpollcontroller()._jobs_to_pool[
                                                 sched.registered_name
                                                 ]) - set(getpollcontroller()._jobs_pooling[
                                                 sched.registered_name
                                                 ]))
+                            getlogger().debug2(f"jobs poll {jobs_pool}")
                             if jobs_pool:
                                 getpollcontroller()._jobs_pooling[sched.registered_name] += jobs_pool
+                                getlogger().debug2("Polling, jobs polling"
+                                                   f"{set(getpollcontroller()._jobs_pooling[sched.registered_name])}")
                                 getpollcontroller().reset_time_to_poll(sched.registered_name)
                                 # getpollcontroller()._poll_event[sched.registered_name].clear()
                                 await sched.poll(*jobs_pool)
+                                # Check if reframe was aborted but we were waiting for the command
                                 if hasattr(current_task(), 'aborting'):
                                     raise asyncio.CancelledError
                                 getpollcontroller()._jobs_pooling[sched.registered_name] = [
                                     job for job in getpollcontroller()._jobs_pooling[sched.registered_name]
                                     if job not in jobs_pool
                                 ]
-                                await asyncio.sleep(0)
+                                getlogger().debug2("After polling, jobs polling"
+                                                   f"{set(getpollcontroller()._jobs_pooling[sched.registered_name])}")
                                 # getpollcontroller()._poll_event[sched.registered_name].set()
 
                     if task.run_complete():
@@ -890,23 +911,3 @@ async def handle_sigint():
     print("\nReceived SIGINT. Cleaning up...")
     await abortall_signalhandler()
     print("Cleanup done. Exiting.")
-
-def all_tasks(loop):
-    """Wrapper for asyncio.current_task() compatible with Python 3.6 and later.
-    """
-    if sys.version_info >= (3, 7):
-        # Use asyncio.current_task() directly in Python 3.7+
-        return asyncio.all_tasks(loop)
-    else:
-        # Fallback to asyncio.tasks.current_task() in Python 3.6
-        return asyncio.Task.all_tasks(loop)
-
-def current_task():
-    """Wrapper for asyncio.current_task() compatible with Python 3.6 and later.
-    """
-    if sys.version_info >= (3, 7):
-        # Use asyncio.current_task() directly in Python 3.7+
-        return asyncio.current_task()
-    else:
-        # Fallback to asyncio.tasks.current_task() in Python 3.6
-        return asyncio.Task.current_task()

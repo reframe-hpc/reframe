@@ -31,6 +31,7 @@ from reframe.core.exceptions import (AbortTaskError,
                                      TaskExit)
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
+from reframe.utility.osext import all_tasks
 
 ABORT_REASONS = (AssertionError, FailureLimitError, KeyboardError,
                  KeyboardInterrupt, ForceExitError, RunSessionTimeout)
@@ -812,7 +813,6 @@ class ExecutionPolicy(abc.ABC):
 
 
 def asyncio_run(coro):
-    from reframe.frontend.executors.policies import all_tasks
     try:
         loop = asyncio.get_event_loop()
         for task in all_tasks(loop):

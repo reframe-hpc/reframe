@@ -417,7 +417,7 @@ async def run_command(cmd, check=False, timeout=None, **kwargs):
 
     '''
     try:
-        from reframe.frontend.executors.policies import all_tasks
+
         from reframe.core.logging import getlogger
         proc_stdout, proc_stderr, proc = None, None, None
         if timeout:
@@ -429,7 +429,6 @@ async def run_command(cmd, check=False, timeout=None, **kwargs):
         ## Asynchronous command launch ----------------------------------------
         t_start = time.time()
         proc = await run_command_asyncio(cmd, start_new_session=False, **kwargs)
-        task_asyncio = current_task()
         if hasattr(task_asyncio, "aborting"):
             raise asyncio.CancelledError
         else:
@@ -1114,3 +1113,13 @@ def current_task():
     else:
         # Fallback to asyncio.tasks.current_task() in Python 3.6
         return asyncio.Task.current_task()
+
+def all_tasks(loop):
+    """Wrapper for asyncio.current_task() compatible with Python 3.6 and later.
+    """
+    if sys.version_info >= (3, 7):
+        # Use asyncio.current_task() directly in Python 3.7+
+        return asyncio.all_tasks(loop)
+    else:
+        # Fallback to asyncio.tasks.current_task() in Python 3.6
+        return asyncio.Task.all_tasks(loop)

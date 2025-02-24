@@ -18,7 +18,7 @@ import time
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError
 from reframe.core.schedulers import JobScheduler, Job
-from reframe.frontend.executors.policies import current_task
+from reframe.utility.osext import current_task
 
 # Just import flux once
 try:

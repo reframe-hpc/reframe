@@ -41,15 +41,7 @@ class RuntimeContext:
             osext.rmtree(ret, ignore_errors=True)
 
         # os.makedirs(ret, exist_ok=True)
-        parts = ret.split(os.sep)
-        parts = [part for part in parts if part]
-        for i in range(1, len(parts) + 1):
-            subpath = os.sep + os.sep.join(parts[:i])
-            if not os.path.exists(subpath):
-                try:
-                    await aiofiles.os.mkdir(subpath)
-                except FileNotFoundError:
-                    pass
+        await aiofiles.os.makedirs(ret, exist_ok=True)
 
         return ret
 
