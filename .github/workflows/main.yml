@@ -151,7 +151,7 @@ jobs:
           python -m build
       - name: Install Wheel
         run: |
-          python -m pip install dist/ReFrame_HPC*.whl
+          python -m pip install dist/*.whl
       - name: Test Installation
         run: |
           reframe -V
