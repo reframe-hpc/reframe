@@ -766,7 +766,7 @@ def test_sourcesdir_build_system(local_exec_ctx):
 def test_sourcesdir_git(local_exec_ctx):
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(rfm.RunOnlyRegressionTest):
-        sourcesdir = 'https://github.com/octocat/hello-worId.git'
+        sourcesdir = 'https://github.com/reframe-hpc/ci-hello-world.git'
         executable = 'true'
         valid_systems = ['*']
         valid_prog_environs = ['*']
