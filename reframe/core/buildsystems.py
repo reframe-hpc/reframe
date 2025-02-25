@@ -481,7 +481,7 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #: :type: :class:`str`
     #: :default: :class:`None`
     srcdir = variable(str, type(None), value=None)
-    
+
     #: The directory of the configure script.
     #:
     #: This can be changed to do an out of source build without copying the
@@ -493,7 +493,7 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #: .. note::
     #:     .. versionchanged:: 4.8
     #:        The field is now available in all configure-based build systems
-    #:        (Autotools, CMake).
+    #:        (:class:`Autotools`, :class:`CMake`).
     configuredir = variable(str, value='.')
 
     #: The CMake build directory, where all the generated files will be placed.
