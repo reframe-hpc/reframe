@@ -121,7 +121,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 # We raise the SkipTestError here and catch it immediately in
                 # order for `skip()` to get the correct exception context.
                 try:
-                    raise SkipTestError('skipped due to skipped dependencies')
+                    raise SkipTestError(f'{task.info()} skipped due to skipped dependencies')
                 except SkipTestError as e:
                     task.skip()
                     raise TaskExit from e
@@ -450,7 +450,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _advance_startup(self, task):
         if self.deps_skipped(task):
             try:
-                raise SkipTestError('skipped due to skipped dependencies')
+                raise SkipTestError(f'{task.info()} skipped due to skipped dependencies')
             except SkipTestError as e:
                 task.skip()
                 self._current_tasks.remove(task)
