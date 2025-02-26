@@ -1780,6 +1780,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._setup_container_platform()
         self._resolve_fixtures()
 
+    def _mark_stagedir(self):
+        (Path(self.stagedir) / '.rfm_mark').touch()
+
     def _requires_stagedir_contents(self):
         '''Return true if the contents of the stagedir need to be generated'''
 
@@ -1788,12 +1791,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # `--dont-restage` is passed. In this case, we want to leave the
         # existing stagedir untouched.
 
-        mark = Path(self.stagedir) / '.rfm_mark'
-        if mark.exists():
-            return False
-        else:
-            mark.touch()
-            return True
+        return not (Path(self.stagedir) / '.rfm_mark').exists()
 
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
@@ -1804,6 +1802,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
         except (OSError, ValueError, TypeError) as e:
             raise PipelineError('copying of files failed') from e
+        else:
+            self._mark_stagedir()
 
     def _clone_to_stagedir(self, url):
         self.logger.debug(f'Cloning URL {url} into stage directory')
@@ -1811,6 +1811,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.sourcesdir, self._stagedir,
             timeout=rt.runtime().get_option('general/0/git_timeout')
         )
+        self._mark_stagedir()
 
     @final
     def compile(self):
