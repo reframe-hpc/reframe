@@ -459,16 +459,16 @@ class SlurmJobScheduler(sched.JobScheduler):
             t_start = time.strftime(
                 '%F', time.localtime(min(job.submit_time for job in jobs))
             )
-            completed = await _run_strict(
-                f'sacct -S {t_start} -P '
-                f'-j {",".join(job.jobid for job in jobs)} '
-                f'-o jobid,state,exitcode,end,nodelist'
-            )
-            # completed = _run_strict_s(
+            # completed = await _run_strict(
             #     f'sacct -S {t_start} -P '
             #     f'-j {",".join(job.jobid for job in jobs)} '
             #     f'-o jobid,state,exitcode,end,nodelist'
             # )
+            completed = _run_strict_s(
+                f'sacct -S {t_start} -P '
+                f'-j {",".join(job.jobid for job in jobs)} '
+                f'-o jobid,state,exitcode,end,nodelist'
+            )
 
         self._update_state_count += 1
 
@@ -531,12 +531,12 @@ class SlurmJobScheduler(sched.JobScheduler):
             return
 
         if not reasons:
-            completed = await osext.run_command(
-                'squeue -h -j %s -o %%r' % job.jobid
-            )
-            # completed = osext.run_command_s(
+            # completed = await osext.run_command(
             #     'squeue -h -j %s -o %%r' % job.jobid
             # )
+            completed = osext.run_command_s(
+                'squeue -h -j %s -o %%r' % job.jobid
+            )
             if hasattr(current_task(), 'aborting'):
                 raise asyncio.CancelledError
             reasons = completed.stdout.splitlines()
