@@ -7,6 +7,7 @@
 # Handling of the current host context
 #
 
+import aiofiles.os
 import os
 import functools
 import time
@@ -34,12 +35,14 @@ class RuntimeContext:
         self._timestamp = time.localtime()
         self._use_timestamps = use_timestamps
 
-    def _makedir(self, *dirs, wipeout=False):
+    async def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)
         if wipeout:
             osext.rmtree(ret, ignore_errors=True)
 
-        os.makedirs(ret, exist_ok=True)
+        # os.makedirs(ret, exist_ok=True)
+        await aiofiles.os.makedirs(ret, exist_ok=True)
+
         return ret
 
     def _format_dirs(self, *dirs):
@@ -144,17 +147,17 @@ class RuntimeContext:
 
         return os.path.abspath(ret)
 
-    def make_stagedir(self, *dirs):
+    async def make_stagedir(self, *dirs):
         wipeout = self.get_option('general/0/clean_stagedir')
-        ret = self._makedir(self.stage_prefix,
+        ret = await self._makedir(self.stage_prefix,
                             *self._format_dirs(*dirs), wipeout=wipeout)
         getlogger().debug(
             f'Created stage directory {ret!r} [clean_stagedir: {wipeout}]'
         )
         return ret
 
-    def make_outputdir(self, *dirs):
-        ret = self._makedir(self.output_prefix,
+    async def make_outputdir(self, *dirs):
+        ret = await self._makedir(self.output_prefix,
                             *self._format_dirs(*dirs), wipeout=True)
         getlogger().debug(f'Created output directory {ret!r}')
         return ret
@@ -202,6 +205,23 @@ def init_runtime(site_config, **kwargs):
 
     if _runtime_context is None:
         _runtime_context = RuntimeContext(site_config, **kwargs)
+
+
+_working_dir = None
+
+
+def set_working_dir():
+    global _working_dir
+
+    _working_dir = os.getcwd()
+
+
+def get_working_dir():
+
+    if _working_dir is None:
+        raise ReframeFatalError('no working dir was yet set')
+
+    return _working_dir
 
 
 def runtime():
@@ -417,6 +437,7 @@ class temp_environment:
 
 class temp_config:
     '''Context manager to temporarily switch to specific configuration.'''
+    # TODO: Do we need to change something here? context management asyncio
 
     def __init__(self, system):
         self.__to = system

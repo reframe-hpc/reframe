@@ -418,7 +418,7 @@ class _SiteConfig:
 
         def _sh_meth(m):
             def _fn():
-                completed = osext.run_command(m, check=True)
+                completed = osext.run_command_s(m, check=True)
                 return completed.stdout.strip()
 
             return _fn

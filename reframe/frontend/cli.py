@@ -32,7 +32,7 @@ from reframe.frontend.testgenerators import (distribute_tests,
                                              getallnodes, repeat_tests,
                                              parameterize_tests)
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
-                                                 AsynchronousExecutionPolicy)
+                                                 AsyncioExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
@@ -253,6 +253,8 @@ def validate_storage_options(namespace, cmd_options):
 
 @logging.time_function_noexit
 def main():
+    # Setup the working dir
+    runtime.set_working_dir()
     # Setup command line options
     argparser = argparse.ArgumentParser()
     action_options = argparser.add_mutually_exclusive_group(required=True)
@@ -1561,7 +1563,7 @@ def main():
         if options.exec_policy == 'serial':
             exec_policy = SerialExecutionPolicy()
         elif options.exec_policy == 'async':
-            exec_policy = AsynchronousExecutionPolicy()
+            exec_policy = AsyncioExecutionPolicy()
         else:
             # This should not happen, since choices are handled by
             # argparser
@@ -1743,7 +1745,8 @@ def main():
             sys.exit(1)
         else:
             sys.exit(0)
-    except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
+    except (Exception, KeyboardInterrupt, errors.KeyboardError,
+            errors.ReframeFatalError):
         exc_info = sys.exc_info()
         tb = ''.join(traceback.format_exception(*exc_info))
         message = f'run session stopped: {errors.what(*exc_info)}'

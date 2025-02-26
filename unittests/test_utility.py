@@ -25,13 +25,13 @@ from reframe.core.exceptions import (ConfigError,
 
 
 def test_command_success():
-    completed = osext.run_command('echo foobar')
+    completed = osext.run_command_s('echo foobar')
     assert completed.returncode == 0
     assert completed.stdout == 'foobar\n'
 
 
 def test_command_success_cmd_seq():
-    completed = osext.run_command(['echo', 'foobar'])
+    completed = osext.run_command_s(['echo', 'foobar'])
     assert completed.returncode == 0
     assert completed.stdout == 'foobar\n'
 
@@ -39,13 +39,13 @@ def test_command_success_cmd_seq():
 def test_command_error():
     with pytest.raises(SpawnedProcessError,
                        match=r"command 'false' failed with exit code 1"):
-        osext.run_command('false', check=True)
+        osext.run_command_s('false', check=True)
 
 
 def test_command_error_cmd_seq():
     with pytest.raises(SpawnedProcessError,
                        match=r"command 'false' failed with exit code 1"):
-        osext.run_command(['false'], check=True)
+        osext.run_command_s(['false'], check=True)
 
 
 def test_command_timeout():
@@ -53,7 +53,7 @@ def test_command_timeout():
         SpawnedProcessTimeout, match=r"command 'sleep 3' timed out "
                                      r'after 2s') as exc_info:
 
-        osext.run_command('sleep 3', timeout=2)
+        osext.run_command_s('sleep 3', timeout=2)
 
     assert exc_info.value.timeout == 2
 
@@ -66,7 +66,7 @@ def test_command_stdin(tmp_path):
         fp.write('hello')
 
     with open(tmp_path / 'in.txt') as fp:
-        completed = osext.run_command('cat', stdin=fp)
+        completed = osext.run_command_s('cat', stdin=fp)
 
     assert completed.stdout == 'hello'
 
@@ -74,7 +74,7 @@ def test_command_stdin(tmp_path):
 def test_command_async():
     t_launch = time.time()
     t_sleep  = t_launch
-    proc = osext.run_command_async('sleep 1')
+    proc = osext.run_command_process('sleep 1')
     t_launch = time.time() - t_launch
 
     proc.wait()
@@ -90,7 +90,7 @@ def test_command_futures():
 
     # Check that some operations cannot be performed on an unstarted future
     with pytest.raises(osext.UnstartedProcError):
-        proc.done()
+        test_util.asyncio_run(proc.done)
 
     with pytest.raises(osext.UnstartedProcError):
         proc.cancel()
@@ -99,10 +99,10 @@ def test_command_futures():
         proc.terminate()
 
     with pytest.raises(osext.UnstartedProcError):
-        proc.wait()
+        test_util.asyncio_run(proc.wait)
 
     assert not proc.started()
-    proc.start()
+    test_util.asyncio_run(proc.start)
     assert proc.started()
     assert proc.pid is not None
 
@@ -110,17 +110,18 @@ def test_command_futures():
     assert not proc.is_session()
 
     # stdout must block
-    assert proc.stdout().read() == 'hello\n'
+    stdout, stderr = test_util.asyncio_run(proc.communicate)
+    assert stdout.decode() == 'hello\n'
     assert proc.exitcode == 0
     assert proc.signal is None
 
     # Additional wait() should have no effect
-    proc.wait()
-    proc.wait()
+    test_util.asyncio_run(proc.wait)
+    test_util.asyncio_run(proc.wait)
 
-    assert proc.done()
+    assert test_util.asyncio_run(proc.done)
     assert not proc.cancelled()
-    assert proc.exception() is None
+    assert test_util.asyncio_run(proc.exception) is None
 
 
 def test_command_futures_callbacks():
@@ -135,13 +136,13 @@ def test_command_futures_callbacks():
     with pytest.raises(ValueError):
         proc.add_done_callback(lambda: 1)
 
-    proc.start()
-    while not proc.done():
+    test_util.asyncio_run(proc.start)
+    while not test_util.asyncio_run(proc.done):
         pass
 
     # Call explicitly more times
-    proc.done()
-    proc.done()
+    test_util.asyncio_run(proc.done)
+    test_util.asyncio_run(proc.done)
     assert num_called == 1
 
 
@@ -152,13 +153,14 @@ def _checked_cmd(request):
 
 def test_command_futures_error(_checked_cmd):
     proc = osext.run_command_async2("false", shell=True, check=_checked_cmd)
-    proc.start()
+    test_util.asyncio_run(proc.start)
 
     # exception() blocks until the process is finished
     if _checked_cmd:
-        assert isinstance(proc.exception(), SpawnedProcessError)
+        assert isinstance(test_util.asyncio_run(proc.exception),
+                          SpawnedProcessError)
     else:
-        assert proc.exception() is None
+        assert test_util.asyncio_run(proc.exception) is None
 
     assert proc.exitcode == 1
     assert proc.signal is None
@@ -178,7 +180,7 @@ def _signal(request):
 
 def test_command_futures_signal(_checked_cmd, _signal):
     proc = osext.run_command_async2('sleep 3', shell=True, check=_checked_cmd)
-    proc.start()
+    test_util.asyncio_run(proc.start)
     if _signal == signal.SIGTERM:
         proc.terminate()
     elif _signal == signal.SIGKILL:
@@ -186,8 +188,8 @@ def test_command_futures_signal(_checked_cmd, _signal):
     else:
         proc.kill(_signal)
 
-    proc.wait()
-    assert proc.done()
+    test_util.asyncio_run(proc.wait)
+    assert test_util.asyncio_run(proc.done)
     if _signal == signal.SIGKILL:
         assert proc.cancelled()
     else:
@@ -196,9 +198,10 @@ def test_command_futures_signal(_checked_cmd, _signal):
     assert proc.signal == _signal
     assert proc.exitcode is None
     if _checked_cmd:
-        assert isinstance(proc.exception(), SpawnedProcessError)
+        assert isinstance(test_util.asyncio_run(proc.exception),
+                          SpawnedProcessError)
     else:
-        assert proc.exception() is None
+        assert test_util.asyncio_run(proc.exception) is None
 
 
 def test_command_futures_chain(tmp_path):
@@ -211,13 +214,14 @@ def test_command_futures_chain(tmp_path):
         proc0.then(proc2).then(proc3)
         all_procs = [proc0, proc1, proc2, proc3]
         t_start = time.time()
-        proc0.start()
-        while not all(p.done() for p in all_procs if p.started()):
+        test_util.asyncio_run(proc0.start)
+        while not all(test_util.asyncio_run(p.done) for p in all_procs
+                      if p.started()):
             pass
 
         t_elapsed = time.time() - t_start
         assert t_elapsed < 2
-        assert all(p.done() for p in all_procs)
+        assert all(test_util.asyncio_run(p.done) for p in all_procs)
 
     with open(tmp_path / 'stdout.txt') as fp:
         assert fp.read() == 'hello\nworld\n'
@@ -244,13 +248,13 @@ def test_command_futures_chain_cond(_chain_policy, tmp_path):
         with pytest.raises(ValueError):
             proc0.then(proc1, when=lambda: False)
 
-        proc0.start()
-        proc0.wait()
-        proc1.wait()
+        test_util.asyncio_run(proc0.start)
+        test_util.asyncio_run(proc0.wait)
+        test_util.asyncio_run(proc1.wait)
         if _chain_policy == 'fail_on_error':
             assert not proc2.started()
         else:
-            proc2.wait()
+            test_util.asyncio_run(proc2.wait)
 
     with open(tmp_path / 'stdout.txt') as fp:
         if _chain_policy == 'fail_on_error':
@@ -264,8 +268,8 @@ def test_command_futures_chain_cancel():
     proc1 = osext.run_command_async2('sleep 1', shell=True)
     proc2 = osext.run_command_async2('echo world', shell=True)
     proc0.then(proc1).then(proc2)
-    proc0.start()
-    while not proc0.done():
+    test_util.asyncio_run(proc0.start)
+    while not test_util.asyncio_run(proc0.done):
         pass
 
     assert proc1.started()
@@ -437,12 +441,12 @@ def test_is_url():
 @pytest.fixture
 def git_only():
     try:
-        osext.run_command('git --version', check=True, log=False)
+        osext.run_command_s('git --version', check=True, log=False)
     except (SpawnedProcessError, FileNotFoundError):
         pytest.skip('no git installation found on system')
 
     try:
-        osext.run_command('git status', check=True, log=False)
+        osext.run_command_s('git status', check=True, log=False)
     except (SpawnedProcessError, FileNotFoundError):
         pytest.skip('not inside a git repository')
 

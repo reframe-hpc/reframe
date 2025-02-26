@@ -101,7 +101,7 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''
 
     @abc.abstractmethod
-    def submit(self, job):
+    async def submit(self, job):
         '''Submit a job.
 
         :arg job: A job descriptor.
@@ -109,7 +109,7 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''
 
     @abc.abstractmethod
-    def wait(self, job):
+    async def wait(self, job):
         '''Wait for a job to finish.
 
         :arg job: A job descriptor.
@@ -136,7 +136,7 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''
 
     @abc.abstractmethod
-    def poll(self, *jobs):
+    async def poll(self, *jobs):
         '''Poll all the requested jobs.
 
         :arg jobs: The job descriptors to poll.
@@ -617,14 +617,15 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         )
         return len(available_nodes) * num_tasks_per_node
 
-    def submit(self):
-        return self.scheduler.submit(self)
+    async def submit(self):
+        result = await self.scheduler.submit(self)
+        return result
 
-    def wait(self):
+    async def wait(self):
         if self.jobid is None:
             raise JobNotStartedError('cannot wait an unstarted job')
 
-        self.scheduler.wait(self)
+        await self.scheduler.wait(self)
         self._completion_time = self._completion_time or time.time()
 
     def cancel(self):
