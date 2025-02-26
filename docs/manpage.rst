@@ -477,6 +477,10 @@ Options controlling ReFrame output
 
    .. versionadded:: 3.1
 
+   .. warning::
+
+      Running a test with :option:`--dont-restage` on a stage directory that was created with a different ReFrame version is undefined behaviour.
+
 .. option:: --keep-stage-files
 
    Keep test stage directories even for tests that finish successfully.

@@ -1707,7 +1707,7 @@ Result storage configuration
 .. py:attribute:: storage.enable
 
    :required: No
-   :default: ``true``
+   :default: ``false``
 
    Enable results storage.
 
