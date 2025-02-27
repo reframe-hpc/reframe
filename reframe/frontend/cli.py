@@ -941,9 +941,12 @@ def main():
                 # We lexically split the mode options, because otherwise spaces
                 # will be treated as part of the option argument;
                 # see GH bug #1554
-                mode_args = list(
-                    itertools.chain.from_iterable(shlex.split(m)
-                                                  for m in mode_args))
+                mode_args = list(itertools.chain.from_iterable(
+                    shlex.split(osext.expandvars(arg)) for arg in mode_args)
+                )
+                printer.debug(f'Expanding execution mode {options.mode!r}: '
+                              f'{" ".join(mode_args)}')
+
                 # Parse the mode's options and reparse the command-line
                 options = argparser.parse_args(mode_args,
                                                suppress_required=True)

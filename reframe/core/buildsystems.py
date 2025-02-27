@@ -482,6 +482,20 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #: :default: :class:`None`
     srcdir = variable(str, type(None), value=None)
 
+    #: The directory of the configure script.
+    #:
+    #: This can be changed to do an out of source build without copying the
+    #: entire source tree.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``'.'``
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 4.8
+    #:        The field is now available in all configure-based build systems
+    #:        (:class:`Autotools`, :class:`CMake`).
+    configuredir = variable(str, value='.')
+
     #: The CMake build directory, where all the generated files will be placed.
     #:
     #: :type: :class:`str`
@@ -580,9 +594,11 @@ class CMake(ConfigureBasedBuildSystem):
             cmake_cmd += self.config_opts
 
         if self.builddir:
-            cmake_cmd += [os.path.relpath('.', self.builddir)]
+            cmake_cmd += [os.path.join(
+                os.path.relpath(self.configuredir, self.builddir)
+            )]
         else:
-            cmake_cmd += ['.']
+            cmake_cmd += [self.configuredir]
 
         make_cmd = ['make -j']
         if self.max_concurrency is not None:
@@ -605,15 +621,6 @@ class Autotools(ConfigureBasedBuildSystem):
        corresponding flags for compilers and compiler flags.
     3. Issue ``make`` to compile the code.
     '''
-
-    #: The directory of the configure script.
-    #:
-    #: This can be changed to do an out of source build without copying the
-    #: entire source tree.
-    #:
-    #: :type: :class:`str`
-    #: :default: ``'.'``
-    configuredir = variable(str, value='.')
 
     def emit_build_commands(self, environ):
         prepare_cmd = []
