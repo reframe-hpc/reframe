@@ -340,9 +340,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._exit()
 
     def _exit(self):
-        pass
         # Clean up all remaining tasks
-        # asyncio_run(_cleanup_all(self._retired_tasks, not self.keep_stage_files))
+        asyncio_run(_cleanup_all(self._retired_tasks, not self.keep_stage_files))
 
 
 class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
@@ -815,7 +814,7 @@ class AsyncioExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _exit(self):
         # Clean up all remaining tasks
-        asyncio_run(_cleanup_all(self._retired_tasks, not self.keep_stage_files))
+        # asyncio_run(_cleanup_all(self._retired_tasks, not self.keep_stage_files))
         if self._pipeline_statistics:
             self._dump_pipeline_progress('pipeline-progress.json')
 
