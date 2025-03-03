@@ -1400,6 +1400,35 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @loggable
     @property
     def perfvalues(self):
+        '''The obtained performance values for this test.
+
+        If the test is a performance test, this contains a read-only dictionary
+        of the following form:
+
+        .. code-block:: python
+
+           {
+               var: [value, ref, lower, upper, unit, result],
+               ...
+           }
+
+        The ``var`` keys correspond to performance variables and are formed as
+        ``<system>:<partition>:<perfvar_name>``. The ``value`` is the obtained
+        performance value, the ``ref``, ``lower``, ``upper`` and ``unit`` are
+        the same as defined in :attr:`reference`. The ``result`` is a ``pass``
+        or ``fail`` string denoting whether the achieved performance for this
+        variable is within bounds or not.
+
+        .. versionadded:: 2.18
+
+        .. versionchanged:: 3.11
+           This property is now loggable.
+
+        .. versionchanged:: 4.8
+           The values of the dictionary are now lists (instead of tuples) and
+           contain also the result of the check.
+
+        '''
         return util.MappingView(self._perfvalues)
 
     @property
@@ -2322,7 +2351,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
                     ref = (0, None, None)
 
-                self._perfvalues[key] = (value, *ref, unit)
+                self._perfvalues[key] = [value, *ref, unit, None]
 
         if self.is_dry_run():
             return
@@ -2330,7 +2359,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Check the performance variables against their references.
         errors = []
         for key, values in self._perfvalues.items():
-            val, ref, low_thres, high_thres, unit = values
+            val, ref, low_thres, high_thres, unit, _ = values
 
             # Verify that val is a number
             if not isinstance(val, numbers.Number):
@@ -2349,6 +2378,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 )
             except SanityError as e:
                 errors.append(e.message)
+                self._perfvalues[key][-1] = 'fail'
+            else:
+                self._perfvalues[key][-1] = 'pass'
 
         # Combine all error messages to a single `PerformanceError` containing
         # the information of all failed performance variables
