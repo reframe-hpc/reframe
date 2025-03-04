@@ -1,6 +1,5 @@
 #!/bin/bash
 
-sudo /sbin/mungekey -c -f
-cp /etc/munge/munge.key /scratch
+sudo -u munge /sbin/mungekey -cf
 
 tail -f /dev/null

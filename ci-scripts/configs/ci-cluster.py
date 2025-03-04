@@ -18,6 +18,14 @@ site_configuration = {
                     'environs': ['gnu', 'clang']
                 },
                 {
+                    'name': 'compute-slurm',
+                    'descr': 'Slurmcompute nodes',
+                    'scheduler': 'slurm',
+                    'launcher': 'srun',
+                    'access': ['-p all'],
+                    'environs': ['gnu', 'clang']
+                },
+                {
                     'name': 'compute-squeue',
                     'descr': 'Squeue compute nodes',
                     'scheduler': 'squeue',
