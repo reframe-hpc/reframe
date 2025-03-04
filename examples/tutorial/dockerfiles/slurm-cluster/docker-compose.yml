@@ -10,9 +10,7 @@ services:
       MARIADB_USER: "slurm"
 
   munge-key-generator:
-    image: munge
-    build:
-      context: examples/tutorial/dockerfiles/slurm-cluster/munge
+    image: ghcr.io/reframe-hpc/munge-ubuntu:22.04
     hostname: munge-host
     healthcheck:
         test: ["CMD-SHELL", "test -f /etc/munge/munge.key"]
@@ -23,8 +21,7 @@ services:
       - munge-etc:/etc/munge
 
   slurmdbd:
-    build:
-      context: examples/tutorial/dockerfiles/slurm-cluster/dbd
+    image: ghcr.io/reframe-hpc/slurm-dbd-ubuntu:22.04
     container_name: slurmdbd
     hostname: slurmdbd
     healthcheck:
@@ -46,9 +43,7 @@ services:
       - slurm-etc:/etc/slurm/
 
   slurm-master:
-    build:
-      context: examples/tutorial/dockerfiles/slurm-cluster/master
-    image: master
+    image: ghcr.io/reframe-hpc/slurm-master-ubuntu:22.04
     hostname: slurm-master
     healthcheck:
         test: ["CMD-SHELL", "service slurmctld status"]
@@ -102,9 +97,7 @@ services:
         condition: service_started
 
   node0:
-    build:
-      context: examples/tutorial/dockerfiles/slurm-cluster/node
-    image: node
+    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:22.04
     hostname: nid00
     container_name: slurm-node0
     volumes:
@@ -123,9 +116,7 @@ services:
       - slurm-master
 
   node1:
-    build:
-      context: examples/tutorial/dockerfiles/slurm-cluster/node
-    image: node
+    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:22.04
     hostname: nid01
     container_name: slurm-node1
     volumes:
@@ -144,9 +135,7 @@ services:
       - slurm-master
 
   node2:
-    build:
-      context: examples/tutorial/dockerfiles/slurm-cluster/node
-    image: node
+    image: ghcr.io/reframe-hpc/slurm-node-ubuntu:22.04
     hostname: nid02
     container_name: slurm-node2
     volumes:
