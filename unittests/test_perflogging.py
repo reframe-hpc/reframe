@@ -20,6 +20,12 @@ class _MyPerfTest(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
     executable = 'echo perf0=100 && echo perf1=50'
+    reference = {
+        '*': {
+            'perf0': (100, -0.05, 0.05, 'unit0'),
+            'perf1': (100, -0.05, 0.05, 'unit1')
+        }
+    }
 
     @sanity_function
     def validate(self):
@@ -170,7 +176,7 @@ def test_perf_logging(make_runner, make_exec_ctx, perf_test,
             perffmt=(
                 '%(check_perf_value)s,%(check_perf_unit)s,'
                 '%(check_perf_ref)s,%(check_perf_lower_thres)s,'
-                '%(check_perf_upper_thres)s,'
+                '%(check_perf_upper_thres)s,%(check_perf_result)s,'
             )
         )
     )
@@ -310,7 +316,8 @@ def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
             fmt=('%(check_job_completion_time)s|reframe %(version)s|'
                  '%(check_name)s|%(check_perf_var)s=%(check_perf_value)s|'
                  'ref=%(check_perf_ref)s (l=%(check_perf_lower_thres)s, '
-                 'u=%(check_perf_upper_thres)s)|%(check_perf_unit)s'),
+                 'u=%(check_perf_upper_thres)s)|%(check_perf_unit)s|'
+                 '%(check_perf_result)s'),
             logging_opts={'perflog_compat': True}
         )
     )
@@ -330,16 +337,18 @@ def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
         lines = fp.readlines()
 
     version = osext.reframe_version()
+    print(''.join(lines))
     assert lines[0] == ('job_completion_time|reframe version|name|'
                         'perf_var=perf_value|ref=perf_ref '
-                        '(l=perf_lower_thres, u=perf_upper_thres)|perf_unit\n')
+                        '(l=perf_lower_thres, u=perf_upper_thres)|perf_unit|'
+                        'perf_result\n')
     assert lines[1].endswith(
         f'|reframe {version}|_MyPerfTest|'
-        f'perf0=100.0|ref=0 (l=null, u=null)|unit0\n'
+        f'perf0=100.0|ref=100 (l=-0.05, u=0.05)|unit0|pass\n'
     )
     assert lines[2].endswith(
         f'|reframe {version}|_MyPerfTest|'
-        f'perf1=50.0|ref=0 (l=null, u=null)|unit1\n'
+        f'perf1=50.0|ref=100 (l=-0.05, u=0.05)|unit1|fail\n'
     )
 
 

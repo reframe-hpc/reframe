@@ -32,7 +32,7 @@ from .utility import Aggregator, parse_cmp_spec, parse_query_spec
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
 
-DATA_VERSION = '4.0'
+DATA_VERSION = '4.1'
 _SCHEMA = None
 _RESERVED_SESSION_INFO_KEYS = None
 _DATETIME_FMT = r'%Y%m%dT%H%M%S%z'
@@ -458,7 +458,7 @@ class RunReport:
         '''Get tabular data from this report'''
 
         columns = ['name', 'sysenv', 'job_nodelist',
-                   'pvar', 'punit', 'pval', 'result']
+                   'pvar', 'punit', 'pval', 'presult']
         data = [columns]
         num_runs = len(self.__report['runs'])
         for runid, runinfo in enumerate(self.__report['runs']):
@@ -469,12 +469,15 @@ class RunReport:
 
                 for pvar, reftuple in tc['perfvalues'].items():
                     pvar = pvar.split(':')[-1]
-                    pval, _, _, _, punit = reftuple
+                    pval, _, _, _, punit, *presult = reftuple
                     if pval is None:
                         # Ignore `None` performance values
                         # (performance tests that failed sanity)
                         continue
 
+                    # `presult` was not present in report schema < 4.1, so we
+                    # need to treat this case properly
+                    presult = presult[0] if presult else None
                     line = []
                     for c in columns:
                         if c == 'pvar':
@@ -483,6 +486,8 @@ class RunReport:
                             line.append(pval)
                         elif c == 'punit':
                             line.append(punit)
+                        elif c == 'presult':
+                            line.append(presult)
                         else:
                             line.append(tc[c])
 
@@ -610,12 +615,15 @@ def _group_testcases(testcases, groups, columns):
     for tc in map(_TCProxy, testcases):
         for pvar, reftuple in tc['perfvalues'].items():
             pvar = pvar.split(':')[-1]
-            pval, pref, plower, pupper, punit = reftuple
+            pval, pref, plower, pupper, punit, *presult = reftuple
             if pval is None:
                 # Ignore `None` performance values
                 # (performance tests that failed sanity)
                 continue
 
+            # `presult` was not present in report schema < 4.1, so we need
+            # to treat this case properly
+            presult = presult[0] if presult else None
             plower = pref * (1 + plower) if plower is not None else -math.inf
             pupper = pref * (1 + pupper) if pupper is not None else math.inf
             record = _TCProxy(tc, include_only=record_cols)
@@ -626,6 +634,7 @@ def _group_testcases(testcases, groups, columns):
                 'plower': plower,
                 'pupper': pupper,
                 'punit': punit,
+                'presult': presult
             })
             key = _group_key(groups, record)
             grouped.setdefault(key, [])
