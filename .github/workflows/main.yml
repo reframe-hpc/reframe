@@ -28,7 +28,7 @@ jobs:
         coverage run --source=reframe ./test_reframe.py
         coverage report -m
 
-  unittest-py-old:
+  unittest-py-eol:
     runs-on: ubuntu-latest
     strategy:
       matrix:
