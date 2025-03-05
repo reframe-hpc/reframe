@@ -12,6 +12,7 @@ import time
 from argparse import ArgumentParser
 from contextlib import suppress
 
+import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
@@ -465,8 +466,12 @@ class SlurmJobScheduler(sched.JobScheduler):
                 if self._sacct_retries < self._max_sacct_retries:
                     self._sacct_retries += 1
                     self.log(
-                        f'sacct failed with error: '
-                        f'{e.stderr}: have tried {self._sacct_retries} time(s)'
+                        (
+                            f'sacct failed with error: '
+                            f'{e.stderr}: have tried {self._sacct_retries} '
+                            f'time(s)'
+                        ),
+                        level=logging.WARNING
                     )
                     return
                 else:
