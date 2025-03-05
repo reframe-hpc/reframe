@@ -28,41 +28,19 @@ jobs:
         coverage run --source=reframe ./test_reframe.py
         coverage report -m
 
-  unittest-py36:
-    runs-on: ubuntu-20.04
+  unittest-py-eol:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.6']
+        python-version: ['3.6', '3.7']
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies and docs
+    - name: Build Image for Python ${{ matrix.python-version }}
       run: |
-        ./bootstrap.sh +docs
-    - name: Generic Unittests
+        docker build --build-arg PYTHON_VERSION=${{ matrix.python-version }} -f ci-scripts/dockerfiles/reframe-python.dockerfile -t reframe-python${{ matrix.python-version }}:latest .
+    - name: Run Unittests
       run: |
-        ./test_reframe.py
-
-  unittest-py37:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        python-version: ['3.7']
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies and docs
-      run: |
-        ./bootstrap.sh +docs
-    - name: Generic Unittests
-      run: |
-        ./test_reframe.py
+        docker run reframe-python${{ matrix.python-version }}:latest
 
   unittest-macos:
     runs-on: macos-latest
