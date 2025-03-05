@@ -452,6 +452,13 @@ def test_prepare_without_smt(fake_job, slurm_only):
         assert re.search(r'--hint=nomultithread', fp.read()) is not None
 
 
+def test_prepare_with_constraints(fake_job, slurm_only):
+    fake_job.options = ['--constraint=foo']
+    prepare_job(fake_job)
+    with open(fake_job.script_filename) as fp:
+        assert re.search(r'#SBATCH --constraint=foo', fp.read()) is not None
+
+
 def test_prepare_nodes_option(make_exec_ctx, make_job, slurm_only):
     make_exec_ctx(test_util.TEST_CONFIG_FILE, 'testsys')
     job = make_job(sched_opts={'part_name': 'gpu'})
@@ -625,42 +632,47 @@ def test_no_empty_lines_in_preamble(minimal_job):
 
 
 def test_combined_access_constraint(make_job, slurm_only):
-    job = make_job(sched_access=['--constraint=c1'])
+    job = make_job(sched_access=['--constraint=c1', '-A acct', '-p part'])
     job.options = ['-C c2&c3']
     prepare_job(job)
     with open(job.script_filename) as fp:
         script_content = fp.read()
 
-    print(script_content)
+    assert re.search('-A acct', script_content)
+    assert re.search('-p part', script_content)
     assert re.search(r'(?m)--constraint=\(c1\)&\(c2&c3\)$', script_content)
     assert re.search(r'(?m)--constraint=(c1|c2&c3)$', script_content) is None
 
 
 def test_combined_access_multiple_constraints(make_job, slurm_only):
-    job = make_job(sched_access=['--constraint=c1'])
+    job = make_job(sched_access=['--constraint=c1', '-A acct', '-p part'])
     job.options = ['--constraint=c2', '-C c3']
     prepare_job(job)
     with open(job.script_filename) as fp:
         script_content = fp.read()
 
+    assert re.search('-A acct', script_content)
+    assert re.search('-p part', script_content)
     assert re.search(r'(?m)--constraint=\(c1\)&\(c3\)$', script_content)
     assert re.search(r'(?m)--constraint=(c1|c2|c3)$', script_content) is None
 
 
 def test_combined_access_verbatim_constraint(make_job, slurm_only):
-    job = make_job(sched_access=['--constraint=c1'])
+    job = make_job(sched_access=['--constraint=c1', '-A acct', '-p part'])
     job.options = ['#SBATCH --constraint=c2', '#SBATCH -C c3']
     prepare_job(job)
     with open(job.script_filename) as fp:
         script_content = fp.read()
 
+    assert re.search('-A acct', script_content)
+    assert re.search('-p part', script_content)
     assert re.search(r'(?m)--constraint=c1$', script_content)
     assert re.search(r'(?m)^#SBATCH --constraint=c2$', script_content)
     assert re.search(r'(?m)^#SBATCH -C c3$', script_content)
 
 
 def test_sched_access_in_submit(make_job):
-    job = make_job(sched_access=['--constraint=c1', '--foo=bar'])
+    job = make_job(sched_access=['--constraint=c1', '-A acct'])
     job.options = ['--constraint=c2', '--xyz']
     job.scheduler._sched_access_in_submit = True
 
@@ -673,7 +685,7 @@ def test_sched_access_in_submit(make_job):
 
     print(script_content)
     assert '--xyz' in script_content
-    assert '--foo=bar' not in script_content
+    assert '-A acct' not in script_content
     if job.scheduler.registered_name in ('slurm', 'squeue'):
         # Constraints are combined in `sched_access` for Slurm backends
         assert '--constraint' not in script_content

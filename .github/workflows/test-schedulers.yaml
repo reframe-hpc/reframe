@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        scheduler: ['pbs', 'squeue', 'torque']
+        scheduler: ['pbs', 'slurm', 'squeue', 'torque']
     steps:
     - uses: actions/checkout@v4
     - name: Login to GitHub Container Registry
@@ -21,4 +21,4 @@ jobs:
         docker compose -f .github/pseudo-cluster/docker-compose.yml build
     - name: Run Unittests with ${{ matrix.scheduler }} scheduler
       run: |
-        BACKEND=${{ matrix.scheduler }} docker compose -f .github/pseudo-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from frontend
+        BACKEND=${{ matrix.scheduler }} docker compose -f .github/pseudo-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from unittest-sched

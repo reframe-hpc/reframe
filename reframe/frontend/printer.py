@@ -161,7 +161,8 @@ class PrettyPrinter:
 
             self.info(f"  * Reason: {msg}")
             tb = ''.join(traceback.format_exception(
-                *rec['fail_info'].values()))
+                *rec['fail_info'].values())
+            )
             if rec['fail_severe']:
                 self.info(tb)
             else:

@@ -180,16 +180,17 @@ These files are located by default under ``perflogs/<system>/<partition>/<testna
 In our example, this translates to ``perflogs/generic/default/stream_test.log``.
 The information that is being logged is fully configurable and we will cover this in the :ref:`logging` section.
 
-Finally, you can use also the :option:`--performance-report` option, which will print a summary of the results of the performance tests that have run in the current session and compare them (by default) to their last obtained performance.
+Finally, you can also use the :option:`--performance-report` option, which will print a summary of the results of the performance tests that have run in the current session and (optionally) compare them to past results (see :ref:`querying-past-results` for more on comparing performance results).
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
-   │ name        │ sysenv                  │ pvar     │    pval │ punit   │ pdiff   │ job_nodelist   │ result   │
-   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
-   │ stream_test │ generic:default+builtin │ copy_bw  │ 40292.1 │ MB/s    │ -0.04%  │ myhost         │ pass     │
-   │ stream_test │ generic:default+builtin │ triad_bw │ 30564.7 │ MB/s    │ +0.12%  │ myhost         │ pass     │
-   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
+   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━┑
+   │ name        │ sysenv                  │ job_nodelist   │ pvar     │ punit   │    pval │ result   │
+   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━┥
+   │ stream_test │ generic:default+builtin │ myhost         │ copy_bw  │ MB/s    │ 17154.1 │ pass     │
+   ├─────────────┼─────────────────────────┼────────────────┼──────────┼─────────┼─────────┼──────────┤
+   │ stream_test │ generic:default+builtin │ myhost         │ triad_bw │ MB/s    │ 13664.8 │ pass     │
+   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━┙
 
 
 Inspecting the test artifacts
@@ -457,6 +458,25 @@ Note that ReFrame has loaded two configuration files: first the ``<builtin>`` an
 Note also that the system and environment specification in the test run output is now ``@tutorialsys:default+baseline``.
 ReFrame has determined that the ``default`` partition and the ``baseline`` environment satisfy the test constraints and thus it has run the test with this partition/environment combination.
 
+
+YAML configuration
+------------------
+
+.. versionadded:: 4.8
+
+Apart from Python, ReFrame's configuration can be specified in a YAML file.
+The advantage is a more compact configuration, but it's not fully programmable as is the Python configuration.
+Below is the same configuration file presented above, but in YAML:
+
+
+.. literalinclude:: ../examples/tutorial/config/baseline.yaml
+   :caption:
+   :lines: 6-
+
+If you are using multiple configuration files, ReFrame allows you to "mix and match" the configuration file types: some of them can be in Python, others in YAML.
+
+Note that YAML configuration files offer a minimal programmability as they are essentially `Jinja2 <https://jinja.palletsprojects.com/>`__ templates where a few variables are substituted by ReFrame.
+Check the configuration reference for more information.
 
 .. _compiling-the-test-code:
 
@@ -1672,12 +1692,12 @@ By inspecting the generated script files, you will notice that ReFrame emits the
 .. code-block:: bash
    :caption: Run with the Docker compose setup.
 
-   cat /scratch/rfm-stage/output/pseudo-cluster/compute/gnu/stream_test_584fea5f/rfm_job.sh
+   cat /scratch/rfm-stage/output/pseudo-cluster/compute/gnu/stream_test_05038dad/rfm_job.sh
 
 .. code-block:: bash
 
     #!/bin/bash
-    #SBATCH --job-name="rfm_stream_test_pseudo-cluster_compute_8de19aca"
+    #SBATCH --job-name="rfm_stream_test_05038dad"
     #SBATCH --ntasks=1
     #SBATCH --output=rfm_job.out
     #SBATCH --error=rfm_job.err

@@ -1,0 +1,22 @@
+# Copyright 2016-2025 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Config file for testing the YAML bindings
+
+systems:
+- name: testsys
+  hostnames: ['.*']
+  partitions:
+  - name: default
+    scheduler: local
+    launcher: local
+    environs: ['builtin']
+    extras:
+      getenv: {{ getenv("_FOO_") }}
+      gid: {{ gid }}
+      group: {{ group }}
+      hostname: {{ hostname }}
+      uid: {{ uid }}
+      user: {{ user }}

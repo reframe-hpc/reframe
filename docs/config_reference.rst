@@ -6,9 +6,22 @@ ReFrame's behavior can be configured through its configuration file, environment
 An option can be specified via multiple paths (e.g., a configuration file parameter and an environment variable), in which case command-line options precede environment variables, which in turn precede configuration file options.
 This section provides a complete reference guide of the configuration options of ReFrame that can be set in its configuration file or specified using environment variables.
 
-ReFrame's configuration is in JSON syntax.
-The full schema describing it can be found in |schemas/config.json|_ file.
-The final configuration for ReFrame is validated against this schema.
+ReFrame's configuration is a JSON object that is stored in either a Python, JSON or YAML file.
+In case of Python configuration, the configuration object must be stored in the special ``site_configuration`` variable:
+
+.. code-block:: python
+
+   site_configuration = {
+      .. # The configuration details.
+   }
+
+The final configuration is validated against the schema |schemas/config.json|_.
+See also :ref:`manpage-configuration` for understanding how ReFrame builds its final configuration.
+
+.. warning::
+   .. versionchanged:: 4.8
+
+   Raw JSON configuration files are deprecated.
 
 The syntax we use to describe the different configuration objects follows the convention: ``OBJECT[.OBJECT]*.PROPERTY``.
 Even if a configuration object contains a list of other objects, this is not reflected in the above syntax, as all objects in a certain list are homogeneous.
@@ -82,6 +95,10 @@ It consists of the following properties, which we also call conventionally *conf
       If the requested symbol cannot be found, a warning will be issued and the method will be ignored.
    2. Shell commands: Any string not prefixed with ``py::`` will be treated as a shell command and will be executed *during auto-detection* to retrieve the hostname.
       The standard output of the command will be used.
+
+   .. note::
+
+      For YAML configuration files the ``py::`` prefixed strings cannot refer to user-defined functions.
 
    If the :option:`--system` option is not passed, ReFrame will try to autodetect the current system trying the methods in this list successively, until one of them succeeds.
    The resulting name will be matched against the :attr:`~config.systems.hostnames` patterns of each system and the system that matches first will be used as the current one.
@@ -1151,7 +1168,7 @@ All logging handlers share the following set of common attributes:
 
    Log record format string.
 
-   ReFrame accepts all log record attributes from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following attributes:
+   ReFrame accepts all log record placeholders from Python's `logging <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ mechanism and adds the following ones:
 
    .. csv-table::
 
@@ -1210,16 +1227,17 @@ All logging handlers share the following set of common attributes:
       ``%(check_valid_prog_environs)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs` attribute.
       ``%(check_valid_systems)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.valid_systems` attribute.
       ``%(check_variables)s``, DEPRECATED: Please use ``%(check_env_vars)s`` instead.
+      ``%(hostname)s``, The hostname where ReFrame runs.
       ``%(osuser)s``, The name of the OS user running ReFrame.
       ``%(osgroup)s``, The name of the OS group running ReFrame.
       ``%(version)s``, The ReFrame version.
 
    ReFrame allows you to log any test variable, parameter or property if they are marked as "loggable".
-   The log record attribute will have the form ``%(check_NAME)s`` where ``NAME`` is the variable name, the parameter name or the property name that is marked as loggable.
+   The log record placeholder will have the form ``%(check_NAME)s`` where ``NAME`` is the variable name, the parameter name or the property name that is marked as loggable.
 
-   There is also the special ``%(check_#ALL)s`` format specifier which expands to all the loggable test attributes.
-   These include all the above specifiers and any additional loggable variables or parameters defined by the test.
-   On expanding this specifier, ReFrame will try to guess the delimiter to use for separating the different attributes based on the existing format.
+   There is also the special ``%(check_#ALL)s`` format placeholder which expands to all the loggable test attributes.
+   These include all the above placeholders and any additional loggable variables or parameters defined by the test.
+   On expanding this placeholder, ReFrame will try to guess the delimiter to use for separating the different attributes based on the existing format.
    If it cannot guess it, it will default to ``|``.
 
    Since this can lead to very long records, you may consider using it with the :attr:`~logging.handlers_perflog..filelog..ignore_keys` parameter to filter out some attributes that are not of interest.
@@ -1234,13 +1252,16 @@ All logging handlers share the following set of common attributes:
    Limit the number of attributes that can be logged. User attributes or properties must be explicitly marked as "loggable" in order to be selectable for logging.
 
 .. versionadded:: 4.0
-   The ``%(check_result)s`` specifier is added.
+   The ``%(check_result)s`` placeholder is added.
 
 .. versionadded:: 4.3
-   The ``%(check_#ALL)s`` special specifier is added.
+   The ``%(check_#ALL)s`` special placeholder is added.
 
 .. versionadded:: 4.7
-   The ``%(check_fail_phase)s`` and ``%(check_fail_reason)s`` specifiers are added.
+   The ``%(check_fail_phase)s`` and ``%(check_fail_reason)s`` placeholders are added.
+
+.. versionadded:: 4.8
+   The ``%(hostname)s`` placeholder is added.
 
 
 .. py:attribute:: logging.handlers.format_perfvars
@@ -1257,10 +1278,10 @@ All logging handlers share the following set of common attributes:
    .. important::
       The last character of this format will be interpreted as the final delimiter of the formatted performance variables to the rest of the record.
 
-   The following log record attributes are defined additionally by this format specifier:
+   The following log record placeholders are defined additionally by this format specifier:
 
    .. csv-table::
-      :header: "Log record attribute", "Description"
+      :header: "Log record placeholders", "Description"
 
       ``%(check_perf_lower_thres)s``, The lower threshold of the logged performance variable.
       ``%(check_perf_ref)s``, The reference value of the logged performance variable.
@@ -1352,7 +1373,7 @@ The additional properties for the ``filelog`` handler are the following:
 
 .. py:attribute:: logging.handlers_perflog..filelog..ignore_keys
 
-   A list of log record `format specifiers <#config.logging.handlers.format>`__ that will be ignored by the special ``%(check_#ALL)s`` specifier.
+   A list of log record `format placeholders <#config.logging.handlers.format>`__ that will be ignored by the special ``%(check_#ALL)s`` placeholder.
 
    .. versionadded:: 4.3
 
@@ -1591,11 +1612,11 @@ This handler transmits the whole log record, meaning that all the information wi
    .. py:function:: json_formatter(record: object, extras: Dict[str, str], ignore_keys: Set[str]) -> str
 
       :arg record: The prepared log record.
-         The log record is a simple Python object with all the attributes listed in :attr:`~config.logging.handlers.format`, as well as all the default Python `log record <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ attributes.
+         The log record is a simple Python object with all the placeholders listed in :attr:`~config.logging.handlers.format`, as well as all the default Python `log record <https://docs.python.org/3.8/library/logging.html#logrecord-attributes>`__ placeholders.
          In addition to those, there is also the special :attr:`__rfm_check__` attribute that contains a reference to the actual test for which the performance is being logged.
       :arg extras: Any extra attributes specified in :attr:`~config.logging.handlers_perflog..httpjson..extras`.
       :arg ignore_keys: The set of keys specified in :attr:`~config.logging.handlers_perflog..httpjson..ignore_keys`.
-         ReFrame always adds the default Python log record attributes in this set.
+         ReFrame always adds the default Python log record placeholders in this set.
       :returns: A string representation of the JSON record to be sent to the server or :obj:`None` if the record should not be sent to the server.
 
    .. note::
@@ -1603,6 +1624,32 @@ This handler transmits the whole log record, meaning that all the information wi
 
    .. versionadded:: 4.1
 
+
+.. py:attribute:: logging.handlers_perflog..httpjson..backoff_intervals
+
+   :required: No
+   :default: ``[0.1, 0.2, 0.4, 0.8, 1.6, 3.2]``
+
+   List of wait intervals in seconds when server responds with HTTP error 429 (``TOO_MANY_REQUESTS``).
+
+   In this case, ReFrame will retry contacting the server after waiting an amount of time that is determined by cyclically iterating this list of intervals.
+
+   ReFrame will keep trying contacting the server, until a different HTTP resonse is received (either success or error) or the corresponding :attr:`~config.logging.handlers_perflog..httpjson..timeout` is exceeded.
+
+   .. versionadded:: 4.7.3
+
+
+.. py:attribute:: logging.handlers_perflog..httpjson..retry_timeout
+
+   :required: No
+   :default: ``0``
+
+   Timeout in seconds for retrying when server responds with HTTP error 429 (``TOO_MANY_REQUESTS``).
+
+   If set to zero, ReFrame will retry until another HTTP response (success or error) is received.
+
+
+   .. versionadded:: 4.7.3
 
 
 .. _exec-mode-config:
@@ -1660,7 +1707,7 @@ Result storage configuration
 .. py:attribute:: storage.enable
 
    :required: No
-   :default: ``true``
+   :default: ``false``
 
    Enable results storage.
 
@@ -2258,3 +2305,43 @@ A *device info object* in ReFrame's configuration is used to hold information ab
    :default: ``None``
 
    Number of devices of this type inside the system partition.
+
+
+Dynamic configuration
+=====================
+
+One advantage of ReFrame's configuration is that it is programmable, especially if you are using the Python files.
+Since the configuration is loaded as a Python module, you can generate parts of the configuration dynamically.
+
+The YAML configuration on the other hand is more static, although not fully.
+Code generation can still be used with the YAML configuration as it is treated as a Jinja2 template, where ReFrame provides the following bindings:
+
+- ``getenv(<envvar>)``: Retrieve an environment variable.
+- ``gid``: The real group id of the ReFrame process.
+- ``group``: The group name of the ReFrame process.
+- ``hostname``: The local host's hostname.
+- ``uid``: The real user id of the ReFrame process.
+- ``user``: The user name of the ReFrame process.
+
+These are two examples of YAML logging configuration that uses one of those bindings:
+
+.. code-block:: yaml
+
+   logging:
+   - handlers:
+   - type: file
+      name: reframe-{{ hostname }}.log
+      level: debug2
+      format: "[%(asctime)s.%(msecs)03d] %(levelname)s: %(check_info)s: %(message)s"
+      append: false
+
+
+.. code-block:: yaml
+
+   logging:
+   - handlers:
+   - type: file
+      name: reframe-{{ getenv("FOO") }}.log
+      level: debug2
+      format: "[%(asctime)s.%(msecs)03d] %(levelname)s: %(check_info)s: %(message)s"
+      append: false

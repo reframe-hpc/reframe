@@ -8,11 +8,15 @@ import copy
 import fnmatch
 import functools
 import importlib
+import io
 import itertools
 import json
 import jsonschema
 import os
 import re
+import socket
+import yaml
+from jinja2.sandbox import SandboxedEnvironment
 
 import reframe
 import reframe.core.settings as settings
@@ -20,21 +24,28 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.environments import normalize_module_list
-from reframe.core.exceptions import (ConfigError, ReframeFatalError)
+from reframe.core.exceptions import ConfigError, ReframeFatalError
 from reframe.core.logging import getlogger
 from reframe.utility import ScopedDict
 
 
 def _match_option(opt, opt_map):
+    def _copy_if_mutable(item):
+        for c in (dict, list):
+            if isinstance(item, c):
+                return c(item)
+
+        return item
+
     if isinstance(opt, list):
         opt = '/'.join(opt)
 
     if opt in opt_map:
-        return opt_map[opt]
+        return _copy_if_mutable(opt_map[opt])
 
     for k, v in opt_map.items():
         if fnmatch.fnmatchcase(opt, k):
-            return v
+            return _copy_if_mutable(v)
 
     raise KeyError(opt)
 
@@ -351,11 +362,34 @@ class _SiteConfig:
     def load_config_json(self, filename):
         with open(filename) as fp:
             try:
-                config = json.loads(fp.read())
+                config = json.load(fp)
             except json.JSONDecodeError as e:
                 raise ConfigError(
                     f"invalid JSON syntax in configuration file '{filename}'"
                 ) from e
+
+        self.update_config(config, filename)
+
+    def load_config_yaml(self, filename):
+        bindings = {
+            'getenv': os.getenv,
+            'gid': os.getgid(),
+            'group': osext.osgroup(),
+            'hostname': socket.gethostname(),
+            'uid': os.getuid(),
+            'user': osext.osuser(),
+        }
+
+        with open(filename) as fp:
+            environment = SandboxedEnvironment()
+            template = environment.from_string(fp.read())
+            yaml_src = template.render(**bindings)
+            try:
+                config = yaml.safe_load(io.StringIO(yaml_src))
+            except Exception as err:
+                raise ConfigError(
+                    f'invalid YAML syntax in configuration file `{filename}`'
+                ) from err
 
         self.update_config(config, filename)
 
@@ -429,7 +463,7 @@ class _SiteConfig:
                               'the `--system` option')
 
         getlogger().debug(f'Retrieved hostname: {hostname!r}')
-        getlogger().debug(f'Looking for a matching configuration entry')
+        getlogger().debug('Looking for a matching configuration entry')
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
                 if re.match(patt, hostname):
@@ -665,7 +699,13 @@ def load_config(*filenames):
         _, ext = os.path.splitext(f)
         if ext == '.py':
             ret.load_config_python(f)
+        elif ext == '.yaml' or ext == '.yml':
+            ret.load_config_yaml(f)
         elif ext == '.json':
+            getlogger().warning(
+                f'{f}: JSON configuration files are deprecated; '
+                'please use either a Python or YAML configuration'
+            )
             ret.load_config_json(f)
         else:
             raise ConfigError(f"unknown configuration file type: '{f}'")

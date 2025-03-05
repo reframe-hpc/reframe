@@ -1,4 +1,9 @@
-FROM ubuntu:20.04
+# Copyright 2016-2025 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+FROM ubuntu:22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -14,27 +19,17 @@ RUN apt update -y && apt install -y \
     slurm-client \
     slurmd \
     slurm-wlm-torque \
-    sudo \
     wget \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN useradd -m admin -s /usr/bin/bash -d /home/admin && \
-    echo "admin:admin" | chpasswd && \
-    adduser admin sudo && \
-    echo "admin     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN useradd -m admin -s /usr/bin/bash -d /home/admin
 
-COPY slurm.conf /etc/slurm-llnl/
-COPY cgroup.conf /etc/slurm-llnl/
-COPY docker-entrypoint.sh /etc/slurm-llnl/
-
-RUN chmod +r /etc/slurm-llnl/slurm.conf
-RUN chmod +r /etc/slurm-llnl/cgroup.conf
-RUN chmod +rx /etc/slurm-llnl/docker-entrypoint.sh
+COPY docker-entrypoint.sh /usr/bin/
 
 RUN mkdir /scratch && \
     chown -R admin:admin /scratch
 
 EXPOSE 6817 6818 6819
 
-ENTRYPOINT ["/etc/slurm-llnl/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]

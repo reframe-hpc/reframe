@@ -428,8 +428,8 @@ def test_is_interactive(monkeypatch):
 
 
 def test_is_url():
-    repo_https = 'https://github.com/reframe-hpc/reframe.git'
-    repo_ssh = 'git@github.com:reframe-hpc/reframe.git'
+    repo_https = 'https://github.com/reframe-hpc/ci-hello-world.git'
+    repo_ssh = 'git@github.com:reframe-hpc/ci-hello-world.git'
     assert osext.is_url(repo_https)
     assert not osext.is_url(repo_ssh)
 

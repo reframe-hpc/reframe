@@ -46,6 +46,7 @@ This module offers the following aggregate types:
    A tuple with elements of type :class:`T`.
 
 .. py:data:: Tuple[T1,T2,...,Tn]
+   :noindex:
 
    A tuple with ``n`` elements, whose types are exactly :class:`T1`,
    :class:`T2`, ..., :class:`Tn` in that order.

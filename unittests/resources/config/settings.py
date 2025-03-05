@@ -171,7 +171,6 @@ site_configuration = {
                     'launcher': 'local',
                     'environs': ['e0', 'e1', 'e2']
                 }
-
             ]
         },
         {
@@ -191,6 +190,27 @@ site_configuration = {
                     'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
+                    'environs': ['builtin']
+                }
+            ]
+        },
+        {
+            'name': 'sys3',
+            'descr': 'System required for testing default extras',
+            'hostnames': [r'sys3\d+'],
+            'partitions': [
+                {
+                    'name': 'part1',
+                    'descr': 'Login nodes',
+                    'scheduler': 'local',
+                    'launcher': 'local',
+                    'environs': ['builtin']
+                },
+                {
+                    'name': 'part2',
+                    'descr': 'Compute nodes',
+                    'scheduler': 'slurm',
+                    'launcher': 'srun',
                     'environs': ['builtin']
                 }
             ]
@@ -255,6 +275,11 @@ site_configuration = {
                 '-p builtin',
                 '-S local=1'
             ]
+        },
+        {
+            'name': 'env_vars',
+            'options': ['-n', '${TEST_NAME_PATTERN}',
+                        '-S', '${VAR}=${VAL}']
         }
     ],
     'logging': [
@@ -268,7 +293,7 @@ site_configuration = {
                         '[%(check_job_completion_time)s] %(levelname)s: '
                         '%(check_name)s: %(message)s'
                     ),
-                    'datefmt': '%FT%T',
+                    'datefmt': r'%FT%T',
                     'append': False,
                 },
             ],

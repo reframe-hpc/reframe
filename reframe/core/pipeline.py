@@ -20,6 +20,7 @@ import itertools
 import numbers
 import os
 import shutil
+from pathlib import Path
 
 import reframe.core.fields as fields
 import reframe.core.hooks as hooks
@@ -1779,6 +1780,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._setup_container_platform()
         self._resolve_fixtures()
 
+    def _mark_stagedir(self):
+        (Path(self.stagedir) / '.rfm_mark').touch()
+
+    def _requires_stagedir_contents(self):
+        '''Return true if the contents of the stagedir need to be generated'''
+
+        # Every time the stage directory is created a fresh mark is created.
+        # Normally, this is wiped out before running the test, unless
+        # `--dont-restage` is passed. In this case, we want to leave the
+        # existing stagedir untouched.
+
+        return not (Path(self.stagedir) / '.rfm_mark').exists()
+
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
         self.logger.debug(f'Symlinking files: {self.readonly_files}')
@@ -1788,6 +1802,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
         except (OSError, ValueError, TypeError) as e:
             raise PipelineError('copying of files failed') from e
+        else:
+            self._mark_stagedir()
 
     def _clone_to_stagedir(self, url):
         self.logger.debug(f'Cloning URL {url} into stage directory')
@@ -1795,6 +1811,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.sourcesdir, self._stagedir,
             timeout=rt.runtime().get_option('general/0/git_timeout')
         )
+        self._mark_stagedir()
 
     @final
     def compile(self):
@@ -1832,11 +1849,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     f'interpreted as relative to it'
                 )
 
-            if osext.is_url(self.sourcesdir):
-                self._clone_to_stagedir(self.sourcesdir)
-            else:
-                self._copy_to_stagedir(os.path.join(self._prefix,
-                                                    self.sourcesdir))
+            if self._requires_stagedir_contents():
+                if osext.is_url(self.sourcesdir):
+                    self._clone_to_stagedir(self.sourcesdir)
+                else:
+                    self._copy_to_stagedir(os.path.join(self._prefix,
+                                                        self.sourcesdir))
 
         # Set executable (only if hasn't been provided)
         if not hasattr(self, 'executable'):
@@ -2310,8 +2328,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             return
 
         # Check the performance variables against their references.
+        errors = []
         for key, values in self._perfvalues.items():
-            val, ref, low_thres, high_thres, *_ = values
+            val, ref, low_thres, high_thres, unit = values
 
             # Verify that val is a number
             if not isinstance(val, numbers.Number):
@@ -2325,11 +2344,22 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 sn.evaluate(
                     sn.assert_reference(
                         val, ref, low_thres, high_thres,
-                        msg=('failed to meet reference: %s={0}, '
-                             'expected {1} (l={2}, u={3})' % tag))
+                        msg=(f'{tag}={{0}} {unit}, expected {{1}} '
+                             '(l={2}, u={3})'))
                 )
             except SanityError as e:
-                raise PerformanceError(e) from None
+                errors.append(e.message)
+
+        # Combine all error messages to a single `PerformanceError` containing
+        # the information of all failed performance variables
+        if errors:
+            msg = 'failed to meet references:'
+            if len(errors) > 1:
+                msg += '\n\t'
+            else:
+                msg += ' '
+
+            raise PerformanceError(msg + '\n\t'.join(errors))
 
     def _copy_job_files(self, job, dst):
         if job is None:
@@ -2616,7 +2646,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         The resources of the test are copied to the stage directory and the
         rest of execution is delegated to the :func:`RegressionTest.run()`.
         '''
-        if self.sourcesdir:
+        if self.sourcesdir and self._requires_stagedir_contents():
             if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:
