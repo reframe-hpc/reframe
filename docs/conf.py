@@ -130,7 +130,10 @@ last_updated = True
 
 # READTHEDOCS
 html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+sphinx_rtd_theme_version_info = tuple(int(x) for x in sphinx_rtd_theme.__version__.split('.'))
+if sphinx_rtd_theme_version_info[0] < 3:
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
 html_theme_options = {
     'collapse_navigation': True,
     'display_version': True,
