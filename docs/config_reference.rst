@@ -456,6 +456,20 @@ System Partition Configuration
       No other test would be able to proceed.
 
 
+.. py:attribute:: systems.partitions.sched_options.sacct_retries
+
+   :required: No
+   :default: ``0``
+
+   Some times the ``sacct`` command may be temporarily unavailable.
+   In this case, ReFrame will continue polling until ``sacct_retries`` is reached.
+   Every time the command succeeds, the counter is reset.
+
+   This option is relevant for the Slurm backend only.
+
+   .. versionadded:: 4.8.0
+
+
 .. py:attribute:: systems.partitions.sched_options.unqualified_hostnames
 
    :required: No
