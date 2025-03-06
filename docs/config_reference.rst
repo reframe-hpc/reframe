@@ -459,7 +459,7 @@ System Partition Configuration
 .. py:attribute:: systems.partitions.sched_options.sacct_retries
 
    :required: No
-   :default: ``0``
+   :default: ``3``
 
    Some times the ``sacct`` command may be temporarily unavailable.
    In this case, ReFrame will continue polling until ``sacct_retries`` is reached.
