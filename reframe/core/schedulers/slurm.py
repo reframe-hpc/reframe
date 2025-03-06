@@ -12,6 +12,7 @@ import time
 from argparse import ArgumentParser
 from contextlib import suppress
 
+import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
@@ -140,6 +141,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._submit_timeout = self.get_option('job_submit_timeout')
         self._use_nodes_opt = self.get_option('use_nodes_option')
         self._resubmit_on_errors = self.get_option('resubmit_on_errors')
+        self._max_sacct_retries = self.get_option('sacct_retries')
+        self._sacct_retries = 0
         self._sched_access_in_submit = self.get_option(
             'sched_access_in_submit'
         )
@@ -322,7 +325,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             if partition_match:
                 return partition_match.group('partition')
 
-        except SpawnedProcessError as e:
+        except SpawnedProcessError:
             self.log('could not retrieve actual partition')
 
         return None
@@ -451,11 +454,28 @@ class SlurmJobScheduler(sched.JobScheduler):
             t_start = time.strftime(
                 '%F', time.localtime(min(job.submit_time for job in jobs))
             )
-            completed = _run_strict(
-                f'sacct -S {t_start} -P '
-                f'-j {",".join(job.jobid for job in jobs)} '
-                f'-o jobid,state,exitcode,end,nodelist'
-            )
+            try:
+                completed = _run_strict(
+                    f'sacct -S {t_start} -P '
+                    f'-j {",".join(job.jobid for job in jobs)} '
+                    f'-o jobid,state,exitcode,end,nodelist'
+                )
+                # Reset the retry counter if the command succeeds
+                self._sacct_retries = 0
+            except SpawnedProcessError as e:
+                if self._sacct_retries < self._max_sacct_retries:
+                    self._sacct_retries += 1
+                    self.log(
+                        (
+                            f'sacct failed with error: '
+                            f'{e.stderr}: have tried {self._sacct_retries} '
+                            f'time(s)'
+                        ),
+                        level=logging.WARNING
+                    )
+                    return
+                else:
+                    raise e
 
         self._update_state_count += 1
 
@@ -508,7 +528,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         t_pending = time.time() - job.submit_time
         if t_pending >= job.max_pending_time:
-            self.log(f'maximum pending time for job exceeded; cancelling it')
+            self.log('maximum pending time for job exceeded; cancelling it')
             self.cancel(job)
             job._exception = JobError('maximum pending time exceeded',
                                       job.jobid)
