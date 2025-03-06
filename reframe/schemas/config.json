@@ -684,7 +684,7 @@
         "systems*/sched_options/ignore_reqnodenotavail": false,
         "systems*/sched_options/job_submit_timeout": 60,
         "systems*/sched_options/resubmit_on_errors": [],
-        "systems*/sched_options/sacct_retries": 0,
+        "systems*/sched_options/sacct_retries": 3,
         "systems*/sched_options/unqualified_hostnames": false,
         "systems*/sched_options/use_nodes_option": false
     }
