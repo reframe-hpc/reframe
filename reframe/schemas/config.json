@@ -106,17 +106,18 @@
         "sched_options": {
             "type": "object",
             "properties": {
-                "sched_access_in_submit": {"type": "boolean"},
                 "hosts": {
                     "type": "array",
                     "items": {"type": "string"}
                 },
                 "ignore_reqnodenotavail": {"type": "boolean"},
                 "job_submit_timeout": {"type": "number"},
+                "max_sacct_failures": {"type": "number"},
                 "resubmit_on_errors": {
                     "type": "array",
                     "items": {"type": "string"}
                 },
+                "sched_access_in_submit": {"type": "boolean"},
                 "unqualified_hostnames": {"type": "boolean"},
                 "use_nodes_option": {"type": "boolean"}
             }
@@ -678,10 +679,11 @@
         "systems/partitions/time_limit": null,
         "systems/partitions/devices": [],
         "systems/partitions/extras": {},
-        "systems*/sched_options/sched_access_in_submit": false,
-        "systems*/sched_options/ssh_hosts": [],
         "systems*/sched_options/ignore_reqnodenotavail": false,
         "systems*/sched_options/job_submit_timeout": 60,
+        "systems*/sched_options/max_sacct_failures": 3,
+        "systems*/sched_options/sched_access_in_submit": false,
+        "systems*/sched_options/ssh_hosts": [],
         "systems*/sched_options/resubmit_on_errors": [],
         "systems*/sched_options/unqualified_hostnames": false,
         "systems*/sched_options/use_nodes_option": false
