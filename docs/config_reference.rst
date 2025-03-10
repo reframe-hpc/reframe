@@ -456,18 +456,20 @@ System Partition Configuration
       No other test would be able to proceed.
 
 
-.. py:attribute:: systems.partitions.sched_options.sacct_retries
+.. py:attribute:: systems.partitions.sched_options.max_sacct_failures
 
    :required: No
    :default: ``3``
 
+   Maximum number of consecutive failures of `sacct` before ReFrame reports a failure.
+
    Some times the ``sacct`` command may be temporarily unavailable.
-   In this case, ReFrame will continue polling until ``sacct_retries`` is reached.
+   In this case, ReFrame will continue polling until ``max_sacct_failures`` is reached.
    Every time the command succeeds, the counter is reset.
 
-   This option is relevant for the Slurm backend only.
+   This option is relevant for the ``slurm`` backend only.
 
-   .. versionadded:: 4.8.0
+   .. versionadded:: 4.8
 
 
 .. py:attribute:: systems.partitions.sched_options.unqualified_hostnames
