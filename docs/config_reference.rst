@@ -1305,6 +1305,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_perf_upper_thres)s``, The upper threshold of the logged performance variable.
       ``%(check_perf_value)s``, The actual value of the logged performance variable.
       ``%(check_perf_var)s``, The name of the logged performance variable.
+      ``%(check_perf_result)s``, The result of this performance variable (``"pass"`` or ``"fail"``).
 
 
    .. important::
@@ -1313,6 +1314,10 @@ All logging handlers share the following set of common attributes:
 
 
    .. versionadded:: 4.0.0
+
+   .. versionchanged:: 4.8
+
+      The ``%(check_perf_result)s`` placeholder was added.
 
 .. py:attribute:: logging.handlers.datefmt
 
