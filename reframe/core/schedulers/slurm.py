@@ -142,7 +142,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._use_nodes_opt = self.get_option('use_nodes_option')
         self._resubmit_on_errors = self.get_option('resubmit_on_errors')
         self._max_sacct_failures = self.get_option('max_sacct_failures')
-        self._num_failures_sacct = 0
+        self._num_sacct_failures = 0
         self._sched_access_in_submit = self.get_option(
             'sched_access_in_submit'
         )
@@ -461,12 +461,12 @@ class SlurmJobScheduler(sched.JobScheduler):
                     f'-o jobid,state,exitcode,end,nodelist'
                 )
                 # Reset the retry counter if the command succeeds
-                self._num_failures_sacct = 0
+                self._num_sacct_failures = 0
             except SpawnedProcessError as e:
-                self._num_failures_sacct += 1
-                if self._num_failures_sacct > self._max_sacct_failures:
+                self._num_sacct_failures += 1
+                if self._num_sacct_failures > self._max_sacct_failures:
                     self.log(
-                        f'sacct failed ({self._num_failures_sacct}/'
+                        f'sacct failed ({self._num_sacct_failures}/'
                         f'{self._max_sacct_failures}): {e.stderr}',
                         level=logging.WARNING
                     )
