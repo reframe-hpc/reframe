@@ -183,7 +183,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_skip(self, task):
-        msg = str(task.exc_info[1])
+        msg = f'{task.info()} [{task.exc_info[1]}]'
         self.printer.status('SKIP', msg, just='right')
 
     def on_task_abort(self, task):
@@ -438,12 +438,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             num_progressed += bump_state(t)
             new_state = t.state
 
+            if self._pipeline_statistics:
+                self._update_pipeline_progress(old_state, new_state, 1)
+
             t_elapsed = time.time() - t_init
             if timeout and t_elapsed > timeout and num_progressed:
                 break
-
-            if self._pipeline_statistics:
-                self._update_pipeline_progress(old_state, new_state, 1)
 
         getlogger().debug2(f'Bumped {num_progressed} test(s)')
 
@@ -605,7 +605,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._pollctl.reset_snooze_time()
 
     def on_task_skip(self, task):
-        msg = str(task.exc_info[1])
+        msg = f'{task.info()} [{task.exc_info[1]}]'
         self.printer.status('SKIP', msg, just='right')
 
     def on_task_abort(self, task):

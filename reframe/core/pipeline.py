@@ -20,6 +20,7 @@ import itertools
 import numbers
 import os
 import shutil
+from pathlib import Path
 
 import reframe.core.fields as fields
 import reframe.core.hooks as hooks
@@ -1399,6 +1400,35 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     @loggable
     @property
     def perfvalues(self):
+        '''The obtained performance values for this test.
+
+        If the test is a performance test, this contains a read-only dictionary
+        of the following form:
+
+        .. code-block:: python
+
+           {
+               var: [value, ref, lower, upper, unit, result],
+               ...
+           }
+
+        The ``var`` keys correspond to performance variables and are formed as
+        ``<system>:<partition>:<perfvar_name>``. The ``value`` is the obtained
+        performance value, the ``ref``, ``lower``, ``upper`` and ``unit`` are
+        the same as defined in :attr:`reference`. The ``result`` is a ``pass``
+        or ``fail`` string denoting whether the achieved performance for this
+        variable is within bounds or not.
+
+        .. versionadded:: 2.18
+
+        .. versionchanged:: 3.11
+           This property is now loggable.
+
+        .. versionchanged:: 4.8
+           The values of the dictionary are now lists (instead of tuples) and
+           contain also the result of the check.
+
+        '''
         return util.MappingView(self._perfvalues)
 
     @property
@@ -1779,6 +1809,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         self._setup_container_platform()
         self._resolve_fixtures()
 
+    def _mark_stagedir(self):
+        (Path(self.stagedir) / '.rfm_mark').touch()
+
+    def _requires_stagedir_contents(self):
+        '''Return true if the contents of the stagedir need to be generated'''
+
+        # Every time the stage directory is created a fresh mark is created.
+        # Normally, this is wiped out before running the test, unless
+        # `--dont-restage` is passed. In this case, we want to leave the
+        # existing stagedir untouched.
+
+        return not (Path(self.stagedir) / '.rfm_mark').exists()
+
     def _copy_to_stagedir(self, path):
         self.logger.debug(f'Copying {path} to stage directory')
         self.logger.debug(f'Symlinking files: {self.readonly_files}')
@@ -1788,6 +1831,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             )
         except (OSError, ValueError, TypeError) as e:
             raise PipelineError('copying of files failed') from e
+        else:
+            self._mark_stagedir()
 
     def _clone_to_stagedir(self, url):
         self.logger.debug(f'Cloning URL {url} into stage directory')
@@ -1795,6 +1840,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             self.sourcesdir, self._stagedir,
             timeout=rt.runtime().get_option('general/0/git_timeout')
         )
+        self._mark_stagedir()
 
     @final
     def compile(self):
@@ -1832,11 +1878,12 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                     f'interpreted as relative to it'
                 )
 
-            if osext.is_url(self.sourcesdir):
-                self._clone_to_stagedir(self.sourcesdir)
-            else:
-                self._copy_to_stagedir(os.path.join(self._prefix,
-                                                    self.sourcesdir))
+            if self._requires_stagedir_contents():
+                if osext.is_url(self.sourcesdir):
+                    self._clone_to_stagedir(self.sourcesdir)
+                else:
+                    self._copy_to_stagedir(os.path.join(self._prefix,
+                                                        self.sourcesdir))
 
         # Set executable (only if hasn't been provided)
         if not hasattr(self, 'executable'):
@@ -2304,7 +2351,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
                     ref = (0, None, None)
 
-                self._perfvalues[key] = (value, *ref, unit)
+                self._perfvalues[key] = [value, *ref, unit, None]
 
         if self.is_dry_run():
             return
@@ -2312,7 +2359,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         # Check the performance variables against their references.
         errors = []
         for key, values in self._perfvalues.items():
-            val, ref, low_thres, high_thres, unit = values
+            val, ref, low_thres, high_thres, unit, _ = values
 
             # Verify that val is a number
             if not isinstance(val, numbers.Number):
@@ -2331,6 +2378,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 )
             except SanityError as e:
                 errors.append(e.message)
+                self._perfvalues[key][-1] = 'fail'
+            else:
+                self._perfvalues[key][-1] = 'pass'
 
         # Combine all error messages to a single `PerformanceError` containing
         # the information of all failed performance variables
@@ -2628,7 +2678,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         The resources of the test are copied to the stage directory and the
         rest of execution is delegated to the :func:`RegressionTest.run()`.
         '''
-        if self.sourcesdir:
+        if self.sourcesdir and self._requires_stagedir_contents():
             if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:

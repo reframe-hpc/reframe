@@ -239,7 +239,7 @@ def test_select_subconfig(site_config):
     site_config.select_subconfig('testsys')
     assert len(site_config['systems']) == 1
     assert len(site_config['systems'][0]['partitions']) == 2
-    assert len(site_config['modes']) == 1
+    assert len(site_config['modes']) == 2
     assert site_config.get('systems/0/name') == 'testsys'
     assert site_config.get('systems/0/descr') == 'Fake system for unit tests'
     assert site_config.get('systems/0/hostnames') == ['testsys']
@@ -326,8 +326,14 @@ def test_select_subconfig(site_config):
         'systems/0/sched_options/resubmit_on_errors'
     ) == []
     assert site_config.get(
+        'systems/0/sched_options/max_sacct_failures'
+    ) == 3
+    assert site_config.get(
         'systems/0/partitions/@gpu/sched_options/resubmit_on_errors'
     ) == []
+    assert site_config.get(
+        'systems/0/partitions/@gpu/sched_options/max_sacct_failures'
+    ) == 3
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
     assert site_config.get('environments/1/cxx') == 'CC'
     assert site_config.get('general/0/check_search_path') == ['c:d']
@@ -509,6 +515,18 @@ def test_system_create(site_config):
     site_config.select_subconfig('testsys:login')
     system = System.create(site_config)
     assert system.partitions[0].container_runtime == 'Docker'
+
+    # Test correct extras when partitions have no extras set
+    # See: https://github.com/reframe-hpc/reframe/issues/3371
+    site_config.select_subconfig('sys3:part1')
+    system = System.create(site_config)
+    assert system.partitions[0].extras == {'scheduler': 'local',
+                                           'launcher': 'local'}
+
+    site_config.select_subconfig('sys3:part2')
+    system = System.create(site_config)
+    assert system.partitions[0].extras == {'scheduler': 'slurm',
+                                           'launcher': 'srun'}
 
 
 def test_yaml_bindings(monkeypatch):

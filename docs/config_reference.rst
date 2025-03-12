@@ -456,6 +456,22 @@ System Partition Configuration
       No other test would be able to proceed.
 
 
+.. py:attribute:: systems.partitions.sched_options.max_sacct_failures
+
+   :required: No
+   :default: ``3``
+
+   Maximum number of consecutive failures of `sacct` before ReFrame reports a failure.
+
+   Some times the ``sacct`` command may be temporarily unavailable.
+   In this case, ReFrame will continue polling until ``max_sacct_failures`` is reached.
+   Every time the command succeeds, the counter is reset.
+
+   This option is relevant for the ``slurm`` backend only.
+
+   .. versionadded:: 4.8
+
+
 .. py:attribute:: systems.partitions.sched_options.unqualified_hostnames
 
    :required: No
@@ -1289,6 +1305,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_perf_upper_thres)s``, The upper threshold of the logged performance variable.
       ``%(check_perf_value)s``, The actual value of the logged performance variable.
       ``%(check_perf_var)s``, The name of the logged performance variable.
+      ``%(check_perf_result)s``, The result of this performance variable (``"pass"`` or ``"fail"``).
 
 
    .. important::
@@ -1297,6 +1314,10 @@ All logging handlers share the following set of common attributes:
 
 
    .. versionadded:: 4.0.0
+
+   .. versionchanged:: 4.8
+
+      The ``%(check_perf_result)s`` placeholder was added.
 
 .. py:attribute:: logging.handlers.datefmt
 
@@ -1707,7 +1728,7 @@ Result storage configuration
 .. py:attribute:: storage.enable
 
    :required: No
-   :default: ``true``
+   :default: ``false``
 
    Enable results storage.
 

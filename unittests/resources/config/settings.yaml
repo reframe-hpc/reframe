@@ -136,6 +136,20 @@ systems:
     scheduler: local,
     launcher: local
     environs: [builtin]
+- name: sys3
+  descr: System required for testing default extras
+  hostnames: [sys3\d+]
+  partitions:
+  - name: part1
+    descr: Login nodes
+    scheduler: local
+    launcher: local
+    environs: [builtin]
+  - name: part2
+    descr: Compue nodes
+    scheduler: slurm
+    launcher: srun
+    environs: [builtin]
 environments:
 - name: PrgEnv-gnu
   modules:
@@ -175,6 +189,10 @@ modes:
   - -n ^HelloTest$
   - -p builtin
   - -S local=1
+- name: env_vars
+  options:
+  - -n ${TEST_NAME_PATTERN}
+  - -S ${VAR}=${VAL}
 logging:
 - level: debug
   handlers:
