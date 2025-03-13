@@ -2220,7 +2220,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly in no longer allowed. See `here
+              Overriding this method directly is no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
@@ -2701,6 +2701,14 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     the compile stage will always fail if the compilation fails.
     However, if a sanity function is defined, it will be used to validate the
     test.
+
+    .. warning::
+
+       ReFrame checks the exit code of the associated build job to mark the
+       test as a failure. If :attr:`build_locally` is set to :obj:`False` and
+       the scheduler backend cannot retrieve the exit code of the submitted
+       job, ReFrame's exit code check is not sufficient. Users in this case
+       should provide a sanity checking function explicitly.
 
     This class is also directly available under the top-level :mod:`reframe`
     module.
