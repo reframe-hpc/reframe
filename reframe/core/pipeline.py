@@ -980,10 +980,17 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: the test will run. Setting this to :class:`False` is useful when
     #: cross-compilation is not supported on the system where ReFrame is run.
     #: Normally, ReFrame will mark the test as a failure if the spawned job
-    #: exits with a non-zero exit code. However, certain scheduler backends,
-    #: such as the ``squeue`` do not set it. In such cases, it is the user's
-    #: responsibility to check whether the build phase failed by adding an
-    #: appropriate sanity check.
+    #: exits with a non-zero exit code. However, only certain scheduler
+    #: backends can retrieve the job's exit code reliably and these are the
+    #: ``local``, ``pbs``, ``slurm`` and ``ssh``. For the rest of the backends,
+    #: the user should make sure to provide an appropriate sanity check.
+    #:
+    #: .. tip::
+    #:    For normal tests (build + run) where ``build_locally=False`` and a
+    #:    scheduler backend that cannot retrieve the job's exit code is used,
+    #:    the sanity of the build must be checked in a post-compile hook
+    #:    raising a :class:`~reframe.core.exceptions.BuildError` in case of
+    #:    errors.
     #:
     #: :type: boolean
     #: :default: :class:`True`
@@ -2220,7 +2227,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
               more details.
 
            .. versionchanged:: 3.4
-              Overriding this method directly in no longer allowed. See `here
+              Overriding this method directly is no longer allowed. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 
