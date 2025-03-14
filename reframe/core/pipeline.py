@@ -980,10 +980,17 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: the test will run. Setting this to :class:`False` is useful when
     #: cross-compilation is not supported on the system where ReFrame is run.
     #: Normally, ReFrame will mark the test as a failure if the spawned job
-    #: exits with a non-zero exit code. However, certain scheduler backends,
-    #: such as the ``squeue`` do not set it. In such cases, it is the user's
-    #: responsibility to check whether the build phase failed by adding an
-    #: appropriate sanity check.
+    #: exits with a non-zero exit code. However, only certain scheduler
+    #: backends can retrieve the job's exit code reliably and these are the
+    #: ``local``, ``pbs``, ``slurm`` and ``ssh``. For the rest of the backends,
+    #: the user should make sure to provide an appropriate sanity check.
+    #:
+    #: .. tip::
+    #:    For normal tests (build + run) where ``build_locally=False`` and a
+    #:    scheduler backend that cannot retrieve the job's exit code is used,
+    #:    the sanity of the build must be checked in a post-compile hook
+    #:    raising a :class:`~reframe.core.exceptions.BuildError` in case of
+    #:    errors.
     #:
     #: :type: boolean
     #: :default: :class:`True`
@@ -2701,14 +2708,6 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
     the compile stage will always fail if the compilation fails.
     However, if a sanity function is defined, it will be used to validate the
     test.
-
-    .. warning::
-
-       ReFrame checks the exit code of the associated build job to mark the
-       test as a failure. If :attr:`build_locally` is set to :obj:`False` and
-       the scheduler backend cannot retrieve the exit code of the submitted
-       job, ReFrame's exit code check is not sufficient. Users in this case
-       should provide a sanity checking function explicitly.
 
     This class is also directly available under the top-level :mod:`reframe`
     module.
