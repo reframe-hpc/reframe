@@ -1382,6 +1382,15 @@ The syntax for selecting sessions or test cases can take one of the following fo
 2. ``<select> := ?<session_filter>``: A valid Python expression on the available session information including any user-specific session extras (see also :option:`--session-extras`), e.g., ``?'xyz=="123"'``.
    In this case, the testcases from all sessions matching the filter will be retrieved.
 3. ``<select> := <time_period>``: A time period specification (see below for details).
+4. ``<select> := <time_period>?<session_filter>``: This is a variation of option (2), where sessions are filtered also by the time period.
+   This syntax is useful for limiting the query scope and therefore reducing query times.
+
+
+.. note::
+   .. versionchanged:: 4.8
+
+      Support for scoping the session filter queries by a time period was added.
+
 
 Time periods
 ^^^^^^^^^^^^
@@ -1505,13 +1514,13 @@ Note that parts that have a grammar defined elsewhere (e.g., Python attributes a
    <cmpspec> ::= (<select> "/")? <select> "/" <aggr> "/" <cols>
    <aggr> ::= <aggr_fn> ":" <cols>
    <aggr_fn> ::= "first" | "last" | "max" | "min" | "mean" | "median"
-   <cols> ::= <extra_cols> | <explicit_cols>
+   <cols> ::= <extra_cols> | <explicit_cols> | E
    <extra_cols> ::= ("+" <attr>)+
    <explicit_cols> ::= <attr> ("," <attr>)*
    <attr> ::= /* any Python attribute */
    <select> ::= <session_uuid> | <session_filter> | <time_period>
    <session_uuid> ::= /* any valid UUID */
-   <session_filter> ::= "?" <python_expr>
+   <session_filter> ::= (<time_period>)? "?" <python_expr>
    <python_expr> ::= /* any valid Python expression */
    <time_period> ::= <timestamp> ":" <timestamp>
    <timestamp> ::= ("now" | <abs_timestamp>) (("+" | "-") <number> ("w" | "d" | "h" | "m"))?

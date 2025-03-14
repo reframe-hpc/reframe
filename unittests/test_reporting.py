@@ -213,7 +213,7 @@ def test_parse_cmp_spec_period(time_period):
     match = parse_cmp_spec(f'{spec}/{spec}/mean:/')
     for query in ('base', 'target'):
         assert getattr(match, query).by_time_period()
-        ts_start, ts_end = getattr(match, query).value
+        ts_start, ts_end = getattr(match, query).time_period
         if 'now' in spec:
             # Truncate splits of seconds if using `now` timestamps
             ts_start = int(ts_start)
@@ -341,15 +341,16 @@ def test_parse_cmp_spec_with_uuid(uuid_spec):
     match = parse_cmp_spec(uuid_spec)
     base_uuid, target_uuid = _uuids(uuid_spec)
     if match.base.by_session_uuid():
-        assert match.base.value == base_uuid
+        assert match.base.uuid == base_uuid
 
     if match.target.by_session_uuid():
-        assert match.target.value == target_uuid
+        assert match.target.uuid == target_uuid
 
 
 @pytest.fixture(params=[
     '?xyz == "123"/?xyz == "789"/mean:/',
-    '?xyz == "789"/mean:/'
+    '?xyz == "789"/mean:/',
+    'now-1d:now?xyz == "789"/mean:/'
 ])
 def sess_filter(request):
     return request.param
@@ -359,10 +360,15 @@ def test_parse_cmp_spec_with_filter(sess_filter):
     match = parse_cmp_spec(sess_filter)
     if match.base:
         assert match.base.by_session_filter()
-        assert match.base.value == 'xyz == "123"'
+        assert match.base.sess_filter == 'xyz == "123"'
 
     assert match.target.by_session_filter()
-    assert match.target.value == 'xyz == "789"'
+    assert match.target.sess_filter == 'xyz == "789"'
+
+    if sess_filter.startswith('now'):
+        assert match.target.by_time_period()
+        ts_start, ts_end = match.target.time_period
+        assert int(ts_end - ts_start) == 86400
 
 
 @pytest.fixture(params=['2024:07:01T12:34:56', '20240701', '20240701:',
@@ -439,6 +445,15 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
 
         return count
 
+    def from_time_period(ts_start, ts_end):
+        return QuerySelector(time_period=(ts_start, ts_end))
+
+    def from_session_uuid(x):
+        return QuerySelector(uuid=x)
+
+    def from_session_filter(filt, ts_start, ts_end):
+        return QuerySelector(time_period=(ts_start, ts_end), sess_filter=filt)
+
     monkeypatch.setenv('HOME', str(tmp_path))
     uuids = []
     timestamps = []
@@ -451,17 +466,19 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
         report = _generate_runreport(runner.stats, *tm.timestamps())
         uuids.append(report.store())
 
-    backend = report_storage.StorageBackend.default()
-
-    from_time_period = QuerySelector.from_time_period
-    from_session_uuid = QuerySelector.from_session_uuid
-
     # Test `fetch_sessions`: time period version
+    backend = report_storage.StorageBackend.default()
     now = time.time()
     stored_sessions = backend.fetch_sessions(from_time_period(0, now))
     assert len(stored_sessions) == 2
     for i, sess in enumerate(stored_sessions):
         assert sess['session_info']['uuid'] == uuids[i]
+
+    # Test `fetch_sessions`: session filter version
+    stored_sessions = backend.fetch_sessions(
+        from_session_filter('num_failures==5', timestamps[1][0], now)
+    )
+    assert len(stored_sessions) == 1
 
     # Test `fetch_session`: session uuid version
     for uuid in uuids:
@@ -493,6 +510,13 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
     # Test the inverted period
     assert backend.fetch_testcases(from_time_period(timestamps[1][1],
                                                     timestamps[0][0])) == []
+
+    # Test `fetch_testcases`: session filter version
+    testcases = backend.fetch_testcases(
+        from_session_filter('num_failures==5', timestamps[1][0], now),
+        '^HelloTest'
+    )
+    assert len(testcases) == 1
 
     # Test `fetch_testcases`: session version
     for i, uuid in enumerate(uuids):

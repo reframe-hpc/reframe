@@ -237,6 +237,7 @@ class _SqliteStorage(StorageBackend):
             r'\"session_info\":\s+(?P<sess_info>\{.*?\})'
         )
 
+        @time_function
         def _extract_sess_info(s):
             return sess_info_patt.search(s).group('sess_info')
 
@@ -318,7 +319,11 @@ class _SqliteStorage(StorageBackend):
                                       name_patt=None, test_filter=None):
         query = 'SELECT uuid, json_blob from sessions'
         if selector.by_session_uuid():
-            query += f' WHERE uuid == "{selector.value}"'
+            query += f' WHERE uuid == "{selector.uuid}"'
+        elif selector.by_time_period():
+            ts_start, ts_end = selector.time_period
+            query += (f' WHERE (session_start_unix >= {ts_start} AND '
+                      f'session_start_unix < {ts_end})')
 
         getprofiler().enter_region('sqlite session query')
         with self._db_connect(self._db_file()) as conn:
@@ -330,7 +335,8 @@ class _SqliteStorage(StorageBackend):
             return []
 
         sessions = self._decode_sessions(
-            results, selector.value if selector.by_session_filter() else None
+            results,
+            selector.sess_filter if selector.by_session_filter() else None
         )
         return [tc for sess in sessions.values()
                 for run in sess['runs'] for tc in run['testcases']
@@ -341,7 +347,7 @@ class _SqliteStorage(StorageBackend):
     def _fetch_testcases_time_period(self, ts_start, ts_end, name_patt=None,
                                      test_filter=None):
         expr = (f'job_completion_time_unix >= {ts_start} AND '
-                f'job_completion_time_unix <= {ts_end}')
+                f'job_completion_time_unix < {ts_end}')
         if name_patt:
             expr += f' AND name REGEXP "{name_patt}"'
 
@@ -354,31 +360,34 @@ class _SqliteStorage(StorageBackend):
     @time_function
     def fetch_testcases(self, selector: QuerySelector,
                         name_patt=None, test_filter=None):
-        if selector.by_time_period():
-            return self._fetch_testcases_time_period(
-                *selector.value, name_patt, test_filter
-            )
-        else:
+        if selector.by_session():
             return self._fetch_testcases_from_session(
                 selector, name_patt, test_filter
+            )
+        else:
+            return self._fetch_testcases_time_period(
+                *selector.time_period, name_patt, test_filter
             )
 
     @time_function
     def fetch_sessions(self, selector: QuerySelector):
         query = 'SELECT uuid, json_blob FROM sessions'
         if selector.by_time_period():
-            ts_start, ts_end = selector.value
+            ts_start, ts_end = selector.time_period
             query += (f' WHERE (session_start_unix >= {ts_start} AND '
-                      f'session_start_unix <= {ts_end})')
+                      f'session_start_unix < {ts_end})')
         elif selector.by_session_uuid():
-            query += f' WHERE uuid == "{selector.value}"'
+            query += f' WHERE uuid == "{selector.uuid}"'
 
+        getprofiler().enter_region('sqlite session query')
         with self._db_connect(self._db_file()) as conn:
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
+        getprofiler().exit_region()
         session = self._decode_sessions(
-            results, selector.value if selector.by_session_filter() else None
+            results,
+            selector.sess_filter if selector.by_session_filter() else None
         )
         return [*session.values()]
 
@@ -414,7 +423,7 @@ class _SqliteStorage(StorageBackend):
     @time_function
     def remove_sessions(self, selector: QuerySelector):
         if selector.by_session_uuid():
-            uuids = [selector.value]
+            uuids = [selector.uuid]
         else:
             uuids = [sess['session_info']['uuid']
                      for sess in self.fetch_sessions(selector)]
