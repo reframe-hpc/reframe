@@ -155,7 +155,7 @@ class PrettyPrinter:
 
             if print_file_info:
                 lines = [msg + '\n']
-                lines += _file_info(stdout, prefix=rec['stagedir'])
+                lines += _file_info(stdout, prefix=rec['stagedir']) + ['\n']
                 lines += _file_info(stderr, prefix=rec['stagedir'])
                 msg = ''.join(lines)
 

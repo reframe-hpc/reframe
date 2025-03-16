@@ -1015,7 +1015,7 @@ def main():
             if spec == 'all':
                 spec = '19700101T0000+0000:now'
 
-            printer.table(reporting.session_data(spec))
+            printer.table(reporting.session_data(spec), disable_numparse=True)
             sys.exit(0)
 
     if options.list_stored_testcases:
