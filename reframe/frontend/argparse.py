@@ -160,6 +160,10 @@ class _ArgumentHolder:
         # options. Values are tuples of the form (envvar, configvar)
         self._option_map = shared_options if shared_options is not None else {}
 
+        # We store the options (without actions) to quickly decide if an option
+        # is part of specific option group
+        self._options = set()
+
     def __getattr__(self, name):
         # Delegate all unknown public attribute requests to the underlying
         # holder
@@ -176,7 +180,15 @@ class _ArgumentHolder:
         else:
             setattr(self._holder, name, value)
 
+    def has_known_options(self, args):
+        flags = {arg for arg in args if arg.startswith('-')}
+        return flags & self._options
+
     def add_argument(self, *flags, **kwargs):
+        # Store all flags separately
+        for opt in flags:
+            self._options.add(opt)
+
         try:
             opt_name = kwargs['dest']
         except KeyError:

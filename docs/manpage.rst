@@ -666,6 +666,14 @@ Options controlling ReFrame execution
    .. versionchanged:: 4.1
       Options that can be specified multiple times are now combined between execution modes and the command line.
 
+   .. versionchanged:: 4.7
+      The :option:`--mode` must always be combined with a :ref:`command option <commands>`.
+      If the mode contains a command option already, the command option that will finally take effect is implementation defined.
+
+   .. versionchanged:: 4.8
+      Command options are disallowed from execution modes.
+
+
 .. option:: --reruns=N
 
    Rerun the whole test session ``N`` times.
