@@ -680,11 +680,28 @@ def _aggregate_perf(grouped_testcases, aggr_fn, cols):
 def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
                           groups=None, columns=None):
     groups = groups or []
-    columns = columns or []
-    grouped_base = _group_testcases(base_testcases, groups, columns)
-    grouped_target = _group_testcases(target_testcases, groups, columns)
-    pbase = _aggregate_perf(grouped_base, base_fn, columns)
-    ptarget = _aggregate_perf(grouped_target, target_fn, columns)
+
+    # Clean up columns and store those for which we want explicitly the A or B
+    # variants
+    cols = []
+    variants_A = set()
+    variants_B = set()
+    for c in columns:
+        if c.endswith('_A'):
+            variants_A.add(c[:-2])
+            cols.append(c[:-2])
+        elif c.endswith('_B'):
+            variants_B.add(c[:-2])
+            cols.append(c[:-2])
+        else:
+            variants_A.add(c)
+            variants_B.add(c)
+            cols.append(c)
+
+    grouped_base = _group_testcases(base_testcases, groups, cols)
+    grouped_target = _group_testcases(target_testcases, groups, cols)
+    pbase = _aggregate_perf(grouped_base, base_fn, cols)
+    ptarget = _aggregate_perf(grouped_target, target_fn, cols)
 
     # For visual purposes if `name` is in `groups`, consider also its
     # derivative `basename` to be in, so as to avoid duplicate columns
@@ -692,13 +709,17 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
         groups.append('basename')
 
     # Build the final table data
-    extra_cols = set(columns) - set(groups) - {'pdiff'}
+    extra_cols = set(cols) - set(groups) - {'pdiff'}
 
     # Header line
     header = []
-    for c in columns:
+    for c in cols:
         if c in extra_cols:
-            header += [f'{c}_A', f'{c}_B']
+            if c in variants_A:
+                header.append(f'{c}_A')
+
+            if c in variants_B:
+                header.append(f'{c}_B')
         else:
             header.append(c)
 
@@ -706,7 +727,7 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
     for key, aggr_data in pbase.items():
         pdiff = None
         line = []
-        for c in columns:
+        for c in cols:
             base = aggr_data.get(c)
             try:
                 target = ptarget[key][c]
@@ -729,8 +750,11 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
             elif c == 'pdiff':
                 line.append('n/a' if pdiff is None else pdiff)
             elif c in extra_cols:
-                line.append('n/a' if base is None else base)
-                line.append('n/a' if target is None else target)
+                if c in variants_A:
+                    line.append('n/a' if base is None else base)
+
+                if c in variants_B:
+                    line.append('n/a' if target is None else target)
             else:
                 line.append('n/a' if base is None else base)
 
