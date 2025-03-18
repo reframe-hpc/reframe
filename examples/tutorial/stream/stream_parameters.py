@@ -27,7 +27,7 @@ class stream_test(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['+openmp']
     stream_binary = fixture(build_stream, scope='environment')
     num_threads = parameter([1, 2, 4, 8])
-    thread_placement = parameter(['close', 'cores', 'spread'])
+    thread_placement = parameter(['true', 'close', 'spread'])
 
     @run_after('setup')
     def set_executable(self):
