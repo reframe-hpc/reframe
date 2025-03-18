@@ -8,6 +8,7 @@ import collections.abc
 import contextlib
 import glob as pyglob
 import itertools
+import math
 import os
 import re
 import sys
@@ -576,8 +577,14 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
 
         return ref*(1 + thres)
 
-    lower = calc_bound(lower_thres) or float('-inf')
-    upper = calc_bound(upper_thres) or float('inf')
+    lower = calc_bound(lower_thres)
+    if lower is None:
+        lower = -math.inf
+
+    upper = calc_bound(upper_thres)
+    if upper is None:
+        upper = math.inf
+
     try:
         evaluate(assert_bounded(val, lower, upper))
     except SanityError:

@@ -473,6 +473,18 @@ def test_assert_reference():
                              r'\(l=-1\.2, u=-0\.9\)'):
         sn.evaluate(sn.assert_reference(-0.8, -1, -0.2, 0.1))
 
+    # Check that bounds are correctly calculated in case that lower bound
+    # reaches zero (see also GH issue #3430)
+    with pytest.raises(SanityError,
+                       match=r'1 is beyond reference value 0\.1 '
+                             r'\(l=0\.0, u=0\.1\)'):
+        assert sn.assert_reference(1, 0.1, -1.0, 0)
+
+    with pytest.raises(SanityError,
+                       match=r'-1 is beyond reference value -0\.1 '
+                             r'\(l=-0\.1, u=-0\.0\)'):
+        assert sn.assert_reference(-1, -0.1, 0, 1.0)
+
     # Check invalid thresholds
     with pytest.raises(SanityError,
                        match=r'invalid high threshold value: -0\.1'):
