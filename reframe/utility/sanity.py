@@ -550,7 +550,13 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         lower and upper thresholds do not have appropriate values.
     '''
     if lower_thres is not None:
-        lower_thres_limit = -1 if ref >= 0 else None
+        if ref > 0:
+            lower_thres_limit = -1
+        elif ref == 0:
+            lower_thres_limit = -math.inf
+        else:
+            lower_thres_limit = None
+
         try:
             evaluate(assert_bounded(lower_thres, lower_thres_limit, 0))
         except SanityError:
@@ -559,7 +565,13 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
             ) from None
 
     if upper_thres is not None:
-        upper_thres_limit = None if ref >= 0 else 1
+        if ref > 0:
+            upper_thres_limit = None
+        elif ref == 0:
+            upper_thres_limit = math.inf
+        else:
+            upper_thres_limit = 1
+
         try:
             evaluate(assert_bounded(upper_thres, 0, upper_thres_limit))
         except SanityError:
@@ -577,11 +589,16 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
 
         return ref*(1 + thres)
 
-    lower = calc_bound(lower_thres)
+    if ref != 0:
+        lower = calc_bound(lower_thres)
+        upper = calc_bound(upper_thres)
+    else:
+        lower = lower_thres
+        upper = upper_thres
+
     if lower is None:
         lower = -math.inf
 
-    upper = calc_bound(upper_thres)
     if upper is None:
         upper = math.inf
 
