@@ -295,7 +295,12 @@ def _expected_pbs_directives_minimal(job):
     ])
 
 
-_expected_pbs_directives_no_tasks = _expected_pbs_directives_minimal
+def _expected_pbs_directives_no_tasks(job):
+    return set([
+        '#PBS -N testjob',
+        f'#PBS -o {job.stdout}',
+        f'#PBS -e {job.stderr}'
+    ])
 
 
 def _expected_torque_directives(job):
@@ -324,7 +329,7 @@ def _expected_torque_directives_minimal(job):
     ])
 
 
-_expected_torque_directives_no_tasks = _expected_torque_directives_minimal
+_expected_torque_directives_no_tasks = _expected_pbs_directives_no_tasks
 
 
 def _expected_oar_directives(job):
