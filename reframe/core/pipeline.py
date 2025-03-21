@@ -672,7 +672,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: performance variables defined in :attr:`perf_patterns` and scoped under
     #: the system/partition combinations.
     #: The reference itself is a four-tuple that contains the reference value,
-    #: the lower and upper thresholds and the measurement unit.
+    #: the lower and upper thresholds, and the measurement unit.
+    #: 
+    #: For non-zero reference values, lower and upper thresholds are
+    #: percentages -/+ from the reference value in decimal form.
+    #:
+    #: When a reference value of ``0`` is expected, lower and upper 
+    #: thresholds are interpreted as absolute values.
     #:
     #: An example follows:
     #:
@@ -690,7 +696,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    }
     #:
     #: To better understand how to set the performance reference tuple, here
-    #: are some examples with both positive and negative reference values:
+    #: are some examples with positive, negative, and zero reference values:
     #:
     #:   ============================== ============  ==========  ===========
     #:   **Performance Tuple**          **Expected**  **Lowest**  **Highest**
@@ -700,13 +706,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:   ``(-100, -0.01, 0.02, 'C')``     -100 C        -101 C      -98 C
     #:   ``(-100, -0.01, None, 'C')``     -100 C        -101 C      inf C
     #:   ``(-100, None, 0.02, 'C')``      -100 C        -inf C      -98 C
+    #:   ``(0, -2, 5, 'C')``                 0 C          -2 C        5 C
     #:   ============================== ============  ==========  ===========
     #:
     #: During the performance stage of the pipeline, the reference tuple
     #: elements, except the unit, are passed to the
     #: :func:`~reframe.utility.sanity.assert_reference` function along with the
-    #: obtained performance value in order to actually assess whether the test
-    #: passes the performance check or not.
+    #: obtained performance value to assess whether the test
+    #: passes or fails the performance check.
     #:
     #: :type: A scoped dictionary with system names as scopes, performance
     #:   variables as keys and reference tuples as values.
