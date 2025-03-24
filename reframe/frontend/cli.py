@@ -406,7 +406,7 @@ def main():
         help='Exclude checks whose name matches PATTERN'
     )
     select_options.add_argument(
-        '-E', '--filter-expr', action='store', metavar='EXPR',
+        '-E', '--filter-expr', action='append', metavar='EXPR',
         help='Select checks that satisfy the expression EXPR'
     )
 
@@ -1022,8 +1022,9 @@ def main():
         namepatt = '|'.join(options.names)
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
+            filt = options.filter_expr[-1] if options.filter_expr else None
             printer.table(reporting.testcase_data(
-                options.list_stored_testcases, namepatt, options.filter_expr
+                options.list_stored_testcases, namepatt, filt
             ))
             sys.exit(0)
 
@@ -1043,9 +1044,9 @@ def main():
         namepatt = '|'.join(options.names)
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
+            filt = options.filter_expr[-1] if options.filter_expr else None
             printer.info(jsonext.dumps(reporting.testcase_info(
-                options.describe_stored_testcases,
-                namepatt, options.filter_expr
+                options.describe_stored_testcases, namepatt, filt
             ), indent=2))
             sys.exit(0)
 
@@ -1061,11 +1062,20 @@ def main():
         namepatt = '|'.join(options.names)
         with exit_gracefully_on_error('failed to generate performance report',
                                       printer):
+            filt = [None, None]
+            if options.filter_expr is not None:
+                if len(options.filter_expr) == 1:
+                    filt[0] = options.filter_expr[0]
+                elif len(options.filter_expr) == 2:
+                    filt[:] = options.filter_expr
+                else:
+                    printer.error('cannot apply `-E` option more than twice '
+                                  'in performance comparisons')
+                    sys.exit(1)
+
             printer.table(
                 reporting.performance_compare(options.performance_compare,
-                                              None,
-                                              namepatt,
-                                              options.filter_expr)
+                                              None, namepatt, *filt)
             )
             sys.exit(0)
 
@@ -1283,12 +1293,12 @@ def main():
         )
 
         if options.filter_expr:
-            testcases = filter(filters.validates(options.filter_expr),
+            testcases = filter(filters.validates(options.filter_expr[-1]),
                                testcases)
 
             testcases = list(testcases)
             printer.verbose(
-                f'Filtering test cases(s) by {options.filter_expr}: '
+                f'Filtering test cases(s) by {options.filter_expr[-1]}: '
                 f'{len(testcases)} remaining'
             )
 
