@@ -34,7 +34,7 @@ import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.containers import (ContainerPlatform, ContainerPlatformField)
+from reframe.core.containers import ContainerPlatform
 from reframe.core.deferrable import (_DeferredExpression,
                                      _DeferredPerformanceExpression)
 from reframe.core.environments import Environment
@@ -466,8 +466,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.12.0
     #:    This field is now set automatically from the current partition's
     #:    configuration.
-    container_platform = variable(field=ContainerPlatformField,
-                                  value=_NoRuntime(), loggable=False)
+    container_platform = variable(ContainerPlatform, value=_NoRuntime(),
+                                  loggable=False, allow_implicit=True)
 
     #: .. versionadded:: 3.0
     #:
@@ -673,11 +673,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: the system/partition combinations.
     #: The reference itself is a four-tuple that contains the reference value,
     #: the lower and upper thresholds, and the measurement unit.
-    #: 
+    #:
     #: For non-zero reference values, lower and upper thresholds are
     #: percentages -/+ from the reference value in decimal form.
     #:
-    #: When a reference value of ``0`` is expected, lower and upper 
+    #: When a reference value of ``0`` is expected, lower and upper
     #: thresholds are interpreted as absolute values.
     #:
     #: An example follows:

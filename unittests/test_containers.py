@@ -6,6 +6,7 @@
 import pytest
 
 import reframe.core.containers as containers
+from reframe.core.containers import ContainerPlatform
 
 
 @pytest.fixture(params=[
@@ -126,7 +127,6 @@ def expected_cmd_mount_points(container_variant):
         return ('apptainer run -B"/path/one:/one" '
                 '-B"/path/two:/two" -B"/foo:/rfm_workdir" '
                 '--pwd /rfm_workdir image:tag')
-
 
 
 @pytest.fixture
@@ -304,3 +304,14 @@ def test_run_with_workdir(container_platform_with_opts,
     container_platform_with_opts.workdir = 'foodir'
     found_commands = container_platform_with_opts.launch_command('/foo')
     assert found_commands == expected_run_with_workdir
+
+
+@pytest.fixture(params=['Docker', 'Sarus', 'Shifter',
+                        'Singularity', 'Apptainer'])
+def container_platform_name(request):
+    return request.param
+
+
+def test_create_from_str(container_platform_name):
+    cp = ContainerPlatform(container_platform_name)
+    assert type(cp).__name__ == container_platform_name
