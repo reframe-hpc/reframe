@@ -673,11 +673,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: the system/partition combinations.
     #: The reference itself is a four-tuple that contains the reference value,
     #: the lower and upper thresholds, and the measurement unit.
-    #: 
+    #:
     #: For non-zero reference values, lower and upper thresholds are
     #: percentages -/+ from the reference value in decimal form.
     #:
-    #: When a reference value of ``0`` is expected, lower and upper 
+    #: When a reference value of ``0`` is expected, lower and upper
     #: thresholds are interpreted as absolute values.
     #:
     #: An example follows:
@@ -1231,7 +1231,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         basename, *params = self.display_name.split(' ')
         name = basename
         for p in params:
-            if not p.startswith('%$'):
+            if not p.startswith('%.'):
                 name += f' {p}'
 
         self._rfm_name = name
