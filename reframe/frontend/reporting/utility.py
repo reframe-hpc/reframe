@@ -154,55 +154,49 @@ def is_uuid(s):
 
 
 class QuerySelector:
-    '''A union class for the different session and testcase queries.
+    '''A class for encapsulating the different session and testcase queries.
 
     A session or testcase query can be of one of the following kinds:
 
-    - Query by time period
     - Query by session uuid
+    - Query by time period
     - Query by session filtering expression
+    - Query by session filtering expression and time period
 
     This class holds only a single value that is interpreted differently,
     depending on how it was constructed.
     There are methods to query the actual kind of the held value, so that
     callers can take appropriate action.
     '''
-    BY_SESS_FILTER = 1
-    BY_SESS_UUID = 2
-    BY_TIME_PERIOD = 3
 
-    def __init__(self, value, kind):
-        self.__value = value
-        self.__kind = kind
+    def __init__(self, *, uuid=None, time_period=None, sess_filter=None):
+        self.__uuid = uuid
+        self.__time_period = time_period
+        self.__sess_filter = sess_filter
 
     @property
-    def value(self):
-        return self.__value
+    def uuid(self):
+        return self.__uuid
 
     @property
-    def kind(self):
-        return self.__kind
+    def time_period(self):
+        return self.__time_period
+
+    @property
+    def sess_filter(self):
+        return self.__sess_filter
 
     def by_time_period(self):
-        return self.__kind == self.BY_TIME_PERIOD
+        return self.__time_period is not None
+
+    def by_session(self):
+        return self.by_session_filter() or self.by_session_uuid()
 
     def by_session_uuid(self):
-        return self.__kind == self.BY_SESS_UUID
+        return self.__uuid is not None
 
     def by_session_filter(self):
-        return self.__kind == self.BY_SESS_FILTER
-
-    @classmethod
-    def from_time_period(cls, ts_start, ts_end):
-        return cls((ts_start, ts_end), cls.BY_TIME_PERIOD)
-
-    @classmethod
-    def from_session_uuid(cls, uuid):
-        return cls(uuid, cls.BY_SESS_UUID)
-
-    @classmethod
-    def from_session_filter(cls, sess_filter):
-        return cls(sess_filter, cls.BY_SESS_FILTER)
+        return self.__sess_filter is not None
 
     def __repr__(self):
         clsname = type(self).__name__
@@ -249,12 +243,17 @@ def parse_query_spec(s):
         return None
 
     if is_uuid(s):
-        return QuerySelector.from_session_uuid(s)
+        return QuerySelector(uuid=s)
 
-    if s.startswith('?'):
-        return QuerySelector.from_session_filter(s[1:])
+    if '?' in s:
+        time_period, sess_filter = s.split('?', maxsplit=1)
+        if time_period:
+            return QuerySelector(sess_filter=sess_filter,
+                                 time_period=parse_time_period(time_period))
+        else:
+            return QuerySelector(sess_filter=sess_filter)
 
-    return QuerySelector.from_time_period(*parse_time_period(s))
+    return QuerySelector(time_period=parse_time_period(s))
 
 
 _Match = namedtuple('_Match',
