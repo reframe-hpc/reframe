@@ -1446,6 +1446,13 @@ def test_performance_compare(run_reframe, table_format, monkeypatch):
         )
     )
 
+    # Select only specific variants of extra cols
+    assert_no_crash(
+        *run_reframe2(
+            action='--performance-compare=now-1m:now/now-1d:now/mean:/+result_A+job_nodelist_B'  # noqa: E501
+        )
+    )
+
     # Check disjoint sets of groups and columns
     assert_no_crash(
         *run_reframe2(
