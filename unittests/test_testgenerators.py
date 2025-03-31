@@ -46,7 +46,7 @@ def test_distribute_testcases(sys0_exec_ctx):
     assert count == 2
 
     def sys0p0_nodes():
-        for nodelist in (['n2'], ['n2'], ['n1'], ['n1']):
+        for nodelist in (['n1'], ['n1'], ['n2'], ['n2']):
             yield nodelist
 
     nodelist_iter = sys0p0_nodes()
