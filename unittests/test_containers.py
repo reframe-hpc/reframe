@@ -128,6 +128,75 @@ def expected_cmd_mount_points(container_variant):
                 '-B"/path/two:/two" -B"/foo:/rfm_workdir" '
                 '--pwd /rfm_workdir image:tag')
 
+@pytest.fixture
+def expected_cmd_mount_points_no_stagedir(container_variant):
+    if container_variant in {'Docker', 'Docker+nopull'}:
+        return ('docker run --rm -v "/path/one":"/one" '
+                '-v "/path/two":"/two" '
+                '-w /workspace image:tag cmd')
+    elif container_variant == 'Docker+nocommand':
+        return ('docker run --rm -v "/path/one":"/one" '
+                '-v "/path/two":"/two" '
+                '-w /workspace image:tag')
+    elif container_variant in {'Sarus', 'Sarus+nopull'}:
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                '-w /workspace image:tag cmd')
+    elif container_variant == 'Sarus+nocommand':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                '-w /workspace image:tag')
+    elif container_variant == 'Sarus+mpi':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                '--mpi -w /workspace image:tag cmd')
+    elif container_variant == 'Sarus+load':
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                '-w /workspace load/library/image:tag cmd')
+    elif container_variant in {'Shifter', 'Shifter+nopull'}:
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                'image:tag cmd')
+    elif container_variant == 'Shifter+nocommand':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                'image:tag')
+    elif container_variant == 'Shifter+mpi':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                '--mpi image:tag cmd')
+    elif container_variant == 'Shifter+load':
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                'load/library/image:tag cmd')
+    elif container_variant == 'Singularity':
+        return ('singularity exec -B"/path/one:/one" '
+                '-B"/path/two:/two" --pwd /workspace image:tag cmd')
+    elif container_variant == 'Singularity+cuda':
+        return ('singularity exec -B"/path/one:/one" '
+                '-B"/path/two:/two" --nv --pwd /workspace image:tag cmd')
+    elif container_variant == 'Singularity+nocommand':
+        return ('singularity run -B"/path/one:/one" '
+                '-B"/path/two:/two" --pwd /workspace image:tag')
+    elif container_variant == 'Apptainer':
+        return ('apptainer exec -B"/path/one:/one" '
+                '-B"/path/two:/two" --pwd /workspace image:tag cmd')
+    elif container_variant == 'Apptainer+cuda':
+        return ('apptainer exec -B"/path/one:/one" '
+                '-B"/path/two:/two" --nv --pwd /workspace image:tag cmd')
+    elif container_variant == 'Apptainer+nocommand':
+        return ('apptainer run -B"/path/one:/one" '
+                '-B"/path/two:/two" --pwd /workspace image:tag')
+
 
 @pytest.fixture
 def expected_cmd_prepare(container_variant):
@@ -219,6 +288,16 @@ def test_mount_points(container_platform, expected_cmd_mount_points):
                                        ('/path/two', '/two')]
     cmd = container_platform.launch_command('/foo')
     assert cmd == expected_cmd_mount_points
+
+
+def test_mount_points_no_stagedir(container_platform,
+                                  expected_cmd_mount_points_no_stagedir):
+    container_platform.mount_points = [('/path/one', '/one'),
+                                       ('/path/two', '/two')]
+    container_platform.mount_stagedir = None
+    container_platform.workdir = '/workspace'
+    cmd = container_platform.launch_command('/foo')
+    assert cmd == expected_cmd_mount_points_no_stagedir
 
 
 def test_prepare_command(container_platform, expected_cmd_prepare):

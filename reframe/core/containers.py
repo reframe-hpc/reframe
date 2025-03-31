@@ -10,9 +10,6 @@ import reframe.utility.typecheck as typ
 from reframe.core.meta import RegressionTestMeta
 
 
-_STAGEDIR_MOUNT = '/rfm_workdir'
-
-
 class _ContainerMeta(typ.ConvertibleType, RegressionTestMeta, abc.ABCMeta):
     '''Metaclass for container platforms.
 
@@ -67,6 +64,17 @@ class ContainerPlatform(abc.ABC, metaclass=_ContainerMeta):
     #: :default: ``[]``
     mount_points = variable(typ.List[typ.Tuple[str, str]], value=[])
 
+    #: Mount the stage directory inside the container
+    #:
+    #: If not :obj:`None`, the stage directory will always be mounted inside
+    #: the container in the specified location.
+    #:
+    #: .. versionadded:: 4.8
+    #:
+    #: :type: :class:`str` or :obj:`None`
+    #: :default: ``/rfm_workdir``
+    mount_stagedir = variable(str, type(None), value='/rfm_workdir')
+
     #: Additional options to be passed to the container runtime when executed.
     #:
     #: :type: :class:`list[str]`
@@ -75,16 +83,20 @@ class ContainerPlatform(abc.ABC, metaclass=_ContainerMeta):
 
     #: The working directory of ReFrame inside the container.
     #:
-    #: This is the directory where the test's stage directory is mounted inside
-    #: the container. This directory is always mounted regardless if
-    #: :attr:`mount_points` is set or not.
+    #: By default, this is the directory where the test's stage directory is
+    #: mounted inside the container.
     #:
     #: :type: :class:`str`
     #: :default: ``/rfm_workdir``
     #:
     #: .. versionchanged:: 3.12.0
     #:    This attribute is no more deprecated.
-    workdir = variable(str, type(None), value=_STAGEDIR_MOUNT)
+    #:
+    #: .. versionchanged:: 4.8
+    #:    Whether the stage directory will be mounted or not is now controlled
+    #:    by the :attr:`mount_stagedir` variable. If it is not mounted, make
+    #:    sure to properly update also the working directory.
+    workdir = variable(str, type(None), value='/rfm_workdir')
 
     @classmethod
     def __rfm_cast_str__(cls, s):
@@ -161,7 +173,10 @@ class Docker(ContainerPlatform):
 
     def launch_command(self, stagedir):
         super().launch_command(stagedir)
-        mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
+        mount_points = self.mount_points
+        if self.mount_stagedir:
+            mount_points.append((stagedir, self.mount_stagedir))
+
         run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in mount_points]
         if self.workdir:
             run_opts.append(f'-w {self.workdir}')
@@ -200,7 +215,10 @@ class Sarus(ContainerPlatform):
 
     def launch_command(self, stagedir):
         super().launch_command(stagedir)
-        mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
+        mount_points = self.mount_points
+        if self.mount_stagedir:
+            mount_points.append((stagedir, self.mount_stagedir))
+
         run_opts = [f'--mount=type=bind,source="{mp[0]}",destination="{mp[1]}"'
                     for mp in mount_points]
         if self.with_mpi:
@@ -252,7 +270,10 @@ class Singularity(ContainerPlatform):
 
     def launch_command(self, stagedir):
         super().launch_command(stagedir)
-        mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
+        mount_points = self.mount_points
+        if self.mount_stagedir:
+            mount_points.append((stagedir, self.mount_stagedir))
+
         run_opts = [f'-B"{mp[0]}:{mp[1]}"' for mp in mount_points]
         if self.with_cuda:
             run_opts.append('--nv')
