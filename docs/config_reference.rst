@@ -1698,6 +1698,14 @@ The options of an execution mode will be passed to ReFrame as if they were speci
 
    The command-line options associated with this execution mode.
 
+   .. warning::
+      :ref:`Command options <commands>` are *not* allowed in execution modes.
+      These should always be passed explicitly in command line.
+
+   .. versionchanged:: 4.8
+
+      Command options are explicitly disallowed in execution modes.
+
 
 .. py:attribute:: modes.target_systems
 
