@@ -1217,12 +1217,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''The name of the test.
 
         This is an alias of :attr:`display_name` but omitting any implicit
-        parameters starting with ``$`` that are inserted by the
+        parameters starting with ``.`` that are inserted by the
         :option:`--repeat`, :option:`--distribute` and other similar options.
 
         .. versionchanged:: 4.7
 
-           The implicit parameters starting with ``$`` are now omitted.
+           The implicit parameters starting with special characters are now
+           omitted.
+
         '''
         if hasattr(self, '_rfm_name'):
             return self._rfm_name
@@ -1231,7 +1233,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         basename, *params = self.display_name.split(' ')
         name = basename
         for p in params:
-            if not p.startswith('%$'):
+            if not p.startswith('%.'):
                 name += f' {p}'
 
         self._rfm_name = name
