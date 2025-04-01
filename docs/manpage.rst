@@ -1491,8 +1491,14 @@ The selection of the final columns of the results table is specified by the same
 
 However, for performance comparisons, ReFrame will generate two columns for every attribute in the subspec that is not also a group-by attribute, suffixed with ``_A`` and ``_B``.
 These columns contain the aggregated values of the corresponding attributes.
-Note that only the aggregation of ``pval`` (i.e. the test case performance)  can be controlled (see :ref:`testcase-grouping`)
+Note that only the aggregation of ``pval`` (i.e. the test case performance)  can be controlled (see :ref:`testcase-grouping`).
 All other attributes are aggregated by joining their unique values.
+
+It possible to select only one of the A/B variants of the extra columns by adding the ``_A`` or ``_B`` suffix to the column name in the ``<cols>`` subspec, e.g., ``+result_A`` will only show the result of the first group of test cases.
+
+.. versionchanged:: 4.8
+
+   Support for selecting A/B column variants in performance comparisons.
 
 Examples
 --------
