@@ -50,6 +50,10 @@ def test_arguments(argparser, foo_options):
 
     foo_options.add_argument('--foo-bar', action='store_true')
     foo_options.add_argument('--alist', action='append', default=[])
+    assert foo_options.has_known_options(['-f', '-l', '-b'])
+    assert foo_options.has_known_options(['--foobar', '-l', '-b'])
+    assert not foo_options.has_known_options(['-l', '-b'])
+
     options = argparser.parse_args(['--foobar', '--foo-bar'])
     assert options.foobar
     assert options.foo_bar
