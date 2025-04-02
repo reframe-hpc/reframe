@@ -448,6 +448,14 @@ def test_assert_reference():
     assert sn.assert_reference(-0.9, -1, upper_thres=0.1)
     assert sn.assert_reference(-0.9, -1)
 
+    # Check reference values of 0
+    assert sn.assert_reference(0, 0, 0, 0)
+    assert sn.assert_reference(-1, 0, -2, 2)
+    assert sn.assert_reference(2, 0, -2, 2)
+    with pytest.raises(SanityError, match=r'3 is beyond reference value 0 '
+                                          r'\(l=-10, u=1\)'):
+        sn.evaluate(sn.assert_reference(3, 0, -10, 1))
+
     # Check upper threshold values greater than 1
     assert sn.assert_reference(20.0, 10.0, None, 3.0)
     assert sn.assert_reference(-50.0, -20.0, -2.0, 0.5)

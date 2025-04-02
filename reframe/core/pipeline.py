@@ -34,7 +34,7 @@ import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.containers import (ContainerPlatform, ContainerPlatformField)
+from reframe.core.containers import ContainerPlatform
 from reframe.core.deferrable import (_DeferredExpression,
                                      _DeferredPerformanceExpression)
 from reframe.core.environments import Environment
@@ -466,8 +466,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.12.0
     #:    This field is now set automatically from the current partition's
     #:    configuration.
-    container_platform = variable(field=ContainerPlatformField,
-                                  value=_NoRuntime(), loggable=False)
+    container_platform = variable(ContainerPlatform, value=_NoRuntime(),
+                                  loggable=False, allow_implicit=True)
 
     #: .. versionadded:: 3.0
     #:
@@ -672,7 +672,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: performance variables defined in :attr:`perf_patterns` and scoped under
     #: the system/partition combinations.
     #: The reference itself is a four-tuple that contains the reference value,
-    #: the lower and upper thresholds and the measurement unit.
+    #: the lower and upper thresholds, and the measurement unit.
+    #:
+    #: For non-zero reference values, lower and upper thresholds are
+    #: percentages -/+ from the reference value in decimal form.
+    #:
+    #: When a reference value of ``0`` is expected, lower and upper
+    #: thresholds are interpreted as absolute values.
     #:
     #: An example follows:
     #:
@@ -690,7 +696,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:    }
     #:
     #: To better understand how to set the performance reference tuple, here
-    #: are some examples with both positive and negative reference values:
+    #: are some examples with positive, negative, and zero reference values:
     #:
     #:   ============================== ============  ==========  ===========
     #:   **Performance Tuple**          **Expected**  **Lowest**  **Highest**
@@ -700,13 +706,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:   ``(-100, -0.01, 0.02, 'C')``     -100 C        -101 C      -98 C
     #:   ``(-100, -0.01, None, 'C')``     -100 C        -101 C      inf C
     #:   ``(-100, None, 0.02, 'C')``      -100 C        -inf C      -98 C
+    #:   ``(0, -2, 5, 'C')``                 0 C          -2 C        5 C
     #:   ============================== ============  ==========  ===========
     #:
     #: During the performance stage of the pipeline, the reference tuple
     #: elements, except the unit, are passed to the
     #: :func:`~reframe.utility.sanity.assert_reference` function along with the
-    #: obtained performance value in order to actually assess whether the test
-    #: passes the performance check or not.
+    #: obtained performance value to assess whether the test
+    #: passes or fails the performance check.
     #:
     #: :type: A scoped dictionary with system names as scopes, performance
     #:   variables as keys and reference tuples as values.
@@ -1210,12 +1217,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''The name of the test.
 
         This is an alias of :attr:`display_name` but omitting any implicit
-        parameters starting with ``$`` that are inserted by the
+        parameters starting with ``.`` that are inserted by the
         :option:`--repeat`, :option:`--distribute` and other similar options.
 
         .. versionchanged:: 4.7
 
-           The implicit parameters starting with ``$`` are now omitted.
+           The implicit parameters starting with special characters are now
+           omitted.
+
         '''
         if hasattr(self, '_rfm_name'):
             return self._rfm_name
@@ -1224,7 +1233,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         basename, *params = self.display_name.split(' ')
         name = basename
         for p in params:
-            if not p.startswith('%$'):
+            if not p.startswith('%.'):
                 name += f' {p}'
 
         self._rfm_name = name

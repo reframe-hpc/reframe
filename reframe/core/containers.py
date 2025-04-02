@@ -5,15 +5,20 @@
 
 import abc
 
-import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.typecheck as typ
+from reframe.core.meta import RegressionTestMeta
 
 
-_STAGEDIR_MOUNT = '/rfm_workdir'
+class _ContainerMeta(typ.ConvertibleType, RegressionTestMeta, abc.ABCMeta):
+    '''Metaclass for container platforms.
+
+    This essentially combines the ABCMeta with our standard metaclass that
+    provides the variables.
+    '''
 
 
-class ContainerPlatform(abc.ABC):
+class ContainerPlatform(abc.ABC, metaclass=_ContainerMeta):
     '''The abstract base class of any container platform.'''
 
     #: The default mount location of the test case stage directory inside the
@@ -23,7 +28,7 @@ class ContainerPlatform(abc.ABC):
     #:
     #: :type: :class:`str` or :class:`None`
     #: :default: :class:`None`
-    image = fields.TypedField(str, type(None))
+    image = variable(str, type(None), value=None)
 
     #: The command to be executed within the container.
     #:
@@ -36,7 +41,7 @@ class ContainerPlatform(abc.ABC):
     #:
     #: :type: :class:`str` or :class:`None`
     #: :default: :class:`None`
-    command = fields.TypedField(str, type(None))
+    command = variable(str, type(None), value=None)
 
     #: Pull the container image before running.
     #:
@@ -46,7 +51,7 @@ class ContainerPlatform(abc.ABC):
     #:
     #: :type: :class:`bool`
     #: :default: ``True``
-    pull_image = fields.TypedField(bool)
+    pull_image = variable(typ.Bool, value=True)
 
     #: List of mount point pairs for directories to mount inside the container.
     #:
@@ -57,34 +62,45 @@ class ContainerPlatform(abc.ABC):
     #:
     #: :type: :class:`list[tuple[str, str]]`
     #: :default: ``[]``
-    mount_points = fields.TypedField(typ.List[typ.Tuple[str, str]])
+    mount_points = variable(typ.List[typ.Tuple[str, str]], value=[])
+
+    #: Mount the stage directory inside the container
+    #:
+    #: If not :obj:`None`, the stage directory will always be mounted inside
+    #: the container in the specified location.
+    #:
+    #: .. versionadded:: 4.8
+    #:
+    #: :type: :class:`str` or :obj:`None`
+    #: :default: ``/rfm_workdir``
+    mount_stagedir = variable(str, type(None), value='/rfm_workdir')
 
     #: Additional options to be passed to the container runtime when executed.
     #:
     #: :type: :class:`list[str]`
     #: :default: ``[]``
-    options = fields.TypedField(typ.List[str])
+    options = variable(typ.List[str], value=[])
 
     #: The working directory of ReFrame inside the container.
     #:
-    #: This is the directory where the test's stage directory is mounted inside
-    #: the container. This directory is always mounted regardless if
-    #: :attr:`mount_points` is set or not.
+    #: By default, this is the directory where the test's stage directory is
+    #: mounted inside the container.
     #:
     #: :type: :class:`str`
     #: :default: ``/rfm_workdir``
     #:
     #: .. versionchanged:: 3.12.0
     #:    This attribute is no more deprecated.
-    workdir = fields.TypedField(str, type(None))
+    #:
+    #: .. versionchanged:: 4.8
+    #:    Whether the stage directory will be mounted or not is now controlled
+    #:    by the :attr:`mount_stagedir` variable. If it is not mounted, make
+    #:    sure to properly update also the working directory.
+    workdir = variable(str, type(None), value='/rfm_workdir')
 
-    def __init__(self):
-        self.image = None
-        self.command = None
-        self.workdir = _STAGEDIR_MOUNT
-        self.mount_points  = []
-        self.options = []
-        self.pull_image = True
+    @classmethod
+    def __rfm_cast_str__(cls, s):
+        return cls.create(s)
 
     @abc.abstractmethod
     def emit_prepare_commands(self, stagedir):
@@ -157,7 +173,10 @@ class Docker(ContainerPlatform):
 
     def launch_command(self, stagedir):
         super().launch_command(stagedir)
-        mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
+        mount_points = self.mount_points
+        if self.mount_stagedir:
+            mount_points.append((stagedir, self.mount_stagedir))
+
         run_opts = [f'-v "{mp[0]}":"{mp[1]}"' for mp in mount_points]
         if self.workdir:
             run_opts.append(f'-w {self.workdir}')
@@ -178,11 +197,10 @@ class Sarus(ContainerPlatform):
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    with_mpi = fields.TypedField(bool)
+    with_mpi = variable(typ.Bool, value=False)
 
     def __init__(self):
         super().__init__()
-        self.with_mpi = False
         self._command = 'sarus'
 
     def emit_prepare_commands(self, stagedir):
@@ -197,7 +215,10 @@ class Sarus(ContainerPlatform):
 
     def launch_command(self, stagedir):
         super().launch_command(stagedir)
-        mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
+        mount_points = self.mount_points
+        if self.mount_stagedir:
+            mount_points.append((stagedir, self.mount_stagedir))
+
         run_opts = [f'--mount=type=bind,source="{mp[0]}",destination="{mp[1]}"'
                     for mp in mount_points]
         if self.with_mpi:
@@ -238,11 +259,10 @@ class Singularity(ContainerPlatform):
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    with_cuda = fields.TypedField(bool)
+    with_cuda = variable(typ.Bool, value=False)
 
     def __init__(self):
         super().__init__()
-        self.with_cuda = False
         self._launch_command = 'singularity'
 
     def emit_prepare_commands(self, stagedir):
@@ -250,7 +270,10 @@ class Singularity(ContainerPlatform):
 
     def launch_command(self, stagedir):
         super().launch_command(stagedir)
-        mount_points = self.mount_points + [(stagedir, _STAGEDIR_MOUNT)]
+        mount_points = self.mount_points
+        if self.mount_stagedir:
+            mount_points.append((stagedir, self.mount_stagedir))
+
         run_opts = [f'-B"{mp[0]}:{mp[1]}"' for mp in mount_points]
         if self.with_cuda:
             run_opts.append('--nv')
@@ -277,14 +300,3 @@ class Apptainer(Singularity):
     def __init__(self):
         super().__init__()
         self._launch_command = 'apptainer'
-
-
-class ContainerPlatformField(fields.TypedField):
-    def __init__(self, *other_types):
-        super().__init__(ContainerPlatform, *other_types)
-
-    def __set__(self, obj, value):
-        if isinstance(value, str):
-            value = ContainerPlatform.create(value)
-
-        return super().__set__(obj, value)
