@@ -732,31 +732,22 @@ class _SlurmNode(sched.Node):
         return not self.is_avail()
 
     def satisfies(self, slurm_constraint):
-        def _replacemany(s, replacements):
-            for src, dst in replacements:
-                s = s.replace(src, dst)
-
-            return s
-
         # Convert the Slurm constraint to a Python expression and evaluate it,
         # but restrict our syntax to accept only AND or OR constraints and
-        # their combinations; to properly treat `-` in constraints we need to
-        # convert them to valid Python identifiers before evaluating the
-        # constraint.
-        if not re.match(r'^[\-\w\d\(\)\|\&]*$', slurm_constraint):
+        # their combinations; since Slurm features are not valid Python
+        # identifiers, we replace them with booleans before evaluating.
+
+        if not re.match(r'^[\-\w\(\)\|\&]+$', slurm_constraint):
             return False
 
-        names = {
-            grp[0] for grp in re.finditer(r'[\-\w][\-\w\d]*', slurm_constraint)
-        }
-        expr = _replacemany(slurm_constraint,
-                            [('-', '_'), ('|', ' or '), ('&', ' and ')])
-        vars = {n.replace('-', '_'): True for n in self.active_features}
-        vars.update({
-            n.replace('-', '_'): False for n in names - self.active_features
-        })
+        expr = re.sub(
+            "[\-\w]+",
+            lambda m: str(m.group(0) in self.active_features),
+            slurm_constraint
+        ).replace("|", " or ").replace("&", " and ")
+
         try:
-            return eval(expr, {}, vars)
+            return eval(expr)
         except BaseException:
             return False
 
