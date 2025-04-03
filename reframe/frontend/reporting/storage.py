@@ -223,8 +223,8 @@ class _SqliteStorage(StorageBackend):
         return session_uuid
 
     def store(self, report, report_file=None):
-        with self._db_connect(self._db_file()) as conn:
-            with self._db_lock():
+        with self._db_lock():
+            with self._db_connect(self._db_file()) as conn:
                 return self._db_store_report(conn, report, report_file)
 
     @time_function
