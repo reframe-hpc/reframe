@@ -569,7 +569,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: - ``local``: not applicable.
     #: - ``lsf``: Neither the ``-nnodes`` nor the ``-n`` will be emitted.
     #: - ``oar``: Resets it to ``1``.
-    #: - ``pbs``: Resets it to ``1``.
+    #: - ``pbs``: The ``-lselect`` option will not be emitted.
     #: - ``sge``: not applicable.
     #: - ``slurm``: Neither the ``--ntasks`` nor the ``--nodes`` option (if the
     #:   :attr:`~config.systems.partitions.sched_options.use_nodes_option` is
@@ -589,6 +589,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:        number of required tasks by the test.
     #:     .. versionchanged:: 4.1
     #:        Allow :attr:`num_tasks` to be :obj:`None`.
+    #:     .. versionchanged:: 4.8
+    #:        ``pbs`` and ``torque`` backends interpret ``num_tasks=None``.
     num_tasks = variable(int, type(None), value=1)
 
     #: Number of tasks per node required by this test.
