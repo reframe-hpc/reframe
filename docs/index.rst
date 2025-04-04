@@ -13,6 +13,8 @@ The stages of this pipeline take care of all the system interaction details, suc
 
 ReFrame also offers a high-level and flexible abstraction for writing sanity and performance checks for your regression tests, without having to care about the details of parsing output files, searching for patterns and testing against reference values for different systems.
 
+Additionally, ReFrame supports storing the test results in a database allowing for later inspection, basic analytics and performance comparisons.
+
 Finally, ReFrame offers a powerful and efficient runtime for running and managing the execution of tests, as well as integration with common logging facilities, where ReFrame can send live data from currently running performance tests.
 
 Publications
