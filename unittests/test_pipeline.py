@@ -15,7 +15,6 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
-from reframe.core.containers import _STAGEDIR_MOUNT
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      PerformanceError, SanityError,
                                      SkipTestError, ReframeSyntaxError)
@@ -1853,14 +1852,14 @@ def container_test(tmp_path):
 
                 self.container_platform.image = image
                 self.container_platform.command = (
-                    f"bash -c 'cd {_STAGEDIR_MOUNT}; pwd; ls; "
-                    f"cat /etc/os-release'"
+                    "bash -c 'cd /rfm_workdir; pwd; ls; "
+                    "cat /etc/os-release'"
                 )
 
             @sanity_function
             def assert_os_release(self):
                 return sn.all([
-                    sn.assert_found(rf'^{_STAGEDIR_MOUNT}', self.stdout),
+                    sn.assert_found(r'^/rfm_workdir', self.stdout),
                     sn.assert_found(r'^foo', self.stdout),
                     sn.assert_found(
                         r'18\.04\.\d+ LTS \(Bionic Beaver\)', self.stdout),

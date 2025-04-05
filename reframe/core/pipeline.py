@@ -34,7 +34,7 @@ import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.containers import (ContainerPlatform, ContainerPlatformField)
+from reframe.core.containers import ContainerPlatform
 from reframe.core.deferrable import (_DeferredExpression,
                                      _DeferredPerformanceExpression)
 from reframe.core.environments import Environment
@@ -466,8 +466,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.12.0
     #:    This field is now set automatically from the current partition's
     #:    configuration.
-    container_platform = variable(field=ContainerPlatformField,
-                                  value=_NoRuntime(), loggable=False)
+    container_platform = variable(ContainerPlatform, value=_NoRuntime(),
+                                  loggable=False, allow_implicit=True)
 
     #: .. versionadded:: 3.0
     #:
@@ -569,7 +569,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: - ``local``: not applicable.
     #: - ``lsf``: Neither the ``-nnodes`` nor the ``-n`` will be emitted.
     #: - ``oar``: Resets it to ``1``.
-    #: - ``pbs``: Resets it to ``1``.
+    #: - ``pbs``: The ``-lselect`` option will not be emitted.
     #: - ``sge``: not applicable.
     #: - ``slurm``: Neither the ``--ntasks`` nor the ``--nodes`` option (if the
     #:   :attr:`~config.systems.partitions.sched_options.use_nodes_option` is
@@ -589,6 +589,8 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:        number of required tasks by the test.
     #:     .. versionchanged:: 4.1
     #:        Allow :attr:`num_tasks` to be :obj:`None`.
+    #:     .. versionchanged:: 4.8
+    #:        ``pbs`` and ``torque`` backends interpret ``num_tasks=None``.
     num_tasks = variable(int, type(None), value=1)
 
     #: Number of tasks per node required by this test.
@@ -673,11 +675,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: the system/partition combinations.
     #: The reference itself is a four-tuple that contains the reference value,
     #: the lower and upper thresholds, and the measurement unit.
-    #: 
+    #:
     #: For non-zero reference values, lower and upper thresholds are
     #: percentages -/+ from the reference value in decimal form.
     #:
-    #: When a reference value of ``0`` is expected, lower and upper 
+    #: When a reference value of ``0`` is expected, lower and upper
     #: thresholds are interpreted as absolute values.
     #:
     #: An example follows:
@@ -1217,12 +1219,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         '''The name of the test.
 
         This is an alias of :attr:`display_name` but omitting any implicit
-        parameters starting with ``$`` that are inserted by the
+        parameters starting with ``.`` that are inserted by the
         :option:`--repeat`, :option:`--distribute` and other similar options.
 
         .. versionchanged:: 4.7
 
-           The implicit parameters starting with ``$`` are now omitted.
+           The implicit parameters starting with special characters are now
+           omitted.
+
         '''
         if hasattr(self, '_rfm_name'):
             return self._rfm_name
@@ -1231,7 +1235,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         basename, *params = self.display_name.split(' ')
         name = basename
         for p in params:
-            if not p.startswith('%$'):
+            if not p.startswith('%.'):
                 name += f' {p}'
 
         self._rfm_name = name

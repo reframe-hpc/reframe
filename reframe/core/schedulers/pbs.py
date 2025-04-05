@@ -81,16 +81,19 @@ class PbsJobScheduler(sched.JobScheduler):
         )
 
     def _emit_lselect_option(self, job):
-        num_tasks = job.num_tasks or 1
-        num_tasks_per_node = job.num_tasks_per_node or 1
-        num_cpus_per_task = job.num_cpus_per_task or 1
-        num_nodes = num_tasks // num_tasks_per_node
-        num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
-        select_opt = self.TASKS_OPT.format(
-            num_nodes=num_nodes,
-            num_tasks_per_node=num_tasks_per_node,
-            num_cpus_per_node=num_cpus_per_node
-        )
+        if job.num_tasks is not None:
+            num_tasks = job.num_tasks
+            num_tasks_per_node = job.num_tasks_per_node or 1
+            num_cpus_per_task = job.num_cpus_per_task or 1
+            num_nodes = num_tasks // num_tasks_per_node
+            num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
+            select_opt = self.TASKS_OPT.format(
+                num_nodes=num_nodes,
+                num_tasks_per_node=num_tasks_per_node,
+                num_cpus_per_node=num_cpus_per_node
+            )
+        else:
+            select_opt = None
 
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
@@ -106,11 +109,19 @@ class PbsJobScheduler(sched.JobScheduler):
             elif opt.startswith('#'):
                 verb_opts.append(opt)
             else:
-                select_opt += ':' + opt
+                if select_opt is None:
+                    select_opt = f'-l select={opt}'
+                else:
+                    select_opt += f':{opt}'
 
-        return [self._format_option(select_opt),
-                *(self._format_option(opt) for opt in rem_opts),
-                *verb_opts]
+        if select_opt is not None:
+            formatted_opts = [self._format_option(select_opt)]
+        else:
+            formatted_opts = []
+
+        formatted_opts += [*(self._format_option(opt) for opt in rem_opts),
+                           *verb_opts]
+        return formatted_opts
 
     def _format_option(self, option):
         return self._prefix + ' ' + option

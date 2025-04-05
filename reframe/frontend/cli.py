@@ -947,6 +947,15 @@ def main():
                 printer.debug(f'Expanding execution mode {options.mode!r}: '
                               f'{" ".join(mode_args)}')
 
+                action_opts = action_options.has_known_options(mode_args)
+                if action_opts:
+                    printer.error(
+                        f'Expanding execution mode {options.mode!r} failed: '
+                        'action options are not allowed in modes: '
+                        f'{" ".join(action_opts)}'
+                    )
+                    sys.exit(1)
+
                 # Parse the mode's options and reparse the command-line
                 options = argparser.parse_args(mode_args,
                                                suppress_required=True)

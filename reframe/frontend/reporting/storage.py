@@ -133,6 +133,12 @@ class _SqliteStorage(StorageBackend):
             # filelock 3.10
             kwargs = {}
 
+        # Create parent directories of the lock file
+        #
+        # NOTE: This is not necessary for filelock >= 3.12.3 and Python >= 3.8
+        # However, we do create it here, in order to support the older Python
+        # versions.
+        os.makedirs(prefix, exist_ok=True)
         return FileLock(os.path.join(prefix, '.db.lock'), **kwargs)
 
     def _db_create(self):
@@ -223,8 +229,8 @@ class _SqliteStorage(StorageBackend):
         return session_uuid
 
     def store(self, report, report_file=None):
-        with self._db_connect(self._db_file()) as conn:
-            with self._db_lock():
+        with self._db_lock():
+            with self._db_connect(self._db_file()) as conn:
                 return self._db_store_report(conn, report, report_file)
 
     @time_function

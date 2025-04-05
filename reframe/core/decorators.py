@@ -9,6 +9,7 @@
 
 __all__ = ['simple_test']
 
+import collections
 import inspect
 import sys
 import traceback
@@ -96,7 +97,7 @@ class TestRegistry:
         # establish their exact dependencies at instantiation time, so the
         # dependency graph grows dynamically.
 
-        leaf_tests = []
+        leaf_tests = collections.deque()
         for test, variants in self._tests.items():
             for args, kwargs in variants:
                 try:
@@ -127,7 +128,7 @@ class TestRegistry:
         while leaf_tests:
             tmp_registry = FixtureRegistry()
             while leaf_tests:
-                c = leaf_tests.pop()
+                c = leaf_tests.popleft()
                 reg = getattr(c, '_rfm_fixture_registry', None)
                 final_tests.append(c)
                 if reg:
@@ -140,7 +141,7 @@ class TestRegistry:
                     _setvars(new_fixtures.uninst_tests(), external_vars)
                 )
 
-            leaf_tests = new_fixtures.instantiate_all()
+            leaf_tests = collections.deque(new_fixtures.instantiate_all())
             fixture_registry.update(new_fixtures)
 
         return final_tests
