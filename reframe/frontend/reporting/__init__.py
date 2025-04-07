@@ -764,7 +764,8 @@ def compare_testcase_data(base_testcases, target_testcases, base_fn, target_fn,
 
 
 @time_function
-def performance_compare(cmp, report=None, namepatt=None, test_filter=None):
+def performance_compare(cmp, report=None, namepatt=None,
+                        filterA=None, filterB=None):
     with reraise_as(ReframeError, (ValueError,),
                     'could not parse comparison spec'):
         match = parse_cmp_spec(cmp)
@@ -786,9 +787,9 @@ def performance_compare(cmp, report=None, namepatt=None, test_filter=None):
         except IndexError:
             tcs_base = []
     else:
-        tcs_base = backend.fetch_testcases(match.base, namepatt, test_filter)
+        tcs_base = backend.fetch_testcases(match.base, namepatt, filterA)
 
-    tcs_target = backend.fetch_testcases(match.target, namepatt, test_filter)
+    tcs_target = backend.fetch_testcases(match.target, namepatt, filterB)
     return compare_testcase_data(tcs_base, tcs_target, match.aggregator,
                                  match.aggregator, match.groups, match.columns)
 

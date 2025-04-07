@@ -218,7 +218,15 @@ class _SequenceType(_BuiltinType):
     def __rfm_cast_str__(cls, s):
         container_type = cls._type
         elem_type = cls._elem_type
-        return container_type(elem_type(e) for e in s.split(','))
+        try:
+            items = json.loads(s)
+        except json.JSONDecodeError:
+            items = [elem_type(e) for e in s.split(',')]
+        else:
+            if not isinstance(items, list):
+                items = [items]
+
+        return container_type(items)
 
 
 class _TupleType(_SequenceType):

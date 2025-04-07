@@ -187,10 +187,15 @@ Result storage commands
 
    The ``CMPSPEC`` argument specifies how testcases will be selected, aggregated and presented.
    This option can be combined with :option:`--name` and :option:`--filter-expr` to restrict the listed tests.
+   The :option:`--filter-expr` option specifically can be specified twice, in which case the first expression will be used the to filter the first set of test cases, and the second one will filter the second set.
 
    Check the :ref:`querying-past-results` section for the exact syntax of ``CMPSPEC``.
 
    .. versionadded:: 4.7
+
+   .. versionchanged:: 4.8
+
+      The :option:`--filter-expr` can now be passed twice with :option:`--performance-compare`.
 
 Other commands
 ^^^^^^^^^^^^^^
@@ -764,7 +769,7 @@ Options controlling ReFrame execution
    - Sequence types: ``-S seqvar=1,2,3,4``
    - Mapping types: ``-S mapvar=a:1,b:2,c:3``
 
-   Nested mapping types can also be converted using JSON syntax.
+   They can also be converted using JSON syntax.
    For example, the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` complex dictionary could be set with ``-S extra_resources='{"gpu": {"num_gpus_per_node":8}}'``.
 
    Conversions to arbitrary objects are also supported.
@@ -825,6 +830,10 @@ Options controlling ReFrame execution
    .. versionchanged:: 4.4
 
       Allow setting nested mapping types using JSON syntax.
+
+   .. versionchanged:: 4.8
+
+      Allow setting sequence types using JSON syntax.
 
 .. option:: --skip-performance-check
 

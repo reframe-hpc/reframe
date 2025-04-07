@@ -102,6 +102,10 @@ def test_list_type():
     assert typ.List[int]('1,2') == [1, 2]
     assert typ.List[int]('1') == [1]
 
+    # Conversion from JSON
+    assert typ.List[int]('[1, 2]') == [1, 2]
+    assert typ.List[typ.List[int]]('[[1], [2]]') == [[1], [2]]
+
     with pytest.raises(ValueError):
         typ.List[int]('foo')
 
