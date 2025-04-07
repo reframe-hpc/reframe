@@ -25,6 +25,8 @@ ReFrame offers an intuitive and very powerful syntax that allows users to create
 ReFrame will load the tests and send them down a well-defined pipeline that will execute them in parallel.
 The stages of this pipeline take care of all the system interaction details, such as programming environment switching, compilation, job submission, job status query, sanity checking and performance assessment.
 
+ReFrame also supports storing the test results in a database allowing for later inspection, basic analytics and performance comparisons.
+
 Please visit the project's documentation [page](https://reframe-hpc.readthedocs.io/) and [GitHub repository](https://github.com/reframe-hpc/reframe) for all the details!
 
 ## Contact
