@@ -165,10 +165,11 @@ class _BuiltinType(ConvertibleType):
 
     def __instancecheck__(cls, inst):
         if hasattr(cls, '_types'):
-            return any(issubclass(type(inst), t) for t in cls._types)
+            return isinstance(inst, cls._types)
+            # return any(issubclass(type(inst), t) for t in cls._types)
 
         if hasattr(cls, '_xtype'):
-            return not issubclass(type(inst), cls._xtype)
+            return not isinstance(inst, cls._xtype)
 
         return issubclass(type(inst), cls)
 
@@ -236,6 +237,9 @@ class _TupleType(_SequenceType):
     '''
 
     def __instancecheck__(cls, inst):
+        if not super().__instancecheck__(inst):
+            return False
+
         if not issubclass(type(inst), cls):
             return False
 
@@ -295,6 +299,9 @@ class _MappingType(_BuiltinType):
         cls._namespace = namespace
 
     def __instancecheck__(cls, inst):
+        if not super().__instancecheck__(inst):
+            return False
+
         if not issubclass(type(inst), cls):
             return False
 
