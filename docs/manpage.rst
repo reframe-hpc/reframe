@@ -187,10 +187,15 @@ Result storage commands
 
    The ``CMPSPEC`` argument specifies how testcases will be selected, aggregated and presented.
    This option can be combined with :option:`--name` and :option:`--filter-expr` to restrict the listed tests.
+   The :option:`--filter-expr` option specifically can be specified twice, in which case the first expression will be used the to filter the first set of test cases, and the second one will filter the second set.
 
    Check the :ref:`querying-past-results` section for the exact syntax of ``CMPSPEC``.
 
    .. versionadded:: 4.7
+
+   .. versionchanged:: 4.8
+
+      The :option:`--filter-expr` can now be passed twice with :option:`--performance-compare`.
 
 Other commands
 ^^^^^^^^^^^^^^
