@@ -195,6 +195,8 @@ class PrettyPrinter:
                 info += f' @{tc["system"]}:{tc["partition"]}+{tc["environ"]}'
 
                 failed_stage = tc['fail_phase']
+                if not failed_stage:
+                    continue
                 failures.setdefault(failed_stage, [])
                 failures[failed_stage].append(info)
 
