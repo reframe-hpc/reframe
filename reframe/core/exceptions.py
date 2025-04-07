@@ -279,6 +279,14 @@ class SkipTestError(ReframeError):
     '''Raised when a test needs to be skipped.'''
 
 
+class ExpectedFailureError(ReframeError):
+    '''Raised when a test failure is expected'''
+
+
+class UnexpectedSuccessError(ReframeError):
+    '''Raised when a test unexpectedly passes'''
+
+
 def user_frame(exc_type, exc_value, tb):
     '''Return a user frame from the exception's traceback.
 

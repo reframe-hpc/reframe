@@ -1423,6 +1423,148 @@ Note that we are using another configuration file, which defines an MPI-enabled 
    You should adapt them if running on an actual parallel cluster.
 
 
+Marking expected failures
+=========================
+
+.. versionadded:: 4.9
+
+In ReFrame you can mark a test failure as expected and attach a message explaining the failure.
+There are two types of failures, sanity and performance failures, and you can mark either type.
+
+Expected sanity failures
+------------------------
+
+To mark an expected sanity failure, you need to decorate the test with the :func:`@xfail <reframe.core.decorators.xfail>` decorator as follows:
+
+.. literalinclude:: ../examples/tutorial/stream/stream_runonly_xfail.py
+   :caption:
+   :lines: 5-
+
+The :func:`@xfail <reframe.core.decorators.xfail>` decorator takes a message to issue when the test fails, explaining the failure, and optionally a predicate to control when the test is expected to fail (we will discuss this later in the section).
+In the example above, we have introduced a typo in the sanity checking function to cause the test to fail, but we have marked it as an expected failure.
+Here is the output:
+
+.. code-block:: bash
+   :caption: Run in the single-node container
+
+   reframe -C tutorial/config/baseline.py -c tutorial/stream/stream_runonly_xfail.py -r
+
+.. code-block:: console
+
+
+   [==========] Running 1 check(s)
+   [==========] Started on Thu May 15 09:10:06 2025+0000
+
+   [----------] start processing checks
+   [ RUN      ] stream_test /2e15a047 @tutorialsys:default+baseline
+   [    XFAIL ] stream_test /2e15a047 @tutorialsys:default+baseline [demo failure]
+   [----------] all spawned checks have finished
+
+   [  PASSED  ] Ran 1/1 test case(s) from 1 check(s) (0 failure(s), 1 expected failure(s), 0 skipped, 0 aborted)
+   [==========] Finished on Thu May 15 09:10:09 2025+0000
+
+Notice that the test is marked as ``XFAIL`` and no ``FAILURE INFO`` is generated.
+
+As mentioned previously you can control when a sanity failure should be considered expected or not by passing the ``predicate`` argument to :func:`@xfail <reframe.core.decorators.xfail>`.
+In the following example, a failure is expected only if ``x<=2``:
+
+.. literalinclude:: ../examples/tutorial/stream/stream_runonly_xfail_cond.py
+   :caption:
+   :lines: 5-
+
+If we run with ``x=3``, the test will fail normally:
+
+.. code-block:: bash
+   :caption: Run in the single-node container
+
+   reframe -C tutorial/config/baseline.py -c tutorial/stream/stream_runonly_xfail_cond.py -r -S x=3
+
+.. code-block:: console
+
+   [----------] start processing checks
+   [ RUN      ] stream_test /2e15a047 @tutorialsys:default+baseline
+   [     FAIL ] (1/1) stream_test /2e15a047 @tutorialsys:default+baseline
+   ==> test failed during 'sanity': test staged in '/home/user/reframe-examples/stage/tutorialsys/default/baseline/stream_test'
+   [----------] all spawned checks have finished
+
+
+If a test passes unexpectedly, its status will be set to ``XPASS`` and it will be counted as failure.
+In the previous example, we fix the typo in the assertion for ``x=2``, so that the test passes insted of expectedly failing.
+Here is the outcome:
+
+.. code-block:: bash
+   :caption: Run in the single-node container
+
+   reframe -C tutorial/config/baseline.py -c tutorial/stream/stream_runonly_xfail_cond.py -r -S x=2
+
+.. code-block:: console
+
+   [----------] start processing checks
+   [ RUN      ] stream_test /2e15a047 @tutorialsys:default+baseline
+   [    XPASS ] stream_test /2e15a047 @tutorialsys:default+baseline
+   [----------] all spawned checks have finished
+
+   [  FAILED  ] Ran 1/1 test case(s) from 1 check(s) (1 failure(s), 0 expected failure(s), 0 skipped, 0 aborted)
+
+Note that the test is counted as a failure and the overall run result is FAIL.
+The reason in the ``FAILURE INFO`` of the test mentions that the test has passed unexpectedly and also states the original reason of why it should fail.
+
+.. code-block:: console
+
+   * Reason: unexpected success error: demo failure
+
+
+Expected performance failures
+-----------------------------
+
+A test fails a performance check when it cannot meet its reference performance within certain user-defined bounds.
+As dicussed :ref:`earlier <writing-your-first-test>`, a test may define multiple performance variables, each one associated with a different reference.
+To mark an expected performance failure, you need to wrap the :attr:`~reframe.core.pipeline.RegressionTest.reference` tuple with the :func:`~reframe.core.builtins.xfail` builtin.
+Here is an example:
+
+.. code-block:: python
+
+   reference = {
+      'tutorialsys': {
+         'copy_bw':  xfail('demo fail', (100_000, -0.1, 0.1, 'MB/s')),
+         'triad_bw': (30_000, -0.1, 0.1, 'MB/s')
+      }
+   }
+
+For demonstration purposes, we have increased significantly the ``copy_bw`` reference so as to cause the test to fail and mark this as an expected failure.
+Note that the :func:`~reframe.core.builtins.xfail` builtin is *different* from the :func:`@xfail <reframe.core.decorators.xfail>` decorator.
+Although the first argument is always the message to be printed, the builtin takes the reference tuple as a second argument, whereas the decorator takes optionally a conditional.
+
+.. note::
+
+   For testing out this example, you need to set the :attr:`reference` in the ``stream_run_only.py`` test based on your system's performance.
+
+Since a test might define multiple performance variables, some of which may be marked as expected failures, the overall final state of the test has to be determined in a more complex way.
+Assuming that the notation ``A>B`` means that ``A`` takes precendence over ``B``, the types of performance failures use the following hierarchy:
+
+.. code-block:: console
+
+   FAIL > XPASS > XFAIL > PASS
+
+In other words, if at least one performance variable fails, the test is a ``FAIL``.
+If none of the performance variables fails, but at least one passes unexpectedly, the test is an ``XPASS``.
+If none of the performance variables fails nor passes unexpectedly and all the expected failures fail, then the test is an ``XFAIL``.
+In all other cases the test is a ``PASS``.
+
+In cases of failures or unexpected passes, the status of every performance will be printed in the ``FAILURE INFO``.
+Also, if colors are enabled (see :option:`--nocolor`), then each variable's status will be color coded in the ``P:`` lines printed just after the test finishes.
+Here is an example combined failure (``XPASS`` and ``FAIL``):
+
+
+.. code-block:: console
+
+   * Reason: performance error:
+       reference(s) met unexpectedly: copy_bw=40299.1 MB/s, expected 40000 (l=36000.0, u=44000.0)
+       failed to meet reference(s): triad_bw=30561.6 MB/s, expected 100000 (l=90000.0, u=110000.00000000001)
+
+You can try different combinations of :func:`~reframe.core.builtins.xfail` markings and reference values to explore the behavior.
+
+
 Managing the run session
 ========================
 

@@ -494,24 +494,24 @@ def test_assert_reference():
         assert sn.assert_reference(-1, -0.1, 0, 1.0)
 
     # Check invalid thresholds
-    with pytest.raises(SanityError,
+    with pytest.raises(ValueError,
                        match=r'invalid high threshold value: -0\.1'):
         sn.evaluate(sn.assert_reference(0.9, 1, -0.2, -0.1))
 
-    with pytest.raises(SanityError,
+    with pytest.raises(ValueError,
                        match=r'invalid low threshold value: 0\.2'):
         sn.evaluate(sn.assert_reference(0.9, 1, 0.2, 0.1))
 
-    with pytest.raises(SanityError,
+    with pytest.raises(ValueError,
                        match=r'invalid low threshold value: 1\.2'):
         sn.evaluate(sn.assert_reference(0.9, 1, 1.2, 0.1))
 
     # check invalid thresholds greater than 1
-    with pytest.raises(SanityError,
+    with pytest.raises(ValueError,
                        match=r'invalid low threshold value: -2\.0'):
         sn.evaluate(sn.assert_reference(0.9, 1, -2.0, 0.1))
 
-    with pytest.raises(SanityError,
+    with pytest.raises(ValueError,
                        match=r'invalid high threshold value: 1\.5'):
         sn.evaluate(sn.assert_reference(-1.5, -1, -0.5, 1.5))
 

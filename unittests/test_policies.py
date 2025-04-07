@@ -418,6 +418,12 @@ class _TaskEventMonitor(executors.TaskEventListener):
     def on_task_success(self, task):
         pass
 
+    def on_task_xsuccess(self, task):
+        pass
+
+    def on_task_xfailure(self, task):
+        pass
+
     def on_task_failure(self, task):
         pass
 

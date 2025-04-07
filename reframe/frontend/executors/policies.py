@@ -10,6 +10,7 @@ import time
 
 import reframe.core.runtime as rt
 import reframe.utility as util
+import reframe.utility.color as color
 from reframe.core.exceptions import (FailureLimitError,
                                      RunSessionTimeout,
                                      TaskExit)
@@ -46,10 +47,25 @@ def _print_perf(task):
         rt.runtime().get_option('general/0/perf_info_level')
     )
     for key, info in perfvars.items():
+        val, ref, lower, upper, unit, result = info
         name = key.split(':')[-1]
-        getlogger().log(level,
-                        f'P: {name}: {info[0]} {info[4]} '
-                        f'(r:{info[1]}, l:{info[2]}, u:{info[3]})')
+        msg = f'P: {name}: {val} {unit} (r:{ref}, l:{lower}, u:{upper})'
+        if result == 'xfail':
+            msg = color.colorize(msg, color.MAGENTA)
+        elif result == 'fail' or result == 'xpass':
+            msg = color.colorize(msg, color.RED)
+
+        getlogger().log(level, msg)
+
+
+def _print_pipeline_timings(task):
+    timings = task.pipeline_timings(['setup',
+                                     'compile_complete',
+                                     'run_complete',
+                                     'sanity',
+                                     'performance',
+                                     'total'])
+    getlogger().verbose(f'==> {timings}')
 
 
 class _PollController:
@@ -82,7 +98,85 @@ class _PollController:
         )
 
 
-class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
+class _PolicyEventListener(TaskEventListener):
+    def on_task_setup(self, task):
+        pass
+
+    def on_task_run(self, task):
+        pass
+
+    def on_task_compile(self, task):
+        pass
+
+    def on_task_exit(self, task):
+        pass
+
+    def on_task_compile_exit(self, task):
+        pass
+
+    def on_task_skip(self, task):
+        msg = f'{task.info()} [{task.exc_info[1]}]'
+        self.printer.status('SKIP', msg, just='right')
+
+    def on_task_abort(self, task):
+        msg = f'{task.info()}'
+        self.printer.status('ABORT', msg, just='right')
+
+    def on_task_xfailure(self, task):
+        msg = f'{task.info()} [{task.exc_info[1]}]'
+        self.printer.status('XFAIL', msg, just='right')
+        _print_perf(task)
+        if task.failed_stage == 'sanity':
+            # Dry-run the performance stage to trigger performance logging
+            task.performance(dry_run=True)
+
+        _print_pipeline_timings(task)
+
+    def on_task_failure(self, task):
+        self._num_failed_tasks += 1
+        msg = f'{task.info()}'
+        if task.failed_stage == 'cleanup':
+            self.printer.status('ERROR', msg, just='right')
+        else:
+            self.printer.status('FAIL', msg, just='right')
+
+        _print_perf(task)
+        if task.failed_stage == 'sanity':
+            # Dry-run the performance stage to trigger performance logging
+            task.performance(dry_run=True)
+
+        getlogger().info(f'==> test failed during {task.failed_stage!r}: '
+                         f'test staged in {task.check.stagedir!r}')
+        _print_pipeline_timings(task)
+        if self._num_failed_tasks >= self.max_failures:
+            raise FailureLimitError(
+                f'maximum number of failures ({self.max_failures}) reached'
+            )
+
+    def on_task_xsuccess(self, task):
+        msg = f'{task.info()}'
+        self.printer.status('XPASS', msg, just='right')
+        _print_perf(task)
+        if task.failed_stage == 'sanity':
+            # Dry-run the performance stage to trigger performance logging
+            task.performance(dry_run=True)
+
+        _print_pipeline_timings(task)
+
+    def on_task_success(self, task):
+        msg = f'{task.info()}'
+        self.printer.status('OK', msg, just='right')
+        _print_perf(task)
+        _print_pipeline_timings(task)
+
+        # Update reference count of dependencies
+        for c in task.testcase.deps:
+            # NOTE: Restored dependencies are not in the task_index
+            if c in self._task_index:
+                self._task_index[c].ref_count -= 1
+
+
+class SerialExecutionPolicy(ExecutionPolicy, _PolicyEventListener):
     def __init__(self):
         super().__init__()
 
@@ -160,78 +254,14 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         except BaseException:
             task.fail(sys.exc_info())
 
-    def on_task_setup(self, task):
-        pass
-
-    def on_task_run(self, task):
-        pass
-
-    def on_task_compile(self, task):
-        pass
-
-    def on_task_exit(self, task):
-        pass
-
-    def on_task_compile_exit(self, task):
-        pass
-
-    def on_task_skip(self, task):
-        msg = f'{task.info()} [{task.exc_info[1]}]'
-        self.printer.status('SKIP', msg, just='right')
-
-    def on_task_abort(self, task):
-        msg = f'{task.info()}'
-        self.printer.status('ABORT', msg, just='right')
-
-    def on_task_failure(self, task):
-        self._num_failed_tasks += 1
-        msg = f'{task.info()}'
-        if task.failed_stage == 'cleanup':
-            self.printer.status('ERROR', msg, just='right')
-        else:
-            self.printer.status('FAIL', msg, just='right')
-
-        _print_perf(task)
-        if task.failed_stage == 'sanity':
-            # Dry-run the performance stage to trigger performance logging
-            task.performance(dry_run=True)
-
-        timings = task.pipeline_timings(['setup',
-                                         'compile_complete',
-                                         'run_complete',
-                                         'sanity',
-                                         'performance',
-                                         'total'])
-        getlogger().info(f'==> test failed during {task.failed_stage!r}: '
-                         f'test staged in {task.check.stagedir!r}')
-        getlogger().verbose(f'==> {timings}')
-        if self._num_failed_tasks >= self.max_failures:
-            raise FailureLimitError(
-                f'maximum number of failures ({self.max_failures}) reached'
-            )
-
+    def on_task_success(self, task):
+        super().on_task_success(task)
+        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
         if self.timeout_expired():
             raise RunSessionTimeout('maximum session duration exceeded')
 
-    def on_task_success(self, task):
-        msg = f'{task.info()}'
-        self.printer.status('OK', msg, just='right')
-        _print_perf(task)
-        timings = task.pipeline_timings(['setup',
-                                         'compile_complete',
-                                         'run_complete',
-                                         'sanity',
-                                         'performance',
-                                         'total'])
-        getlogger().verbose(f'==> {timings}')
-
-        # Update reference count of dependencies
-        for c in task.testcase.deps:
-            # NOTE: Restored dependencies are not in the task_index
-            if c in self._task_index:
-                self._task_index[c].ref_count -= 1
-
-        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
+    def on_task_failure(self, task):
+        super().on_task_failure(task)
         if self.timeout_expired():
             raise RunSessionTimeout('maximum session duration exceeded')
 
@@ -240,7 +270,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         _cleanup_all(self._retired_tasks, not self.keep_stage_files)
 
 
-class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
+class AsynchronousExecutionPolicy(ExecutionPolicy, _PolicyEventListener):
     '''The asynchronous execution policy.'''
 
     def __init__(self):
@@ -576,70 +606,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             with contextlib.suppress(FailureLimitError):
                 task.abort(cause)
 
-    # These function can be useful for tracking statistics of the framework,
-    # such as number of tests that have finished setup etc.
-    def on_task_setup(self, task):
-        pass
-
-    def on_task_run(self, task):
-        pass
-
-    def on_task_compile(self, task):
-        pass
-
     def on_task_exit(self, task):
         self._pollctl.reset_snooze_time()
 
     def on_task_compile_exit(self, task):
         self._pollctl.reset_snooze_time()
-
-    def on_task_skip(self, task):
-        msg = f'{task.info()} [{task.exc_info[1]}]'
-        self.printer.status('SKIP', msg, just='right')
-
-    def on_task_abort(self, task):
-        msg = f'{task.info()}'
-        self.printer.status('ABORT', msg, just='right')
-
-    def on_task_failure(self, task):
-        self._num_failed_tasks += 1
-        msg = f'{task.info()}'
-        if task.failed_stage == 'cleanup':
-            self.printer.status('ERROR', msg, just='right')
-        else:
-            self.printer.status('FAIL', msg, just='right')
-
-        _print_perf(task)
-        if task.failed_stage == 'sanity':
-            # Dry-run the performance stage to trigger performance logging
-            task.performance(dry_run=True)
-
-        timings = task.pipeline_timings(['setup',
-                                         'compile_complete',
-                                         'run_complete',
-                                         'sanity',
-                                         'performance',
-                                         'total'])
-        getlogger().info(f'==> test failed during {task.failed_stage!r}: '
-                         f'test staged in {task.check.stagedir!r}')
-        getlogger().verbose(f'==> {timings}')
-        if self._num_failed_tasks >= self.max_failures:
-            raise FailureLimitError(
-                f'maximum number of failures ({self.max_failures}) reached'
-            )
-
-    def on_task_success(self, task):
-        msg = f'{task.info()}'
-        self.printer.status('OK', msg, just='right')
-        _print_perf(task)
-        timings = task.pipeline_timings(['setup',
-                                         'compile_complete',
-                                         'run_complete',
-                                         'sanity',
-                                         'performance',
-                                         'total'])
-        getlogger().verbose(f'==> {timings}')
-        for c in task.testcase.deps:
-            # NOTE: Restored dependencies are not in the task_index
-            if c in self._task_index:
-                self._task_index[c].ref_count -= 1

@@ -357,8 +357,8 @@ def test_composition_of_types():
     for t in composite_types:
         assert isinstance({1: 1}, t)
         assert isinstance({'1': 1}, t)
-        assert isinstance({1: [1]}, t)
-        assert isinstance({'1': 1.2}, t)
+        assert not isinstance({1: [1]}, t)
+        assert not isinstance({'1': 1.2}, t)
 
     # Test custom types
 

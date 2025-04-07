@@ -15,9 +15,15 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
-from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
-                                     PerformanceError, SanityError,
-                                     SkipTestError, ReframeSyntaxError)
+from reframe.core.exceptions import (BuildError,
+                                     ExpectedFailureError,
+                                     PerformanceError,
+                                     PipelineError,
+                                     ReframeError,
+                                     ReframeSyntaxError,
+                                     SanityError,
+                                     SkipTestError,
+                                     UnexpectedSuccessError)
 from reframe.core.meta import make_test
 from reframe.core.warnings import ReframeDeprecationWarning
 
@@ -1836,6 +1842,69 @@ def test_incompat_perf_syntax(perftest, sanity_file,
         _run_sanity(perftest, *dummy_gpu_exec_ctx)
 
 
+@pytest.fixture(params=['pass', 'fail', 'xpass', 'xfail'])
+def value1_status(request):
+    return request.param
+
+
+@pytest.fixture(params=['pass', 'fail', 'xpass', 'xfail'])
+def value2_status(request):
+    return request.param
+
+
+def test_perf_expected_failures(perftest, sanity_file, perf_file,
+                                value1_status, value2_status, local_exec_ctx):
+    def reftuple(status):
+        if status == 'pass':
+            return (10, 0, 0)
+        elif status == 'fail':
+            return (5, 0, 0)
+        elif status == 'xpass':
+            return builtins.xfail('bug 123', (10, 0, 0))
+        elif status == 'xfail':
+            return builtins.xfail('bug 456', (5, 0, 0))
+
+        assert 0, 'unknown perf status'
+
+    perftest.perf_variables = {
+        'value1': sn.make_performance_function(
+            sn.extractsingle(r'value1 = (\S+)', perf_file, 1, float), 'unit'
+        ),
+        'value2': sn.make_performance_function(
+            sn.extractsingle(r'value2 = (\S+)', perf_file, 1, float), 'unit'
+        )
+    }
+    perftest.reference = {
+        '*': {
+            'value1': reftuple(value1_status),
+            'value2': reftuple(value2_status)
+        }
+    }
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('value1 = 10\nvalue2 = 10')
+
+    # Matrix of expected exceptions based on status of observed values
+    # - Rows represent `value1_status`
+    # - Columns represent `value2_status`
+    index = {status: i for i, status in enumerate(['pass', 'fail',
+                                                   'xpass', 'xfail'])}
+    P  = PerformanceError
+    US = UnexpectedSuccessError
+    EF = ExpectedFailureError
+    exceptions = [
+        [None, P, US, EF],
+        [   P, P,  P,  P],  # noqa: E201
+        [  US, P, US, US],  # noqa: E201
+        [  EF, P, US, EF]   # noqa: E201
+    ]
+    exctype = exceptions[index[value1_status]][index[value2_status]]
+    if exctype is None:
+        _run_sanity(perftest, *local_exec_ctx)
+    else:
+        with pytest.raises(exctype):
+            _run_sanity(perftest, *local_exec_ctx)
+
+
 @pytest.fixture
 def container_test(tmp_path):
     def _container_test(platform, image):
@@ -2054,7 +2123,7 @@ def test_hashcode():
     class _X0(rfm.RunOnlyRegressionTest):
         p = parameter([1])
 
-    class _X0(rfm.RunOnlyRegressionTest):
+    class _X0(rfm.RunOnlyRegressionTest):   # noqa: F811
         p = parameter([2])
 
     _X1 = _X0

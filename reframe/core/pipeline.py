@@ -13,6 +13,7 @@ __all__ = [
 ]
 
 
+import functools
 import glob
 import hashlib
 import inspect
@@ -33,6 +34,7 @@ import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
+from reframe.core.builtins import _XFailReference
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatform
 from reframe.core.deferrable import (_DeferredExpression,
@@ -41,6 +43,8 @@ from reframe.core.environments import Environment
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
                                      SanityError, SkipTestError,
+                                     ExpectedFailureError,
+                                     UnexpectedSuccessError,
                                      ReframeSyntaxError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
@@ -63,6 +67,7 @@ class _NoRuntime(ContainerPlatform):
 
 # Meta-type to use for type checking in some variables
 Deferrable = typ.make_meta_type('Deferrable', _DeferredExpression)
+XfailRef = typ.make_meta_type('XfailRef', _XFailReference)
 
 
 # Valid systems/environments mini-language
@@ -693,7 +698,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:        },
     #:        'sys0:part1': {
     #:            'perfvar0': (100, -0.1, 0.1, 'Gflop/s'),
-    #:            'perfvar1': (40, -0.1, 0.1, 'GB/s')
+    #:            'perfvar1':  (40, -0.1, 0.1, 'GB/s')
     #:        }
     #:    }
     #:
@@ -717,9 +722,45 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #: obtained performance value to assess whether the test
     #: passes or fails the performance check.
     #:
+    #: Marking expected failures
+    #: -------------------------
+    #:
+    #: You can mark any performance reference tuple as an expected failure
+    #: using the :func:`~reframe.core.builtins.xfail` builtin as follows:
+    #:
+    #: .. code-block:: python
+    #:
+    #:     self.reference = {
+    #:         'sys0:part0': {
+    #:             'perfvar0': xfail('bug 123', (50, -0.1, 0.1, 'Gflop/s')),
+    #:             'perfvar1': (20, -0.1, 0.1, 'GB/s')
+    #:         }
+    #:     }
+    #:
+    #: If the test fails in ``perfvar0`` then this will be marked as an
+    #: expected failure and the message `"bug 123"` will be printed. If it
+    #: passes, it will be marked as an unexpected pass and the test will be
+    #: counted as a failure.
+    #:
+    #: Α test may contain references for multiple performance variables, some
+    #: of which may be marked as expected failures. The following rules govern
+    #: the outcome of the test:
+    #:
+    #: - If any performance variable fails, regardless of how the rest are
+    #:   marked, then the test is a failure and its state is ``FAIL``.
+    #: - If any performance variable that is marked as an expected failure
+    #:   passes, then the test is a failure and its state is ``XPASS``.
+    #: - If all performance variables that are marked as expected failures fail
+    #:   and all the rest pass, then the test is successful and its state is
+    #:   ``XFAIL``.
+    #: - If all performance variables pass and none of them is marked as an
+    #:   expected failure, then the test is successful and its state is
+    #:   ``PASS``.
+    #:
     #: :type: A scoped dictionary with system names as scopes, performance
     #:   variables as keys and reference tuples as values.
     #:   The elements of reference tuples cannot be deferrable expressions.
+    #: :default: ``{}``
     #:
     #: .. note::
     #:     .. versionchanged:: 3.0
@@ -732,10 +773,19 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     #:
     #:     .. versionchanged:: 4.0.0
     #:        Deferrable expressions are not allowed in reference tuples.
+    #:
+    #:     .. versionchanged:: 4.8
+    #:        Treat thresholds as absolute values when reference is zero.
+    #:
+    #:     .. versionchanged:: 4.9
+    #:        Support marking reference tuples as expected failures.
+    #:
     reference = variable(
-        typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable],
-        typ.Dict[str, typ.Dict[str, typ.Tuple[~Deferrable, ~Deferrable,
-                                              ~Deferrable, ~Deferrable]]],
+        typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable] | XfailRef,
+        typ.Dict[str, typ.Dict[
+            str, typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable, ~Deferrable] | XfailRef
+        ]],
+        XfailRef,
         field=fields.ScopedDictField, value={}, loggable=False
     )
 
@@ -2272,9 +2322,20 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             return
 
         with osext.change_dir(self._stagedir):
-            success = sn.evaluate(self.sanity_patterns)
-            if not success:
-                raise SanityError()
+            try:
+                expected, message = self.__rfm_xfail_sanity__()
+                success = sn.evaluate(self.sanity_patterns)
+            except SanityError:
+                if not expected:
+                    raise
+                else:
+                    raise ExpectedFailureError(message)
+            else:
+                if expected:
+                    raise UnexpectedSuccessError(message)
+
+                if not success:
+                    raise SanityError('<unknown>')
 
     def is_performance_check(self):
         '''Return :obj:`True` if the test is a performance test.'''
@@ -2328,6 +2389,7 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                                                                         unit)
 
         # Evaluate the performance function and retrieve the metrics
+        xfailures = {}
         with osext.change_dir(self._stagedir):
             for tag, expr in self.perf_variables.items():
                 try:
@@ -2343,6 +2405,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 key = f'{self._current_partition.fullname}:{tag}'
                 try:
                     ref = self.reference[key]
+                    if isinstance(ref, _XFailReference):
+                        xfailures[key] = ref.message
+                        ref = ref.data
 
                     # If units are also provided in the reference, raise
                     # a warning if they match with the units provided by
@@ -2374,8 +2439,70 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         if self.is_dry_run():
             return
 
+        class _PerfErrorBuilder:
+            '''Manage the different types of performance errors'''
+
+            def __init__(self):
+                self._messages = {}
+                self._total_messages = 0
+
+            def _fmtperf(self, tag, val, unit, ref, low_thres, high_thres):
+                lower, upper = sn.reference_bounds(ref, low_thres, high_thres)
+                return (f'{tag}={val} {unit}, expected {ref} '
+                        f'(l={lower}, u={upper})')
+
+            def _add_error(self, kind, msg):
+                self._messages.setdefault(kind, [])
+                self._messages[kind].append(msg)
+                self._total_messages += 1
+
+            def add_fail(self, tag, val, unit, ref, low_thr, high_thr):
+                msg = self._fmtperf(tag, val, unit, ref, low_thr, high_thr)
+                self._add_error('fail', msg)
+
+            def add_xfail(self, reason):
+                self._add_error('xfail', reason)
+
+            def add_xpass(self, tag, val, unit, ref, low_thr, high_thr):
+                msg = self._fmtperf(tag, val, unit, ref, low_thr, high_thr)
+                self._add_error('xpass', msg)
+
+            def raise_error(self):
+                '''Raise the right error based on collected data'''
+
+                if 'fail' in self._messages:
+                    raise PerformanceError(str(self))
+                elif 'xpass' in self._messages:
+                    raise UnexpectedSuccessError(str(self))
+                elif 'xfail' in self._messages:
+                    msg = ', '.join(self._messages['xfail'])
+                    raise ExpectedFailureError(msg)
+
+            def __str__(self):
+                def _fmt_errors(errlist, indent=''):
+                    indent += 2*' '
+                    ret = ''
+                    if len(errlist) > 1:
+                        ret += f'\n{indent}'
+
+                    ret += f'\n{indent}'.join(errlist)
+                    return ret
+
+                indent = 6*' '
+                delim = f'\n{indent}' if self._total_messages > 1 else ''
+                ret = ''
+                for state, errlist in self._messages.items():
+                    if state == 'fail':
+                        ret += delim + 'failed to meet reference(s): '
+                        ret += _fmt_errors(errlist, indent)
+                    elif state == 'xpass':
+                        ret += delim + 'reference(s) met unexpectedly: '
+                        ret += _fmt_errors(errlist, indent)
+
+                return ret
+
         # Check the performance variables against their references.
-        errors = []
+        errors = _PerfErrorBuilder()
         for key, values in self._perfvalues.items():
             val, ref, low_thres, high_thres, unit, _ = values
 
@@ -2389,27 +2516,24 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
             tag = key.split(':')[-1]
             try:
                 sn.evaluate(
-                    sn.assert_reference(
-                        val, ref, low_thres, high_thres,
-                        msg=(f'{tag}={{0}} {unit}, expected {{1}} '
-                             '(l={2}, u={3})'))
+                    sn.assert_reference(val, ref, low_thres, high_thres)
                 )
-            except SanityError as e:
-                errors.append(e.message)
-                self._perfvalues[key][-1] = 'fail'
+            except SanityError:
+                if key in xfailures:
+                    errors.add_xfail(xfailures[key])
+                    self._perfvalues[key][-1] = 'xfail'
+                else:
+                    errors.add_fail(tag, val, unit, ref, low_thres, high_thres)
+                    self._perfvalues[key][-1] = 'fail'
             else:
-                self._perfvalues[key][-1] = 'pass'
+                if key in xfailures:
+                    errors.add_xpass(tag, val, unit, ref,
+                                     low_thres, high_thres)
+                    self._perfvalues[key][-1] = 'xpass'
+                else:
+                    self._perfvalues[key][-1] = 'pass'
 
-        # Combine all error messages to a single `PerformanceError` containing
-        # the information of all failed performance variables
-        if errors:
-            msg = 'failed to meet references:'
-            if len(errors) > 1:
-                msg += '\n\t'
-            else:
-                msg += ' '
-
-            raise PerformanceError(msg + '\n\t'.join(errors))
+        errors.raise_error()
 
     def _copy_job_files(self, job, dst):
         if job is None:
@@ -2654,6 +2778,9 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
     def __rfm_json_decode__(self, json):
         # 'tags' are decoded as list, so we convert them to a set
         self.tags = set(json['tags'])
+
+    def __rfm_xfail_sanity__(self):
+        return False, ''
 
 
 class RunOnlyRegressionTest(RegressionTest, special=True):
