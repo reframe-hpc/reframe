@@ -741,10 +741,10 @@ class _SlurmNode(sched.Node):
             return False
 
         expr = re.sub(
-            "[\-\w]+",
+            r'[\-\w]+',
             lambda m: str(m.group(0) in self.active_features),
             slurm_constraint
-        ).replace("|", " or ").replace("&", " and ")
+        ).replace('|', ' or ').replace('&', ' and ')
 
         try:
             return eval(expr)
