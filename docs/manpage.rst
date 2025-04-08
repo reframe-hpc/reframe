@@ -1348,6 +1348,12 @@ Since the report file information is now kept in the results database, there is 
 You can disable the report generation by turning off the :attr:`~config.general.generate_file_reports` configuration parameter.
 The file report of any session can be retrieved from the database with the :option:`--describe-stored-sessions` option.
 
+.. warning::
+
+    ReFrame uses file locking to coordinate storing of run session data in the database file.
+    Enabling the database storage on filesystems that do not support locking (e.g some networked filesystems) might lead to hangs at the end of a run session.
+    In this case, you can either disable the database storage using :attr:`~config.storage.enable` or use a filesystem supporting locking (by setting :attr:`~config.storage.sqlite_db_file` or the :envvar:`RFM_SQLITE_DB_FILE` environment variable) for the database.
+
 
 .. _querying-past-results:
 
