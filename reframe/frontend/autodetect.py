@@ -172,7 +172,8 @@ def _remote_detect(part, cli_job_options):
                 job = Job.create(part.scheduler,
                                  part.launcher_type(),
                                  name='rfm-detect-job',
-                                 sched_access=part.access + cli_job_options)
+                                 sched_access=part.access,
+                                 sched_options=cli_job_options)
                 custom_command = runtime.runtime().get_option(
                     'general/0/remote_install'
                 )
