@@ -1352,7 +1352,8 @@ The file report of any session can be retrieved from the database with the :opti
 
     ReFrame uses file locking to coordinate storing of run session data in the database file.
     Enabling the database storage on filesystems that do not support locking (e.g some networked filesystems) might lead to hangs at the end of a run session.
-    In this case, you can either disable the database storage using :attr:`~config.storage.enable` or use a filesystem supporting locking (by setting :attr:`~config.storage.sqlite_db_file` or the :envvar:`RFM_SQLITE_DB_FILE` environment variable) for the database.
+    For this reason, you must make sure that the database file is located on a filesystem that supports locking.
+    You can set the database location through the :attr:`~config.storage.sqlite_db_file` configuration setting or the :envvar:`RFM_SQLITE_DB_FILE` environment variable.
 
 
 .. _querying-past-results:
