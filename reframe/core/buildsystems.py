@@ -600,7 +600,7 @@ class CMake(ConfigureBasedBuildSystem):
         else:
             cmake_cmd += [self.configuredir]
 
-        make_cmd = ['make -j']
+        make_cmd = ['cmake --build . -j']
         if self.max_concurrency is not None:
             make_cmd += [str(self.max_concurrency)]
 
