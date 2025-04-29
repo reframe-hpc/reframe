@@ -647,12 +647,10 @@ def _group_testcases(testcases, groups, columns):
 def _aggregate_perf(grouped_testcases, aggr_fn, cols):
     # Update delimiter for joining unique values based on the table format
     table_foramt = runtime().get_option('general/0/table_format')
-    if table_foramt == 'csv':
-        delim = '|'
-    elif table_foramt == 'plain':
-        delim = ','
-    else:
+    if table_foramt == 'pretty':
         delim = '\n'
+    else:
+        delim = '|'
 
     other_aggr = Aggregator.create('join_uniq', delim)
     count_aggr = Aggregator.create('count')
