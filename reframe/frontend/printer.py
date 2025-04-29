@@ -119,7 +119,7 @@ class PrettyPrinter:
 
         def _print_failure_info(rec, runid, total_runs):
             self.info(line_width * '-')
-            self.info(f"FAILURE INFO for {rec['name']} "
+            self.info(f"FAILURE INFO for {rec['display_name']} "
                       f"(run: {runid}/{total_runs})")
             self.info(f"  * Description: {rec['descr']}")
             self.info(f"  * System partition: {rec['system']}")
