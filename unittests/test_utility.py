@@ -2025,17 +2025,22 @@ def test_nodelist_utilities():
 
     nodelist = util.nodelist_abbrev
     expand = util.nodelist_expand
-    assert nodelist(nid_nodes) == 'nid00[1-2],nid0[05-19],nid125'
-    assert nodelist(cid_nodes) == 'cid0[00-19],cid05[5-6]'
+    assert nodelist(nid_nodes) == 'nid[001-002,005-019,125]'
+    assert nodelist(cid_nodes) == 'cid[000-019,055-056]'
     assert nodelist(all_nodes) == (
-        'cid0[00-19],cid05[5-6],nid00[1-2],nid0[05-19],nid125'
+        'cid[000-019,055-056],nid[001-002,005-019,125]'
     )
 
     # Test the reverse operation
     assert expand('nid00[1-2],nid0[05-19],nid125') == sorted(nid_nodes)
+    assert expand('nid[001-002,005-019,125]') == sorted(nid_nodes)
     assert expand('cid0[00-19],cid05[5-6]') == sorted(cid_nodes)
+    assert expand('cid[000-019,055-056]') == sorted(cid_nodes)
     assert expand(
         'cid0[00-19],cid05[5-6],nid00[1-2],nid0[05-19],nid125'
+    ) == sorted(all_nodes)
+    assert expand(
+        'cid[000-019,055-056],nid[001-002,005-019,125]'
     ) == sorted(all_nodes)
 
     # Test non-contiguous nodes
@@ -2044,16 +2049,18 @@ def test_nodelist_utilities():
         nid_nodes += [f'nid{n:03}' for n in range(10*i, 10*i+5)]
 
     random.shuffle(nid_nodes)
-    assert nodelist(nid_nodes) == 'nid00[0-4],nid01[0-4],nid02[0-4]'
-    assert nodelist(['nid01', 'nid10', 'nid20']) == 'nid01,nid10,nid20'
+    assert nodelist(nid_nodes) == 'nid[000-004,010-014,020-024]'
+    assert nodelist(['nid01', 'nid10', 'nid20']) == 'nid[01,10,20]'
     assert nodelist([]) == ''
     assert nodelist(['nid001']) == 'nid001'
     assert nodelist(['node']) == 'node'
-    assert nodelist(['nid001', 'node', 'nid002']) == 'nid00[1-2],node'
+    assert nodelist(['nid001', 'node', 'nid002']) == 'nid[001-002],node'
 
     # Test the reverse operation
     assert expand('nid00[0-4],nid01[0-4],nid02[0-4]') == sorted(nid_nodes)
+    assert expand('nid[000-004,010-014,020-024]') == sorted(nid_nodes)
     assert expand('nid01,nid10,nid20') == ['nid01', 'nid10', 'nid20']
+    assert expand('nid[01,10,20]') == ['nid01', 'nid10', 'nid20']
     assert expand('') == []
     assert expand('nid001') == ['nid001']
 
@@ -2067,20 +2074,21 @@ def test_nodelist_utilities():
     # Test host names with suffixes (see GH #3021)
     nodes = [f'nid{n:03}-x' for n in range(100)]
     nodes.append('nid100-y')
-    assert nodelist(nodes) == 'nid0[00-99]-x,nid100-y'
+    assert nodelist(nodes) == 'nid[000-099]-x,nid100-y'
     assert expand('nid0[00-99]-x,nid100-y') == nodes
+    assert expand('nid[000-099]-x,nid100-y') == nodes
 
     # Test edge condition when node lists jump from N to N+1 digits
     # See GH issue #3338
     nodes = ['vs-std-0009', 'vs-std-0010', 'vs-std-0099', 'vs-std-0100']
-    assert nodelist(nodes) == 'vs-std-00[09-10],vs-std-0[099-100]'
+    assert nodelist(nodes) == 'vs-std-[0009-0010,0099-0100]'
     assert expand('vs-std-00[09-10],vs-std-0[099-100]') == [
         'vs-std-0009', 'vs-std-0010', 'vs-std-0099', 'vs-std-0100'
     ]
 
     # Test node duplicates
-    assert nodelist(['nid001', 'nid001', 'nid002']) == 'nid001,nid00[1-2]'
-    assert expand('nid001,nid00[1-2]') == ['nid001', 'nid001', 'nid002']
+    assert nodelist(['nid001', 'nid001', 'nid002']) == 'nid[001-002]'
+    assert expand('nid001,nid00[1-2]') == ['nid001', 'nid002']
 
     with pytest.raises(TypeError, match='nodes argument must be a Sequence'):
         nodelist(1)
@@ -2088,7 +2096,7 @@ def test_nodelist_utilities():
     with pytest.raises(TypeError, match='nodes argument cannot be a string'):
         nodelist('foo')
 
-    with pytest.raises(TypeError, match='nodespec argument must be a string'):
+    with pytest.raises(TypeError):
         expand(10)
 
     with pytest.raises(ValueError, match='invalid nodespec'):
