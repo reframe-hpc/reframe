@@ -40,9 +40,15 @@ class JobLauncher(metaclass=_JobLauncherMeta):
     #: invocation. The keys are the variable names and the values are their
     #: corresponding values.
     #:
+    #: This is supported by the following launchers:
+    #:
+    #: - ``srun``
+    #: - ``mpirun-openmpi``
+    #: - ``mpirun-intelmpi``
+    #:
     #: :type: :class:`Dict[str, str]`
     #: :default: ``{}``
-    environment_variables = variable(typ.Dict[str, str], value={})
+    env_vars = variable(typ.Dict[str, str], value={})
 
     #: Optional modifier of the launcher command.
     #:
@@ -67,7 +73,7 @@ class JobLauncher(metaclass=_JobLauncherMeta):
 
     def __init__(self):
         self.options = []
-        self.environment_variables = {}
+        self.env_vars = {}
 
     @abc.abstractmethod
     def command(self, job):
@@ -81,6 +87,8 @@ class JobLauncher(metaclass=_JobLauncherMeta):
 
     def run_command(self, job):
         '''The full launcher command to be emitted for a specific job.
+
+        This includes any user options.
 
         :param job: a job descriptor.
         :returns: the launcher command as a string.
