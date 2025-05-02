@@ -336,6 +336,17 @@ System Partition Configuration
    .. versionadded:: 4.4
       The ``ssh`` scheduler is added.
 
+   .. versionchanged:: 4.8.1
+      All ``SBATCH_*`` variables are unset before submitting a job through the Slurm-based backends.
+      See note below for information.
+
+   .. note::
+      The Slurm-based backends unset all ``SBATCH_*`` environment variables before submitting a job.
+      This is done to avoid environment variables bypassing ReFrame's configuration.
+      For example, if the :attr:`~config.systems.partitions.access` options for a partition used ``-A foo`` and ``SBATCH_ACCOUNT=bar`` was set, then the environment variable would override the configuration, as ReFrame emits those (by default) in the submission script.
+
+      Job submission in ReFrame is controlled exclusively by the system partition's :attr:`~config.systems.partitions.access` options, the test job's :attr:`~reframe.core.schedulers.Job.options` and the :option:`-J` command-line option.
+
    .. note::
 
       The way that multiple node jobs are submitted using the SGE scheduler can be very site-specific.

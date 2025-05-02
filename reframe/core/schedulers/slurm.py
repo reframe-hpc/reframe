@@ -6,6 +6,7 @@
 import functools
 import glob
 import itertools
+import os
 import re
 import shlex
 import time
@@ -260,17 +261,35 @@ class SlurmJobScheduler(sched.JobScheduler):
         # Filter out empty statements before returning
         return list(filter(None, preamble))
 
-    def submit(self, job):
-        cmd_parts = ['sbatch']
-        if self._sched_access_in_submit:
-            cmd_parts += job.sched_access
+    def sbatch(self, args):
+        '''Run sbatch using a clean environment
 
-        cmd_parts += [job.script_filename]
-        cmd = ' '.join(cmd_parts)
+        We unset all `SBATCH_*` environment variables before submitting;
+        submission should be controlled entirely by ReFrame through the
+        partition's `access` options, the test's `job.options` and the
+        command-line `-J` option
+        '''
+
+        with rt.temp_environment():
+            for var in [name for name in os.environ.keys()
+                        if name.startswith('SBATCH_')]:
+                self.log(f'unsetting environment variable {var}',
+                         logging.DEBUG)
+                del os.environ[var]
+
+            cmd = ' '.join(['sbatch'] + args)
+            return _run_strict(cmd, timeout=self._submit_timeout)
+
+    def submit(self, job):
+        sbatch_args = []
+        if self._sched_access_in_submit:
+            sbatch_args += job.sched_access
+
+        sbatch_args += [job.script_filename]
         intervals = itertools.cycle([1, 2, 3])
         while True:
             try:
-                completed = _run_strict(cmd, timeout=self._submit_timeout)
+                completed = self.sbatch(sbatch_args)
                 break
             except SpawnedProcessError as e:
                 error_match = re.search(
