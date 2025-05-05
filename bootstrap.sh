@@ -116,10 +116,10 @@ if [ -n "$PYGELF" ]; then
     sed -e 's/^#+pygelf%//g' requirements.txt > $tmp_requirements
     CMD_M +pygelf $python -m pip install --no-cache-dir -q -r $tmp_requirements --target=$py_pkg_prefix/ --upgrade $PIPOPTS && rm $tmp_requirements
 else
-    CMD $python -m pip install --no-cache-dir -q -r requirements.txt --target=$py_pkg_prefix/ --upgrade $PIPOPTS
+    CMD $python -m pip install --use-pep517 --no-cache-dir -q -r requirements.txt --target=$py_pkg_prefix/ --upgrade $PIPOPTS
 fi
 
 if [ -n "$MAKEDOCS" ]; then
-    CMD_M +docs $python -m pip install --no-cache-dir -q -r docs/requirements.txt --target=$py_pkg_prefix/ --upgrade $PIPOPTS
+    CMD_M +docs $python -m pip install --use-pep517 --no-cache-dir -q -r docs/requirements.txt --target=$py_pkg_prefix/ --upgrade $PIPOPTS
     make -C docs PYTHON=$python
 fi
