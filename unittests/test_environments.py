@@ -139,6 +139,15 @@ def test_temp_environment(base_environ, user_runtime, modules_system):
     assert not rt.is_env_loaded(environ)
 
 
+def test_temp_environment_as_snapshot(base_environ):
+    with rt.temp_environment():
+        del os.environ['_var0']
+        os.environ['_var1'] = 'foo'
+
+    assert os.environ['_var0'] == 'val0'
+    assert os.environ['_var1'] == 'val1'
+
+
 def test_env_load_already_present(base_environ, user_runtime,
                                   modules_system, env0):
     modules_system.load_module('testmod_boo')

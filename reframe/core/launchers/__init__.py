@@ -54,7 +54,7 @@ class JobLauncher(metaclass=_JobLauncherMeta):
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     #:
-    #: :versionadded:: 4.6.0
+    #: .. versionadded:: 4.6.0
     modifier_options = variable(typ.List[str], value=[])
 
     def __init__(self):

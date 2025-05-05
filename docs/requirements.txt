@@ -1,4 +1,5 @@
 archspec==0.2.5
+ClusterShell==1.9.3
 docutils==0.18.1; python_version < '3.9'
 docutils==0.21.2; python_version >= '3.9'
 jinja2==3.0.3; python_version == '3.6'

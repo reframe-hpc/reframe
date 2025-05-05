@@ -1232,6 +1232,7 @@ def main():
 
     # Print command line
     session_info = report['session_info']
+    storage_status = 'on' if rt.get_option('storage/0/enable') else 'off'
     printer.info('[ReFrame Setup]')
     print_infoline('version', session_info['version'])
     print_infoline('command', repr(session_info['cmdline']))
@@ -1254,7 +1255,8 @@ def main():
                    ', '.join(repr(s) for s in session_info['log_files']))
     print_infoline(
         'results database',
-        repr(osext.expandvars(rt.get_option('storage/0/sqlite_db_file')))
+        f'[{storage_status}] '
+        f'{osext.expandvars(rt.get_option("storage/0/sqlite_db_file"))!r}'
     )
     printer.info('')
     try:
