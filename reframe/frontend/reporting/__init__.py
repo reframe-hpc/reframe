@@ -646,8 +646,8 @@ def _group_testcases(testcases, groups, columns):
 @time_function
 def _aggregate_perf(grouped_testcases, aggr_fn, cols):
     # Update delimiter for joining unique values based on the table format
-    table_foramt = runtime().get_option('general/0/table_format')
-    if table_foramt == 'pretty':
+    table_format = runtime().get_option('general/0/table_format')
+    if table_format == 'pretty':
         delim = '\n'
     else:
         delim = '|'
