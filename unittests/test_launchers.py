@@ -92,6 +92,7 @@ def job(make_job, launcher):
     job.exclusive_access = True
     job.options = ['--gres=gpu:4', '#DW jobdw anything']
     job.launcher.options = ['--foo']
+    job.launcher.env_vars = {'FOO': 'bar', 'BAR': 'baz'}
     return job
 
 
@@ -127,7 +128,20 @@ def test_run_command(job):
     elif launcher_name == 'mpirun':
         assert command == 'mpirun -np 4 --foo'
     elif launcher_name == 'srun':
-        assert command == 'srun --cpus-per-task=2 --foo'
+        assert command == ('srun '
+                           '--cpus-per-task=2 '
+                           '--export=FOO=bar,BAR=baz '
+                           '--foo')
+    elif launcher_name == 'mpirun-openmpi':
+        assert command == ('mpirun -np 4 '
+                           '-x FOO=bar '
+                           '-x BAR=baz '
+                           '--foo')
+    elif launcher_name == 'mpirun-intelmpi':
+        assert command == ('mpirun -np 4 '
+                           '-genv FOO bar '
+                           '-genv BAR baz '
+                           '--foo')
     elif launcher_name == 'srunalloc':
         assert command == ('srun '
                            '--job-name=fake_job '

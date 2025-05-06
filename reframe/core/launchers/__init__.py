@@ -36,6 +36,22 @@ class JobLauncher(metaclass=_JobLauncherMeta):
     #: :default: ``[]``
     options = variable(typ.List[str], value=[])
 
+    #: Dictionary of environment variables to be passed via the job launcher
+    #: invocation. The keys are the variable names and the values are their
+    #: corresponding values.
+    #:
+    #: This is supported by the following launchers only:
+    #:
+    #: - ``srun``
+    #: - ``mpirun-openmpi``
+    #: - ``mpirun-intelmpi``
+    #:
+    #: :type: :class:`Dict[str, str]`
+    #: :default: ``{}``
+    #:
+    #: .. versionadded:: 4.9
+    env_vars = variable(typ.Dict[str, str], value={})
+
     #: Optional modifier of the launcher command.
     #:
     #: This will be combined with the :attr:`modifier_options` and prepended to
@@ -59,6 +75,7 @@ class JobLauncher(metaclass=_JobLauncherMeta):
 
     def __init__(self):
         self.options = []
+        self.env_vars = {}
 
     @abc.abstractmethod
     def command(self, job):

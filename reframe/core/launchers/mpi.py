@@ -48,6 +48,10 @@ class SrunLauncher(JobLauncher):
         if self.use_cpus_per_task and job.num_cpus_per_task:
             ret.append(f'--cpus-per-task={job.num_cpus_per_task}')
 
+        if self.env_vars:
+            env_vars = ','.join(f'{k}={v}' for k, v in self.env_vars.items())
+            ret.append(f'--export={env_vars}')
+
         return ret
 
 
@@ -107,6 +111,24 @@ class AlpsLauncher(JobLauncher):
 class MpirunLauncher(JobLauncher):
     def command(self, job):
         return ['mpirun', '-np', str(job.num_tasks)]
+
+
+@register_launcher('mpirun-openmpi')
+class MpirunOpenMPILauncher(JobLauncher):
+    def command(self, job):
+        cmd = ['mpirun', '-np', str(job.num_tasks)]
+        for name, value in self.env_vars.items():
+            cmd += ['-x', f'{name}={value}']
+        return cmd
+
+
+@register_launcher('mpirun-intelmpi')
+class MpirunIntelMPILauncher(JobLauncher):
+    def command(self, job):
+        cmd = ['mpirun', '-np', str(job.num_tasks)]
+        for name, value in self.env_vars.items():
+            cmd += ['-genv', name, value]
+        return cmd
 
 
 @register_launcher('mpiexec')

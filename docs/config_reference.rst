@@ -518,8 +518,10 @@ System Partition Configuration
      The program will be launched locally.
    - ``lrun``: Parallel programs will be launched using `LC Launcher  <https://hpc.llnl.gov/training/tutorials/using-lcs-sierra-system#lrun>`__'s ``lrun`` command.
    - ``lrun-gpu``: Parallel programs will be launched using `LC Launcher <https://hpc.llnl.gov/training/tutorials/using-lcs-sierra-system#lrun>`__'s ``lrun -M "-gpu"`` command that enables the CUDA-aware Spectrum MPI.
-   - ``mpirun``: Parallel programs will be launched using the ``mpirun`` command.
    - ``mpiexec``: Parallel programs will be launched using the ``mpiexec`` command.
+   - ``mpirun``: Parallel programs will be launched using the (generic) ``mpirun`` command.
+   - ``mpirun-intelmpi``: Parallel programs will be launched using the Intel MPI's ``mpirun`` command.
+   - ``mpirun-openmpi``: Parallel programs will be launched using the OpenMPI's ``mpirun`` command.
    - ``pdsh``: Parallel programs will be launched using the ``pdsh`` command. This launcher uses the partition's :attr:`~config.systems.partitions.access` property in order to determine the options to be passed to ``pdsh``.
    - ``srun``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command.
    - ``srunalloc``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command, but job allocation options will also be emitted.
@@ -541,6 +543,10 @@ System Partition Configuration
 
    - ``upcrun``: Parallel programs will be launched using the `UPC <https://upc.lbl.gov/>`__ ``upcrun`` command.
    - ``upcxx-run``: Parallel programs will be launched using the `UPC++ <https://bitbucket.org/berkeleylab/upcxx/wiki/Home>`__ ``upcxx-run`` command.
+
+   .. versionadded:: 4.9
+
+      The ``mpirun-intelmpi`` and ``mpirun-openmpi`` parallel launchers were added.
 
    .. tip::
 
