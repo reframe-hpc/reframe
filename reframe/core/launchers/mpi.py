@@ -54,6 +54,7 @@ class SrunLauncher(JobLauncher):
 
         return ret
 
+
 @register_launcher('ibrun')
 class IbrunLauncher(JobLauncher):
     '''TACC's custom parallel job launcher.'''

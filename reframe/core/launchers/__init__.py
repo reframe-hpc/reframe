@@ -40,7 +40,7 @@ class JobLauncher(metaclass=_JobLauncherMeta):
     #: invocation. The keys are the variable names and the values are their
     #: corresponding values.
     #:
-    #: This is supported by the following launchers:
+    #: This is supported by the following launchers only:
     #:
     #: - ``srun``
     #: - ``mpirun-openmpi``
@@ -48,6 +48,8 @@ class JobLauncher(metaclass=_JobLauncherMeta):
     #:
     #: :type: :class:`Dict[str, str]`
     #: :default: ``{}``
+    #:
+    #: .. versionadded:: 4.9
     env_vars = variable(typ.Dict[str, str], value={})
 
     #: Optional modifier of the launcher command.
