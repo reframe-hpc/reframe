@@ -112,7 +112,7 @@ class TestRegistry:
                     getlogger().warning(
                         f"skipping test {test.__qualname__!r}: "
                         f"{what(*exc_info)} "
-                        f"(rerun with '-v' for more information)"
+                        f"(rerun with '-v' for a backtrace)"
                     )
                     getlogger().verbose(traceback.format_exc())
 
@@ -166,8 +166,9 @@ def _register_test(cls, *args, **kwargs):
 
 def _validate_test(cls):
     if not issubclass(cls, RegressionTest):
-        raise ReframeSyntaxError('the decorated class must be a '
-                                 'subclass of RegressionTest')
+        raise ReframeSyntaxError(f"the decorated class {cls.__name__!r} "
+                                 "is not a subclass of 'RegressionTest'",
+                                 with_code_context=True)
 
     if (cls.is_abstract()):
         getlogger().warning(

@@ -279,7 +279,7 @@ def test_param_space_read_only():
     class Foo(rfm.RegressionMixin):
         pass
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(ValueError):
         Foo.param_space['a'] = (1, 2, 3)
 
 
