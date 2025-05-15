@@ -13,7 +13,6 @@ __all__ = [
 ]
 
 
-import functools
 import glob
 import hashlib
 import inspect
