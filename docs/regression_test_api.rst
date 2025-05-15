@@ -27,6 +27,8 @@ Test Decorators
 
 .. autodecorator:: reframe.core.decorators.simple_test
 
+.. autodecorator:: reframe.core.decorators.xfail
+
 
 .. _builtins:
 
@@ -86,6 +88,7 @@ The use of this module is required only when creating new tests programmatically
 
 .. autofunction:: reframe.core.builtins.variable
 
+.. autofunction:: reframe.core.builtins.xfail
 
 .. _pipeline-hooks:
 
