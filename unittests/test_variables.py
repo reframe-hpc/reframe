@@ -171,7 +171,8 @@ def test_required_var_not_present(OneVarTest):
 
 
 def test_required_non_var():
-    msg = "'not_a_var' has not been declared as a variable"
+    msg = ("cannot assign the special value 'required' to the non-variable "
+           "'not_a_var' in class 'Foo'")
     with pytest.raises(ReframeSyntaxError, match=msg):
         class Foo(rfm.RegressionTest):
             not_a_var = required
@@ -226,7 +227,7 @@ def test_var_space_is_read_only():
     class Foo(rfm.RegressionMixin):
         pass
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(ValueError):
         Foo._rfm_var_space['v'] = 0
 
 

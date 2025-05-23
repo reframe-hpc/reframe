@@ -78,8 +78,48 @@ class ReframeFatalError(ReframeBaseError):
     '''
 
 
+class SourceCodeInfo:
+    def __init__(self, frame):
+        self.__filename = frame.filename
+        self.__lineno = frame.lineno
+        self.__line = frame.code_context[frame.index]
+        # FIXME: positions is from Python >= 3.11
+        self.__columns  = frame.positions[2:]
+
+    @property
+    def filename(self):
+        return self.__filename
+
+    @property
+    def lineno(self):
+        return self.__lineno
+
+    @property
+    def line(self):
+        return self.__line
+
+    @property
+    def columns(self):
+        return self.__columns
+
+    def __str__(self):
+        start, end = self.columns
+        span = min(end - start, len(self.line) - 1)
+        prefix = '| '
+        return (f'{prefix}{self.filename}:{self.lineno}\n'
+                f'{prefix}{self.line}'
+                f'{prefix}{" "*start}^{"~"*(span-1)}')
+
+
 class ReframeSyntaxError(ReframeError):
     '''Raised when the syntax of regression tests is incorrect.'''
+
+    def __init__(self, *args, with_code_context=False):
+        super().__init__(*args)
+        if with_code_context:
+            frame = user_frame()
+            if frame:
+                self._message += f'\n{SourceCodeInfo(frame)}'
 
 
 class RegressionTestLoadError(ReframeError):
@@ -285,7 +325,21 @@ class SkipTestError(ReframeError):
     '''Raised when a test needs to be skipped.'''
 
 
-def user_frame(exc_type, exc_value, tb):
+def user_frame():
+    '''Return the first user frame as a :py:class:`FrameInfo` object.
+
+    If no user frame can be found, :obj:`None` is returned
+    '''
+
+    for finfo in inspect.stack():
+        relpath = os.path.relpath(finfo.filename, reframe.INSTALL_PREFIX)
+        if relpath.split(os.sep)[0] != 'reframe':
+            return finfo
+
+    return None
+
+
+def user_frame_from_tb(exc_type, exc_value, tb):
     '''Return a user frame from the exception's traceback.
 
     As user frame is considered the first frame that is outside from
@@ -321,7 +375,7 @@ def is_user_error(exc_type, exc_value, tb):
     :py:class:`ValueError` and the exception isthrown from user context.
     '''
 
-    frame = user_frame(exc_type, exc_value, tb)
+    frame = user_frame_from_tb(exc_type, exc_value, tb)
     if frame is None:
         return False
 
@@ -364,10 +418,8 @@ def what(exc_type, exc_value, tb):
     elif isinstance(exc_value, AbortTaskError):
         reason = f'aborted due to {type(exc_value.__cause__).__name__}'
     elif is_user_error(exc_type, exc_value, tb):
-        frame = user_frame(exc_type, exc_value, tb)
-        relpath = os.path.relpath(frame.filename)
-        source = ''.join(frame.code_context or '<n/a>')
-        reason += f': {relpath}:{frame.lineno}: {exc_value}\n{source}'
+        source = SourceCodeInfo(user_frame_from_tb(exc_type, exc_value, tb))
+        reason += f': {exc_value}:\n{source}'
     else:
         if str(exc_value):
             reason += f': {exc_value}'
