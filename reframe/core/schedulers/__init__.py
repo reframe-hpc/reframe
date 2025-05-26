@@ -480,7 +480,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
 
         :type: :class:`str` or :class:`None`
         '''
-        return self._jobid
+        return str(self._jobid) if self._jobid is not None else None
 
     @property
     def exitcode(self):

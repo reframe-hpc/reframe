@@ -94,7 +94,7 @@ class LocalJobScheduler(sched.JobScheduler):
     def _kill_all(self, job):
         '''Send SIGKILL to all the processes of the spawned job.'''
         try:
-            os.killpg(job.jobid, signal.SIGKILL)
+            os.killpg(job._jobid, signal.SIGKILL)
             job._signal = signal.SIGKILL
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
@@ -109,7 +109,7 @@ class LocalJobScheduler(sched.JobScheduler):
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
         try:
-            os.killpg(job.jobid, signal.SIGTERM)
+            os.killpg(job._jobid, signal.SIGTERM)
             job._signal = signal.SIGTERM
         except (ProcessLookupError, PermissionError):
             # Job has finished already, close file handles
@@ -160,11 +160,11 @@ class LocalJobScheduler(sched.JobScheduler):
             self._poll_job(job)
 
     def _poll_job(self, job):
-        if job is None or job.jobid is None:
+        if job is None or job._jobid is None:
             return
 
         try:
-            pid, status = os.waitpid(job.jobid, os.WNOHANG)
+            pid, status = os.waitpid(job._jobid, os.WNOHANG)
         except OSError as e:
             if e.errno == errno.ECHILD:
                 # No unwaited children
