@@ -41,7 +41,7 @@ from reframe.core.environments import Environment
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError, PipelineError,
                                      SanityError, SkipTestError,
-                                     ReframeSyntaxError)
+                                     ReframeError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 
@@ -2246,12 +2246,13 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         if hasattr(self, '_rfm_sanity'):
             # Using more than one type of syntax to set the sanity patterns is
-            # not allowed.
+            # not allowed. We can only make this check here, because
+            # `sanity_patterns` can be set anywhere in the test before this
+            # point.
             if hasattr(self, 'sanity_patterns'):
-                raise ReframeSyntaxError(
-                    f"assigning a sanity function to the 'sanity_patterns' "
-                    f"variable conflicts with using the 'sanity_function' "
-                    f"decorator (class {self.__class__.__qualname__})"
+                raise ReframeError(
+                    "you may not use simultaneously 'sanity_patterns' "
+                    "and '@sanity_function' in a test"
                 )
 
             self.sanity_patterns = self._rfm_sanity()
@@ -2308,8 +2309,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
         perf_patterns = getattr(self, 'perf_patterns', None)
 
         if perf_patterns is not None and self.perf_variables:
-            raise ReframeSyntaxError(
-                "you cannot mix 'perf_patterns' and 'perf_variables' syntax"
+            # We can only make this check here, because variables can be set
+            # anywhere in the test before this point.
+            raise ReframeError(
+                "you may not use simultaneously 'perf_patterns' and "
+                "'perf_variables' in a test"
             )
 
         # Convert `perf_patterns` to `perf_variables`
