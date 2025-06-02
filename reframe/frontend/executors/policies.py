@@ -208,7 +208,7 @@ class SerialExecutionPolicy(ExecutionPolicy, _PolicyEventListener):
                 task.skip_from_deps()
                 raise TaskExit
 
-            if any(self._task_index[c].skipped
+            if any(self._task_index[c].skipped or self._task_index[c].xfailed
                    for c in case.deps if c in self._task_index):
                 task.do_skip('skipped due to skipped dependencies')
                 raise TaskExit
@@ -595,7 +595,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, _PolicyEventListener):
 
     def deps_skipped(self, task):
         # NOTE: Restored dependencies are not in the task_index
-        return any(self._task_index[c].skipped
+        return any(self._task_index[c].skipped or self._task_index[c].xfailed
                    for c in task.testcase.deps if c in self._task_index)
 
     def _abortall(self, cause):
