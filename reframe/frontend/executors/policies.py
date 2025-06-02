@@ -209,13 +209,14 @@ class SerialExecutionPolicy(ExecutionPolicy, _PolicyEventListener):
                    for c in case.deps if c in self._task_index):
                 raise TaskDependencyError('dependencies failed')
 
-            if any(self._task_index[c].skipped
+            if any(self._task_index[c].skipped or self._task_index[c].xfailed
                    for c in case.deps if c in self._task_index):
 
                 # We raise the SkipTestError here and catch it immediately in
                 # order for `skip()` to get the correct exception context.
                 try:
-                    raise SkipTestError('skipped due to skipped dependencies')
+                    raise SkipTestError('skipped due to skipped or '
+                                        'xfailed dependencies')
                 except SkipTestError as e:
                     task.skip()
                     raise TaskExit from e
@@ -480,7 +481,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, _PolicyEventListener):
     def _advance_startup(self, task):
         if self.deps_skipped(task):
             try:
-                raise SkipTestError('skipped due to skipped dependencies')
+                raise SkipTestError('skipped due to skipped or '
+                                    'xfailed dependencies')
             except SkipTestError:
                 task.skip()
                 self._current_tasks.remove(task)
@@ -606,7 +608,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, _PolicyEventListener):
 
     def deps_skipped(self, task):
         # NOTE: Restored dependencies are not in the task_index
-        return any(self._task_index[c].skipped
+        return any(self._task_index[c].skipped or self._task_index[c].xfailed
                    for c in task.testcase.deps if c in self._task_index)
 
     def _abortall(self, cause):
