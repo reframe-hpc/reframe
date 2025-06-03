@@ -279,7 +279,7 @@ def test_param_space_read_only():
     class Foo(rfm.RegressionMixin):
         pass
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(ValueError):
         Foo.param_space['a'] = (1, 2, 3)
 
 
@@ -331,7 +331,8 @@ def test_class_attr_access():
         p = parameter([1, 2, 3])
 
     assert MyTest.p.values == (1, 2, 3,)
-    with pytest.raises(ReframeSyntaxError, match='cannot override parameter'):
+    with pytest.raises(ReframeSyntaxError,
+                       match='assignment to a test parameter is not allowed'):
         MyTest.p = (4, 5,)
 
 
