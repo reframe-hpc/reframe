@@ -1564,6 +1564,12 @@ Here is an example combined failure (``XPASS`` and ``FAIL``):
 
 You can try different combinations of :func:`~reframe.core.builtins.xfail` markings and reference values to explore the behavior.
 
+Expected failures and dependencies
+----------------------------------
+
+If a test fails expectedly, all its dependent tests will be skipped.
+If it passes unexpectedly, then this is treated as any other failure.
+
 
 Managing the run session
 ========================
