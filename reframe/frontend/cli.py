@@ -1352,7 +1352,7 @@ def main():
                 if not rec:
                     return False
 
-                return rec['result'] == 'fail' or rec['result'] == 'abort'
+                return rec['result'] in {'fail', 'fail_deps', 'abort'}
 
             testcases = list(filter(_case_failed, testcases))
             printer.verbose(
