@@ -101,6 +101,7 @@ class _SqliteStorage(StorageBackend):
 
             self._db_create()
 
+        self._db_create_indexes()
         self._db_schema_check()
         return self.__db_file
 
@@ -161,12 +162,20 @@ class _SqliteStorage(StorageBackend):
                          'uuid TEXT, '
                          'FOREIGN KEY(session_uuid) '
                          'REFERENCES sessions(uuid) ON DELETE CASCADE)')
+
+        # Update DB file mode
+        os.chmod(self.__db_file, self.__db_file_mode)
+
+    def _db_create_indexes(self):
+        clsname = type(self).__name__
+        getlogger().debug(f'{clsname}: creating database indexes if needed')
+        with self._db_connect(self.__db_file) as conn:
             conn.execute('CREATE INDEX IF NOT EXISTS index_testcases_time '
                          'on testcases(job_completion_time_unix)')
             conn.execute('CREATE TABLE IF NOT EXISTS metadata('
                          'schema_version TEXT)')
-        # Update DB file mode
-        os.chmod(self.__db_file, self.__db_file_mode)
+            conn.execute('CREATE INDEX IF NOT EXISTS index_sessions_time '
+                         'on sessions(session_start_unix)')
 
     def _db_schema_check(self):
         with self._db_read(self.__db_file) as conn:
