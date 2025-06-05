@@ -256,7 +256,7 @@ class _SqliteStorage(StorageBackend):
 
         @time_function
         def _mass_json_decode(json_objs):
-            data = '[' + ','.join(json_objs) + ']'
+            data = f'[{",".join(json_objs)}]'
             getlogger().debug(
                 f'decoding JSON raw data of length {len(data)}'
             )
