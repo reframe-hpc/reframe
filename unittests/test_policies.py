@@ -18,8 +18,7 @@ import unittests.utility as test_util
 from reframe.core.exceptions import (AbortTaskError,
                                      FailureLimitError,
                                      ForceExitError,
-                                     RunSessionTimeout,
-                                     TaskDependencyError)
+                                     RunSessionTimeout)
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
     BadSetupCheck,
@@ -353,17 +352,13 @@ def assert_dependency_run(runner):
     assert_runall(runner)
     stats = runner.stats
     assert 10 == stats.num_cases(0)
-    assert 4  == len(stats.failed())
-    for tf in stats.failed():
-        check = tf.testcase.check
-        _, exc_value, _ = tf.exc_info
-        if check.name == 'T7' or check.name == 'T9':
-            assert isinstance(exc_value, TaskDependencyError)
+    assert 2  == len(stats.failed())
+    assert 2  == len(stats.skipped())
 
     # Check that cleanup is executed properly for successful tests as well
     for t in stats.tasks():
         check = t.testcase.check
-        if t.failed:
+        if t.failed or t.skipped:
             continue
 
         if t.ref_count == 0:
@@ -499,7 +494,7 @@ def test_concurrency_unlimited(make_async_runner, make_cases,
     #     assert begin_stamps[-1] <= end_stamps[0]
     #
     if begin_stamps[-1] > end_stamps[0]:
-        pytest.skip('the system seems too much loaded.')
+        pytest.skip('the system seems too loaded')
 
 
 def test_concurrency_limited(make_async_runner, make_cases,
@@ -543,7 +538,7 @@ def test_concurrency_limited(make_async_runner, make_cases,
     # corresponding strict check would be:
     # self.assertTrue(self.begin_stamps[max_jobs-1] <= self.end_stamps[0])
     if begin_stamps[max_jobs-1] > end_stamps[0]:
-        pytest.skip('the system seems too loaded.')
+        pytest.skip('the system seems too loaded')
 
 
 def test_concurrency_none(make_async_runner, make_cases,

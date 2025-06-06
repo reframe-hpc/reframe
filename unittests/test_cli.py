@@ -172,7 +172,7 @@ def test_check_restore_session_failed(run_reframe, tmp_path):
     )
     assert set(report.slice('name', when=('fail_phase', 'sanity'))) == {'T2'}
     assert set(report.slice('name',
-                            when=('fail_phase', 'startup'))) == {'T7', 'T9'}
+                            when=('result', 'fail_deps'))) == {'T7', 'T9'}
     assert set(report.slice('name', when=('fail_phase', 'setup'))) == {'T8'}
     assert report['runs'][-1]['num_cases'] == 4
 

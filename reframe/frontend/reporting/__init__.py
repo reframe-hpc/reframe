@@ -32,7 +32,7 @@ from .utility import Aggregator, parse_cmp_spec, parse_query_spec
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
 
-DATA_VERSION = '4.1'
+DATA_VERSION = '4.2'
 _SCHEMA = None
 _RESERVED_SESSION_INFO_KEYS = None
 _DATETIME_FMT = r'%Y%m%dT%H%M%S%z'

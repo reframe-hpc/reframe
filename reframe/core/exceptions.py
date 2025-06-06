@@ -94,12 +94,6 @@ class TaskExit(ReframeError):
     '''Raised when a regression task must exit the pipeline prematurely.'''
 
 
-class TaskDependencyError(ReframeError):
-    '''Raised inside a regression task by the runtime when one of its
-    dependencies has failed.
-    '''
-
-
 class FailureLimitError(ReframeError):
     '''Raised when the limit of test failures has been reached.'''
 

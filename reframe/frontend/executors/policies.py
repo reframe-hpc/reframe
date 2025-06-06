@@ -12,8 +12,6 @@ import reframe.core.runtime as rt
 import reframe.utility as util
 from reframe.core.exceptions import (FailureLimitError,
                                      RunSessionTimeout,
-                                     SkipTestError,
-                                     TaskDependencyError,
                                      TaskExit)
 from reframe.core.logging import getlogger, level_from_str
 from reframe.core.pipeline import (CompileOnlyRegressionTest,
@@ -113,18 +111,13 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             # NOTE: Restored dependencies are not in the task_index
             if any(self._task_index[c].failed
                    for c in case.deps if c in self._task_index):
-                raise TaskDependencyError('dependencies failed')
+                task.skip_from_deps()
+                raise TaskExit
 
             if any(self._task_index[c].skipped
                    for c in case.deps if c in self._task_index):
-
-                # We raise the SkipTestError here and catch it immediately in
-                # order for `skip()` to get the correct exception context.
-                try:
-                    raise SkipTestError('skipped due to skipped dependencies')
-                except SkipTestError as e:
-                    task.skip()
-                    raise TaskExit from e
+                task.do_skip('skipped due to skipped dependencies')
+                raise TaskExit
 
             task.setup(task.testcase.partition,
                        task.testcase.environ,
@@ -449,12 +442,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _advance_startup(self, task):
         if self.deps_skipped(task):
-            try:
-                raise SkipTestError('skipped due to skipped dependencies')
-            except SkipTestError as e:
-                task.skip()
-                self._current_tasks.remove(task)
-                return 1
+            task.do_skip('skipped due to skipped dependencies')
+            self._current_tasks.remove(task)
+            return 1
         elif self.deps_succeeded(task):
             try:
                 if task.check.is_dry_run():
@@ -479,8 +469,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             return 1
         elif self.deps_failed(task):
-            exc = TaskDependencyError('dependencies failed')
-            task.fail((type(exc), exc, None))
+            task.skip_from_deps()
             self._current_tasks.remove(task)
             return 1
         else:

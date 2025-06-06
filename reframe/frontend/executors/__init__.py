@@ -203,6 +203,7 @@ class RegressionTask:
         self._exc_info = (None, None, None)
         self._listeners = listeners or []
         self._skipped = False
+        self._failed_deps = False
 
         # Reference count for dependent tests; safe to cleanup the test only
         # if it is zero
@@ -294,6 +295,10 @@ class RegressionTask:
                 not self._aborted and not self._skipped)
 
     @property
+    def failed_deps(self):
+        return self._failed_deps
+
+    @property
     def state(self):
         if self.failed:
             return 'fail'
@@ -343,7 +348,10 @@ class RegressionTask:
         elif self.aborted:
             return 'abort'
         elif self.skipped:
-            return 'skip'
+            if self.failed_deps:
+                return 'fail_deps'
+            else:
+                return 'skip'
         else:
             return '<unknown>'
 
@@ -510,6 +518,18 @@ class RegressionTask:
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_skip')
+
+    def skip_from_deps(self):
+        self.do_skip('dependencies failed')
+        self._failed_deps = True
+
+    def do_skip(self, message):
+        try:
+            # We raise the SkipTestError here and catch it immediately in
+            # order for `skip()` to get the correct exception context.
+            raise SkipTestError(message)
+        except SkipTestError:
+            self.skip()
 
     def abort(self, cause=None):
         if self.failed or self._aborted:
@@ -685,8 +705,12 @@ class Runner:
             self._printer.timestamp('Finished on', 'short double line')
 
     def _retry_failed(self, cases):
+        def _failed_or_deps():
+            return self._stats.failed() + [t for t in self._stats.skipped()
+                                           if t.failed_deps]
+
         rt = runtime.runtime()
-        failures = self._stats.failed()
+        failures = _failed_or_deps()
         while (failures and rt.current_run < self._max_retries):
             num_failed_checks = len({tc.check.unique_name for tc in failures})
             rt.next_run()
@@ -702,7 +726,7 @@ class Runner:
             cases_graph, _ = dependencies.build_deps(failed_cases, cases)
             failed_cases = dependencies.toposort(cases_graph, is_subgraph=True)
             self._runall(failed_cases)
-            failures = self._stats.failed()
+            failures = _failed_or_deps()
 
     def _runall(self, testcases):
         def print_separator(check, prefix):
