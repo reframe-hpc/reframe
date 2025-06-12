@@ -1633,6 +1633,13 @@ The following list summarizes the schema changes (version numbers refer to schem
 
       Every reference tuple of ``.[].runs[].testcases[].perfvalues`` has now an additional element at the end, denoting the result (``pass`` or ``fail``) for the corresponding performance variable.
 
+   .. admonition:: 4.2
+
+      A new test ``result`` is introduced: ``fail_deps``, for when the dependencies of a test fail and the test is skipped.
+
+      Since ReFrame 4.9, if a test's dependencies fail, the test is skipped and is put in the ``fail_deps`` state.
+      Previously, it was treated as a normal failure.
+
 
 Environment
 ===========
