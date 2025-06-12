@@ -22,5 +22,8 @@ jobs:
     - name: Run unit tests with ${{ matrix.scheduler }} scheduler
       run: |
         BACKEND=${{ matrix.scheduler }} docker compose -f .github/pseudo-cluster/docker-compose.yml up --abort-on-container-exit --exit-code-from unittest-sched
+        _exitcode=$?
+        docker cp unittest-sched:/home/admin/reframe/coverage.xml .
+        exit $_exitcode
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4.2.0
