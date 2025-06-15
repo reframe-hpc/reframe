@@ -20,5 +20,6 @@ COPY --chown=rfmuser . /home/rfmuser/reframe/
 WORKDIR /home/rfmuser/reframe
 
 RUN ./bootstrap.sh
+RUN pip install pytest-cov
 
-CMD ["/bin/bash", "-c", "./test_reframe.py --rfm-user-config=ci-scripts/configs/lmod.py -v"]
+CMD ["/bin/bash", "-c", "./test_reframe.py --cov=reframe --cov-report=xml --rfm-user-config=ci-scripts/configs/lmod.py"]

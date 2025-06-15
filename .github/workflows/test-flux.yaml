@@ -30,6 +30,7 @@ jobs:
         run: |
           apt-get update && apt-get install -y python3-pip
           ./bootstrap.sh
+          pip install pytest-cov
           export PATH=$PWD/bin:$PATH
           which reframe
 
@@ -40,4 +41,6 @@ jobs:
           which reframe
           flux start reframe -c examples/howto/flux -C examples/howto/flux/settings.py -l
           flux start reframe -c examples/howto/flux -C examples/howto/flux/settings.py -r
-          flux start python3 ./test_reframe.py --rfm-user-config=examples/howto/flux/settings.py -vvvv
+          flux start python3 ./test_reframe.py --cov=reframe --cov-report=xml --rfm-user-config=examples/howto/flux/settings.py
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4.2.0
