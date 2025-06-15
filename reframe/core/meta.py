@@ -36,15 +36,21 @@ class RegressionTestMeta(type):
         value cannot be updated more than once within the same class body.
         '''
 
+        def __init__(self, clsname, namespace=None):
+            super().__init__(namespace)
+            self.__clsname = clsname
+
         def __setitem__(self, key, value):
             if isinstance(value, variables.TestVar):
                 # Insert the attribute in the variable namespace
                 try:
                     self['_rfm_local_var_space'][key] = value
-                    value.__set_name__(self, key)
+                    value.__set_name__(None, key)
+                    value.__rfm_set_owner__(self.__clsname)
                 except KeyError:
                     raise ReframeSyntaxError(
-                        f'variable {key!r} is already declared'
+                        f'variable {key!r} is already defined in '
+                        f'{self.__clsname}', with_code_context=True
                     ) from None
 
                 # Override the regular class attribute (if present) and return
@@ -54,9 +60,12 @@ class RegressionTestMeta(type):
                 # Insert the attribute in the parameter namespace
                 try:
                     self['_rfm_local_param_space'][key] = value
+                    value.__set_name__(None, key)
+                    value.__rfm_set_owner__(self.__clsname)
                 except KeyError:
                     raise ReframeSyntaxError(
-                        f'parameter {key!r} is already declared in this class'
+                        f'parameter {key!r} is already defined in '
+                        f'{self.__clsname}', with_code_context=True
                     ) from None
 
                 # Override the regular class attribute (if present) and return
@@ -65,17 +74,21 @@ class RegressionTestMeta(type):
             elif isinstance(value, fixtures.TestFixture):
                 # Insert the attribute in the fixture namespace
                 self['_rfm_local_fixture_space'][key] = value
+                value.__set_name__(None, key)
+                value.__rfm_set_owner__(self.__clsname)
 
                 # Override the regular class attribute (if present)
                 self._namespace.pop(key, None)
                 return
             elif key in self['_rfm_local_param_space']:
                 raise ReframeSyntaxError(
-                    f'cannot redefine parameter {key!r}'
+                    f'cannot assign a value to parameter {key!r}',
+                    with_code_context=True
                 )
             elif key in self['_rfm_local_fixture_space']:
                 raise ReframeSyntaxError(
-                    f'cannot redefine fixture {key!r}'
+                    f'cannot assign a value to fixture {key!r}',
+                    with_code_context=True
                 )
             else:
                 # Insert the items manually to overide the namespace clash
@@ -88,17 +101,20 @@ class RegressionTestMeta(type):
                 try:
                     super().__setitem__('_rfm_sanity', value)
                 except KeyError:
+                    fn_name = self['_rfm_sanity'].__name__
                     raise ReframeSyntaxError(
-                        'the @sanity_function decorator can only be used '
-                        'once in the class body'
+                        f"marking '{value.__name__}()' as a sanity function "
+                        "conflicts with the already defined "
+                        f"sanity function '{fn_name}()'",
+                        with_code_context=True
                     ) from None
             elif hasattr(value, '_rfm_perf_key'):
                 try:
                     self['_rfm_perf_fns'][key] = value
                 except KeyError:
                     raise ReframeSyntaxError(
-                        f'the performance function {key!r} has already been '
-                        f'defined in this class'
+                        f"performance function '{key}()' has already been "
+                        "defined", with_code_context=True
                     ) from None
 
             # Register the final methods
@@ -134,13 +150,17 @@ class RegressionTestMeta(type):
                     # Handle parameter access
                     if key in self['_rfm_local_param_space']:
                         raise ReframeSyntaxError(
-                            'accessing a test parameter from the class '
-                            'body is disallowed'
+                            f'attempt to access parameter {key!r} before the '
+                            'test is instantiated (parameters can only be '
+                            'accessed inside pipeline hooks as test '
+                            'attributes):', with_code_context=True
                         ) from None
                     elif key in self['_rfm_local_fixture_space']:
                         raise ReframeSyntaxError(
-                            'accessing a fixture from the class body is '
-                            'disallowed'
+                            f'attempt to access fixture {key!r} before the '
+                            'test is instantiated (fixtures can only be '
+                            'accessed inside pipeline hooks as test '
+                            'attributes):', with_code_context=True
                         ) from None
                     else:
                         # As the last resource, look if key is a variable in
@@ -287,11 +307,11 @@ class RegressionTestMeta(type):
             return inst
 
         # Register all builtins
-        for name in builtins.__all__:
-            namespace[name] = getattr(builtins, name)
+        for key in builtins.__all__:
+            namespace[key] = getattr(builtins, key)
 
         namespace['bind'] = bind
-        return metacls.MetaNamespace(namespace)
+        return metacls.MetaNamespace(name, namespace)
 
     def __new__(metacls, name, bases, namespace, **kwargs):
         '''Remove builtins from the class namespace.
@@ -357,12 +377,16 @@ class RegressionTestMeta(type):
             for base in cls._rfm_bases:
                 if hasattr(base, '_rfm_sanity'):
                     cls._rfm_sanity = getattr(base, '_rfm_sanity')
-                    if cls._rfm_sanity.__name__ in namespace:
+                    fn_name = cls._rfm_sanity.__name__
+                    if fn_name in namespace:
                         raise ReframeSyntaxError(
-                            f'{cls.__qualname__!r} overrides the candidate '
-                            f'sanity function '
-                            f'{cls._rfm_sanity.__qualname__!r} without '
-                            f'defining an alternative'
+                            f"sanity function {fn_name!r} defined in "
+                            f"{base.__name__!r} is overriden by a normal "
+                            "function with the same name in "
+                            f"{cls.__name__!r}: either rename the function "
+                            f"in {cls.__name__!r} or decorate it with "
+                            "'@sanity_function'",
+                            with_code_context=True
                         )
 
                     break
@@ -387,11 +411,21 @@ class RegressionTestMeta(type):
         for b in cls._rfm_bases:
             for key in b._rfm_final_methods:
                 if key in namespace and callable(namespace[key]):
-                    msg = (f"'{cls.__qualname__}.{key}' attempts to "
-                           f"override final method "
-                           f"'{b.__qualname__}.{key}'; "
-                           f"you should use the pipeline hooks instead")
-                    raise ReframeSyntaxError(msg)
+                    bnames = ', '.join(c.__name__ for c in bases)
+                    raise ReframeSyntaxError(
+                        f"you cannot override in {cls.__name__!r} the special "
+                        f"pipeline method {key!r} defined in {b.__name__!r}:\n"
+                        "1. If this is by accident, rename the method.\n"
+                        "2. If you want to execute test actions before/after "
+                        "this pipeline stage, you should rename the method "
+                        "and decorate it with either '@run_before' or "
+                        "'@run_after'.\n"
+                        "3. If you do want to augment the core functionality "
+                        "of the pipeline stage, define your test class as "
+                        "follows:\n"
+                        f"\nclass {cls.__name__}({bnames}, special=True):\n",
+                        with_code_context=True
+                    )
 
     def __call__(cls, *args, **kwargs):
         '''Inject test builtins during object construction.
@@ -576,9 +610,9 @@ class RegressionTestMeta(type):
                     var_space[name].define(value)
                     return True
                 elif var_space[name].field is not value:
-                    desc = '.'.join([cls.__qualname__, name])
                     raise ReframeSyntaxError(
-                        f'cannot override variable descriptor {desc!r}'
+                        'cannot assign a descriptor to a test variable',
+                        with_code_context=True
                     )
                 else:
                     # Variable is being injected
@@ -612,7 +646,10 @@ class RegressionTestMeta(type):
             # Catch attempts to override a test parameter
             param_space = super().__getattribute__('_rfm_param_space')
             if name in param_space.params:
-                raise ReframeSyntaxError(f'cannot override parameter {name!r}')
+                raise ReframeSyntaxError(
+                    'assignment to a test parameter is not allowed',
+                    with_code_context=True
+                )
         except AttributeError:
             '''Catch early access attempt to the parameter space.'''
 
@@ -620,7 +657,10 @@ class RegressionTestMeta(type):
         try:
             fixture_space = super().__getattribute__('_rfm_fixture_space')
             if name in fixture_space.fixtures:
-                raise ReframeSyntaxError(f'cannot override fixture {name!r}')
+                raise ReframeSyntaxError(
+                    'assignment to a test fixture is not allowed',
+                    with_code_context=True
+                )
 
         except AttributeError:
             '''Catch early access attempt to the fixture space.'''
