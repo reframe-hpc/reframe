@@ -22,5 +22,5 @@ os.environ['RFM_INSTALL_PREFIX'] = INSTALL_PREFIX
 
 
 # Import important names for user tests
-from reframe.core.pipeline import *     # noqa: F401, F403
-from reframe.core.decorators import *   # noqa: F401, F403
+from reframe.core.pipeline import *     # noqa: F401, F403, E402
+from reframe.core.decorators import *   # noqa: F401, F403, E402
