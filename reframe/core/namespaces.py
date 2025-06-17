@@ -150,7 +150,7 @@ class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
         for key in self._namespace:
             if key in illegal_names:
                 raise ReframeSyntaxError(
-                    f'{key!r} already defined in one of base clasess of '
+                    f'{key!r} already defined in one of the base classes of '
                     f'{cls.__qualname__!r}', with_code_context=True
                 )
 
