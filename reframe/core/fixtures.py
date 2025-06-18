@@ -181,8 +181,12 @@ class FixtureRegistry:
                 parent_test.valid_prog_environs
             )
         except AttributeError as e:
-            msg = e.args[0] + f' in test {parent_test.display_name!r}'
-            raise ReframeSyntaxError(msg) from None
+            # Catch `AttributeError` that is raised when `valid_systems` or
+            # `valid_prog_environs` are not set
+            raise ReframeSyntaxError(
+                f'could not instantiate fixture {fixture.name!r} '
+                f'in {parent_test.display_name!r}: {e}'
+            ) from None
 
         # Return if there are no valid system/environment combinations
         if not valid_sysenv:
@@ -313,7 +317,7 @@ class FixtureRegistry:
                     getlogger().warning(
                         f"skipping fixture {name!r}: "
                         f"{what(*exc_info)} "
-                        f"(rerun with '-v' for more information)"
+                        f"(rerun with '-v' for a backtrace)"
                     )
                     getlogger().verbose(traceback.format_exc())
                 else:
@@ -817,6 +821,20 @@ class TestFixture:
         # Store the variables dict
         self._variables = variables
 
+    def __set_name__(self, owner, name):
+        self._name = name
+
+    def __rfm_set_owner__(self, owner):
+        self._owner = owner
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def owner(self):
+        return self._owner
+
     @property
     def cls(self):
         '''The underlying RegressionTest class.'''
@@ -920,10 +938,12 @@ class FixtureSpace(namespaces.Namespace):
         '''
         for key, value in other.fixtures.items():
             if key in self.fixtures:
+                fixt_self  = self.fixtures[key]
                 raise ReframeSyntaxError(
-                    f'fixture space conflict: '
-                    f'fixture {key!r} is defined in more than '
-                    f'one base class of {cls.__qualname__!r}'
+                    'multiple inheritance of fixtures is not allowed: '
+                    f'fixture {fixt_self.name!r} is inherited from '
+                    f'{fixt_self.owner!r} but attempted to inherit it also '
+                    f'from {value.owner!r}', with_code_context=True
                 )
 
             self.fixtures[key] = value
@@ -940,9 +960,13 @@ class FixtureSpace(namespaces.Namespace):
         # changed using the `x = fixture(...)` syntax.
         for key in self.fixtures:
             if key in cls.__dict__:
+                fixt = self.fixtures[key]
                 raise ReframeSyntaxError(
-                    f'fixture {key!r} can only be redefined through the '
-                    f'fixture built-in'
+                    f"name {key!r} conflicts with fixture {fixt.name!r} "
+                    f"defined in {fixt.owner!r}: if you want to override the "
+                    "fixture definition, consider redefining it using the "
+                    "'fixture()' builtin",
+                    with_code_context=True
                 )
 
     def inject(self, obj, cls=None, fixtures_index=None):

@@ -175,6 +175,22 @@ class TestParam:
 
         self.__fmt_fn = fmt
         self.__loggable = loggable
+        self.__owner = None
+        self.__name = None
+
+    def __set_name__(self, owner, name):
+        self.__name = name
+
+    def __rfm_set_owner__(self, name):
+        self.__owner = name
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def owner(self):
+        return self.__owner
 
     @property
     def format(self):
@@ -198,7 +214,10 @@ class TestParam:
                 self.values = tuple(filt_vals) + self.values
             except TypeError:
                 raise ReframeSyntaxError(
-                    "'filter_param' must return an iterable"
+                    f"failed to inherit parameter {self.name!r} in "
+                    f"{self.owner!r}: 'filter_params' callable "
+                    "must return an iterable",
+                    with_code_context=True
                 ) from None
 
     def is_abstract(self):
@@ -255,10 +274,13 @@ class ParamSpace(namespaces.Namespace):
             # could be doubly defined and lead to repeated
             # values
             if self.defines(name) and other.defines(name):
+                p_self  = self.params[name]
+                p_other = other.params[name]
                 raise ReframeSyntaxError(
-                    f'parameter space conflict: '
-                    f'parameter {name!r} is defined in more than '
-                    f'one base class of class {cls.__qualname__!r}'
+                    f'multiple inheritance of parameters is not allowed: '
+                    f'parameter {p_self.name!r} in {p_self.owner!r} conflicts '
+                    f'with parameter {p_other.name!r} in {p_other.owner!r}',
+                    with_code_context=True
                 )
 
             if not self.defines(name):
@@ -281,11 +303,16 @@ class ParamSpace(namespaces.Namespace):
         # If any previously declared parameter was defined in the class body
         # by directly assigning it a value, raise an error. Parameters must be
         # changed using the `x = parameter([...])` syntax.
-        for key, values in cls.__dict__.items():
+        for key, value in cls.__dict__.items():
             if key in self.params:
+                p = self.params[key]
                 raise ReframeSyntaxError(
-                    f'parameter {key!r} must be modified through the built-in '
-                    f'parameter type'
+                    f"name {key!r} conflicts with parameter {p.name!r} "
+                    f"defined in {p.owner!r}: if you want to override the "
+                    f"parameter's values, consider inheriting as follows:\n"
+                    f"    {key} = parameter(inherit_params=True, "
+                    f"filter_params=lambda _: {value})",
+                    with_code_context=True
                 )
 
     def inject(self, obj, cls=None, params_index=None):

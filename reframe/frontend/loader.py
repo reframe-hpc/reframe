@@ -224,8 +224,9 @@ class RegressionCheckLoader:
             if not is_severe(*exc_info):
                 # Simply skip the file in this case
                 getlogger().warning(
-                    f"skipping test file {filename!r}: {what(*exc_info)} "
-                    f"(rerun with '-v' for more information)"
+                    f"skipping test file {osext.relpath_subdir(filename)!r}: "
+                    f"{what(*exc_info)}\n"
+                    f"rerun with '-v' for a backtrace"
                 )
                 getlogger().verbose(traceback.format_exc())
                 return []

@@ -221,7 +221,7 @@ class TestVar:
     # assumptions about the mangled name. So we just add the `_p_` prefix for
     # to denote the "private" fields.
 
-    __slots__ = ('_p_default_value', '_p_field',
+    __slots__ = ('_p_default_value', '_p_field', '_owner',
                  '_loggable', '_name', '_target', '_refs', '_merge_fn')
 
     __mutable_props = ('_default_value',)
@@ -229,7 +229,7 @@ class TestVar:
     def __init__(self, *args, **kwargs):
         alias = kwargs.pop('alias', None)
         if alias is not None and 'field' in kwargs:
-            raise ValueError(f"'field' cannot be set for an alias variable")
+            raise ValueError("'field' cannot be set for an alias variable")
 
         if alias is not None and 'value' in kwargs:
             raise ValueError('alias variables do not accept default values')
@@ -375,6 +375,10 @@ class TestVar:
         return self._name
 
     @property
+    def owner(self):
+        return self._owner
+
+    @property
     def target(self):
         return self._target
 
@@ -385,6 +389,9 @@ class TestVar:
             self._p_field._target_field = new_target._field
 
         self._target = new_target
+
+    def __rfm_set_owner__(self, name):
+        self._owner = name
 
     def __set_name__(self, owner, name):
         self._name = name
@@ -431,7 +438,8 @@ class TestVar:
     def _check_is_defined(self):
         if not self.is_defined():
             raise ReframeSyntaxError(
-                f'variable {self._name!r} is not assigned a value'
+                f'variable {self._name!r} is not assigned a value',
+                with_code_context=True
             )
 
     def __str__(self):
@@ -826,7 +834,7 @@ class VarSpace(namespaces.Namespace):
     def join(self, other, cls):
         '''Join an existing VarSpace into the current one.
 
-        :param other: instance of the VarSpace class.
+        :param other: The variable space that is being inherited.
         :param cls: the target class.
         '''
         for key, var in other.items():
@@ -836,8 +844,11 @@ class VarSpace(namespaces.Namespace):
                     this_var.update_from(var)
                 else:
                     raise ReframeSyntaxError(
-                        f'multiple inheritance is disabled for variable '
-                        f'{key!r}; consider declaring it with a `merge_func`'
+                        f'cannot inherit variable {key!r} multiple times: '
+                        f'already inherited from: {self.vars[key].owner!r}, '
+                        f'but attempted to inherit it also from '
+                        f'{other[key].owner!r}',
+                        with_code_context=True
                     )
             else:
                 self.vars[key] = copy.deepcopy(var)
@@ -869,7 +880,9 @@ class VarSpace(namespaces.Namespace):
                 # Disable redeclaring a variable
                 if key in self.vars:
                     raise ReframeSyntaxError(
-                        f'cannot redeclare the variable {key!r}'
+                        f'variable {key!r} is already defined in '
+                        f'{self.vars[key].owner!r}',
+                        with_code_context=True
                     )
 
                 # Add a new var
@@ -891,8 +904,13 @@ class VarSpace(namespaces.Namespace):
                 _assigned_vars.add(key)
             elif value is Undefined:
                 # Cannot be set as Undefined if not a variable
+                #
+                # Use the `required` alias in the message to make it
+                # user-friendly
                 raise ReframeSyntaxError(
-                    f'{key!r} has not been declared as a variable'
+                    "cannot assign the special value 'required' to "
+                    f"the non-variable {key!r} in class {cls.__name__!r}: ",
+                    with_code_context=True
                 )
 
         # Delete the vars from the class __dict__.
@@ -912,8 +930,8 @@ class VarSpace(namespaces.Namespace):
         for key in self._namespace:
             if key in illegal_names and key not in self._injected_vars:
                 raise ReframeSyntaxError(
-                    f'{key!r} already defined in class '
-                    f'{cls.__qualname__!r}'
+                    f'{key!r} already defined in one of base clasess of '
+                    f'{cls.__qualname__!r}', with_code_context=True
                 )
 
     def inject(self, obj, cls):
