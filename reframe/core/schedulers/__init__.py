@@ -165,7 +165,14 @@ def filter_nodes_by_state(nodelist, state):
         state string.
     :returns: the filtered node list
     '''
-    if state == 'avail':
+    if '|' in state:
+        allowed_states = state.split('|')
+        final_nodelist = set()
+        for s in allowed_states:
+            final_nodelist.update(filter_nodes_by_state(nodelist, s))
+
+        nodelist = final_nodelist
+    elif state == 'avail':
         nodelist = {n for n in nodelist if n.is_avail()}
     elif state != 'all':
         if state.endswith('*'):

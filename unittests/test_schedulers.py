@@ -1247,6 +1247,19 @@ def test_flex_alloc_not_enough_nodes_constraint_expr(make_flexible_job):
         prepare_job(job)
 
 
+def test_flex_alloc_allocated_or_idle_partition(make_flexible_job):
+    job = make_flexible_job('allocated|idle')
+    job.options = ['--partition=p3']
+    prepare_job(job)
+    assert job.num_tasks == 12
+
+
+def test_flex_alloc_maint_star_or_allocated(make_flexible_job):
+    job = make_flexible_job('maint*|idle')
+    prepare_job(job)
+    assert job.num_tasks == 16
+
+
 @pytest.fixture
 def slurm_node_allocated():
     return _SlurmNode(
