@@ -743,3 +743,17 @@ def test_config_params(make_runner, make_exec_ctx):
     runner.runall(testcases)
     assert runner.stats.num_cases() == 2
     assert not runner.stats.failed()
+
+
+def test_expected_failures(make_runner, make_loader, make_exec_ctx):
+    make_exec_ctx()
+    runner = make_runner()
+    loader = make_loader(['unittests/resources/checks_unlisted/xfailures.py'])
+    testcases = executors.generate_testcases(loader.load_all())
+    runner.runall(testcases)
+    assert runner.stats.num_cases() == 8
+
+    # XPASSes are counted also as failures, thuse we expect 4 here
+    assert len(runner.stats.failed()) == 4
+    assert len(runner.stats.xfailed()) == 2
+    assert len(runner.stats.xpassed()) == 2
