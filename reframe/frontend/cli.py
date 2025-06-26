@@ -1028,7 +1028,7 @@ def main():
             sys.exit(0)
 
     if options.list_stored_testcases:
-        namepatt = '|'.join(options.names)
+        namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
             filt = options.filter_expr[-1] if options.filter_expr else None
@@ -1050,7 +1050,7 @@ def main():
     if options.describe_stored_testcases:
         # Restore logging level
         printer.setLevel(logging.INFO)
-        namepatt = '|'.join(options.names)
+        namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
             filt = options.filter_expr[-1] if options.filter_expr else None
@@ -1068,7 +1068,7 @@ def main():
             sys.exit(0)
 
     if options.performance_compare:
-        namepatt = '|'.join(options.names)
+        namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
         with exit_gracefully_on_error('failed to generate performance report',
                                       printer):
             filt = [None, None]
