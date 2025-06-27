@@ -7,7 +7,7 @@
 # Decorators used for the definition of tests
 #
 
-__all__ = ['simple_test']
+__all__ = ['simple_test', 'xfail']
 
 import collections
 import inspect
@@ -202,3 +202,46 @@ def simple_test(cls):
             _register_test(cls, variant_num=n)
 
     return cls
+
+
+def xfail(message, predicate=None):
+    '''Mark a test as an expected failure in sanity checking.
+
+    If you want mark an expected performance failure, take a look at the
+    :func:`~reframe.core.builtins.xfail` builtin.
+
+    If a marked test passes sanity checking, then it will be marked as a
+    failure.
+
+    :arg message: the message to be printed when this test fails expectedly.
+    :arg predicate: A callable taking the test instance as its sole argument
+        and returning :obj:`True` or :obj:`False`. If it returns :obj:`True`,
+        then the test is marked as an expected failure, otherwise not. For
+        example, the following test will only be marked as an expected failure
+        only if variable ``x`` equals 1.
+
+        .. code-block:: python
+
+            @rfm.xfail('bug 123', lambda test: return test.x == 1)
+            @rfm.simple_test
+            class MyTest(...):
+                x = variable(int, value=0)
+
+        If ``predicate=None`` then the test is marked as an expected failure
+        unconditionally. It is equivalent to ``predicate=lambda _: True``.
+
+    .. versionadded:: 4.9
+    '''
+    def _default_predicate(_):
+        return True
+
+    predicate = predicate or _default_predicate
+
+    def _xfail_fn(obj):
+        return predicate(obj), message
+
+    def _deco(cls):
+        cls.__rfm_xfail_sanity__ = _xfail_fn
+        return cls
+
+    return _deco

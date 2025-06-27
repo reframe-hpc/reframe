@@ -8,6 +8,8 @@
 #
 
 import functools
+from collections import namedtuple
+
 import reframe.core.parameters as parameters
 import reframe.core.variables as variables
 import reframe.core.fixtures as fixtures
@@ -19,7 +21,7 @@ from reframe.core.deferrable import deferrable, _DeferredPerformanceExpression
 __all__ = ['deferrable', 'deprecate', 'final', 'fixture', 'loggable',
            'loggable_as', 'parameter', 'performance_function', 'required',
            'require_deps', 'run_before', 'run_after', 'sanity_function',
-           'variable']
+           'variable', 'xfail']
 
 parameter = parameters.TestParam
 variable = variables.TestVar
@@ -221,3 +223,18 @@ def loggable_as(name):
 
 loggable = loggable_as(None)
 loggable.__doc__ = '''Equivalent to :func:`loggable_as(None) <loggable_as>`.'''
+
+_XFailReference = namedtuple('XFailReference', ['message', 'data'])
+
+
+def xfail(message, reference):
+    '''Mark a test :attr:`~reframe.core.pipeline.RegressionTest.reference` as
+    an expected failure.
+
+    :arg message: The message to issue when this expected failure is
+        encountered.
+    :arg reference: The original reference tuple.
+
+    .. versionadded:: 4.9
+    '''
+    return _XFailReference(message=message, data=reference)

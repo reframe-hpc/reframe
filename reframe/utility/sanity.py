@@ -529,26 +529,14 @@ def assert_bounded(val, lower=None, upper=None, msg=None):
     raise SanityError(_format(error_msg, val, lower, upper))
 
 
-@deferrable
-def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
-    '''Assert that value ``val`` respects the reference value ``ref``.
+def reference_bounds(ref, lower_thres=None, upper_thres=None):
+    '''Calculate the absolute bounds from their fractional values.
 
-    :arg val: The value to check.
-    :arg ref: The reference value.
-    :arg lower_thres: The lower threshold value expressed as a negative decimal
-        fraction of the reference value.  Must be in [-1, 0] for ref >= 0.0 and
-        in [-inf, 0] for ref < 0.0.
-        If ``None``, no lower thresholds is applied.
-    :arg upper_thres: The upper threshold value expressed as a decimal fraction
-        of the reference value. Must be in [0, inf] for ref >= 0.0 and
-        in [0, 1] for ref < 0.0.
-        If ``None``, no upper thresholds is applied.
-    :arg msg: The error message to use if the assertion fails. You may use
-        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
-    :returns: ``True`` on success.
-    :raises reframe.core.exceptions.SanityError: if assertion fails or if the
-        lower and upper thresholds do not have appropriate values.
+    See :func:`assert_reference` for more details.
+
+    .. versionadded:: 4.9
     '''
+
     if lower_thres is not None:
         if ref > 0:
             lower_thres_limit = -1
@@ -560,7 +548,7 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         try:
             evaluate(assert_bounded(lower_thres, lower_thres_limit, 0))
         except SanityError:
-            raise SanityError(
+            raise ValueError(
                 f'invalid low threshold value: {lower_thres}'
             ) from None
 
@@ -575,7 +563,7 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         try:
             evaluate(assert_bounded(upper_thres, 0, upper_thres_limit))
         except SanityError:
-            raise SanityError(
+            raise ValueError(
                 f'invalid high threshold value: {upper_thres}'
             ) from None
 
@@ -602,7 +590,32 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
     if upper is None:
         upper = math.inf
 
+    return lower, upper
+
+
+@deferrable
+def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
+    '''Assert that value ``val`` respects the reference value ``ref``.
+
+    :arg val: The value to check.
+    :arg ref: The reference value.
+    :arg lower_thres: The lower threshold value expressed as a negative decimal
+        fraction of the reference value.  Must be in [-1, 0] for ref >= 0.0 and
+        in [-inf, 0] for ref < 0.0.
+        If ``None``, no lower thresholds is applied.
+    :arg upper_thres: The upper threshold value expressed as a decimal fraction
+        of the reference value. Must be in [0, inf] for ref >= 0.0 and
+        in [0, 1] for ref < 0.0.
+        If ``None``, no upper thresholds is applied.
+    :arg msg: The error message to use if the assertion fails. You may use
+        ``{0}`` ... ``{N}`` as placeholders for the function arguments.
+    :returns: ``True`` on success.
+    :raises reframe.core.exceptions.SanityError: if assertion fails or if the
+        lower and upper thresholds do not have appropriate values.
+    '''
+
     try:
+        lower, upper = reference_bounds(ref, lower_thres, upper_thres)
         evaluate(assert_bounded(val, lower, upper))
     except SanityError:
         error_msg = msg or '{0} is beyond reference value {1} (l={2}, u={3})'
