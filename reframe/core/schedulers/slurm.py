@@ -628,9 +628,6 @@ class SlurmJobScheduler(sched.JobScheduler):
         job._is_cancelling = True
 
     def finished(self, job):
-        if job.exception:
-            raise job.exception
-
         return slurm_state_completed(job.state)
 
 

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import errno
 import os
 import signal
@@ -92,10 +93,10 @@ class LocalJobScheduler(sched.JobScheduler):
         return [sched.AlwaysIdleNode(socket.gethostname())]
 
     def _kill_all(self, job):
-        '''Send SIGKILL to all the processes of the spawned job.'''
+        '''Send SIGKILL to all the processes of the spawned job and wait for
+        any children to finish'''
         try:
             os.killpg(job._jobid, signal.SIGKILL)
-            job._signal = signal.SIGKILL
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
             # group, so ignore this error
@@ -104,19 +105,18 @@ class LocalJobScheduler(sched.JobScheduler):
             # Close file handles
             job.f_stdout.close()
             job.f_stderr.close()
-            job._state = 'FAILURE'
+            with contextlib.suppress(ChildProcessError):
+                os.waitpid(0, 0)
 
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
         try:
             os.killpg(job._jobid, signal.SIGTERM)
-            job._signal = signal.SIGTERM
         except (ProcessLookupError, PermissionError):
             # Job has finished already, close file handles
             self.log(f'pid {job.jobid} already dead')
             job.f_stdout.close()
             job.f_stderr.close()
-            job._state = 'FAILURE'
 
     def cancel(self, job):
         '''Cancel job.
@@ -150,10 +150,7 @@ class LocalJobScheduler(sched.JobScheduler):
         the process has finished, you *must* call wait() to properly cleanup
         after it.
         '''
-        if job.exception:
-            raise job.exception
-
-        return job.state in ['SUCCESS', 'FAILURE', 'TIMEOUT']
+        return job.exitcode is not None or job.signal is not None
 
     def poll(self, *jobs):
         for job in jobs:
@@ -173,37 +170,36 @@ class LocalJobScheduler(sched.JobScheduler):
             else:
                 raise e
 
-        if job.cancel_time:
-            # Job has been cancelled; give it a grace period and kill it
-            self.log(f'Job {job.jobid} has been cancelled; '
-                     f'giving it a grace period')
-            t_rem = self.CANCEL_GRACE_PERIOD - (time.time() - job.cancel_time)
-            if t_rem > 0:
-                time.sleep(t_rem)
+        if pid:
+            # Job has finished
 
+            # Forcefully kill the whole session once the parent process exits
             self._kill_all(job)
-            return
 
-        if not pid:
-            # Job has not finished; check if we have reached a timeout
-            t_elapsed = time.time() - job.submit_time
-            if job.time_limit and t_elapsed > job.time_limit:
-                self._kill_all(job)
+            # Retrieve the status of the job and return
+            if os.WIFEXITED(status):
+                job._exitcode = os.WEXITSTATUS(status)
+                if job._state == 'RUNNING':
+                    job._state = 'FAILURE' if job._exitcode != 0 else 'SUCCESS'
+            elif os.WIFSIGNALED(status):
+                if job._state == 'RUNNING':
+                    job._state = 'FAILURE'
+
+                job._signal = os.WTERMSIG(status)
+        else:
+            # Job has not finished; check for timeouts
+            now = time.time()
+            t_elapsed = now - job.submit_time
+            if job.cancel_time:
+                t_rem = self.CANCEL_GRACE_PERIOD - (now - job.cancel_time)
+                self.log(f'Job {job.jobid} has been cancelled; '
+                         f'giving it a grace period of {t_rem} seconds')
+                if t_rem <= 0:
+                    self._kill_all(job)
+            elif job.time_limit and t_elapsed > job.time_limit:
+                self.cancel(job)
                 job._state = 'TIMEOUT'
                 job._exception = JobError(
                     f'job timed out ({t_elapsed:.6f}s > {job.time_limit}s)',
                     job.jobid
                 )
-
-            return
-
-        # Job has finished; kill the whole session
-        self._kill_all(job)
-
-        # Retrieve the status of the job and return
-        if os.WIFEXITED(status):
-            job._exitcode = os.WEXITSTATUS(status)
-            job._state = 'FAILURE' if job.exitcode != 0 else 'SUCCESS'
-        elif os.WIFSIGNALED(status):
-            job._state = 'FAILURE'
-            job._signal = os.WTERMSIG(status)
