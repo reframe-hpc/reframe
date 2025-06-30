@@ -384,8 +384,8 @@ class RegressionTask:
                 # This practically ignores skipping during the cleanup phase
                 self.skip()
                 raise TaskExit from e
-        except ABORT_REASONS:
-            self.fail()
+        except ABORT_REASONS as e:
+            self.abort(e)
             raise
         except BaseException as e:
             self.fail()
@@ -516,6 +516,11 @@ class RegressionTask:
         self._notify_listeners('on_task_skip')
 
     def abort(self, cause=None):
+        def _cancel_job(job):
+            if job:
+                with contextlib.suppress(JobNotStartedError):
+                    job.cancel()
+
         if self.failed or self._aborted:
             return
 
@@ -524,11 +529,8 @@ class RegressionTask:
         exc.__cause__ = cause
         self._aborted = True
         try:
-            if self.check.job:
-                self.check.job.cancel()
-                self.check.job.wait()
-        except JobNotStartedError:
-            self.fail((type(exc), exc, None), 'on_task_abort')
+            _cancel_job(self.check.build_job)
+            _cancel_job(self.check.job)
         except BaseException:
             self.fail()
         else:

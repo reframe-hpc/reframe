@@ -1762,12 +1762,14 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
 
         if job_type == 'build':
             script_name = 'rfm_build.sh'
+            job_name = f'rfm_build_{self.short_name}'
         elif job_type == 'run':
             script_name = 'rfm_job.sh'
+            job_name = f'rfm_{self.short_name}'
 
         return Job.create(scheduler,
                           launcher,
-                          name=f'rfm_{self.short_name}',
+                          name=job_name,
                           script_filename=script_name,
                           workdir=self._stagedir,
                           sched_access=self._current_partition.access,
