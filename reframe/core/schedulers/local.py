@@ -176,6 +176,10 @@ class LocalJobScheduler(sched.JobScheduler):
             # Forcefully kill the whole session once the parent process exits
             self._kill_all(job)
 
+            # Call wait() in the underlying Popen object to avoid false
+            # positive warnings
+            job._proc.wait()
+
             # Retrieve the status of the job and return
             if os.WIFEXITED(status):
                 job._exitcode = os.WEXITSTATUS(status)

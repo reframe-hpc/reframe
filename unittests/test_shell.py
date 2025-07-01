@@ -114,7 +114,11 @@ def test_trap_exit(script_file):
 
 def test_trap_signal(script_file):
     with shell.generate_script(script_file, trap_signals=True) as gen:
+        # We add a second sleep here to guard against the scenario that the
+        # `sleep 10` is killed first and the shell script continues and
+        # finishes before it also receives its TERM signal
         gen.write('sleep 10')
+        gen.write('sleep 1')
         gen.write('echo hello')
 
     f_stdout = tempfile.NamedTemporaryFile(mode='w+', delete=False)

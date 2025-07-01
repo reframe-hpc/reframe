@@ -640,8 +640,10 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         done = self.scheduler.finished(self)
         if done:
             self._completion_time = self._completion_time or time.time()
-            if self.exception:
-                raise self.exception
+            if self._exception:
+                exc = self._exception
+                self._exception = None
+                raise exc
 
         return done
 

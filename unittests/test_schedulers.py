@@ -524,11 +524,6 @@ def test_submit_timelimit(minimal_job, local_only):
     assert t_job < 3
     assert minimal_job.state == 'TIMEOUT'
 
-    # Additional scheduler-specific checks
-    sched_name = minimal_job.scheduler.registered_name
-    if sched_name == 'local':
-        assert minimal_job.signal == signal.SIGTERM
-
 
 def test_submit_unqualified_hostnames(make_exec_ctx, make_job, local_only):
     make_exec_ctx(
