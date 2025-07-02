@@ -658,6 +658,63 @@ def test_list_with_details(run_reframe):
     assert returncode == 0
 
 
+def test_list_with_details_with_descr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/descr_test.py'],
+        action='list_detailed',
+        more_options=['-n', 'TestWithDescription']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that the description is shown for tests that have it
+    assert 'description: Test with meaningful description' in stdout
+
+
+def test_list_with_details_with_empty_descr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/descr_test.py'],
+        action='list_detailed',
+        more_options=['-n', 'TestWithEmptyDescription']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that empty descr doesn't show a description line
+    assert 'TestWithEmptyDescription' in stdout
+    assert 'description:' not in stdout
+    
+
+def test_list_with_details_without_descr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/descr_test.py'],
+        action='list_detailed',
+        more_options=['-n', 'TestWithoutDescription']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that no description line appears for tests without description
+    assert 'TestWithoutDescription' in stdout
+    assert 'description:' not in stdout
+
+
+def test_list_without_details_no_descr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/descr_test.py'],
+        action='list'
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that descriptions are not shown in non-detailed listing
+    assert 'description:' not in stdout
+    # But the test names should still be there
+    assert 'TestWithDescription' in stdout
+    assert 'TestWithoutDescription' in stdout
+    assert 'TestWithEmptyDescription' in stdout
+
+
 def test_list_concretized(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
