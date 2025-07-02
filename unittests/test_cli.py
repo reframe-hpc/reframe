@@ -657,6 +657,29 @@ def test_list_with_details(run_reframe):
     assert 'Traceback' not in stderr
     assert returncode == 0
 
+    assert 'BadSetupCheckEarly' in stdout
+    assert 'description: Bad setup check early' in _extract_block(stdout, 'BadSetupCheckEarly')
+
+    assert 'PerformanceFailureCheck' in stdout
+    assert 'description: <no description provided>' in _extract_block(stdout, 'PerformanceFailureCheck')
+
+    assert 'SanityFailureCheck' in stdout
+    assert 'description: <undefined>' in _extract_block(stdout, 'SanityFailureCheck')
+
+def _extract_block(output, testname):
+    """Helper: extract the detailed listing block for a given test."""
+    lines = []
+    in_block = False
+    for line in output.splitlines():
+        if line.startswith(f'- {testname}'):
+            in_block = True
+            lines = [line]
+            continue
+        if in_block:
+            if line.startswith('- '):  # next test listing starts
+                break
+            lines.append(line)
+    return '\n'.join(lines)
 
 def test_list_concretized(run_reframe):
     returncode, stdout, stderr = run_reframe(
