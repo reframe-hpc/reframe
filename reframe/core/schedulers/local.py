@@ -68,6 +68,7 @@ class LocalJobScheduler(sched.JobScheduler):
             stderr=f_stderr,
             start_new_session=True
         )
+        self.log(f'spawned local process: {proc.pid}')
 
         # Update job info
         job._jobid = proc.pid
@@ -96,6 +97,7 @@ class LocalJobScheduler(sched.JobScheduler):
         '''Send SIGKILL to all the processes of the spawned job and wait for
         any children to finish'''
         try:
+            self.log(f'sending SIGKILL to process group {job._jobid}')
             os.killpg(job._jobid, signal.SIGKILL)
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
@@ -111,6 +113,7 @@ class LocalJobScheduler(sched.JobScheduler):
     def _term_all(self, job):
         '''Send SIGTERM to all the processes of the spawned job.'''
         try:
+            self.log(f'sending SIGTERM to process group {job._jobid}')
             os.killpg(job._jobid, signal.SIGTERM)
         except (ProcessLookupError, PermissionError):
             # Job has finished already, close file handles
@@ -126,6 +129,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         This function waits for the spawned process tree to finish.
         '''
+        self.log(f'cancelling job {job._jobid}')
         self._term_all(job)
         job._cancel_time = time.time()
 
@@ -172,6 +176,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         if pid:
             # Job has finished
+            self.log(f'spawned process {job._jobid} has finished')
 
             # Forcefully kill the whole session once the parent process exits
             self._kill_all(job)
@@ -190,17 +195,21 @@ class LocalJobScheduler(sched.JobScheduler):
                     job._state = 'FAILURE'
 
                 job._signal = os.WTERMSIG(status)
+                self.log(f'job killed by signal: {job._signal}')
+
+            self.log(f'job state: {job._state}')
         else:
             # Job has not finished; check for timeouts
             now = time.time()
             t_elapsed = now - job.submit_time
             if job.cancel_time:
                 t_rem = self.CANCEL_GRACE_PERIOD - (now - job.cancel_time)
-                self.log(f'Job {job.jobid} has been cancelled; '
+                self.log(f'job {job.jobid} has been cancelled; '
                          f'giving it a grace period of {t_rem} seconds')
                 if t_rem <= 0:
                     self._kill_all(job)
             elif job.time_limit and t_elapsed > job.time_limit:
+                self.log(f'job {job._jobid} timed out; cancelling it')
                 self.cancel(job)
                 job._state = 'TIMEOUT'
                 job._exception = JobError(
