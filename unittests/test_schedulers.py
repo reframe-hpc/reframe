@@ -11,6 +11,7 @@ import socket
 import time
 
 import reframe.core.runtime as rt
+import reframe.utility.osext as osext
 import unittests.utility as test_util
 from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.environments import Environment
@@ -713,26 +714,35 @@ def test_guess_num_tasks(minimal_job, scheduler):
             minimal_job.guess_num_tasks()
 
 
-def test_submit_max_pending_time(make_job, exec_ctx, scheduler):
-    if scheduler.registered_name in ('local'):
+@pytest.fixture
+def drain_nodes(scheduler):
+    if scheduler.registered_name in {'squeue', 'slurm', 'pbs', 'torque'}:
+        osext.run_command(
+            'sudo scontrol update nodename=nid[00-02] state=drain reason="unit tests"',  # noqa: E501
+            check=True
+        )
+        yield
+        osext.run_command(
+            'sudo scontrol update nodename=nid[00-02] state=resume', check=True
+        )
+    else:
+        yield
+
+
+def test_submit_max_pending_time(make_job, exec_ctx, scheduler, drain_nodes):
+    if scheduler.registered_name in {'local', 'lsf', 'oar', 'sge'}:
         pytest.skip(f"max_pending_time not supported by the "
                     f"'{scheduler.registered_name}' scheduler")
 
     minimal_job = make_job(sched_access=exec_ctx.access)
-    minimal_job.max_pending_time = 0.05
-
-    # Monkey-patch the Job's state property to pretend that the job is always
-    # pending
-    def state(self):
-        if scheduler.registered_name in ('slurm', 'squeue', 'flux'):
+    minimal_job.max_pending_time = 0.1
+    if scheduler.registered_name == 'flux':
+        # For Flux scheduler we monkypatch the job's state to always be PENDING
+        def state(self):
             return 'PENDING'
-        elif scheduler.registered_name in ('pbs', 'torque'):
-            return 'QUEUED'
-        else:
-            # This should not happen
-            assert 0
 
-    type(minimal_job).state = property(state)
+        type(minimal_job).state = property(state)
+
     prepare_job(minimal_job, 'sleep 30')
     submit_job(minimal_job)
     with pytest.raises(JobError,
