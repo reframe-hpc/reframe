@@ -147,7 +147,4 @@ class LsfJobScheduler(PbsJobScheduler):
                 job._completed = True
 
     def finished(self, job):
-        if job.exception:
-            raise job.exception
-
         return job.state == 'COMPLETED'

@@ -137,7 +137,4 @@ class SgeJobScheduler(PbsJobScheduler):
             job._state = 'COMPLETED'
 
     def finished(self, job):
-        if job.exception:
-            raise job.exception
-
         return job.state == 'COMPLETED'

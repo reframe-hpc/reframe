@@ -625,7 +625,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
             raise JobNotStartedError('cannot wait an unstarted job')
 
         self.scheduler.wait(self)
-        self._completion_time = self._completion_time or time.time()
+        self.finished()
 
     def cancel(self):
         if self.jobid is None:
@@ -640,6 +640,10 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         done = self.scheduler.finished(self)
         if done:
             self._completion_time = self._completion_time or time.time()
+            if self._exception:
+                exc = self._exception
+                self._exception = None
+                raise exc
 
         return done
 
