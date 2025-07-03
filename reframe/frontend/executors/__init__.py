@@ -215,9 +215,6 @@ class RegressionTask:
         # if it is zero
         self.ref_count = case.num_dependents
 
-        # Test case has finished, but has not been waited for yet
-        self.zombie = False
-
         # Timestamps for the start and finish phases of the pipeline
         self._timestamps = {}
 
@@ -445,7 +442,6 @@ class RegressionTask:
     def run_complete(self):
         done = self._safe_call(self.check.run_complete)
         if done:
-            self.zombie = True
             self._notify_listeners('on_task_exit')
 
         return done
@@ -461,7 +457,6 @@ class RegressionTask:
     @logging.time_function
     def run_wait(self):
         self._safe_call(self.check.run_wait)
-        self.zombie = False
 
     @logging.time_function
     def sanity(self):
@@ -501,6 +496,15 @@ class RegressionTask:
         self._safe_call(self.check.cleanup, *args, **kwargs)
 
     def fail(self, exc_info=None, callback='on_task_failure'):
+        def _wait_job(job):
+            if job:
+                with contextlib.suppress(JobNotStartedError):
+                    job.wait()
+
+        # Make sure to properly wait/reap any spawned job in case of failures
+        _wait_job(self.check.build_job)
+        _wait_job(self.check.job)
+
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners(callback)
@@ -527,8 +531,9 @@ class RegressionTask:
         exc.__cause__ = cause
         self._aborted = True
         try:
-            if not self.zombie and self.check.job:
+            if self.check.job:
                 self.check.job.cancel()
+                self.check.job.wait()
         except JobNotStartedError:
             self.fail((type(exc), exc, None), 'on_task_abort')
         except BaseException:

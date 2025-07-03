@@ -190,9 +190,6 @@ class PbsJobScheduler(sched.JobScheduler):
         job._cancelled = True
 
     def finished(self, job):
-        if job.exception:
-            raise job.exception
-
         return job.completed
 
     def _update_nodelist(self, job, nodespec):

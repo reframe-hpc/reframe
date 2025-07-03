@@ -1,6 +1,6 @@
 #!/bin/bash
 
 trap -- '' TERM
-sleep 5 &
+sleep 30 &
 echo $!
 wait

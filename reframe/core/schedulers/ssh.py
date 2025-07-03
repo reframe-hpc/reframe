@@ -174,9 +174,6 @@ class SSHJobScheduler(JobScheduler):
                 step.cancel()
 
     def finished(self, job):
-        if job.exception:
-            raise job.exception
-
         return job.state is not None
 
     def poll(self, *jobs):
