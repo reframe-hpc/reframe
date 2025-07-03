@@ -134,21 +134,16 @@ class CleanupFailTest(BaseFrontendCheck):
 class SleepCheck(rfm.RunOnlyRegressionTest, special=True):
     sleep_time = variable(float, int)
     poll_fail = variable(str, type(None), value=None)
-    print_timestamp = (
-        'python3 -c "import time; print(time.time(), flush=True)"'
-    )
-    executable = 'python3'
-    prerun_cmds = [print_timestamp]
-    postrun_cmds = [print_timestamp]
+    executable = 'sleep'
+    prerun_cmds  = [r'date +%s.%N']
+    postrun_cmds = [r'date +%s.%N']
     sanity_patterns = sn.assert_true(1)
     valid_systems = ['*']
     valid_prog_environs = ['*']
 
     @run_before('run')
     def set_sleep_time(self):
-        self.executable_opts = [
-            f'-c "import time; time.sleep({self.sleep_time})"'
-        ]
+        self.executable_opts = [f'{self.sleep_time}s']
 
     def run_complete(self):
         if self.poll_fail == 'early':
