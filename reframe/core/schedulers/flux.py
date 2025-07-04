@@ -150,7 +150,4 @@ class FluxJobScheduler(JobScheduler):
             time.sleep(next(intervals))
 
     def finished(self, job):
-        if job.exception:
-            raise job.exception
-
         return job.completed

@@ -30,6 +30,7 @@ from reframe.core.exceptions import (AbortTaskError,
                                      StatisticsError,
                                      TaskExit,
                                      UnexpectedSuccessError)
+from reframe.core.logging import getlogger
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 
@@ -182,11 +183,17 @@ def generate_testcases(checks, prepare=False):
 
     cases = []
     for c in checks:
+        getlogger().debug(
+            f'Resolving systems/environments for {c.display_name!r} with:'
+        )
+        getlogger().debug(f'  > valid_systems: {c.valid_systems}')
+        getlogger().debug(f'  > valid_prog_environs: {c.valid_prog_environs}')
         valid_comb = runtime.valid_sysenv_comb(c.valid_systems,
                                                c.valid_prog_environs)
         for part, environs in valid_comb.items():
             for env in environs:
                 case = TestCase(c, part, env)
+                getlogger().debug(f'  Generated test case: {case}')
                 if prepare:
                     case.prepare()
 
@@ -219,9 +226,6 @@ class RegressionTask:
         # Reference count for dependent tests; safe to cleanup the test only
         # if it is zero
         self.ref_count = case.num_dependents
-
-        # Test case has finished, but has not been waited for yet
-        self.zombie = False
 
         # Timestamps for the start and finish phases of the pipeline
         self._timestamps = {}
@@ -428,8 +432,8 @@ class RegressionTask:
         except UnexpectedSuccessError as e:
             self.xpass()
             raise TaskExit from e
-        except ABORT_REASONS:
-            self.fail()
+        except ABORT_REASONS as e:
+            self.abort(e)
             raise
         except BaseException as e:
             self.fail()
@@ -479,7 +483,6 @@ class RegressionTask:
     def run_complete(self):
         done = self._safe_call(self.check.run_complete)
         if done:
-            self.zombie = True
             self._notify_listeners('on_task_exit')
 
         return done
@@ -495,7 +498,6 @@ class RegressionTask:
     @logging.time_function
     def run_wait(self):
         self._safe_call(self.check.run_wait)
-        self.zombie = False
 
     @logging.time_function
     def sanity(self):
@@ -516,7 +518,7 @@ class RegressionTask:
             with open(jsonfile, 'w') as fp:
                 jsonext.dump(self.check, fp, indent=2)
         except OSError as e:
-            logging.getlogger().warning(
+            getlogger().warning(
                 f'could not dump test case {self.testcase}: {e}'
             )
 
@@ -526,7 +528,7 @@ class RegressionTask:
             self._perflogger.log_performance(logging.INFO, self,
                                              multiline=self._perflog_compat)
         except LoggingError as e:
-            logging.getlogger().warning(
+            getlogger().warning(
                 f'could not log performance data for {self.testcase}: {e}'
             )
 
@@ -535,6 +537,15 @@ class RegressionTask:
         self._safe_call(self.check.cleanup, *args, **kwargs)
 
     def fail(self, exc_info=None, callback='on_task_failure'):
+        def _wait_job(job):
+            if job:
+                with contextlib.suppress(JobNotStartedError):
+                    job.wait()
+
+        # Make sure to properly wait/reap any spawned job in case of failures
+        _wait_job(self.check.build_job)
+        _wait_job(self.check.job)
+
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners(callback)
@@ -542,7 +553,7 @@ class RegressionTask:
             self._perflogger.log_performance(logging.INFO, self,
                                              multiline=self._perflog_compat)
         except LoggingError as e:
-            logging.getlogger().warning(
+            getlogger().warning(
                 f'could not log performance data for {self.testcase}: {e}'
             )
 
@@ -577,18 +588,21 @@ class RegressionTask:
         self._notify_listeners('on_task_xsuccess')
 
     def abort(self, cause=None):
+        def _cancel_job(job):
+            if job:
+                with contextlib.suppress(JobNotStartedError):
+                    job.cancel()
+
         if self.failed or self._aborted:
             return
 
-        logging.getlogger().debug2(f'Aborting test case: {self.testcase!r}')
+        getlogger().debug2(f'Aborting test case: {self.testcase!r}')
         exc = AbortTaskError()
         exc.__cause__ = cause
         self._aborted = True
         try:
-            if not self.zombie and self.check.job:
-                self.check.job.cancel()
-        except JobNotStartedError:
-            self.fail((type(exc), exc, None), 'on_task_abort')
+            _cancel_job(self.check.build_job)
+            _cancel_job(self.check.job)
         except BaseException:
             self.fail()
         else:

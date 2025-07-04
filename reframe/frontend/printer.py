@@ -124,7 +124,8 @@ class PrettyPrinter:
             self.info(f"FAILURE INFO for {rec['display_name']} "
                       f"(run: {runid}/{total_runs})")
             self.info(f"  * Description: {rec['descr']}")
-            self.info(f"  * System partition: {rec['system']}")
+            self.info("  * System partition: "
+                      f"{rec['system']}:{rec['partition']}")
             self.info(f"  * Environment: {rec['environ']}")
             self.info(f"  * Test file: {rec['filename']}")
             self.info(f"  * Stage directory: {rec['stagedir']}")

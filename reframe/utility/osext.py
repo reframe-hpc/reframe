@@ -586,6 +586,18 @@ def subdirs(dirname, recurse=False):
     return dirs
 
 
+def relpath_subdir(path, parent=os.curdir):
+    '''Make ``path`` relative only if it is a subdirectory of ``parent``.'''
+
+    # Convert paths to absolute
+    path   = os.path.abspath(path)
+    parent = os.path.abspath(parent)
+    if os.path.commonpath([path, parent]) == parent:
+        return os.path.relpath(path, parent)
+    else:
+        return path
+
+
 def follow_link(path):
     '''Return the final target of a symlink chain.
 
