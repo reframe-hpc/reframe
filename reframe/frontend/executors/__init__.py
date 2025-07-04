@@ -28,6 +28,7 @@ from reframe.core.exceptions import (AbortTaskError,
                                      SkipTestError,
                                      StatisticsError,
                                      TaskExit)
+from reframe.core.logging import getlogger
 from reframe.core.schedulers.local import LocalJobScheduler
 from reframe.frontend.printer import PrettyPrinter
 
@@ -174,11 +175,17 @@ def generate_testcases(checks, prepare=False):
 
     cases = []
     for c in checks:
+        getlogger().debug(
+            f'Resolving systems/environments for {c.display_name!r} with:'
+        )
+        getlogger().debug(f'  > valid_systems: {c.valid_systems}')
+        getlogger().debug(f'  > valid_prog_environs: {c.valid_prog_environs}')
         valid_comb = runtime.valid_sysenv_comb(c.valid_systems,
                                                c.valid_prog_environs)
         for part, environs in valid_comb.items():
             for env in environs:
                 case = TestCase(c, part, env)
+                getlogger().debug(f'  Generated test case: {case}')
                 if prepare:
                     case.prepare()
 
@@ -470,7 +477,7 @@ class RegressionTask:
             with open(jsonfile, 'w') as fp:
                 jsonext.dump(self.check, fp, indent=2)
         except OSError as e:
-            logging.getlogger().warning(
+            getlogger().warning(
                 f'could not dump test case {self.testcase}: {e}'
             )
 
@@ -480,7 +487,7 @@ class RegressionTask:
             self._perflogger.log_performance(logging.INFO, self,
                                              multiline=self._perflog_compat)
         except LoggingError as e:
-            logging.getlogger().warning(
+            getlogger().warning(
                 f'could not log performance data for {self.testcase}: {e}'
             )
 
@@ -505,7 +512,7 @@ class RegressionTask:
             self._perflogger.log_performance(logging.INFO, self,
                                              multiline=self._perflog_compat)
         except LoggingError as e:
-            logging.getlogger().warning(
+            getlogger().warning(
                 f'could not log performance data for {self.testcase}: {e}'
             )
 
@@ -524,7 +531,7 @@ class RegressionTask:
         if self.failed or self._aborted:
             return
 
-        logging.getlogger().debug2(f'Aborting test case: {self.testcase!r}')
+        getlogger().debug2(f'Aborting test case: {self.testcase!r}')
         exc = AbortTaskError()
         exc.__cause__ = cause
         self._aborted = True
