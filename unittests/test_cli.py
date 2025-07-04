@@ -303,7 +303,7 @@ def test_check_kbd_interrupt(run_reframe):
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    assert 'FAILED' in stdout
+    assert 'ABORTED' in stdout
     assert returncode != 0
 
 

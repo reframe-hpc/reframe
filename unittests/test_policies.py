@@ -253,7 +253,7 @@ def test_kbd_interrupt_within_test(make_runner, make_cases, common_exec_ctx):
         runner.runall(make_cases([make_kbd_check()]))
 
     stats = runner.stats
-    assert 1 == len(stats.failed())
+    assert 1 == len(stats.aborted())
     assert_all_dead(runner)
 
 
@@ -318,7 +318,7 @@ def test_sigterm_handling(make_runner, make_cases, common_exec_ctx):
 
     assert_all_dead(runner)
     assert runner.stats.num_cases() == 1
-    assert len(runner.stats.failed()) == 1
+    assert len(runner.stats.aborted()) == 1
 
 
 def test_reruns(make_runner, make_cases, common_exec_ctx):
@@ -576,16 +576,13 @@ def test_concurrency_none(make_async_runner, make_cases,
 def assert_interrupted_run(runner):
     assert 4 == runner.stats.num_cases()
     assert_runall(runner)
-    assert 1 == len(runner.stats.failed())
-    assert 3 == len(runner.stats.aborted())
+    assert 4 == len(runner.stats.aborted())
     assert_all_dead(runner)
 
     # Verify that failure reasons for the different tasks are correct
     for t in runner.stats.tasks():
-        if isinstance(t.check, KeyboardInterruptCheck):
-            assert t.exc_info[0] == KeyboardInterrupt
-        else:
-            assert t.exc_info[0] == AbortTaskError
+        assert t.exc_info[0] == AbortTaskError
+        assert isinstance(t.exc_info[1].__cause__, KeyboardInterrupt)
 
 
 def test_kbd_interrupt_in_wait_with_concurrency(

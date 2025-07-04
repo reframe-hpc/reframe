@@ -777,7 +777,6 @@ def _read_pid(job, attempts=3):
                 f'{attempts} attempts')
 
 
-@pytest.mark.flaky(reruns=3)
 def test_cancel_with_grace(minimal_job, scheduler, local_only):
     # This test emulates a spawned process that ignores the SIGTERM signal
     # and also spawns another process:
@@ -785,9 +784,14 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     #   reframe --- local job script --- sleep 5
     #                  (TERM IGN)
     #
-    # We expect the job not to be cancelled immediately, since it ignores
-    # the gracious signal we are sending it. However, we expect it to be
-    # killed immediately after the grace period of 2 seconds expires.
+    # We expect the job not to be cancelled immediately, since it ignores the
+    # gracious signal we are sending it. However, we expect it to be killed
+    # immediately after the grace period of 2 seconds expires. There is a
+    # little tweak though. Since we do not know if the shell will be killed
+    # first or the `sleep 5` process, we add an additional `sleep 1` at the
+    # end to stall the script and make sure that it also get the `TERM`
+    # signal. Otherwise,if the `sleep 5` is killed first, the script will
+    # continue and may be fast enough to not get the signal as well.
     #
     # We also check that the additional spawned process is also killed.
     minimal_job.time_limit = '1m'
@@ -795,18 +799,17 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     prepare_job(minimal_job,
                 command='sleep 5 &',
                 pre_run=['trap -- "" TERM'],
-                post_run=['echo $!', 'wait'],
+                post_run=['echo $!', 'wait', 'sleep 1'],
                 prepare_cmds=[''])
     submit_job(minimal_job)
 
     # Stall a bit here to let the the spawned process start and install its
     # signal handler for SIGTERM
-    time.sleep(1)
+    time.sleep(.2)
 
     sleep_pid = _read_pid(minimal_job)
     t_grace = time.time()
     minimal_job.cancel()
-    time.sleep(0.1)
     minimal_job.wait()
     t_grace = time.time() - t_grace
 
@@ -824,7 +827,6 @@ def test_cancel_with_grace(minimal_job, scheduler, local_only):
     assert_process_died(sleep_pid)
 
 
-# @pytest.mark.flaky(reruns=3)
 def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     # This test emulates a descendant process of the spawned job that
     # ignores the SIGTERM signal:
@@ -855,7 +857,6 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
     minimal_job.wait()
     t_grace = time.time() - t_grace
 
-    # assert t_grace >= 2 and t_grace < 5
     assert minimal_job.state == 'FAILURE'
     assert minimal_job.signal == signal.SIGTERM
     assert_process_died(sleep_pid)
