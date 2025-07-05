@@ -11,6 +11,7 @@ class stream_test(rfm.RunOnlyRegressionTest):
     valid_systems = ['*']
     valid_prog_environs = ['*']
     executable = 'stream.x'
+    descr = 'Run the STREAM memory bandwidth benchmark.'
 
     @sanity_function
     def validate(self):
