@@ -181,6 +181,7 @@
                             "type": "array",
                             "items": {"type": "number"}
                         },
+                        "log_sanity_results": {"type": "boolean"},
                         "retry_timeout": {"type": "number"}
                     },
                     "required": ["url"]
