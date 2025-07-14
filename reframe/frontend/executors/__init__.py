@@ -235,6 +235,9 @@ class RegressionTask:
         self._perflog_compat = runtime.runtime().get_option(
             'logging/0/perflog_compat'
         )
+        self._log_sanity_results = runtime.runtime().get_option(
+            'logging/0/log_sanity_results'
+        )
 
     def duration(self, phase):
         # Treat pseudo-phases first
