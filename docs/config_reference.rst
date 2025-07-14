@@ -1143,6 +1143,16 @@ You may define different logger objects per system but *not* per partition.
    Emit a separate log record for each performance variable.
    Set this option to :obj:`True` if you want to keep compatibility with the performance logging prior to ReFrame 4.0.
 
+.. py:attribute:: logging.log_sanity_results
+
+   :required: No
+   :default: ``false``
+
+   Emit log records of sanity-only tests in the performance handlers.
+   It is useful when you want to send data to the `httpjson <#the-httpjson-log-handler>`__ or other performance logging backends.
+
+   .. versionadded:: 4.9
+
 .. py:attribute:: logging.target_systems
 
    :required: No
