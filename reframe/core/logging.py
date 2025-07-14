@@ -940,7 +940,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         if (
             self.check is None or
             not self.check.is_performance_check() and
-            not self.logger._log_sanity_results
+            not getattr(self.logger, '_log_sanity_results', False)
         ):
             return
 
