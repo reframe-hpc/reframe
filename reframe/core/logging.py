@@ -933,11 +933,13 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['check_job_completion_time_unix'], r'%FT%T%:z'
         )
 
-    def log_performance(self, level, task, msg=None, multiline=False):
+    def log_performance(
+            self, level, task, msg=None, multiline=False, log_sanity=False
+    ):
         if (
             self.check is None or
             not self.check.is_performance_check() and
-            not getattr(self.logger, '_log_sanity_results', False)
+            not log_sanity
         ):
             return
 
