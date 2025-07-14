@@ -604,7 +604,6 @@ def _create_httpjson_handler(site_config, config_prefix):
     debug = site_config.get(f'{config_prefix}/debug')
     backoff_intervals = site_config.get(f'{config_prefix}/backoff_intervals')
     retry_timeout = site_config.get(f'{config_prefix}/retry_timeout')
-    log_sanity_results = site_config.get(f'{config_prefix}/log_sanity_results')
 
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.scheme not in {'http', 'https'}:
@@ -647,7 +646,7 @@ def _create_httpjson_handler(site_config, config_prefix):
 
     return HTTPJSONHandler(url, extras, ignore_keys, json_formatter,
                            extra_headers, debug, backoff_intervals,
-                           retry_timeout, log_sanity_results)
+                           retry_timeout)
 
 
 def _record_to_json(record, extras, ignore_keys):
@@ -698,8 +697,7 @@ class HTTPJSONHandler(logging.Handler):
 
     def __init__(self, url, extras=None, ignore_keys=None,
                  json_formatter=None, extra_headers=None,
-                 debug=False, backoff_intervals=(1, 2, 3), retry_timeout=0,
-                 log_sanity_results=False):
+                 debug=False, backoff_intervals=(1, 2, 3), retry_timeout=0):
         super().__init__()
         self._url = url
         self._extras = extras
@@ -725,7 +723,6 @@ class HTTPJSONHandler(logging.Handler):
         self._debug = debug
         self._timeout = retry_timeout
         self._backoff_intervals = backoff_intervals
-        self._log_sanity_results = log_sanity_results
 
     def emit(self, record):
         # Convert tags to a list to make them JSON friendly
