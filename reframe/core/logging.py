@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
+import atexit
 import itertools
 import logging
 import logging.handlers
@@ -149,7 +150,8 @@ class MultiFileHandler(logging.FileHandler):
     '''
 
     def __init__(self, prefix, mode='a', encoding=None, fmt=None,
-                 perffmt=None, ignore_keys=None):
+                 perffmt=None, ignore_keys=None, use_locking=False,
+                 lockfile_mode=None):
         super().__init__(prefix, mode, encoding, delay=True)
 
         # Reset FileHandler's filename
@@ -164,6 +166,8 @@ class MultiFileHandler(logging.FileHandler):
         self.__perffmt = perffmt
         self.__attr_patt = re.compile(r'\%\((.*?)\)s(.*?(?=%|$))?')
         self.__ignore_keys = set(ignore_keys) if ignore_keys else set()
+        self.__use_locking = use_locking
+        self.__lockfile_mode = lockfile_mode
 
     def __generate_header(self, record):
         # Generate the header from the record and fmt
@@ -234,13 +238,25 @@ class MultiFileHandler(logging.FileHandler):
 
             os.rename(self.baseFilename, self.baseFilename + f'.h{hcnt}')
         finally:
-            # Open the file for writing and write the header
-            fp = open(self.baseFilename,
-                      mode=self.mode, encoding=self.encoding)
-            if record_header != header:
-                fp.write(f'{record_header}\n')
+            if self.__use_locking:
+                # When using locking, we need to  open, append and write to
+                # the file at once
+                lockfile = os.path.join(f'{self.baseFilename}.lock')
+                with osext.flock(lockfile, self.__lockfile_mode):
+                    with open(self.baseFilename, mode=self.mode,
+                              encoding=self.encoding) as fp:
+                        if record_header != header:
+                            fp.write(f'{record_header}\n')
 
-            self.__streams[self.baseFilename] = fp
+                self.__streams[self.baseFilename] = None
+            else:
+                # Open the file for writing and write the header
+                fp = open(self.baseFilename,
+                          mode=self.mode, encoding=self.encoding)
+                if record_header != header:
+                    fp.write(f'{record_header}\n')
+
+                self.__streams[self.baseFilename] = fp
 
     def emit(self, record):
         try:
@@ -255,14 +271,23 @@ class MultiFileHandler(logging.FileHandler):
         check_basename = type(record.__rfm_check__).variant_name()
         self.baseFilename = os.path.join(dirname, f'{check_basename}.log')
         self._emit_header(record)
-        self.stream = self.__streams[self.baseFilename]
-        super().emit(record)
+        if self.__use_locking:
+            lockfile = os.path.join(dirname, f'.{check_basename}.lock')
+            with osext.flock(lockfile, self.__lockfile_mode):
+                with open(self.baseFilename, mode=self.mode,
+                          encoding=self.encoding) as fp:
+                    self.stream = fp
+                    super().emit(record)
+        else:
+            self.stream = self.__streams[self.baseFilename]
+            super().emit(record)
 
     def close(self):
         # Close all open streams
-        for s in self.__streams.values():
-            self.stream = s
-            super().close()
+        for stream in self.__streams.values():
+            if stream:
+                self.stream = stream
+                super().close()
 
 
 def _format_time_rfc3339(timestamp, datefmt):
@@ -459,9 +484,13 @@ def _create_filelog_handler(site_config, config_prefix):
     format = site_config.get(f'{config_prefix}/format')
     format_perf = site_config.get(f'{config_prefix}/format_perfvars')
     ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
+    use_locking = site_config.get(f'{config_prefix}/locking_enable')
+    lockfile_mode = site_config.get(f'{config_prefix}/locking_file_mode')
     return MultiFileHandler(filename_patt, mode='a+' if append else 'w+',
                             fmt=format, perffmt=format_perf,
-                            ignore_keys=ignore_keys)
+                            ignore_keys=ignore_keys,
+                            use_locking=use_locking,
+                            lockfile_mode=lockfile_mode)
 
 
 @register_log_handler('syslog')
@@ -806,6 +835,13 @@ class Logger(logging.Logger):
     def debug2(self, message, *args, **kwargs):
         self.log(DEBUG2, message, *args, **kwargs)
 
+    def shutdown(self):
+        '''Shutdown logger by removing all handlers and closing any files.'''
+
+        for h in list(self.handlers):
+            h.close()
+            self.removeHandler(h)
+
 
 # This is a cache for warnings that we don't want to repeat
 _WARN_ONCE = set()
@@ -1014,6 +1050,8 @@ def configure_logging(site_config):
         _context_logger = null_logger
         return
 
+    # Shutdown the previously setup loggers and close any files
+    shutdown()
     _logger = _create_logger(site_config, 'handlers$', 'handlers')
     _perf_logger = _create_logger(site_config, 'handlers_perflog')
     _context_logger = LoggerAdapter(_logger)
@@ -1066,6 +1104,17 @@ def time_function_noexit(fn):
     return _fn
 
 
+@atexit.register
+def shutdown():
+    '''Shutdown logging'''
+
+    if _logger:
+        _logger.shutdown()
+
+    if _perf_logger:
+        _perf_logger.shutdown()
+
+
 # The following is meant to be used only by the unit tests
 
 class logging_sandbox:
@@ -1085,6 +1134,7 @@ class logging_sandbox:
     def __exit__(self, exc_type, exc_value, traceback):
         global _logger, _perf_logger, _context_logger
 
+        shutdown()
         _logger = self._logger
         _perf_logger = self._perf_logger
         _context_logger = self._context_logger

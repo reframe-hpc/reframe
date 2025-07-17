@@ -9,6 +9,7 @@
 
 import collections.abc
 import errno
+import filelock
 import getpass
 import grp
 import os
@@ -861,6 +862,44 @@ def unique_abs_paths(paths, prune_children=True):
                 p_parent = os.path.dirname(p_parent)
 
     return list(unique_paths - children)
+
+
+def flock(name, mode=None):
+    '''Obtain a file lock
+
+    :arg name: the name of the lock file
+    :arg mode: the file mode of the lock file
+    :returns: a context manager that holds the lock.
+        Example usage:
+
+        .. code-block:: python
+
+            with flock('file.lock'):
+                # do something
+
+    .. versionadded:: 4.8.3
+
+    '''
+
+    if not isinstance(mode, int):
+        mode = int(mode, base=8)
+
+    if mode and sys.version_info >= (3, 7):
+        kwargs = {'mode': mode}
+    else:
+        # Python 3.6 forces us to use an older filelock version that does
+        # not support file modes. File modes where introduced in
+        # filelock 3.10
+        kwargs = {}
+
+    # Create parent directories of the lock file
+    #
+    # NOTE: This is not necessary for filelock >= 3.12.3 and Python >= 3.8
+    # However, we do create it here, in order to support the older Python
+    # versions.
+    prefix = os.path.dirname(name)
+    os.makedirs(prefix, exist_ok=True)
+    return filelock.FileLock(name, **kwargs)
 
 
 def cray_cdt_version():
