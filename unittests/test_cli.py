@@ -768,6 +768,22 @@ def test_list_tests_with_fixtures(run_reframe):
     assert returncode == 0
 
 
+def test_list_tests_with_deps_detailed(run_reframe):
+    """Test detailed listing with dependencies and descriptions."""
+    returncode, stdout, stderr = run_reframe(
+        system='sys0',
+        checkpath=['unittests/resources/checks_unlisted/deps_with_descriptions.py'],
+        action='list_detailed',
+        environs=[]
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that dependency lines show a description with detailed listing.
+    assert 'description: Base test with meaningful description' in stdout
+    assert 'description: Dependent test with meaningful description' in stdout
+
+
 def test_filtering_multiple_criteria_name(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks'],
