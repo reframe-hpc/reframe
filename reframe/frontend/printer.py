@@ -179,7 +179,8 @@ class PrettyPrinter:
                 continue
 
             for r in run_info['testcases']:
-                if r['result'] in {'pass', 'abort', 'skip', 'fail_deps'}:
+                if r['result'] in {'pass', 'xfail', 'abort',
+                                   'skip', 'fail_deps'}:
                     continue
 
                 _print_failure_info(r, run_no, len(report['runs']))
