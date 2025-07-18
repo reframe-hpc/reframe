@@ -97,8 +97,13 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
             location = inspect.getfile(type(u.check))
             if detailed:
-                details = (f' [variant: {u.check.variant_num}, '
-                           f'file: {location!r}]')
+                details_fields = [
+                    f'variant: {u.check.variant_num}',
+                    f'file: {location!r}'
+                ]
+                if hasattr(u.check, 'descr') and u.check.descr:
+                    details_fields.append(f'description: {u.check.descr}')
+                details = '\n' + '\n'.join(f'{prefix}  {field}' for field in details_fields)
 
             lines.append(f'{prefix}^{name_info}{tc_info}{details}')
 
@@ -115,7 +120,13 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
         location = inspect.getfile(type(t.check))
         if detailed:
-            details = f' [variant: {t.check.variant_num}, file: {location!r}]'
+            details_fields = [
+                f'variant: {t.check.variant_num}',
+                f'file: {location!r}'
+            ]
+            if hasattr(t.check, 'descr') and t.check.descr:
+                details_fields.append(f'description: {t.check.descr}')
+            details = '\n' + '\n'.join(f'  {field}' for field in details_fields)
 
         if concretized or (not concretized and
                            t.check.unique_name not in unique_checks):
