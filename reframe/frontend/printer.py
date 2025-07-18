@@ -70,7 +70,8 @@ class PrettyPrinter:
                 status = color.colorize(status, color.GREEN)
 
         final_msg = f'[ {status} ] '
-        if status_stripped in ('ABORT', 'OK', 'SKIP', 'FAIL'):
+        if status_stripped in ('ABORT', 'OK', 'SKIP', 'FAIL', 'XFAIL',
+                               'XPASS', 'ERROR'):
             if self._progress_count < self._progress_total:
                 self._progress_count += 1
 
