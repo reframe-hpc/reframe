@@ -280,6 +280,17 @@ def test_check_failure(run_reframe):
     assert returncode != 0
 
 
+def test_check_xfailures(run_reframe):
+    returncode, stdout, _ = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/xfailures.py']
+    )
+    assert returncode != 0
+    assert 'FAILED' in stdout
+    assert 'Ran 8/8 test case(s)' in stdout
+    assert '4 failure(s), 2 expected failure(s)' in stdout
+    assert 'Traceback' not in stdout
+
+
 def test_check_setup_failure(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
