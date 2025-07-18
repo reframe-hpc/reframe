@@ -438,7 +438,6 @@
                 "properties": {
                     "level": {"$ref": "#/defs/loglevel"},
                     "perflog_compat": {"type": "boolean"},
-                    "log_sanity_results": {"type": "boolean"},
                     "handlers": {
                         "type": "array",
                         "items": {
@@ -618,7 +617,6 @@
         "general/verbose": 0,
         "logging/level": "undefined",
         "logging/perflog_compat": false,
-        "logging/log_sanity_results": false,
         "logging/target_systems": ["*"],
         "logging/handlers": [],
         "logging/handlers_perflog": [],
