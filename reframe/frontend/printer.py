@@ -70,7 +70,8 @@ class PrettyPrinter:
                 status = color.colorize(status, color.GREEN)
 
         final_msg = f'[ {status} ] '
-        if status_stripped in ('ABORT', 'OK', 'SKIP', 'FAIL'):
+        if status_stripped in {'ABORT', 'OK', 'SKIP', 'FAIL', 'XFAIL',
+                               'XPASS', 'ERROR'}:
             if self._progress_count < self._progress_total:
                 self._progress_count += 1
 
@@ -179,7 +180,8 @@ class PrettyPrinter:
                 continue
 
             for r in run_info['testcases']:
-                if r['result'] in {'pass', 'abort', 'skip', 'fail_deps'}:
+                if r['result'] in {'pass', 'xfail', 'abort',
+                                   'skip', 'fail_deps'}:
                     continue
 
                 _print_failure_info(r, run_no, len(report['runs']))
