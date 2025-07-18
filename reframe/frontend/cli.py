@@ -1365,7 +1365,7 @@ def main():
             params = {}
             for param_spec in options.parameterize:
                 try:
-                    var, values_spec = param_spec.split('=')
+                    var, values_spec = param_spec.split('=', maxsplit=1)
                 except ValueError:
                     raise errors.CommandLineError(
                         f'invalid parameter spec: {param_spec}'
