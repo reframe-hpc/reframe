@@ -1046,6 +1046,8 @@ def main():
     if options.describe_stored_sessions:
         # Restore logging level
         printer.setLevel(logging.INFO)
+        printer.set_handler_level(logging.WARNING,
+                                  lambda htype: htype != 'stream')
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
             printer.info(jsonext.dumps(reporting.session_info(
@@ -1056,6 +1058,8 @@ def main():
     if options.describe_stored_testcases:
         # Restore logging level
         printer.setLevel(logging.INFO)
+        printer.set_handler_level(logging.WARNING,
+                                  lambda htype: htype != 'stream')
         namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
