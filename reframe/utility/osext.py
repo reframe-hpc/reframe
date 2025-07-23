@@ -879,6 +879,7 @@ def flock(name, mode=None):
 
     .. versionadded:: 4.8.3
 
+    :meta private:
     '''
 
     if not isinstance(mode, int):
