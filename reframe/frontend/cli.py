@@ -796,6 +796,7 @@ def main():
         dest='sqlite_conn_timeout',
         envvar='RFM_SQLITE_CONN_TIMEOUT',
         configvar='storage/sqlite_conn_timeout',
+        type=float,
         help='Timeout for DB connections (SQLite backend)'
     )
     argparser.add_argument(
