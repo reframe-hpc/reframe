@@ -168,6 +168,7 @@ class MultiFileHandler(logging.FileHandler):
         self.__ignore_keys = set(ignore_keys) if ignore_keys else set()
         self.__use_locking = use_locking
         self.__lockfile_mode = lockfile_mode
+        self.__locks = {}
 
     def __generate_header(self, record):
         # Generate the header from the record and fmt
@@ -212,6 +213,14 @@ class MultiFileHandler(logging.FileHandler):
 
         return header
 
+    def __lock_file_name(self, logfile=None):
+        if logfile is None:
+            logfile = self.baseFilename
+
+        prefix = os.path.dirname(logfile)
+        basename, _ = os.path.splitext(os.path.basename(logfile))
+        return os.path.join(prefix, f'.{basename}.lock')
+
     def _emit_header(self, record):
         if self.baseFilename in self.__streams:
             return
@@ -241,14 +250,16 @@ class MultiFileHandler(logging.FileHandler):
             if self.__use_locking:
                 # When using locking, we need to  open, append and write to
                 # the file at once
-                lockfile = os.path.join(f'{self.baseFilename}.lock')
-                with osext.flock(lockfile, self.__lockfile_mode):
+                rwlock = osext.ReadWriteFileLock(self.__lock_file_name(),
+                                                 self.__lockfile_mode)
+                with rwlock.write_lock():
                     with open(self.baseFilename, mode=self.mode,
                               encoding=self.encoding) as fp:
                         if record_header != header:
                             fp.write(f'{record_header}\n')
 
                 self.__streams[self.baseFilename] = None
+                self.__locks[self.baseFilename] = rwlock
             else:
                 # Open the file for writing and write the header
                 fp = open(self.baseFilename,
@@ -272,8 +283,7 @@ class MultiFileHandler(logging.FileHandler):
         self.baseFilename = os.path.join(dirname, f'{check_basename}.log')
         self._emit_header(record)
         if self.__use_locking:
-            lockfile = os.path.join(dirname, f'.{check_basename}.lock')
-            with osext.flock(lockfile, self.__lockfile_mode):
+            with self.__locks[self.baseFilename].write_lock():
                 with open(self.baseFilename, mode=self.mode,
                           encoding=self.encoding) as fp:
                     self.stream = fp
@@ -486,6 +496,9 @@ def _create_filelog_handler(site_config, config_prefix):
     ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
     use_locking = site_config.get(f'{config_prefix}/locking_enable')
     lockfile_mode = site_config.get(f'{config_prefix}/locking_file_mode')
+    if lockfile_mode is not None:
+        lockfile_mode = int(lockfile_mode, base=8)
+
     return MultiFileHandler(filename_patt, mode='a+' if append else 'w+',
                             fmt=format, perffmt=format_perf,
                             ignore_keys=ignore_keys,

@@ -86,6 +86,11 @@ class _SqliteStorage(StorageBackend):
         else:
             self.__db_file_mode = mode
 
+        self.__db_lock = osext.ReadWriteFileLock(
+            os.path.join(os.path.dirname(self.__db_file), '.db.lock'),
+            self.__db_file_mode
+        )
+
     def _db_file(self):
         prefix = os.path.dirname(self.__db_file)
         if not os.path.exists(self.__db_file):
@@ -122,8 +127,7 @@ class _SqliteStorage(StorageBackend):
             return sqlite3.connect(*args, **kwargs)
 
     def _db_lock(self):
-        lockfile = os.path.join(os.path.dirname(self.__db_file), '.db.lock')
-        return osext.flock(lockfile, self.__db_file_mode)
+        return self.__db_lock.write_lock()
 
     def _db_create(self):
         clsname = type(self).__name__

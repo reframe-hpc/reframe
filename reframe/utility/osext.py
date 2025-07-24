@@ -9,7 +9,7 @@
 
 import collections.abc
 import errno
-import filelock
+import fasteners
 import getpass
 import grp
 import os
@@ -864,43 +864,34 @@ def unique_abs_paths(paths, prune_children=True):
     return list(unique_paths - children)
 
 
-def flock(name, mode=None):
-    '''Obtain a file lock
+class temp_umask:
+    '''Temporarily change the umask'''
+    def __init__(self, mask):
+        self.__new_mask = mask
+        self.__old_mask = None
 
-    :arg name: the name of the lock file
-    :arg mode: the file mode of the lock file
-    :returns: a context manager that holds the lock.
-        Example usage:
+    def __enter__(self):
+        self.__old_mask = os.umask(self.__new_mask)
 
-        .. code-block:: python
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.umask(self.__old_mask)
 
-            with flock('file.lock'):
-                # do something
 
-    .. versionadded:: 4.8.3
+class ReadWriteFileLock(fasteners.InterProcessReaderWriterLock):
+    def __init__(self, path, mode=None):
+        super().__init__(path)
+        self._mode = mode
 
-    :meta private:
-    '''
-
-    if not isinstance(mode, int):
-        mode = int(mode, base=8)
-
-    if mode and sys.version_info >= (3, 7):
-        kwargs = {'mode': mode}
-    else:
-        # Python 3.6 forces us to use an older filelock version that does
-        # not support file modes. File modes where introduced in
-        # filelock 3.10
-        kwargs = {}
-
-    # Create parent directories of the lock file
-    #
-    # NOTE: This is not necessary for filelock >= 3.12.3 and Python >= 3.8
-    # However, we do create it here, in order to support the older Python
-    # versions.
-    prefix = os.path.dirname(name)
-    os.makedirs(prefix, exist_ok=True)
-    return filelock.FileLock(name, **kwargs)
+    def _do_open(self, *args, **kwargs):
+        if self._mode is not None:
+            # We create the directory structure ourselves, so that the mask
+            # applies strictly to the lock file if the parent directories do
+            # not exist
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            with temp_umask(0o0777 ^ self._mode):
+                return super()._do_open(*args, **kwargs)
+        else:
+            return super()._do_open(*args, **kwargs)
 
 
 def cray_cdt_version():

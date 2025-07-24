@@ -87,7 +87,7 @@
                             "items": {"type": "string"}
                         },
                         "locking_enable": {"type": "boolean"},
-                        "locking_file_mode": {"type": "string"}
+                        "locking_file_mode": {"type": ["string", "null"]}
                     },
                     "required": ["prefix"]
                 }
@@ -636,7 +636,7 @@
         "logging/handlers_perflog/filelog_basedir": "./perflogs",
         "logging/handlers_perflog/filelog_ignore_keys": [],
         "logging/handlers_perflog/filelog_locking_enable": false,
-        "logging/handlers_perflog/filelog_locking_file_mode": "644",
+        "logging/handlers_perflog/filelog_locking_file_mode": null,
         "logging/handlers_perflog/graylog_extras": {},
         "logging/handlers_perflog/httpjson_extras": {},
         "logging/handlers_perflog/httpjson_ignore_keys": [],
