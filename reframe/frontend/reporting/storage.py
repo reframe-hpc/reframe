@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
+import contextlib
 import functools
 import json
 import os
@@ -126,13 +127,17 @@ class _SqliteStorage(StorageBackend):
         with getprofiler().time_region('sqlite connect'):
             return sqlite3.connect(*args, **kwargs)
 
+    @contextlib.contextmanager
     def _db_read(self, *args, **kwargs):
         with self.__db_lock.read_lock():
-            return self._db_connect(*args, **kwargs)
+            with self._db_connect(*args, **kwargs) as conn:
+                yield conn
 
+    @contextlib.contextmanager
     def _db_write(self, *args, **kwargs):
         with self.__db_lock.write_lock():
-            return self._db_connect(*args, **kwargs)
+            with self._db_connect(*args, **kwargs) as conn:
+                yield conn
 
     def _db_create(self):
         clsname = type(self).__name__
