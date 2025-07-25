@@ -10,6 +10,7 @@
 import contextlib
 import copy
 import pytest
+import signal
 import tempfile
 
 import reframe.core.settings as settings
@@ -105,9 +106,17 @@ def make_loader():
     return _make_loader
 
 
+@pytest.fixture
+def restore_signals():
+    yield
+    signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signal.SIGHUP, signal.SIG_DFL)
+
+
 @pytest.fixture(params=[policies.SerialExecutionPolicy,
                         policies.AsynchronousExecutionPolicy])
-def make_runner(request):
+def make_runner(request, restore_signals):
     '''Test runner with all the execution policies'''
 
     def _make_runner(*args, **kwargs):
@@ -120,7 +129,7 @@ def make_runner(request):
 
 
 @pytest.fixture
-def make_async_runner():
+def make_async_runner(restore_signals):
     def _make_runner(*args, **kwargs):
         policy = policies.AsynchronousExecutionPolicy()
         policy._pollctl.SLEEP_MIN = 0.001
