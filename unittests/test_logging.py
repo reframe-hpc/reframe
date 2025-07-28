@@ -69,7 +69,8 @@ def handler(logfile, rfc3339formatter):
 def logger(handler):
     logger = rlog.Logger('reframe')
     logger.addHandler(handler)
-    return logger
+    yield logger
+    logger.shutdown()
 
 
 @pytest.fixture
@@ -545,7 +546,7 @@ def url_scheme(request):
 
 def test_httpjson_handler_no_port(make_exec_ctx, config_file,
                                   url_scheme, logging_sandbox):
-    ctx = make_exec_ctx(
+    make_exec_ctx(
         config_file({
             'level': 'info',
             'handlers_perflog': [{

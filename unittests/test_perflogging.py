@@ -465,3 +465,31 @@ def test_perf_logging_sanity_failure(make_runner, make_exec_ctx,
 
     assert len(lines) == 2
     assert lines[1] == 'fail|sanity error: no way|None|None\n'
+
+
+def test_perf_logging_locking(make_runner, make_exec_ctx,
+                              config_perflog, perf_test, tmp_path):
+    make_exec_ctx(config_perflog(
+        fmt='',
+        logging_opts={
+            'handlers_perflog': [{
+                'type': 'filelog',
+                'use_locking': True,
+                'prefix': '%(check_system)s/%(check_partition)s',
+                'level': 'info',
+                'format': (
+                    '%(check_job_completion_time)s,%(version)s,'
+                    '%(check_display_name)s,%(check_system)s,'
+                    '%(check_partition)s,%(check_environ)s,'
+                    '%(check_jobid)s,%(check_result)s,%(check_perfvalues)s'
+                )
+            }]
+        }
+    ))
+    logging.configure_logging(rt.runtime().site_config)
+    runner = make_runner()
+    testcases = executors.generate_testcases([perf_test])
+    _assert_no_logging_error(runner.runall, testcases)
+    logfile = tmp_path / 'perflogs' / 'generic' / 'default' / '_MyPerfTest.log'
+    assert os.path.exists(logfile)
+    assert _count_lines(logfile) == 2
