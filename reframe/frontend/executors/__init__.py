@@ -591,8 +591,13 @@ class TaskEventListener(abc.ABC):
         '''Called when a regression test has succeeded.'''
 
 
-def _handle_sigterm(signum, frame):
-    raise ForceExitError('received TERM signal')
+def _force_exit(signum, frame):
+    # ReFrame will exit, ignore all other signals that cause a graceful
+    # termination
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGHUP, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    raise ForceExitError(f'received signal {signum}')
 
 
 class Runner:
@@ -620,7 +625,8 @@ class Runner:
         self._policy.printer = self._printer
         self._policy.max_failures = max_failures
 
-        signal.signal(signal.SIGTERM, _handle_sigterm)
+        signal.signal(signal.SIGHUP, _force_exit)
+        signal.signal(signal.SIGTERM, _force_exit)
 
     @property
     def max_failures(self):

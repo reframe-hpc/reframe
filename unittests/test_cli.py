@@ -1061,16 +1061,16 @@ def test_repeat_negative(run_reframe):
 
 def test_parameterize_tests(run_reframe):
     returncode, stdout, _ = run_reframe(
-        more_options=['-P', 'num_tasks=2,4,8', '-n', '^HelloTest'],
+        more_options=['-P', 'descr=msg=hello1,msg=hello2',
+                      '-n', '^HelloTest'],
         checkpath=['unittests/resources/checks/hellocheck.py'],
         action='describe'
     )
     assert returncode == 0
 
-    test_descr = json.loads(stdout)
-    print(json.dumps(test_descr, indent=2))
-    num_tasks = {t['num_tasks'] for t in test_descr}
-    assert num_tasks == {2, 4, 8}
+    test_json = json.loads(stdout)
+    descr = [t['descr'] for t in test_json]
+    assert descr == ['msg=hello1', 'msg=hello2']
 
 
 def test_parameterize_tests_invalid_params(run_reframe):

@@ -1020,6 +1020,19 @@ class LoggerAdapter(logging.LoggerAdapter):
 
             h.setLevel(new_level)
 
+    def set_handler_level(self, level, filter=None):
+        '''Set handler level for handlers attached to this logger.
+
+        :arg level: The new level.
+        :arg filter: A callable accepting a single argument, which is the
+            handler type as declared in ReFrame's configuration. If the filter
+            is :obj:`None` then the level applies to all handlers, otherwise
+            it will apply to all handlers that the filter return :obj:`True`.
+        '''
+        for h in self.logger.handlers:
+            if filter is None or filter(h._rfm_type):
+                h.setLevel(level)
+
 
 # A logger that doesn't log anything
 null_logger = LoggerAdapter()
