@@ -1,6 +1,6 @@
 name: ReFrame CI / Scheduler backend tests
-on:
-  pull_request: []
+
+on: [push, pull_request]
 
 jobs:
   scheduler-test:
