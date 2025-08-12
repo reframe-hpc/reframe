@@ -226,6 +226,7 @@ class _SqliteStorage(StorageBackend):
 
         return session_uuid
 
+    @time_function
     def store(self, report, report_file=None):
         with self._db_write(self._db_file()) as conn:
             return self._db_store_report(conn, report, report_file)
