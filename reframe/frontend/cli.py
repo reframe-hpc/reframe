@@ -28,6 +28,7 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
+from reframe.core.warnings import suppress_deprecations
 from reframe.frontend.testgenerators import (distribute_tests,
                                              getallnodes, repeat_tests,
                                              parameterize_tests)
@@ -149,13 +150,18 @@ def describe_checks(testcases, printer):
             #
             # 1. Add other fields that are relevant for users
             # 2. Remove all private fields
-            rec['name'] = tc.check.name
-            rec['unique_name'] = tc.check.unique_name
-            rec['display_name'] = tc.check.display_name
+            cls = type(tc.check)
+            if hasattr(cls, 'loggable_attrs'):
+                for name, alt_name in cls.loggable_attrs():
+                    key = alt_name if alt_name else name
+                    try:
+                        with suppress_deprecations():
+                            rec.setdefault(key, getattr(tc.check, name))
+                    except AttributeError:
+                        rec.setdefault(key, '<undefined>')
+
             rec['pipeline_hooks'] = {}
             rec['perf_variables'] = list(rec['perf_variables'].keys())
-            rec['prefix'] = tc.check.prefix
-            rec['variant_num'] = tc.check.variant_num
             for stage, hooks in tc.check.pipeline_hooks().items():
                 for hk in hooks:
                     if hk.__name__ not in tc.check.disabled_hooks:
@@ -796,6 +802,7 @@ def main():
         dest='sqlite_conn_timeout',
         envvar='RFM_SQLITE_CONN_TIMEOUT',
         configvar='storage/sqlite_conn_timeout',
+        type=float,
         help='Timeout for DB connections (SQLite backend)'
     )
     argparser.add_argument(
@@ -1040,6 +1047,8 @@ def main():
     if options.describe_stored_sessions:
         # Restore logging level
         printer.setLevel(logging.INFO)
+        printer.set_handler_level(logging.WARNING,
+                                  lambda htype: htype != 'stream')
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
             printer.info(jsonext.dumps(reporting.session_info(
@@ -1050,6 +1059,8 @@ def main():
     if options.describe_stored_testcases:
         # Restore logging level
         printer.setLevel(logging.INFO)
+        printer.set_handler_level(logging.WARNING,
+                                  lambda htype: htype != 'stream')
         namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
@@ -1365,7 +1376,7 @@ def main():
             params = {}
             for param_spec in options.parameterize:
                 try:
-                    var, values_spec = param_spec.split('=')
+                    var, values_spec = param_spec.split('=', maxsplit=1)
                 except ValueError:
                     raise errors.CommandLineError(
                         f'invalid parameter spec: {param_spec}'

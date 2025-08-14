@@ -406,10 +406,10 @@ System Partition Configuration
 .. py:attribute:: systems.partitions.sched_options.sched_access_in_submit
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Normally, ReFrame will pass the :attr:`~config.systems.partitions.access` options to the job script only.
-   When this attribute is ``true`` the options are passed in the submission command instead.
+   When this attribute is :obj:`True` the options are passed in the submission command instead.
 
    This option is relevant for the LSF, OAR, PBS and Slurm backends.
 
@@ -427,13 +427,13 @@ System Partition Configuration
 .. py:attribute:: systems.partitions.sched_options.ignore_reqnodenotavail
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Ignore the ``ReqNodeNotAvail`` Slurm state.
 
    If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail`` and a list of unavailable nodes is also specified, ReFrame will check the status of the nodes and, if all of them are indeed down, it will cancel the job.
    Sometimes, however, when Slurm's backfill algorithm takes too long to compute, Slurm will set the pending reason to ``ReqNodeNotAvail`` and mark all system nodes as unavailable, causing ReFrame to kill the job.
-   In such cases, you may set this parameter to ``true`` to avoid this.
+   In such cases, you may set this parameter to :obj:`True` to avoid this.
 
    This option is relevant for the Slurm backends only.
 
@@ -486,7 +486,7 @@ System Partition Configuration
 .. py:attribute:: systems.partitions.sched_options.unqualified_hostnames
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Use unqualified hostnames in the ``local`` scheduler backend.
 
@@ -496,7 +496,7 @@ System Partition Configuration
 .. py:attribute:: systems.partitions.sched_options.use_nodes_option
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Always emit the ``--nodes`` Slurm option in the preamble of the job script.
 
@@ -770,7 +770,7 @@ ReFrame can launch containerized applications, but you need to configure properl
 
    :required: No
 
-   If set to ``true``, this is the default container platform of this partition.
+   If set to :obj:`True`, this is the default container platform of this partition.
    If not specified, the default container platform is assumed to be the first in the list of :attr:`~config.systems.partitions.container_platforms`.
 
    .. versionadded:: 3.12.0
@@ -1138,10 +1138,10 @@ You may define different logger objects per system but *not* per partition.
 .. py:attribute:: logging.perflog_compat
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Emit a separate log record for each performance variable.
-   Set this option to ``true`` if you want to keep compatibility with the performance logging prior to ReFrame 4.0.
+   Set this option to :obj:`True` if you want to keep compatibility with the performance logging prior to ReFrame 4.0.
 
 .. py:attribute:: logging.target_systems
 
@@ -1375,7 +1375,7 @@ The additional properties for the ``file`` handler are the following:
 .. py:attribute:: logging.handlers_perflog..file..append
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Controls whether this handler should append to its file or not.
 
@@ -1385,11 +1385,11 @@ The additional properties for the ``file`` handler are the following:
 .. py:attribute:: logging.handlers_perflog..file..timestamp
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Append a timestamp to this handler's log file.
    This property may also accept a date format as described in the :attr:`~config.logging.handlers.datefmt` property.
-   If the handler's :attr:`~config.logging.handlers..file..name` property is set to ``filename.log`` and this property is set to ``true`` or to a specific timestamp format, the resulting log file will be ``filename_<timestamp>.log``.
+   If the handler's :attr:`~config.logging.handlers..file..name` property is set to ``filename.log`` and this property is set to :obj:`True` or to a specific timestamp format, the resulting log file will be ``filename_<timestamp>.log``.
 
 
 .. _filelog-handler:
@@ -1442,9 +1442,33 @@ The additional properties for the ``filelog`` handler are the following:
 .. py:attribute:: logging.handlers_perflog..filelog..append
 
    :required: No
-   :default: ``true``
+   :default: :obj:`True`
 
    Open each log file in append mode.
+
+
+.. py:attribute:: logging.handlers_perflog..filelog..locking_enable
+
+   :required: No
+   :default: :obj:`False`
+
+   Use file locking when appending to the perflog file.
+
+   Normally, this is not needed, as appending to a file is an atomic operation, but for some filesystems, such as NFS, this is not the case.
+   If you have multiple ReFrame processes appending to a perflog file in NFS, you should consider setting this option to :obj:`True` to avoid data corruption.
+
+   .. versionadded:: 4.8.3
+
+.. py:attribute:: logging.handlers_perflog..filelog..locking_file_mode
+
+   :required: No
+   :default: ``"644"``
+
+   File mode of the lock file that will be created in case file locking is enabled.
+
+   See also :attr:`~config.logging.handlers_perflog..filelog..locking_enable`.
+
+   .. versionadded:: 4.8.3
 
 
 .. versionchanged:: 4.0.0
@@ -1633,7 +1657,7 @@ This handler transmits the whole log record, meaning that all the information wi
 .. py:attribute:: logging.handlers_perflog..httpjson..debug
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    If set, the ``httpjson`` handler will not attempt to send the data to the server, but it will instead dump the JSON record in the current directory.
    The filename has the following form: ``httpjson_record_<timestamp>.json``.
@@ -1753,7 +1777,7 @@ Result storage configuration
 .. py:attribute:: storage.enable
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Enable results storage.
 
@@ -1810,7 +1834,7 @@ General Configuration
 .. py:attribute:: general.check_search_recursive
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Search directories in the `search path <#general.check_search_path>`__ recursively.
 
@@ -1819,7 +1843,7 @@ General Configuration
 .. py:attribute:: general.clean_stagedir
 
    :required: No
-   :default: ``true``
+   :default: :obj:`True`
 
    Clean stage directory of tests before populating it.
 
@@ -1829,16 +1853,16 @@ General Configuration
 .. py:attribute:: general.colorize
 
    :required: No
-   :default: ``true``
+   :default: :obj:`True`
 
    Use colors in output.
-   The command-line option sets the configuration option to ``false``.
+   The command-line option sets the configuration option to :obj:`False`.
 
 
 .. py:attribute:: general.compress_report
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Compress the generated run report file.
    See the documentation of the :option:`--compress-report` option for more information.
@@ -1852,7 +1876,7 @@ General Configuration
    This option is meant for debug purposes only.
 
    :required: No
-   :default: ``False``
+   :default: :obj:`False`
 
    .. versionadded:: 3.10.0
 
@@ -1870,7 +1894,7 @@ General Configuration
 .. py:attribute:: general.flex_alloc_strict
 
    :required: No
-   :default: ``False``
+   :default: :obj:`False`
 
    Fail flexible tests if their minimum task requirement is not satisfied.
 
@@ -1917,7 +1941,7 @@ General Configuration
 .. py:attribute:: general.remote_detect
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Try to auto-detect processor information of remote partitions as well.
    This may slow down the initialization of the framework, since it involves submitting auto-detection jobs to the remote partitions.
@@ -1948,7 +1972,7 @@ General Configuration
 .. py:attribute:: general.ignore_check_conflicts
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Ignore test name conflicts when loading tests.
 
@@ -1970,7 +1994,7 @@ General Configuration
 .. py:attribute:: general.trap_job_errors
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Trap command errors in the generated job scripts and let them exit immediately.
 
@@ -1979,7 +2003,7 @@ General Configuration
 .. py:attribute:: general.keep_stage_files
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Keep stage files of tests even if they succeed.
 
@@ -2005,7 +2029,7 @@ General Configuration
 .. py:attribute:: general.non_default_craype
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Test a non-default Cray Programming Environment.
    This will emit some special instructions in the generated build and job scripts.
@@ -2015,7 +2039,7 @@ General Configuration
 .. py:attribute:: general.purge_environment
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Purge any loaded environment modules before running any tests.
 
@@ -2048,10 +2072,10 @@ General Configuration
 .. py:attribute:: general.resolve_module_conflicts
 
    :required: No
-   :default: ``true``
+   :default: :obj:`True`
 
    ReFrame by default resolves any module conflicts and emits the right sequence of ``module unload`` and ``module load`` commands, in order to load the requested modules.
-   This option disables this behavior if set to ``false``.
+   This option disables this behavior if set to :obj:`False`.
 
    You should avoid using this option for modules system that cannot handle module conflicts automatically, such as early Tmod verions.
 
@@ -2066,7 +2090,7 @@ General Configuration
 .. py:attribute:: general.save_log_files
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Save any log files generated by ReFrame to its output directory
 
@@ -2117,11 +2141,11 @@ General Configuration
 .. py:attribute:: general.use_login_shell
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    Use a login shell for the generated job scripts.
    This option will cause ReFrame to emit ``-l`` in the shebang of shell scripts.
-   This option, if set to ``true``, may cause ReFrame to fail, if the shell changes permanently to a different directory during its start up.
+   This option, if set to :obj:`True`, may cause ReFrame to fail, if the shell changes permanently to a different directory during its start up.
 
 
 .. py:attribute:: general.user_modules
@@ -2169,7 +2193,7 @@ It can either be a simple string or a JSON object with the following attributes:
 .. attribute:: systems.partitions.container_platforms.modules.collection
 
    :required: No
-   :default: ``false``
+   :default: :obj:`False`
 
    A boolean value indicating whether this module refers to a module collection.
    Module collections are treated differently from simple modules when loading.
@@ -2209,7 +2233,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 .. attribute:: systems.partitions.processor.arch
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    The microarchitecture of the processor.
 
@@ -2217,7 +2241,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 .. attribute:: systems.partitions.processor.model
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    The model of the processor.
 
@@ -2226,7 +2250,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 .. attribute:: systems.partitions.processor.platform
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    The hardware platform for this processor (e.g., ``x86_64``, ``arm64`` etc.)
 
@@ -2235,7 +2259,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 .. attribute:: systems.partitions.processor.num_cpus
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    Number of logical CPUs.
 
@@ -2243,7 +2267,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 .. attribute:: systems.partitions.processor.num_cpus_per_core
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    Number of logical CPUs per core.
 
@@ -2251,7 +2275,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 .. attribute:: systems.partitions.processor.num_cpus_per_socket
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    Number of logical CPUs per socket.
 
@@ -2259,7 +2283,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 .. attribute:: systems.partitions.processor.num_sockets
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    Number of sockets.
 
@@ -2267,7 +2291,7 @@ A *processor info object* in ReFrame's configuration is used to hold information
 .. attribute:: systems.partitions.processor.topology
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    Processor topology.
    An example follows:
@@ -2322,7 +2346,7 @@ A *device info object* in ReFrame's configuration is used to hold information ab
 .. attribute:: systems.partitions.devices.type
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    The type of the device, for example ``"gpu"``.
 
@@ -2331,7 +2355,7 @@ A *device info object* in ReFrame's configuration is used to hold information ab
    :noindex:
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    The microarchitecture of the device.
 
@@ -2339,7 +2363,7 @@ A *device info object* in ReFrame's configuration is used to hold information ab
    :noindex:
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    The model of the device.
 
@@ -2348,7 +2372,7 @@ A *device info object* in ReFrame's configuration is used to hold information ab
 .. attribute:: systems.partitions.devices.num_devices
 
    :required: No
-   :default: ``None``
+   :default: :obj:`None`
 
    Number of devices of this type inside the system partition.
 
