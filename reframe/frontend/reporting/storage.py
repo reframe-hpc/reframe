@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
+import contextlib
 import functools
 import json
 import os
@@ -126,15 +127,24 @@ class _SqliteStorage(StorageBackend):
         with getprofiler().time_region('sqlite connect'):
             return sqlite3.connect(*args, **kwargs)
 
-    def _db_lock(self):
-        return self.__db_lock.write_lock()
+    @contextlib.contextmanager
+    def _db_read(self, *args, **kwargs):
+        with self.__db_lock.read_lock():
+            with self._db_connect(*args, **kwargs) as conn:
+                yield conn
+
+    @contextlib.contextmanager
+    def _db_write(self, *args, **kwargs):
+        with self.__db_lock.write_lock():
+            with self._db_connect(*args, **kwargs) as conn:
+                yield conn
 
     def _db_create(self):
         clsname = type(self).__name__
         getlogger().debug(
             f'{clsname}: creating results database in {self.__db_file}...'
         )
-        with self._db_connect(self.__db_file) as conn:
+        with self._db_write(self.__db_file) as conn:
             conn.execute('CREATE TABLE IF NOT EXISTS sessions('
                          'uuid TEXT PRIMARY KEY, '
                          'session_start_unix REAL, '
@@ -159,13 +169,13 @@ class _SqliteStorage(StorageBackend):
         os.chmod(self.__db_file, self.__db_file_mode)
 
     def _db_schema_check(self):
-        with self._db_connect(self.__db_file) as conn:
+        with self._db_read(self.__db_file) as conn:
             results = conn.execute(
                 'SELECT schema_version FROM metadata').fetchall()
 
         if not results:
             # DB is new, insert the schema version
-            with self._db_connect(self.__db_file) as conn:
+            with self._db_write(self.__db_file) as conn:
                 conn.execute('INSERT INTO metadata VALUES(:schema_version)',
                              {'schema_version': self.SCHEMA_VERSION})
         else:
@@ -218,9 +228,8 @@ class _SqliteStorage(StorageBackend):
 
     @time_function
     def store(self, report, report_file=None):
-        with self._db_lock():
-            with self._db_connect(self._db_file()) as conn:
-                return self._db_store_report(conn, report, report_file)
+        with self._db_write(self._db_file()) as conn:
+            return self._db_store_report(conn, report, report_file)
 
     @time_function
     def _decode_sessions(self, results, sess_filter):
@@ -269,7 +278,7 @@ class _SqliteStorage(StorageBackend):
     def _fetch_testcases_raw(self, condition):
         # Retrieve relevant session info and index it in Python
         getprofiler().enter_region('sqlite session query')
-        with self._db_connect(self._db_file()) as conn:
+        with self._db_read(self._db_file()) as conn:
             query = ('SELECT uuid, json_blob FROM sessions WHERE uuid IN '
                      '(SELECT DISTINCT session_uuid FROM testcases '
                      f'WHERE {condition})')
@@ -284,7 +293,7 @@ class _SqliteStorage(StorageBackend):
 
         # Extract the test case data by extracting their UUIDs
         getprofiler().enter_region('sqlite testcase query')
-        with self._db_connect(self._db_file()) as conn:
+        with self._db_read(self._db_file()) as conn:
             query = f'SELECT uuid FROM testcases WHERE {condition}'
             getlogger().debug(query)
             conn.create_function('REGEXP', 2, self._db_matches)
@@ -321,7 +330,7 @@ class _SqliteStorage(StorageBackend):
                       f'session_start_unix < {ts_end})')
 
         getprofiler().enter_region('sqlite session query')
-        with self._db_connect(self._db_file()) as conn:
+        with self._db_read(self._db_file()) as conn:
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
@@ -375,7 +384,7 @@ class _SqliteStorage(StorageBackend):
             query += f' WHERE uuid == "{selector.uuid}"'
 
         getprofiler().enter_region('sqlite session query')
-        with self._db_connect(self._db_file()) as conn:
+        with self._db_read(self._db_file()) as conn:
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
@@ -423,9 +432,8 @@ class _SqliteStorage(StorageBackend):
             uuids = [sess['session_info']['uuid']
                      for sess in self.fetch_sessions(selector)]
 
-        with self._db_lock():
-            with self._db_connect(self._db_file()) as conn:
-                if sqlite3.sqlite_version_info >= (3, 35, 0):
-                    return self._do_remove2(conn, uuids)
-                else:
-                    return self._do_remove(conn, uuids)
+        with self._db_write(self._db_file()) as conn:
+            if sqlite3.sqlite_version_info >= (3, 35, 0):
+                return self._do_remove2(conn, uuids)
+            else:
+                return self._do_remove(conn, uuids)
