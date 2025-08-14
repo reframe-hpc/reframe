@@ -669,6 +669,63 @@ def test_list_with_details(run_reframe):
     assert returncode == 0
 
 
+def test_list_with_details_with_descr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/description.py'],
+        action='list_detailed',
+        more_options=['-n', 'TestWithDescription']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that the description is shown for tests that have it
+    assert 'description: Test with meaningful description' in stdout
+
+
+def test_list_with_details_with_empty_descr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/description.py'],
+        action='list_detailed',
+        more_options=['-n', 'TestWithEmptyDescription']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that empty descr doesn't show a description line
+    assert 'TestWithEmptyDescription' in stdout
+    assert 'description:' not in stdout
+    
+
+def test_list_with_details_without_descr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/description.py'],
+        action='list_detailed',
+        more_options=['-n', 'TestWithoutDescription']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that no description line appears for tests without description
+    assert 'TestWithoutDescription' in stdout
+    assert 'description:' not in stdout
+
+
+def test_list_without_details_no_descr(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/description.py'],
+        action='list'
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that descriptions are not shown in non-detailed listing
+    assert 'description:' not in stdout
+    # But the test names should still be there
+    assert 'TestWithDescription' in stdout
+    assert 'TestWithoutDescription' in stdout
+    assert 'TestWithEmptyDescription' in stdout
+
+
 def test_list_concretized(run_reframe):
     returncode, stdout, stderr = run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
@@ -720,6 +777,22 @@ def test_list_tests_with_fixtures(run_reframe):
     )
     assert 'Found 3 check(s)' in stdout
     assert returncode == 0
+
+
+def test_list_tests_with_deps_detailed(run_reframe):
+    """Test detailed listing with dependencies and descriptions."""
+    returncode, stdout, stderr = run_reframe(
+        system='sys0',
+        checkpath=['unittests/resources/checks_unlisted/deps_with_descriptions.py'],
+        action='list_detailed',
+        environs=[]
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that dependency lines show a description with detailed listing.
+    assert 'description: Base test with meaningful description' in stdout
+    assert 'description: Dependent test with meaningful description' in stdout
 
 
 def test_filtering_multiple_criteria_name(run_reframe):
