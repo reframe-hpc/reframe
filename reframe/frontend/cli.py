@@ -623,6 +623,10 @@ def main():
         default=[], help='Parameterize a test on a set of variables'
     )
     testgen_options.add_argument(
+        '--param-values-delim', action='store', default=',',
+        help='Parameter value delimiter'
+    )
+    testgen_options.add_argument(
         '--repeat', action='store', metavar='N',
         help='Repeat selected tests N times'
     )
@@ -1382,7 +1386,7 @@ def main():
                         f'invalid parameter spec: {param_spec}'
                     ) from None
                 else:
-                    params[var] = values_spec.split(',')
+                    params[var] = values_spec.split(options.param_values_delim)
 
             testcases_all = parameterize_tests(testcases, params)
             testcases = testcases_all
