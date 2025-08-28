@@ -162,6 +162,10 @@ the run hooks of :class:`Y` will be executed as follows:
    - :func:`@run_before <reframe.core.builtins.run_before>`, :func:`@run_after <reframe.core.builtins.run_after>` decorators
 
 .. note::
+
+   Pipeline hook functions cannot be private, i.e., starting with double underscore: ``__``.
+
+.. note::
    Pipeline hooks do not execute in the test's stage directory, but in the directory that ReFrame executes in.
    However, the test's :attr:`~reframe.core.pipeline.RegressionTest.stagedir` can be accessed by explicitly changing the working directory from within the hook function itself (see the :class:`~reframe.utility.osext.change_dir` utility for further details):
 
@@ -200,6 +204,11 @@ the run hooks of :class:`Y` will be executed as follows:
       This version defines the execution order of hooks, which now follows a strict reverse MRO order, so that parent hooks will execute before those of derived classes.
       Tests that relied on the execution order of hooks might break with this change.
 
+.. tip::
+
+   When writing library tests or :class:`~reframe.core.pipeline.RegressionMixin`'s that are meant to be re-used by multiple final tests, it is a good practice to define their hooks using a unique name scheme, e.g., ``_<ClassName>_<hook_name>``.
+   This will avoid possible clashes with hooks in derived test classes that may use the same hook name hiding inadvertently the base class hook.
+   Note that in future ReFrame may create unique names for pipeline hooks automatically.
 
 
 .. _test-variants:
