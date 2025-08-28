@@ -133,3 +133,5 @@ The corresponding BibTeX entry is the following:
   issn       = {1865-0937},
 }
 ```
+
+For a complete list of publications and talks about ReFrame, please refer to the latest documentation page [here](https://reframe-hpc.readthedocs.io/en/latest/#publications).
