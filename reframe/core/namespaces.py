@@ -150,8 +150,8 @@ class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
         for key in self._namespace:
             if key in illegal_names:
                 raise ReframeSyntaxError(
-                    f'{key!r} already defined in class '
-                    f'{cls.__qualname__!r}'
+                    f'{key!r} already defined in one of the base classes of '
+                    f'{cls.__qualname__!r}', with_code_context=True
                 )
 
     @abc.abstractmethod
@@ -161,6 +161,5 @@ class Namespace(LocalNamespace, metaclass=abc.ABCMeta):
         '''
 
     def __setitem__(self, key, value):
-        raise ReframeSyntaxError(
-            f'cannot set item {key!r} into a {type(self).__qualname__} object'
-        )
+        raise ValueError('setting an item directly in '
+                         f'{type(self).__qualname__!r} is not allowed')

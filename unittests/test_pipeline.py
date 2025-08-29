@@ -262,7 +262,7 @@ def test_run_only_decorated_sanity(local_exec_ctx):
         '''Test both syntaxes are incompatible.'''
         sanity_patterns = sn.assert_true(1)
 
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(ReframeError):
         _run(MyOtherTest(), *local_exec_ctx)
 
 
@@ -1838,7 +1838,7 @@ def test_incompat_perf_syntax(perftest, sanity_file,
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.0\n')
     perftest.perf_patterns = {}
-    with pytest.raises(ReframeSyntaxError):
+    with pytest.raises(ReframeError):
         _run_sanity(perftest, *dummy_gpu_exec_ctx)
 
 

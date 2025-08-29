@@ -70,7 +70,8 @@ class PrettyPrinter:
                 status = color.colorize(status, color.GREEN)
 
         final_msg = f'[ {status} ] '
-        if status_stripped in ('ABORT', 'OK', 'SKIP', 'FAIL'):
+        if status_stripped in {'ABORT', 'OK', 'SKIP', 'FAIL', 'XFAIL',
+                               'XPASS', 'ERROR'}:
             if self._progress_count < self._progress_total:
                 self._progress_count += 1
 
@@ -124,7 +125,8 @@ class PrettyPrinter:
             self.info(f"FAILURE INFO for {rec['display_name']} "
                       f"(run: {runid}/{total_runs})")
             self.info(f"  * Description: {rec['descr']}")
-            self.info(f"  * System partition: {rec['system']}")
+            self.info("  * System partition: "
+                      f"{rec['system']}:{rec['partition']}")
             self.info(f"  * Environment: {rec['environ']}")
             self.info(f"  * Test file: {rec['filename']}")
             self.info(f"  * Stage directory: {rec['stagedir']}")
@@ -178,7 +180,8 @@ class PrettyPrinter:
                 continue
 
             for r in run_info['testcases']:
-                if r['result'] in {'pass', 'abort', 'skip', 'fail_deps'}:
+                if r['result'] in {'pass', 'xfail', 'abort',
+                                   'skip', 'fail_deps'}:
                     continue
 
                 _print_failure_info(r, run_no, len(report['runs']))

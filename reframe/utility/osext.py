@@ -9,6 +9,7 @@
 
 import collections.abc
 import errno
+import fasteners
 import getpass
 import grp
 import os
@@ -586,6 +587,18 @@ def subdirs(dirname, recurse=False):
     return dirs
 
 
+def relpath_subdir(path, parent=os.curdir):
+    '''Make ``path`` relative only if it is a subdirectory of ``parent``.'''
+
+    # Convert paths to absolute
+    path   = os.path.abspath(path)
+    parent = os.path.abspath(parent)
+    if os.path.commonpath([path, parent]) == parent:
+        return os.path.relpath(path, parent)
+    else:
+        return path
+
+
 def follow_link(path):
     '''Return the final target of a symlink chain.
 
@@ -849,6 +862,36 @@ def unique_abs_paths(paths, prune_children=True):
                 p_parent = os.path.dirname(p_parent)
 
     return list(unique_paths - children)
+
+
+class temp_umask:
+    '''Temporarily change the umask'''
+    def __init__(self, mask):
+        self.__new_mask = mask
+        self.__old_mask = None
+
+    def __enter__(self):
+        self.__old_mask = os.umask(self.__new_mask)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.umask(self.__old_mask)
+
+
+class ReadWriteFileLock(fasteners.InterProcessReaderWriterLock):
+    def __init__(self, path, mode=None):
+        super().__init__(path)
+        self._mode = mode
+
+    def _do_open(self, *args, **kwargs):
+        if self._mode is not None:
+            # We create the directory structure ourselves, so that the mask
+            # applies strictly to the lock file if the parent directories do
+            # not exist
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            with temp_umask(0o0777 ^ self._mode):
+                return super()._do_open(*args, **kwargs)
+        else:
+            return super()._do_open(*args, **kwargs)
 
 
 def cray_cdt_version():
