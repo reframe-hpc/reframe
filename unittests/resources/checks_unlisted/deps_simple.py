@@ -69,7 +69,7 @@ class Test3(rfm.RunOnlyRegressionTest):
     valid_systems = ['sys0:p0', 'sys0:p1']
     valid_prog_environs = ['e0', 'e1']
     executable = 'echo'
-    executable_opts = ['Test2'] 
+    executable_opts = ['Test3']
     
     @run_after('init')
     def setup_deps(self):
