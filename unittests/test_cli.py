@@ -719,7 +719,7 @@ def test_list_tests_with_deps(run_reframe):
         action='list',
         environs=[]
     )
-    assert 'Found 9 check(s)' in stdout
+    assert 'Found 11 check(s)' in stdout
     assert returncode == 0
 
 
@@ -732,6 +732,32 @@ def test_list_tests_with_fixtures(run_reframe):
     )
     assert 'Found 3 check(s)' in stdout
     assert returncode == 0
+
+
+def test_list_tests_with_deps_detailed(run_reframe):
+    """Test detailed listing with dependencies"""
+    returncode, stdout, stderr = run_reframe(
+        system='sys0',
+        checkpath=['unittests/resources/checks_unlisted/deps_simple.py'],
+        action='list_detailed',
+        environs=[]
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+    # Check that dependency lines show detailed information
+    assert 'variant:' in stdout
+    assert 'file:' in stdout
+    assert 'description:' in stdout
+
+    assert 'Test0' in stdout
+    assert 'description: Test with meaningful description' in stdout
+    
+    assert 'Test1' in stdout
+    assert 'description: <none>' in stdout
+    
+    assert 'Test3' in stdout
+    assert 'description: <undefined>' in stdout
 
 
 def test_filtering_multiple_criteria_name(run_reframe):
