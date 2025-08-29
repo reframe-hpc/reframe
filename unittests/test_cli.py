@@ -661,7 +661,7 @@ def test_list_with_details(run_reframe):
     assert 'description: Bad setup check early' in _extract_block(stdout, 'BadSetupCheckEarly')
 
     assert 'PerformanceFailureCheck' in stdout
-    assert 'description: <no description provided>' in _extract_block(stdout, 'PerformanceFailureCheck')
+    assert 'description: <none>' in _extract_block(stdout, 'PerformanceFailureCheck')
 
     assert 'SanityFailureCheck' in stdout
     assert 'description: <undefined>' in _extract_block(stdout, 'SanityFailureCheck')

@@ -39,7 +39,6 @@ class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class BadSetupCheck(BaseFrontendCheck):
-
     @run_after('setup')
     def raise_error(self):
         raise ReframeError('Setup failure')

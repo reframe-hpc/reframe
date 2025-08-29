@@ -107,7 +107,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
                 if descr_value is None:
                     descr_str = '<undefined>'
                 elif descr_value == '':
-                    descr_str = '<no description provided>'
+                    descr_str = '<none>'
                 else:
                     descr_str = descr_value
 
@@ -138,7 +138,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
             if descr_value is None:
                 descr_str = '<undefined>'
             elif descr_value == '':
-                descr_str = '<no description provided>'
+                descr_str = '<none>'
             else:
                 descr_str = descr_value
 
