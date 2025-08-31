@@ -10,7 +10,6 @@ import reframe.utility.udeps as udeps
 
 @rfm.simple_test
 class Test0(rfm.RunOnlyRegressionTest):
-    descr = 'Test with meaningful description'
     valid_systems = ['sys0:p0', 'sys0:p1']
     valid_prog_environs = ['e0', 'e1']
     executable = 'echo'
@@ -19,7 +18,6 @@ class Test0(rfm.RunOnlyRegressionTest):
 
 @rfm.simple_test
 class Test1(rfm.RunOnlyRegressionTest):
-    descr = ''
     kind = parameter(['default', 'fully', 'by_part', 'by_case',
                       'custom', 'any', 'all', 'nodeps'])
 
@@ -53,24 +51,3 @@ class Test1(rfm.RunOnlyRegressionTest):
             self.depends_on('Test0')
         else:
             self.depends_on('Test0', kindspec[self.kind])
-
-
-@rfm.simple_test
-class Test2(rfm.RunOnlyRegressionTest):
-    valid_systems = ['sys0:p0', 'sys0:p1']
-    valid_prog_environs = ['e0', 'e1']
-    executable = 'echo'
-    executable_opts = ['Test2'] 
-    
-
-@rfm.simple_test
-class Test3(rfm.RunOnlyRegressionTest):
-    descr=required
-    valid_systems = ['sys0:p0', 'sys0:p1']
-    valid_prog_environs = ['e0', 'e1']
-    executable = 'echo'
-    executable_opts = ['Test3']
-    
-    @run_after('init')
-    def setup_deps(self):
-        self.depends_on('Test2')

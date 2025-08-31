@@ -113,7 +113,7 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
                     descr_str = descr_value
 
                 details_fields.append(f'description: {descr_str}')
-                details = '\n' + '\n'.join(f'{prefix}  {field}' for field in details_fields)
+                details = '\n' + '\n'.join(f'{prefix} {field}' for field in details_fields)
 
             lines.append(f'{prefix}^{name_info}{tc_info}{details}')
         return lines

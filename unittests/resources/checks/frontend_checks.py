@@ -45,8 +45,6 @@ class BadSetupCheck(BaseFrontendCheck):
 
 @rfm.simple_test
 class BadSetupCheckEarly(BaseFrontendCheck):
-    descr = "Bad setup check early"
-
     @run_before('setup')
     def raise_error_early(self):
         raise ReframeError('Setup failure')
@@ -65,8 +63,6 @@ class NoPrgEnvCheck(BaseFrontendCheck):
 @rfm.simple_test
 class SanityFailureCheck(BaseFrontendCheck):
     '''A performance test that fails in sanity.'''
-    descr = required
-
     @sanity_function
     def validate_output(self):
         return sn.assert_found('foo', self.stdout)
@@ -78,7 +74,6 @@ class SanityFailureCheck(BaseFrontendCheck):
 
 @rfm.simple_test
 class PerformanceFailureCheck(BaseFrontendCheck):
-    descr = ""
     reference = {
         '*': {
             'perf': (20, -0.1, 0.1, 'Gflop/s')

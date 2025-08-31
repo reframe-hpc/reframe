@@ -661,36 +661,37 @@ def test_list_empty_prgenvs_in_check_and_options(run_reframe):
 
 def test_list_with_details(run_reframe):
     returncode, stdout, stderr = run_reframe(
-        checkpath=['unittests/resources/checks/frontend_checks.py'],
-        action='list_detailed'
+        checkpath=['unittests/resources/checks_unlisted/descriptions.py'],
+        more_options=['-n', 'BaseTest'],
+        action='list_detailed',
+        environs=[]
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
 
-    assert 'BadSetupCheckEarly' in stdout
-    assert 'description: Bad setup check early' in _extract_block(stdout, 'BadSetupCheckEarly')
+    assert 'Found 3 check(s)' in stdout
+    assert len(re.findall(r'description: foo', stdout)) == 1
+    assert len(re.findall(r'description: \<none\>', stdout)) == 1
+    assert len(re.findall(r'description: \<undefined\>', stdout)) == 1
 
-    assert 'PerformanceFailureCheck' in stdout
-    assert 'description: <none>' in _extract_block(stdout, 'PerformanceFailureCheck')
 
-    assert 'SanityFailureCheck' in stdout
-    assert 'description: <undefined>' in _extract_block(stdout, 'SanityFailureCheck')
+def test_list_deps_with_details(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/descriptions.py'],
+        more_options=['-n', 'DerivedTest'],
+        action='list_detailed',
+        environs=[]
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
 
-def _extract_block(output, testname):
-    """Helper: extract the detailed listing block for a given test."""
-    lines = []
-    in_block = False
-    for line in output.splitlines():
-        if line.startswith(f'- {testname}'):
-            in_block = True
-            lines = [line]
-            continue
-        if in_block:
-            if line.startswith('- '):  # next test listing starts
-                break
-            lines.append(line)
-    return '\n'.join(lines)
+    assert 'Found 9 check(s)' in stdout
+    assert len(re.findall(r'description: foo', stdout)) == 6
+    assert len(re.findall(r'description: \<none\>', stdout)) == 6
+    assert len(re.findall(r'description: \<undefined\>', stdout)) == 6
+
 
 def test_list_concretized(run_reframe):
     returncode, stdout, stderr = run_reframe(
@@ -730,7 +731,7 @@ def test_list_tests_with_deps(run_reframe):
         action='list',
         environs=[]
     )
-    assert 'Found 11 check(s)' in stdout
+    assert 'Found 9 check(s)' in stdout
     assert returncode == 0
 
 
@@ -743,32 +744,6 @@ def test_list_tests_with_fixtures(run_reframe):
     )
     assert 'Found 3 check(s)' in stdout
     assert returncode == 0
-
-
-def test_list_tests_with_deps_detailed(run_reframe):
-    """Test detailed listing with dependencies"""
-    returncode, stdout, stderr = run_reframe(
-        system='sys0',
-        checkpath=['unittests/resources/checks_unlisted/deps_simple.py'],
-        action='list_detailed',
-        environs=[]
-    )
-    assert 'Traceback' not in stdout
-    assert 'Traceback' not in stderr
-    assert returncode == 0
-    # Check that dependency lines show detailed information
-    assert 'variant:' in stdout
-    assert 'file:' in stdout
-    assert 'description:' in stdout
-
-    assert 'Test0' in stdout
-    assert 'description: Test with meaningful description' in stdout
-    
-    assert 'Test1' in stdout
-    assert 'description: <none>' in stdout
-    
-    assert 'Test3' in stdout
-    assert 'description: <undefined>' in stdout
 
 
 def test_filtering_multiple_criteria_name(run_reframe):
