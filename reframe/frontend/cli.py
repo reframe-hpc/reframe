@@ -97,12 +97,25 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
                 tc_info = f' @{u.partition.fullname}+{u.environ.name}'
 
             location = inspect.getfile(type(u.check))
+
             if detailed:
-                details = (f' [variant: {u.check.variant_num}, '
-                           f'file: {location!r}]')
+                details_fields = [
+                    f'variant: {u.check.variant_num}',
+                    f'file: {location!r}'
+                ]
+
+                descr_value = getattr(u.check, 'descr', None)
+                if descr_value is None:
+                    descr_str = '<undefined>'
+                elif descr_value == '':
+                    descr_str = '<none>'
+                else:
+                    descr_str = descr_value
+
+                details_fields.append(f'description: {descr_str}')
+                details = '\n' + '\n'.join(f'{prefix} {field}' for field in details_fields)
 
             lines.append(f'{prefix}^{name_info}{tc_info}{details}')
-
         return lines
 
     # We need the leaf test cases to be printed at the leftmost
@@ -116,7 +129,22 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
         location = inspect.getfile(type(t.check))
         if detailed:
-            details = f' [variant: {t.check.variant_num}, file: {location!r}]'
+            details_fields = [
+                f'variant: {t.check.variant_num}',
+                f'file: {location!r}'
+            ]
+
+            descr_value = getattr(t.check, 'descr', None)
+            if descr_value is None:
+                descr_str = '<undefined>'
+            elif descr_value == '':
+                descr_str = '<none>'
+            else:
+                descr_str = descr_value
+
+            details_fields.append(f'description: {descr_str}')
+
+            details = '\n' + '\n'.join(f'  {field}' for field in details_fields)
 
         if concretized or (not concretized and
                            t.check.unique_name not in unique_checks):
