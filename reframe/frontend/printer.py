@@ -277,8 +277,9 @@ class PrettyPrinter:
         self.info('')
 
     def _table_as_csv(self, data):
+        delim = rt.runtime().get_option('general/0/table_format_delim')
         for line in data:
-            self.info(','.join(str(x) for x in line))
+            self.info(delim.join(str(x) for x in line))
 
     def table(self, data, **kwargs):
         '''Print tabular data'''
