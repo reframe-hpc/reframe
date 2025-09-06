@@ -1083,6 +1083,14 @@ The way the tests are generated and how they interact with the test filtering op
 
    .. versionadded:: 4.3
 
+.. option:: --param-values-delim=<delim>
+
+   Use the given delimiter to separate the parameter values passed with :option:`--parameterize`.
+
+   Default delimiter is ``,``.
+
+   .. versionadded:: 4.9
+
 .. option:: --repeat=N
 
    Repeat the selected tests ``N`` times.
