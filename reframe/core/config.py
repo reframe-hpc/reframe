@@ -343,7 +343,7 @@ class _SiteConfig:
 
     def load_config_python(self, filename):
         try:
-            mod = util.import_module_from_file(filename)
+            mod = util.import_module_from_file(filename, load_parents=True)
         except ImportError as e:
             # import_module_from_file() may raise an ImportError if the
             # configuration file is under ReFrame's top-level directory
@@ -695,6 +695,7 @@ def load_config(*filenames):
             # The builtin configuration is always loaded at the beginning
             continue
 
+        f = os.path.abspath(f)
         getlogger().debug(f'Loading configuration file: {f!r}')
         _, ext = os.path.splitext(f)
         if ext == '.py':
