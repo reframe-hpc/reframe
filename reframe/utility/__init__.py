@@ -71,18 +71,8 @@ def _do_import_module_from_file(filename, module_name=None):
     return module
 
 
-def import_module_from_file(filename, force=False, parent=None):
-    '''Import module from file.
-
-    If the file location refers to a directory, the contained ``__init__.py``
-    will be loaded. If the filename resolves to a location that is within the
-    current working directory, a module name will be derived from the supplied
-    file name and Python's :func:`importlib.import_module` will be invoked to
-    actually load the module. If the file location refers to a path outside
-    the current working directory, then the module will be loaded directly
-    from the file, but it will be assigned a mangled name in
-    :obj:`sys.modules`, to avoid clashes with other modules loaded using the
-    standard import mechanism.
+def _import_module_from_file(filename, force, parent):
+    '''Low-level non-recusrive import from file
 
     :arg filename: The path to the filename of a Python module.
     :arg force: Force reload of module in case it is already loaded.
@@ -91,9 +81,6 @@ def import_module_from_file(filename, force=False, parent=None):
         ``parent`` so that Python would be able to resolve relative imports in
         the module file.
     :returns: The loaded Python module.
-
-    .. versionchanged:: 4.6
-       The ``parent`` argument is added.
     '''
 
     # Expand and sanitize filename
@@ -130,6 +117,73 @@ def import_module_from_file(filename, force=False, parent=None):
     return importlib.import_module(module_name)
 
 
+def import_module_from_file(filename, *, force=False, load_parents=False):
+    '''Import module from file.
+
+    If the file location refers to a directory, the contained ``__init__.py``
+    will be loaded. If the filename resolves to a location that is within the
+    current working directory, a module name will be derived from the supplied
+    file name and Python's :func:`importlib.import_module` will be invoked to
+    actually load the module. If the file location refers to a path outside
+    the current working directory, then the module will be loaded directly
+    from the file, but it will be assigned a mangled name in
+    :obj:`sys.modules`, to avoid clashes with other modules loaded using the
+    standard import mechanism.
+
+    If ``load_parents`` is set, any modules along the path will also be
+    loaded. A path  will considered as a parent module and loaded if it
+    contains an ``__init__.py`` file.
+
+    :arg filename: The path to the filename of a Python module.
+    :arg force: Force reload of module in case it is already loaded. This does
+        not apply to the parent modules that have been load with
+        ``load_parents=True``.
+    :arg load_parents: Load parent modules along the path.
+    :returns: The loaded Python module.
+
+    .. versionchanged:: 4.6
+       The ``parent`` argument is added.
+
+    .. versionchanged:: 4.9
+        The ``parent`` argumet is replaced by ``load_parents``. Also, all
+        arguments except ``filename`` are now keyword-only arguments.
+
+        If the old interface is desired, you should use directly the
+        lower-level :func:`_import_module_from_file` function.
+    '''
+
+    import reframe.utility.osext as osext
+
+
+    if not load_parents:
+        return _import_module_from_file(filename, force, None)
+
+    dirname = os.path.dirname(filename)
+
+    # Load all parent modules of test file
+    parents = []
+    while os.path.exists(os.path.join(dirname, '__init__.py')):
+        parents.append(os.path.join(dirname))
+        dirname = os.path.split(dirname)[0]
+
+    parent_module = None
+    for pdir in reversed(parents):
+        with osext.change_dir(pdir):
+            with temp_sys_path(pdir):
+                package_path = os.path.join(pdir, '__init__.py')
+                parent_module = _import_module_from_file(
+                    package_path, force, parent=parent_module
+                ).__name__
+
+    # Now load the actual test file
+    if not parents:
+        pdir = dirname
+
+    with osext.change_dir(pdir):
+        with temp_sys_path(pdir):
+            return _import_module_from_file(filename, force, parent_module)
+
+
 def import_module(module_name, force=False):
     '''Import a module.
 
@@ -162,7 +216,7 @@ def import_module(module_name, force=False):
     else:
         path += '.py'
 
-    return import_module_from_file(path, force)
+    return _import_module_from_file(path, force, None)
 
 
 def import_from_module(module_name, symbol):
