@@ -4,12 +4,25 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
-import contextlib
 import functools
 import json
 import os
 import re
-import sqlite3
+
+from sqlalchemy import (and_,
+                        Column,
+                        create_engine,
+                        delete,
+                        event,
+                        Float,
+                        ForeignKey,
+                        Index,
+                        MetaData,
+                        select,
+                        Table,
+                        Text)
+from sqlalchemy.engine.url import URL
+from sqlalchemy.sql.elements import ClauseElement
 
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
@@ -20,6 +33,71 @@ from reframe.utility import nodelist_abbrev
 from ..reporting.utility import QuerySelector
 
 
+class _ConnectionStrategy:
+    '''Abstract helper class for building SQLAlchemy engine configurations'''
+
+    def __init__(self):
+        self.url = self._build_connection_url()
+        self.engine = create_engine(self.url, **self._connection_kwargs)
+
+    @abc.abstractmethod
+    def _build_connection_url(self):
+        '''Return a SQLAlchemy URL string for this backend.
+
+        Implementations must return a URL suitable for passing to 
+        `sqlalchemy.create_engine()`.
+        '''
+
+    @property
+    def _connection_kwargs(self):
+        '''Per‑dialect kwargs for `create_engine()`'''
+        return {}
+
+
+class _SqliteConnector(_ConnectionStrategy):
+    def __init__(self):
+        self.__db_file = os.path.join(
+            osext.expandvars(runtime().get_option('storage/0/sqlite_db_file'))
+        )
+        mode = runtime().get_option(
+            'storage/0/sqlite_db_file_mode'
+        )
+        if not isinstance(mode, int):
+            self.__db_file_mode = int(mode, base=8)
+        else:
+            self.__db_file_mode = mode
+
+        prefix = os.path.dirname(self.__db_file)
+        if not os.path.exists(self.__db_file):
+            # Create subdirs if needed
+            if prefix:
+                os.makedirs(prefix, exist_ok=True)
+
+            open(self.__db_file, 'a').close()
+            os.chmod(self.__db_file, self.__db_file_mode)
+
+        super().__init__()
+
+        # Enable foreign keys for delete action to have cascade effect
+        @event.listens_for(self.engine, 'connect')
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            # Keep ON DELETE CASCADE behavior consistent
+            cursor = dbapi_connection.cursor()
+            cursor.execute('PRAGMA foreign_keys=ON')
+            cursor.close()
+
+    def _build_connection_url(self):
+        return URL.create(
+            drivername='sqlite',
+            database=self.__db_file
+        ).render_as_string()
+
+    @property
+    def _connection_kwargs(self):
+        timeout = runtime().get_option('storage/0/sqlite_conn_timeout')
+        return {'connect_args': {'timeout': timeout}}
+
+
 class StorageBackend:
     '''Abstract class that represents the results backend storage'''
 
@@ -27,7 +105,7 @@ class StorageBackend:
     def create(cls, backend, *args, **kwargs):
         '''Factory method for creating storage backends'''
         if backend == 'sqlite':
-            return _SqliteStorage(*args, **kwargs)
+            return _SqlStorage(_SqliteConnector(), *args, **kwargs)
         else:
             raise ReframeError(f'no such storage backend: {backend}')
 
@@ -74,38 +152,38 @@ class StorageBackend:
         '''
 
 
-class _SqliteStorage(StorageBackend):
+class _SqlStorage(StorageBackend):
     SCHEMA_VERSION = '1.0'
 
-    def __init__(self):
-        self.__db_file = os.path.join(
-            osext.expandvars(runtime().get_option('storage/0/sqlite_db_file'))
-        )
-        mode = runtime().get_option(
-            'storage/0/sqlite_db_file_mode'
-        )
-        if not isinstance(mode, int):
-            self.__db_file_mode = int(mode, base=8)
-        else:
-            self.__db_file_mode = mode
-
-        self.__db_lock = osext.ReadWriteFileLock(
-            os.path.join(os.path.dirname(self.__db_file), '.db.lock'),
-            self.__db_file_mode
-        )
-
-    def _db_file(self):
-        prefix = os.path.dirname(self.__db_file)
-        if not os.path.exists(self.__db_file):
-            # Create subdirs if needed
-            if prefix:
-                os.makedirs(prefix, exist_ok=True)
-
-            self._db_create()
-
-        self._db_create_indexes()
+    def __init__(self, connector: _ConnectionStrategy):
+        self.__connector = connector
+        # Container for core table objects
+        self.__metadata = MetaData()
+        self._db_schema()
+        self._db_create()
         self._db_schema_check()
-        return self.__db_file
+
+    def _db_schema(self):
+        self.__sessions_table = Table('sessions', self.__metadata,
+                                      Column('uuid', Text, primary_key=True),
+                                      Column('session_start_unix', Float),
+                                      Column('session_end_unix', Float),
+                                      Column('json_blob', Text),
+                                      Column('report_file', Text),
+                                      Index('index_sessions_time', 'session_start_unix'))
+        self.__testcases_table = Table('testcases', self.__metadata,
+                                       Column('name', Text),
+                                       Column('system', Text),
+                                       Column('partition', Text),
+                                       Column('environ', Text),
+                                       Column(
+                                           'job_completion_time_unix', Float),
+                                       Column('session_uuid', Text, ForeignKey(
+                                           'sessions.uuid', ondelete='CASCADE')),
+                                       Column('uuid', Text),
+                                       Index('index_testcases_time', 'job_completion_time_unix'))
+        self.__metadata_table = Table('metadata', self.__metadata,
+                                      Column('schema_version', Text))
 
     def _db_matches(self, patt, item):
         if patt is None:
@@ -124,76 +202,36 @@ class _SqliteStorage(StorageBackend):
 
         return eval(expr, None, item)
 
-    def _db_connect(self, *args, **kwargs):
-        timeout = runtime().get_option('storage/0/sqlite_conn_timeout')
-        kwargs.setdefault('timeout', timeout)
-        with getprofiler().time_region('sqlite connect'):
-            return sqlite3.connect(*args, **kwargs)
-
-    @contextlib.contextmanager
-    def _db_read(self, *args, **kwargs):
-        with self.__db_lock.read_lock():
-            with self._db_connect(*args, **kwargs) as conn:
-                yield conn
-
-    @contextlib.contextmanager
-    def _db_write(self, *args, **kwargs):
-        with self.__db_lock.write_lock():
-            with self._db_connect(*args, **kwargs) as conn:
-                yield conn
+    def _db_connect(self):
+        with getprofiler().time_region(f'{self.__connector.engine.url.drivername} connect'):
+            return self.__connector.engine.begin()
 
     def _db_create(self):
         clsname = type(self).__name__
         getlogger().debug(
-            f'{clsname}: creating results database in {self.__db_file}...'
+            f'{clsname}: creating results database in {self.__connector.engine.url.database}...'
         )
-        with self._db_write(self.__db_file) as conn:
-            conn.execute('CREATE TABLE IF NOT EXISTS sessions('
-                         'uuid TEXT PRIMARY KEY, '
-                         'session_start_unix REAL, '
-                         'session_end_unix REAL, '
-                         'json_blob TEXT, '
-                         'report_file TEXT)')
-            conn.execute('CREATE TABLE IF NOT EXISTS testcases('
-                         'name TEXT,'
-                         'system TEXT, '
-                         'partition TEXT, '
-                         'environ TEXT, '
-                         'job_completion_time_unix REAL, '
-                         'session_uuid TEXT, '
-                         'uuid TEXT, '
-                         'FOREIGN KEY(session_uuid) '
-                         'REFERENCES sessions(uuid) ON DELETE CASCADE)')
-
-        # Update DB file mode
-        os.chmod(self.__db_file, self.__db_file_mode)
-
-    def _db_create_indexes(self):
-        clsname = type(self).__name__
-        getlogger().debug(f'{clsname}: creating database indexes if needed')
-        with self._db_connect(self.__db_file) as conn:
-            conn.execute('CREATE INDEX IF NOT EXISTS index_testcases_time '
-                         'on testcases(job_completion_time_unix)')
-            conn.execute('CREATE TABLE IF NOT EXISTS metadata('
-                         'schema_version TEXT)')
-            conn.execute('CREATE INDEX IF NOT EXISTS index_sessions_time '
-                         'on sessions(session_start_unix)')
+        self.__metadata.create_all(self.__connector.engine)
 
     def _db_schema_check(self):
-        with self._db_read(self.__db_file) as conn:
+        with self._db_connect() as conn:
             results = conn.execute(
-                'SELECT schema_version FROM metadata').fetchall()
+                self.__metadata_table.select()
+            ).fetchall()
 
         if not results:
             # DB is new, insert the schema version
-            with self._db_write(self.__db_file) as conn:
-                conn.execute('INSERT INTO metadata VALUES(:schema_version)',
-                             {'schema_version': self.SCHEMA_VERSION})
+            with self._db_connect() as conn:
+                conn.execute(
+                    self.__metadata_table.insert().values(
+                        schema_version=self.SCHEMA_VERSION
+                    )
+                )
         else:
             found_ver = results[0][0]
             if found_ver != self.SCHEMA_VERSION:
                 raise ReframeError(
-                    f'results DB in {self.__db_file!r} is '
+                    f'results DB in {self.__connector.engine.url.database!r} is '
                     'of incompatible version: '
                     f'found {found_ver}, required: {self.SCHEMA_VERSION}'
                 )
@@ -203,43 +241,36 @@ class _SqliteStorage(StorageBackend):
         session_end_unix = report['session_info']['time_end_unix']
         session_uuid = report['session_info']['uuid']
         conn.execute(
-            'INSERT INTO sessions VALUES('
-            ':uuid, :session_start_unix, :session_end_unix, '
-            ':json_blob, :report_file)',
-            {
-                'uuid': session_uuid,
-                'session_start_unix': session_start_unix,
-                'session_end_unix': session_end_unix,
-                'json_blob': jsonext.dumps(report),
-                'report_file': report_file_path
-            }
+            self.__sessions_table.insert().values(
+                uuid=session_uuid,
+                session_start_unix=session_start_unix,
+                session_end_unix=session_end_unix,
+                json_blob=jsonext.dumps(report),
+                report_file=report_file_path
+            )
         )
         for run in report['runs']:
             for testcase in run['testcases']:
                 sys, part = testcase['system'], testcase['partition']
                 conn.execute(
-                    'INSERT INTO testcases VALUES('
-                    ':name, :system, :partition, :environ, '
-                    ':job_completion_time_unix, '
-                    ':session_uuid, :uuid)',
-                    {
-                        'name': testcase['name'],
-                        'system': sys,
-                        'partition': part,
-                        'environ': testcase['environ'],
-                        'job_completion_time_unix': testcase[
+                    self.__testcases_table.insert().values(
+                        name=testcase['name'],
+                        system=sys,
+                        partition=part,
+                        environ=testcase['environ'],
+                        job_completion_time_unix=testcase[
                             'job_completion_time_unix'
                         ],
-                        'session_uuid': session_uuid,
-                        'uuid': testcase['uuid']
-                    }
+                        session_uuid=session_uuid,
+                        uuid=testcase['uuid']
+                    )
                 )
 
         return session_uuid
 
     @time_function
     def store(self, report, report_file=None):
-        with self._db_write(self._db_file()) as conn:
+        with self._db_connect() as conn:
             return self._db_store_report(conn, report, report_file)
 
     @time_function
@@ -289,17 +320,26 @@ class _SqliteStorage(StorageBackend):
                 for sess in self._mass_json_decode(*json_blobs)}
 
     @time_function
-    def _fetch_testcases_raw(self, condition):
+    def _fetch_testcases_raw(self, condition: ClauseElement, order_by: ClauseElement = None):
         # Retrieve relevant session info and index it in Python
-        getprofiler().enter_region('sqlite session query')
-        with self._db_read(self._db_file()) as conn:
-            query = ('SELECT uuid, json_blob FROM sessions WHERE uuid IN '
-                     '(SELECT DISTINCT session_uuid FROM testcases '
-                     f'WHERE {condition})')
+        getprofiler().enter_region(
+            f'{self.__connector.engine.url.drivername} session query')
+        with self._db_connect() as conn:
+            query = (
+                select(
+                    self.__sessions_table.c.uuid,
+                    self.__sessions_table.c.json_blob
+                )
+                .where(
+                    self.__sessions_table.c.uuid.in_(
+                        select(self.__testcases_table.c.session_uuid)
+                        .distinct()
+                        .where(condition)
+                    )
+                )
+            )
             getlogger().debug(query)
 
-            # Create SQLite function for filtering using name patterns
-            conn.create_function('REGEXP', 2, self._db_matches)
             results = conn.execute(query).fetchall()
 
         getprofiler().exit_region()
@@ -310,11 +350,12 @@ class _SqliteStorage(StorageBackend):
         )
 
         # Extract the test case data by extracting their UUIDs
-        getprofiler().enter_region('sqlite testcase query')
-        with self._db_read(self._db_file()) as conn:
-            query = f'SELECT uuid FROM testcases WHERE {condition}'
+        getprofiler().enter_region(
+            f'{self.__connector.engine.url.drivername} testcase query')
+        with self._db_connect() as conn:
+            query = select(self.__testcases_table.c.uuid).where(
+                condition).order_by(order_by)
             getlogger().debug(query)
-            conn.create_function('REGEXP', 2, self._db_matches)
             results = conn.execute(query).fetchall()
 
         getprofiler().exit_region()
@@ -339,16 +380,24 @@ class _SqliteStorage(StorageBackend):
     @time_function
     def _fetch_testcases_from_session(self, selector, name_patt=None,
                                       test_filter=None):
-        query = 'SELECT uuid, json_blob from sessions'
+        query = select(
+            self.__sessions_table.c.uuid,
+            self.__sessions_table.c.json_blob
+        )
         if selector.by_session_uuid():
-            query += f' WHERE uuid == "{selector.uuid}"'
+            query = query.where(
+                self.__sessions_table.c.uuid == selector.uuid
+            )
         elif selector.by_time_period():
             ts_start, ts_end = selector.time_period
-            query += (f' WHERE (session_start_unix >= {ts_start} AND '
-                      f'session_start_unix < {ts_end})')
+            query = query.where(
+                self.__sessions_table.c.session_start_unix >= ts_start,
+                self.__sessions_table.c.session_start_unix < ts_end
+            )
 
-        getprofiler().enter_region('sqlite session query')
-        with self._db_read(self._db_file()) as conn:
+        getprofiler().enter_region(
+            f'{self.__connector.engine.url.drivername} session query')
+        with self._db_connect() as conn:
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
@@ -370,13 +419,16 @@ class _SqliteStorage(StorageBackend):
     @time_function
     def _fetch_testcases_time_period(self, ts_start, ts_end, name_patt=None,
                                      test_filter=None):
-        expr = (f'job_completion_time_unix >= {ts_start} AND '
-                f'job_completion_time_unix < {ts_end}')
+        expr = [
+            self.__testcases_table.c.job_completion_time_unix >= ts_start,
+            self.__testcases_table.c.job_completion_time_unix < ts_end
+        ]
         if name_patt:
-            expr += f' AND name REGEXP "{name_patt}"'
+            expr.append(self.__testcases_table.c.name.regexp_match(name_patt))
 
         testcases = self._fetch_testcases_raw(
-            f'({expr}) ORDER BY job_completion_time_unix'
+            and_(*expr),
+            self.__testcases_table.c.job_completion_time_unix
         )
         filt_fn = functools.partial(self._db_filter_json, test_filter)
         return [*filter(filt_fn, testcases)]
@@ -395,16 +447,24 @@ class _SqliteStorage(StorageBackend):
 
     @time_function
     def fetch_sessions(self, selector: QuerySelector, decode=True):
-        query = 'SELECT uuid, json_blob FROM sessions'
+        query = select(
+            self.__sessions_table.c.uuid,
+            self.__sessions_table.c.json_blob
+        )
         if selector.by_time_period():
             ts_start, ts_end = selector.time_period
-            query += (f' WHERE (session_start_unix >= {ts_start} AND '
-                      f'session_start_unix < {ts_end})')
+            query = query.where(
+                self.__sessions_table.c.session_start_unix >= ts_start,
+                self.__sessions_table.c.session_start_unix < ts_end
+            )
         elif selector.by_session_uuid():
-            query += f' WHERE uuid == "{selector.uuid}"'
+            query = query.where(
+                self.__sessions_table.c.uuid == selector.uuid
+            )
 
-        getprofiler().enter_region('sqlite session query')
-        with self._db_read(self._db_file()) as conn:
+        getprofiler().enter_region(
+            f'{self.__connector.engine.url.drivername} session query')
+        with self._db_connect() as conn:
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
@@ -421,15 +481,18 @@ class _SqliteStorage(StorageBackend):
     def _do_remove(self, conn, uuids):
         '''Remove sessions'''
 
-        # Enable foreign keys for delete action to have cascade effect
-        conn.execute('PRAGMA foreign_keys = ON')
-        uuids_sql = ','.join(f'"{uuid}"' for uuid in uuids)
-        query = f'DELETE FROM sessions WHERE uuid IN ({uuids_sql})'
+        query = (
+            delete(self.__sessions_table)
+            .where(self.__sessions_table.c.uuid.in_(uuids))
+        )
         getlogger().debug(query)
         conn.execute(query).fetchall()
 
         # Retrieve the uuids that have been removed
-        query = f'SELECT uuid FROM sessions WHERE uuid IN ({uuids_sql})'
+        query = (
+            select(self.__sessions_table.c.uuid)
+            .where(self.__sessions_table.c.uuid.in_(uuids))
+        )
         getlogger().debug(query)
         results = conn.execute(query).fetchall()
         not_removed = {rec[0] for rec in results}
@@ -438,11 +501,11 @@ class _SqliteStorage(StorageBackend):
     def _do_remove2(self, conn, uuids):
         '''Remove sessions using the RETURNING keyword'''
 
-        # Enable foreign keys for delete action to have cascade effect
-        conn.execute('PRAGMA foreign_keys = ON')
-        uuids_sql = ','.join(f'"{uuid}"' for uuid in uuids)
-        query = (f'DELETE FROM sessions WHERE uuid IN ({uuids_sql}) '
-                 'RETURNING uuid')
+        query = (
+            delete(self.__sessions_table)
+            .where(self.__sessions_table.c.uuid.in_(uuids))
+            .returning(self.__sessions_table.c.uuid)
+        )
         getlogger().debug(query)
         results = conn.execute(query).fetchall()
         return [rec[0] for rec in results]
@@ -455,8 +518,8 @@ class _SqliteStorage(StorageBackend):
             uuids = [sess['session_info']['uuid']
                      for sess in self.fetch_sessions(selector)]
 
-        with self._db_write(self._db_file()) as conn:
-            if sqlite3.sqlite_version_info >= (3, 35, 0):
+        with self._db_connect() as conn:
+            if getattr(conn.dialect, 'delete_returning', False):
                 return self._do_remove2(conn, uuids)
             else:
                 return self._do_remove(conn, uuids)
