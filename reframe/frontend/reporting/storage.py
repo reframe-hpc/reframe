@@ -59,7 +59,7 @@ class StorageBackend:
 
         :arg selector: an instance of :class:`QuerySelector` that will specify
             the actual type of query requested.
-        :arg decode: If set to :obj:`False`, do not decode the retuned
+        :arg decode: If set to :obj:`False`, do not decode the returned
             sessions and leave them JSON-encoded.
         :returns: A list of matching sessions, either decoded or not.
         '''
