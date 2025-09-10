@@ -860,8 +860,10 @@ def testcase_data(spec, namepatt=None, test_filter=None):
 @time_function
 def session_info(query):
     '''Retrieve session details as JSON'''
-
-    return StorageBackend.default().fetch_sessions(parse_query_spec(query))
+    sessions = StorageBackend.default().fetch_sessions(
+        parse_query_spec(query), False
+    )
+    return rf'[{",".join(sessions)}]'
 
 
 @time_function
