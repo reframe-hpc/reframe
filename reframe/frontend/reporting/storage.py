@@ -34,7 +34,7 @@ from ..reporting.utility import QuerySelector
 
 
 class _ConnectionStrategy:
-    '''Abstract helper class for building SQLAlchemy engine configurations'''
+    '''Abstract helper class for building the URL and kwargs for a given SQL dialect'''
 
     def __init__(self):
         self.url = self._build_connection_url()
@@ -42,7 +42,7 @@ class _ConnectionStrategy:
 
     @abc.abstractmethod
     def _build_connection_url(self):
-        '''Return a SQLAlchemy URL string for this backend.
+        '''Return a SQLAlchemy URL string for this dialect.
 
         Implementations must return a URL suitable for passing to 
         `sqlalchemy.create_engine()`.
@@ -74,6 +74,7 @@ class _SqliteConnector(_ConnectionStrategy):
                 os.makedirs(prefix, exist_ok=True)
 
             open(self.__db_file, 'a').close()
+            # Update DB file mode
             os.chmod(self.__db_file, self.__db_file_mode)
 
         super().__init__()
@@ -98,6 +99,33 @@ class _SqliteConnector(_ConnectionStrategy):
         return {'connect_args': {'timeout': timeout}}
 
 
+class _PostgresConnector(_ConnectionStrategy):
+    def __init__(self):
+        super().__init__()
+
+    def _build_connection_url(self):
+        host = runtime().get_option('storage/0/postgresql_host')
+        port = runtime().get_option('storage/0/postgresql_port')
+        db = runtime().get_option('storage/0/postgresql_db')
+        driver = runtime().get_option('storage/0/postgresql_driver')
+        user = os.getenv('RFM_POSTGRES_USER')
+        password = os.getenv('RFM_POSTGRES_PASSWORD')
+        if not (driver and host and port and db and user and password):
+            raise ReframeError(
+                'Postgres connection info must be set in config and env')
+
+        return URL.create(
+            drivername=f'postgresql+{driver}',
+            username=user, password=password,
+            host=host, port=port, database=db
+        ).render_as_string(hide_password=False)
+
+    @property
+    def _connection_kwargs(self):
+        timeout = runtime().get_option('storage/0/postgresql_conn_timeout')
+        return {'connect_args': {'connect_timeout': timeout}}
+
+
 class StorageBackend:
     '''Abstract class that represents the results backend storage'''
 
@@ -106,6 +134,8 @@ class StorageBackend:
         '''Factory method for creating storage backends'''
         if backend == 'sqlite':
             return _SqlStorage(_SqliteConnector(), *args, **kwargs)
+        elif backend == 'postgresql':
+            return _SqlStorage(_PostgresConnector(), *args, **kwargs)
         else:
             raise ReframeError(f'no such storage backend: {backend}')
 
