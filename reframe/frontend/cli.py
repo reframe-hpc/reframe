@@ -698,6 +698,11 @@ def main():
         envvar='RFM_TABLE_FORMAT', configvar='general/table_format'
     )
     misc_options.add_argument(
+        '--table-format-delim', action='store',
+        help='The delimiter to use when using `--table-format=csv`',
+        envvar='RFM_TABLE_FORMAT_DELIM', configvar='general/table_format_delim'
+    )
+    misc_options.add_argument(
         '-v', '--verbose', action='count',
         help='Increase verbosity level of output',
         envvar='RFM_VERBOSE', configvar='general/verbose'
