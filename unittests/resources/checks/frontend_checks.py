@@ -8,7 +8,6 @@
 #
 
 import os
-import signal
 import sys
 import time
 
@@ -190,10 +189,13 @@ class SelfKillCheck(rfm.RunOnlyRegressionTest, special=True):
     executable = 'echo'
     sanity_patterns = sn.assert_true(1)
 
+    def __init__(self, signum):
+        self.signum = signum
+
     def run(self):
         super().run()
         time.sleep(0.5)
-        os.kill(os.getpid(), signal.SIGTERM)
+        os.kill(os.getpid(), self.signum)
 
 
 class CompileFailureCheck(rfm.RegressionTest):

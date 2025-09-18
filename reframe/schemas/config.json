@@ -85,7 +85,9 @@
                         "ignore_keys": {
                             "type": "array",
                             "items": {"type": "string"}
-                        }
+                        },
+                        "locking_enable": {"type": "boolean"},
+                        "locking_file_mode": {"type": ["string", "null"]}
                     },
                     "required": ["prefix"]
                 }
@@ -536,6 +538,7 @@
                     "save_log_files": {"type": "boolean"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
                     "table_format": {"enum": ["csv", "plain", "pretty"]},
+                    "table_format_delim": {"type": "string"},
                     "timestamp_dirs": {"type": "string"},
                     "topology_prefix": {"type": "string"},
                     "trap_job_errors": {"type": "boolean"},
@@ -607,6 +610,7 @@
         "general/resolve_module_conflicts": true,
         "general/save_log_files": false,
         "general/table_format": "pretty",
+        "general/table_format_delim": ",",
         "general/target_systems": ["*"],
         "general/topology_prefix": "${HOME}/.reframe/topology",
         "general/timestamp_dirs": "%Y%m%dT%H%M%S%z",
@@ -633,6 +637,8 @@
         "logging/handlers_perflog/filelog_append": true,
         "logging/handlers_perflog/filelog_basedir": "./perflogs",
         "logging/handlers_perflog/filelog_ignore_keys": [],
+        "logging/handlers_perflog/filelog_locking_enable": false,
+        "logging/handlers_perflog/filelog_locking_file_mode": null,
         "logging/handlers_perflog/graylog_extras": {},
         "logging/handlers_perflog/httpjson_extras": {},
         "logging/handlers_perflog/httpjson_ignore_keys": [],

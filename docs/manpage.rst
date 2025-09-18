@@ -1083,6 +1083,14 @@ The way the tests are generated and how they interact with the test filtering op
 
    .. versionadded:: 4.3
 
+.. option:: --param-values-delim=<delim>
+
+   Use the given delimiter to separate the parameter values passed with :option:`--parameterize`.
+
+   Default delimiter is ``,``.
+
+   .. versionadded:: 4.9
+
 .. option:: --repeat=N
 
    Repeat the selected tests ``N`` times.
@@ -1195,6 +1203,14 @@ Miscellaneous options
    - ``pretty``: (default) Generate a pretty table
 
    .. versionadded:: 4.7
+
+.. option:: --table-format-delim[=DELIM]
+
+   Delimiter to use when emitting tables in CSV format using the :option:`--table-format=csv` option.
+
+   The default delimiter is ``,``.
+
+   .. versionadded:: 4.9
 
 .. option:: --upgrade-config-file=OLD[:NEW]
 
@@ -2307,6 +2323,21 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
    .. versionadded:: 4.7
+
+.. envvar:: RFM_TABLE_FORMAT_DELIM
+
+   Delimiter for CSV tables.
+
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--table-format-delim`
+      Associated configuration parameter :attr:`~config.general.table_format_delim`
+      ================================== ==================
+
+   .. versionadded:: 4.9
 
 
 .. envvar:: RFM_TIMESTAMP_DIRS

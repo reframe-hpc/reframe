@@ -6,6 +6,7 @@
 import contextlib
 import os
 import pytest
+import signal
 
 import reframe as rfm
 import reframe.core.runtime as rt
@@ -309,11 +310,16 @@ def test_pass_in_retries(make_runner, make_cases, tmp_path, common_exec_ctx):
     assert 0 == len(runner.stats.failed())
 
 
-def test_sigterm_handling(make_runner, make_cases, common_exec_ctx):
+@pytest.fixture(params=[signal.SIGTERM, signal.SIGHUP])
+def signum(request):
+    return request.param
+
+
+def test_signal_handling(signum, make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     with pytest.raises(ForceExitError,
-                       match='received TERM signal'):
-        runner.runall(make_cases([SelfKillCheck()]))
+                       match=f'received signal {signum}'):
+        runner.runall(make_cases([SelfKillCheck(signum)]))
 
     assert_all_dead(runner)
     assert runner.stats.num_cases() == 1
@@ -443,7 +449,7 @@ def max_jobs_opts(n):
 
 
 @pytest.fixture
-def make_async_runner():
+def make_async_runner(restore_signals):
     # We need to have control in the unit tests where the policy is created,
     # because in some cases we need it to be initialized after the execution
     # context. For this reason, we use a constructor fixture here.

@@ -23,6 +23,7 @@ Publications
 Presentations & Talks
 ---------------------
 
+* [`slides + talk <https://fosdem.org/2025/schedule/event/fosdem-2025-4755-adding-built-in-support-for-basic-performance-test-analytics-to-reframe/>`__] "Adding built-in support for basic performance test analytics to ReFrame," `FOSDEM 25 <https://fosdem.org/2025/>`__.
 * [`slides <https://drive.google.com/file/d/1cwlIipJtJoD-0xGcDMxbL4FQe3xtwAen/view?usp=sharing>`__] "Introduction to ReFrame," CINECA visit, Jun 2024.
 * [`slides <https://users.ugent.be/~kehoste/eum24/008_eum24_ReFrame.pdf>`__][`recording <https://www.youtube.com/live/uSEeU-VJf6k?si=YB19mFpG6aAEBOgH>`__] "Recent Advances in ReFrame," `9th EasyBuild User Meeting 2024 <https://easybuild.io/eum24/>`__.
 * [`slides <https://docs.google.com/presentation/d/1GmO2Uf29SaLg36bPB9g9eeaKMN-bLlDJ5IvLGLQJfD8/edit?usp=share_link>`__][`recording <https://youtu.be/0ApEKc185Bw>`__] "Recent Advances in ReFrame," `8th EasyBuild User Meeting 2023 <https://easybuild.io/eum23/>`__.

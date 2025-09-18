@@ -661,12 +661,36 @@ def test_list_empty_prgenvs_in_check_and_options(run_reframe):
 
 def test_list_with_details(run_reframe):
     returncode, stdout, stderr = run_reframe(
-        checkpath=['unittests/resources/checks/frontend_checks.py'],
-        action='list_detailed'
+        checkpath=['unittests/resources/checks_unlisted/descriptions.py'],
+        more_options=['-n', 'BaseTest'],
+        action='list_detailed',
+        environs=[]
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode == 0
+
+    assert 'Found 3 check(s)' in stdout
+    assert len(re.findall(r'description: foo', stdout)) == 1
+    assert len(re.findall(r'description: \<none\>', stdout)) == 1
+    assert len(re.findall(r'description: \<undefined\>', stdout)) == 1
+
+
+def test_list_deps_with_details(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks_unlisted/descriptions.py'],
+        more_options=['-n', 'DerivedTest'],
+        action='list_detailed',
+        environs=[]
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 0
+
+    assert 'Found 9 check(s)' in stdout
+    assert len(re.findall(r'description: foo', stdout)) == 6
+    assert len(re.findall(r'description: \<none\>', stdout)) == 6
+    assert len(re.findall(r'description: \<undefined\>', stdout)) == 6
 
 
 def test_list_concretized(run_reframe):
@@ -1074,16 +1098,30 @@ def test_repeat_negative(run_reframe):
 
 def test_parameterize_tests(run_reframe):
     returncode, stdout, _ = run_reframe(
-        more_options=['-P', 'num_tasks=2,4,8', '-n', '^HelloTest'],
+        more_options=['-P', 'descr=msg=hello1,msg=hello2',
+                      '-n', '^HelloTest'],
         checkpath=['unittests/resources/checks/hellocheck.py'],
         action='describe'
     )
     assert returncode == 0
 
-    test_descr = json.loads(stdout)
-    print(json.dumps(test_descr, indent=2))
-    num_tasks = {t['num_tasks'] for t in test_descr}
-    assert num_tasks == {2, 4, 8}
+    test_json = json.loads(stdout)
+    descr = [t['descr'] for t in test_json]
+    assert descr == ['msg=hello1', 'msg=hello2']
+
+
+def test_parameterize_values_delim(run_reframe):
+    returncode, stdout, _ = run_reframe(
+        more_options=['-P', 'descr=hello1,hello2/hello3',
+                      '--param-values-delim=/', '-n', '^HelloTest'],
+        checkpath=['unittests/resources/checks/hellocheck.py'],
+        action='describe'
+    )
+    assert returncode == 0
+
+    test_json = json.loads(stdout)
+    descr = [t['descr'] for t in test_json]
+    assert descr == ['hello1,hello2', 'hello3']
 
 
 def test_parameterize_tests_invalid_params(run_reframe):

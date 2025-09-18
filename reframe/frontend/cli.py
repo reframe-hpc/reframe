@@ -28,6 +28,7 @@ import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 import reframe.utility.typecheck as typ
+from reframe.core.warnings import suppress_deprecations
 from reframe.frontend.testgenerators import (distribute_tests,
                                              getallnodes, repeat_tests,
                                              parameterize_tests)
@@ -96,12 +97,25 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
                 tc_info = f' @{u.partition.fullname}+{u.environ.name}'
 
             location = inspect.getfile(type(u.check))
+
             if detailed:
-                details = (f' [variant: {u.check.variant_num}, '
-                           f'file: {location!r}]')
+                details_fields = [
+                    f'variant: {u.check.variant_num}',
+                    f'file: {location!r}'
+                ]
+
+                descr_value = getattr(u.check, 'descr', None)
+                if descr_value is None:
+                    descr_str = '<undefined>'
+                elif descr_value == '':
+                    descr_str = '<none>'
+                else:
+                    descr_str = descr_value
+
+                details_fields.append(f'description: {descr_str}')
+                details = '\n' + '\n'.join(f'{prefix} {field}' for field in details_fields)
 
             lines.append(f'{prefix}^{name_info}{tc_info}{details}')
-
         return lines
 
     # We need the leaf test cases to be printed at the leftmost
@@ -115,7 +129,22 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
         location = inspect.getfile(type(t.check))
         if detailed:
-            details = f' [variant: {t.check.variant_num}, file: {location!r}]'
+            details_fields = [
+                f'variant: {t.check.variant_num}',
+                f'file: {location!r}'
+            ]
+
+            descr_value = getattr(t.check, 'descr', None)
+            if descr_value is None:
+                descr_str = '<undefined>'
+            elif descr_value == '':
+                descr_str = '<none>'
+            else:
+                descr_str = descr_value
+
+            details_fields.append(f'description: {descr_str}')
+
+            details = '\n' + '\n'.join(f'  {field}' for field in details_fields)
 
         if concretized or (not concretized and
                            t.check.unique_name not in unique_checks):
@@ -149,13 +178,18 @@ def describe_checks(testcases, printer):
             #
             # 1. Add other fields that are relevant for users
             # 2. Remove all private fields
-            rec['name'] = tc.check.name
-            rec['unique_name'] = tc.check.unique_name
-            rec['display_name'] = tc.check.display_name
+            cls = type(tc.check)
+            if hasattr(cls, 'loggable_attrs'):
+                for name, alt_name in cls.loggable_attrs():
+                    key = alt_name if alt_name else name
+                    try:
+                        with suppress_deprecations():
+                            rec.setdefault(key, getattr(tc.check, name))
+                    except AttributeError:
+                        rec.setdefault(key, '<undefined>')
+
             rec['pipeline_hooks'] = {}
             rec['perf_variables'] = list(rec['perf_variables'].keys())
-            rec['prefix'] = tc.check.prefix
-            rec['variant_num'] = tc.check.variant_num
             for stage, hooks in tc.check.pipeline_hooks().items():
                 for hk in hooks:
                     if hk.__name__ not in tc.check.disabled_hooks:
@@ -617,6 +651,10 @@ def main():
         default=[], help='Parameterize a test on a set of variables'
     )
     testgen_options.add_argument(
+        '--param-values-delim', action='store', default=',',
+        help='Parameter value delimiter'
+    )
+    testgen_options.add_argument(
         '--repeat', action='store', metavar='N',
         help='Repeat selected tests N times'
     )
@@ -658,6 +696,11 @@ def main():
         '--table-format', choices=['csv', 'pretty', 'plain'],
         help='Table formatting',
         envvar='RFM_TABLE_FORMAT', configvar='general/table_format'
+    )
+    misc_options.add_argument(
+        '--table-format-delim', action='store',
+        help='The delimiter to use when using `--table-format=csv`',
+        envvar='RFM_TABLE_FORMAT_DELIM', configvar='general/table_format_delim'
     )
     misc_options.add_argument(
         '-v', '--verbose', action='count',
@@ -796,6 +839,7 @@ def main():
         dest='sqlite_conn_timeout',
         envvar='RFM_SQLITE_CONN_TIMEOUT',
         configvar='storage/sqlite_conn_timeout',
+        type=float,
         help='Timeout for DB connections (SQLite backend)'
     )
     argparser.add_argument(
@@ -1040,16 +1084,18 @@ def main():
     if options.describe_stored_sessions:
         # Restore logging level
         printer.setLevel(logging.INFO)
+        printer.set_handler_level(logging.WARNING,
+                                  lambda htype: htype != 'stream')
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
-            printer.info(jsonext.dumps(reporting.session_info(
-                options.describe_stored_sessions
-            ), indent=2))
+            printer.info(reporting.session_info(options.describe_stored_sessions))
             sys.exit(0)
 
     if options.describe_stored_testcases:
         # Restore logging level
         printer.setLevel(logging.INFO)
+        printer.set_handler_level(logging.WARNING,
+                                  lambda htype: htype != 'stream')
         namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
         with exit_gracefully_on_error('failed to retrieve test case data',
                                       printer):
@@ -1365,13 +1411,13 @@ def main():
             params = {}
             for param_spec in options.parameterize:
                 try:
-                    var, values_spec = param_spec.split('=')
+                    var, values_spec = param_spec.split('=', maxsplit=1)
                 except ValueError:
                     raise errors.CommandLineError(
                         f'invalid parameter spec: {param_spec}'
                     ) from None
                 else:
-                    params[var] = values_spec.split(',')
+                    params[var] = values_spec.split(options.param_values_delim)
 
             testcases_all = parameterize_tests(testcases, params)
             testcases = testcases_all

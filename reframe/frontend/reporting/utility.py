@@ -200,7 +200,9 @@ class QuerySelector:
 
     def __repr__(self):
         clsname = type(self).__name__
-        return f'{clsname}(value={self.__value}, kind={self.__kind})'
+        return (f'{clsname}(uuid={self.__uuid!r}, '
+                f'time_period={self.__time_period!r}, '
+                f'sess_filter={self.__sess_filter!r})')
 
 
 def parse_time_period(s):
