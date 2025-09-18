@@ -525,8 +525,8 @@ class RegressionTask:
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
         try:
-            self._perflogger.log_performance(logging.INFO, self,
-                                             multiline=self._perflog_compat)
+            self._perflogger.log_result(logging.INFO, self,
+                                        multiline=self._perflog_compat)
         except LoggingError as e:
             getlogger().warning(
                 f'could not log performance data for {self.testcase}: {e}'
@@ -550,8 +550,8 @@ class RegressionTask:
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners(callback)
         try:
-            self._perflogger.log_performance(logging.INFO, self,
-                                             multiline=self._perflog_compat)
+            self._perflogger.log_result(logging.INFO, self,
+                                        multiline=self._perflog_compat)
         except LoggingError as e:
             getlogger().warning(
                 f'could not log performance data for {self.testcase}: {e}'
