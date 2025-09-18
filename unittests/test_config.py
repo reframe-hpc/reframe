@@ -109,7 +109,7 @@ def test_load_config_json(tmp_path):
     json_file = tmp_path / 'settings.json'
     json_file.write_text(json.dumps(settings.site_configuration, indent=4))
     site_config = config.load_config(json_file)
-    assert site_config.sources == ['<builtin>', json_file]
+    assert site_config.sources == ['<builtin>', f'{json_file}']
 
 
 def test_load_config_json_invalid_syntax(tmp_path):

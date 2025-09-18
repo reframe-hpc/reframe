@@ -192,33 +192,9 @@ class RegressionCheckLoader:
             return []
 
         try:
-            dirname = os.path.dirname(filename)
-
-            # Load all parent modules of test file
-            parents = []
-            while os.path.exists(os.path.join(dirname, '__init__.py')):
-                parents.append(os.path.join(dirname))
-                dirname = os.path.split(dirname)[0]
-
-            parent_module = None
-            for pdir in reversed(parents):
-                with osext.change_dir(pdir):
-                    with util.temp_sys_path(pdir):
-                        package_path = os.path.join(pdir, '__init__.py')
-                        parent_module = util.import_module_from_file(
-                            package_path, parent=parent_module
-                        ).__name__
-
-            # Now load the actual test file
-            if not parents:
-                pdir = dirname
-
-            with osext.change_dir(pdir):
-                with util.temp_sys_path(pdir):
-                    return self.load_from_module(
-                        util.import_module_from_file(filename, force,
-                                                     parent_module)
-                    )
+            return self.load_from_module(util.import_module_from_file(
+                filename, force=force, load_parents=True
+            ))
         except Exception:
             exc_info = sys.exc_info()
             if not is_severe(*exc_info):
