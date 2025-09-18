@@ -131,12 +131,12 @@ def import_module_from_file(filename, *, force=False, load_parents=False):
     standard import mechanism.
 
     If ``load_parents`` is set, any modules along the path will also be
-    loaded. A path  will considered as a parent module and loaded if it
+    loaded. A path will considered as a parent module and loaded if it
     contains an ``__init__.py`` file.
 
     :arg filename: The path to the filename of a Python module.
     :arg force: Force reload of module in case it is already loaded. This does
-        not apply to the parent modules that have been load with
+        not apply to the parent modules that have been loaded with
         ``load_parents=True``.
     :arg load_parents: Load parent modules along the path.
     :returns: The loaded Python module.

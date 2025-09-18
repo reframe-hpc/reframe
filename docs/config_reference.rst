@@ -2383,7 +2383,7 @@ Dynamic configuration
 One advantage of ReFrame's configuration is that it is programmable, especially if you are using the Python files.
 Since the configuration is loaded as a Python module, you can generate parts of the configuration dynamically.
 You can also import seamlessly other modules that reside inside the configuration directory.
-This is particularly useful when you define custom scheduler or :ref:`parallel launcher <custom-launchers>` backends.
+This is particularly useful when you define custom schedulers or :ref:`parallel launcher <custom-launchers>` backends.
 
 The YAML configuration on the other hand is more static, although not fully.
 Code generation can still be used with the YAML configuration as it is treated as a Jinja2 template, where ReFrame provides the following bindings:
