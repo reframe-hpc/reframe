@@ -2118,6 +2118,14 @@ General Configuration
    - ``pretty``: (default) Generate a pretty table
 
 
+.. py:attribute:: general.table_format_delim
+
+   :required: No
+   :default: ``","``
+
+   Delimiter to use when emitting tables in CSV format.
+
+
 .. py:attribute:: general.timestamp_dirs
 
    :required: No

@@ -698,6 +698,11 @@ def main():
         envvar='RFM_TABLE_FORMAT', configvar='general/table_format'
     )
     misc_options.add_argument(
+        '--table-format-delim', action='store',
+        help='The delimiter to use when using `--table-format=csv`',
+        envvar='RFM_TABLE_FORMAT_DELIM', configvar='general/table_format_delim'
+    )
+    misc_options.add_argument(
         '-v', '--verbose', action='count',
         help='Increase verbosity level of output',
         envvar='RFM_VERBOSE', configvar='general/verbose'
@@ -1083,9 +1088,7 @@ def main():
                                   lambda htype: htype != 'stream')
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
-            printer.info(jsonext.dumps(reporting.session_info(
-                options.describe_stored_sessions
-            ), indent=2))
+            printer.info(reporting.session_info(options.describe_stored_sessions))
             sys.exit(0)
 
     if options.describe_stored_testcases:
