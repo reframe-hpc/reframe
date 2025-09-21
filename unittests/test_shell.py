@@ -130,7 +130,7 @@ def test_trap_signal(script_file):
 
     # We kill the whole spawned process group (we are launching a shell)
     os.killpg(proc.pid, 15)
-    proc.wait()
+    proc.communicate()
 
     f_stdout.flush()
     f_stdout.seek(0)

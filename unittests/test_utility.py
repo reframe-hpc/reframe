@@ -78,6 +78,7 @@ def test_command_async():
     t_launch = time.time() - t_launch
 
     proc.wait()
+    proc.communicate()
     t_sleep = time.time() - t_sleep
 
     # Now check the timings
@@ -110,7 +111,7 @@ def test_command_futures():
     assert not proc.is_session()
 
     # stdout must block
-    assert proc.stdout().read() == 'hello\n'
+    assert proc.stdout() == 'hello\n'
     assert proc.exitcode == 0
     assert proc.signal is None
 
@@ -270,6 +271,7 @@ def test_command_futures_chain_cancel():
 
     assert proc1.started()
     proc1.cancel()
+    proc1.wait()
     assert proc1.cancelled()
     assert not proc2.started()
 
