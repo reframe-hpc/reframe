@@ -8,6 +8,7 @@ import pytest
 import reframe as rfm
 import reframe.frontend.executors as executors
 import reframe.frontend.filters as filters
+import reframe.utility.sanity as sn
 from reframe.frontend.testgenerators import (distribute_tests,
                                              parameterize_tests, repeat_tests)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -74,10 +75,11 @@ def test_repeat_testcases():
 
 
 @pytest.fixture
-def hello_test_cls():
+def HelloTest():
     class _HelloTest(rfm.RunOnlyRegressionTest):
         message = variable(str, value='world')
         number = variable(int, value=1)
+        x = parameter([1, 2], type=int)
         valid_systems = ['*']
         valid_prog_environs = ['*']
         executable = 'echo'
@@ -95,14 +97,16 @@ def hello_test_cls():
     return _HelloTest
 
 
-def test_parameterize_tests(hello_test_cls):
-    testcases = executors.generate_testcases([hello_test_cls()])
-    assert len(testcases) == 1
-
+def test_parameterize_tests(HelloTest):
+    testcases = executors.generate_testcases(
+        [HelloTest(variant_num=i) for i in range(HelloTest.num_variants)]
+    )
+    assert len(testcases) == 2
     testcases = parameterize_tests(
         testcases, {'message': ['x', 'y'],
                     '_HelloTest.number': [1, '2', 3],
+                    '_HelloTest.x': [3, 4, 5],
                     'UnknownTest.var': 3,
                     'unknown': 1}
     )
-    assert len(testcases) == 6
+    assert len(testcases) == 18

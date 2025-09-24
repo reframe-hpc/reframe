@@ -137,7 +137,7 @@ class TestParam:
 
     '''
 
-    def __init__(self, values=None, inherit_params=False,
+    def __init__(self, values=None, *, type=None, inherit_params=False,
                  filter_params=None, fmt=None, loggable=True):
         if values is None:
             values = []
@@ -175,6 +175,7 @@ class TestParam:
 
         self.__fmt_fn = fmt
         self.__loggable = loggable
+        self.__type = type
         self.__owner = None
         self.__name = None
 
@@ -183,6 +184,10 @@ class TestParam:
 
     def __rfm_set_owner__(self, name):
         self.__owner = name
+
+    @property
+    def type(self):
+        return self.__type
 
     @property
     def name(self):

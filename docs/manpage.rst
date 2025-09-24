@@ -1062,13 +1062,14 @@ The way the tests are generated and how they interact with the test filtering op
 
 .. option:: -P, --parameterize=[TEST.]VAR=VAL0,VAL1,...
 
-   Parameterize a test on an existing variable.
+   Parameterize a test on an existing variable or parameter.
 
-   The test will behave as if the variable ``VAR`` was a parameter taking the values ``VAL0,VAL1,...``.
+   In case of variables, the test will behave as if the variable ``VAR`` was a parameter taking the values ``VAL0,VAL1,...``.
    The values will be converted based on the type of the target variable ``VAR``.
+   In case of parameters, the test will behave is the parameter had been defined with the values ``VAL0,VAL1,...``.
    The ``TEST.`` prefix will only parameterize the variable ``VAR`` of test ``TEST``.
 
-   The :option:`-P` can be specified multiple times in order to parameterize multiple variables.
+   The :option:`-P` can be specified multiple times in order to parameterize multiple variables or redefine multiple parameters.
 
    .. note::
 
@@ -1082,6 +1083,10 @@ The way the tests are generated and how they interact with the test filtering op
       Tests that use raw dependencies are not supported.
 
    .. versionadded:: 4.3
+
+   .. versionchanged:: 4.9
+
+      It is now possible to use the :option:`-P` option to redefine existing test parameters.
 
 .. option:: --param-values-delim=<delim>
 
