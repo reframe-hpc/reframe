@@ -48,6 +48,8 @@ class _ProcFuture:
 
     def __init__(self, check=False, *args, **kwargs):
         self._proc = None
+        self._stdout = None
+        self._stderr = None
         self._exitcode = None
         self._signal = None
         self._check = check
@@ -76,6 +78,17 @@ class _ProcFuture:
             self._wait()
 
         return self
+
+    def _shutdown(self):
+        '''Shut down cleanly the underlying `Popen` object.'''
+        if self._stdout is None and self._proc.stdout:
+            self._stdout = self._proc.stdout.read()
+
+        if self._stderr is None and self._proc.stderr:
+            self._stderr = self._proc.stderr.read()
+
+        self._proc.wait()
+        self._proc.communicate()
 
     @property
     def pid(self):
@@ -179,6 +192,7 @@ class _ProcFuture:
         except OSError as e:
             if e.errno == errno.ECHILD:
                 self._completed = True
+                self._shutdown()
                 return self._completed
             else:
                 raise e
@@ -191,16 +205,19 @@ class _ProcFuture:
         elif os.WIFSIGNALED(status):
             self._signal = os.WTERMSIG(status)
 
+        # Retrieve the stdout/stderr and clean up the underlying Popen object
         self._completed = True
+        self._shutdown()
 
         # Call any done callbacks
         for func in self._done_callbacks:
             func(self)
 
         # Start the next futures in the chain
-        for fut, cond in self._next:
-            if cond(self):
-                fut.start()
+        if not self._cancelled:
+            for fut, cond in self._next:
+                if cond(self):
+                    fut.start()
 
         return self._completed
 
@@ -230,13 +247,12 @@ class _ProcFuture:
         if not self._check:
             return
 
-        if self._proc.returncode == 0:
+        if self._exitcode == 0:
             return
 
         return SpawnedProcessError(self._proc.args,
-                                   self._proc.stdout.read(),
-                                   self._proc.stderr.read(),
-                                   self._proc.returncode)
+                                   self._stdout, self._stderr,
+                                   self._exitcode)
 
     def stdout(self):
         '''Retrieve the standard output of the spawned process.
@@ -244,7 +260,7 @@ class _ProcFuture:
         This is a blocking call and will wait until the future finishes.
         '''
         self._wait()
-        return self._proc.stdout
+        return self._stdout
 
     def stderr(self):
         '''Retrieve the standard error of the spawned process.
@@ -252,7 +268,7 @@ class _ProcFuture:
         This is a blocking call and will wait until the future finishes.
         '''
         self._wait()
-        return self._proc.stderr
+        return self._stderr
 
 
 def run_command(cmd, check=False, timeout=None, **kwargs):
@@ -281,9 +297,12 @@ def run_command(cmd, check=False, timeout=None, **kwargs):
         proc_stdout, proc_stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
-        raise SpawnedProcessTimeout(e.cmd,
-                                    proc.stdout.read(),
-                                    proc.stderr.read(), timeout) from None
+        os.waitpid(proc.pid, 0)
+        proc_stdout = proc.stdout.read()
+        proc_stderr = proc.stderr.read()
+        proc.communicate()
+        raise SpawnedProcessTimeout(e.cmd, proc_stdout,
+                                    proc_stderr, timeout) from None
 
     completed = subprocess.CompletedProcess(cmd,
                                             returncode=proc.returncode,
