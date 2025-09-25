@@ -1786,10 +1786,11 @@ class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
                 self.current_system.name, self._current_partition.name,
                 self._current_environ.name, self.short_name
             )
-            self._outputdir = runtime.make_outputdir(
-                self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.short_name
-            )
+            if not self.is_dry_run():
+                self._outputdir = runtime.make_outputdir(
+                    self.current_system.name, self._current_partition.name,
+                    self._current_environ.name, self.short_name
+                )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 

@@ -162,6 +162,19 @@ def test_check_success(run_reframe, tmp_path, run_action):
                           'reports' / 'run-report-0.json')
 
 
+def test_outputdir_dry_run(run_reframe, tmp_path):
+    # We need to make sure that outputdir is maintained if the same test is
+    # rerun with `--dry-run`
+
+    run_reframe(action='run', more_options=['-n', '^HelloTest'])
+    run_reframe(action='dry_run', more_options=['-n', '^HelloTest'])
+    prefix = (tmp_path / 'output' / 'generic' / 'default' /
+              'builtin' / 'HelloTest')
+    for path in ('rfm_build.err', 'rfm_build.out', 'rfm_build.sh',
+                 'rfm_job.err', 'rfm_job.out', 'rfm_job.sh'):
+        assert (prefix / path).exists()
+
+
 def test_check_restore_session_failed(run_reframe, tmp_path):
     run_reframe(
         checkpath=['unittests/resources/checks_unlisted/deps_complex.py']
