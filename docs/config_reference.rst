@@ -2425,3 +2425,18 @@ These are two examples of YAML logging configuration that uses one of those bind
       level: debug2
       format: "[%(asctime)s.%(msecs)03d] %(levelname)s: %(check_info)s: %(message)s"
       append: false
+
+
+.. _builtin-configuration:
+
+Builtin configuration
+=====================
+
+This is the builtin configuration that ReFrame always loads.
+
+.. literalinclude:: ../reframe/core/settings.py
+   :lines: 6-
+
+.. seealso::
+
+   See also how configuration files are :ref:`loaded <manpage-configuration>` and how you can specify them with the :option:`--config-file` option.
