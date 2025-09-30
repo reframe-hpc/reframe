@@ -1115,7 +1115,7 @@ Miscellaneous options
    Use ``FILE`` as configuration file for ReFrame.
 
    This option can be passed multiple times, in which case multiple configuration files will be read and loaded successively.
-   The base of the configuration chain is always the builtin configuration file, namely the ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
+   The base of the configuration chain is always the :ref:`builtin configuration file <builtin-configuration>`, namely the ``${RFM_INSTALL_PREFIX}/reframe/core/settings.py``.
    At any point, the user can "break" the chain of configuration files by prefixing the configuration file name with a colon as in the following example: ``-C :/path/to/new_config.py``.
    This will ignore any previously loaded configuration file and will only load the one specified.
    Note, however, that the builtin configuration file cannot be overriden;
