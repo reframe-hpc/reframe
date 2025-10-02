@@ -186,7 +186,7 @@ def test_rfc3339_timezone_extension(logfile, logger_with_check,
 def test_rfc3339_timezone_wrong_directive(logfile, logger_without_check):
     formatter = rlog.RFC3339Formatter(
         fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
-        datefmt='%FT%T:z')
+        datefmt=r'%FT%T:z')
     logger_without_check.logger.handlers[0].setFormatter(formatter)
     logger_without_check.info('foo')
     assert _pattern_in_logfile(':z', logfile)
