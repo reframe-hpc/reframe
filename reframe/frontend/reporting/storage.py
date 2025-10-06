@@ -21,6 +21,7 @@ from sqlalchemy import (and_,
                         select,
                         Table,
                         Text)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.engine.url import URL
 from sqlalchemy.sql.elements import ClauseElement
 
@@ -52,6 +53,11 @@ class _ConnectionStrategy:
     def _connection_kwargs(self):
         '''Per‑dialect kwargs for `create_engine()`'''
         return {}
+
+    @property
+    def json_column_type(self):
+        '''Return the JSON column type to use for JSON payloads'''
+        return Text
 
 
 class _SqliteConnector(_ConnectionStrategy):
@@ -124,6 +130,10 @@ class _PostgresConnector(_ConnectionStrategy):
     def _connection_kwargs(self):
         timeout = runtime().get_option('storage/0/postgresql_conn_timeout')
         return {'connect_args': {'connect_timeout': timeout}}
+
+    @property
+    def json_column_type(self):
+        return JSONB
 
 
 class StorageBackend:
@@ -198,7 +208,8 @@ class _SqlStorage(StorageBackend):
                                       Column('uuid', Text, primary_key=True),
                                       Column('session_start_unix', Float),
                                       Column('session_end_unix', Float),
-                                      Column('json_blob', Text),
+                                      Column(
+                                          'json_blob', self.__connector.json_column_type),
                                       Column('report_file', Text),
                                       Index('index_sessions_time', 'session_start_unix'))
         self.__testcases_table = Table('testcases', self.__metadata,
@@ -270,12 +281,18 @@ class _SqlStorage(StorageBackend):
         session_start_unix = report['session_info']['time_start_unix']
         session_end_unix = report['session_info']['time_end_unix']
         session_uuid = report['session_info']['uuid']
+        # Pass dict directly for JSONB
+        if self.__connector.json_column_type is JSONB:
+            json_payload = report
+        else:
+            json_payload = jsonext.dumps(report)
+
         conn.execute(
             self.__sessions_table.insert().values(
                 uuid=session_uuid,
                 session_start_unix=session_start_unix,
                 session_end_unix=session_end_unix,
-                json_blob=jsonext.dumps(report),
+                json_blob=json_payload,
                 report_file=report_file_path
             )
         )
@@ -326,6 +343,9 @@ class _SqlStorage(StorageBackend):
         session_infos = {}
         sessions = {}
         for uuid, json_blob in results:
+            if not isinstance(json_blob, str):
+                # serialize into a json string
+                json_blob = json.dumps(json_blob)
             sessions.setdefault(uuid, json_blob)
             session_infos.setdefault(uuid, _extract_sess_info(json_blob))
 

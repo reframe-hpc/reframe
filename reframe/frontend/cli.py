@@ -1299,10 +1299,18 @@ def main():
     print_infoline('output directory', repr(session_info['prefix_output']))
     print_infoline('log files',
                    ', '.join(repr(s) for s in session_info['log_files']))
+    backend = rt.get_option('storage/0/backend')
+    if backend == 'sqlite':
+        dbfile = osext.expandvars(rt.get_option('storage/0/sqlite_db_file'))
+        dbinfo = f'sqlite file = {dbfile!r}'
+    elif backend == 'postgresql':
+        host = rt.get_option('storage/0/postgresql_host')
+        port = rt.get_option('storage/0/postgresql_port')
+        db   = rt.get_option('storage/0/postgresql_db')
+        dbinfo = f'postgresql://{host}:{port}/{db}'
     print_infoline(
         'results database',
-        f'[{storage_status}] '
-        f'{osext.expandvars(rt.get_option("storage/0/sqlite_db_file"))!r}'
+        f'[{storage_status}] {dbinfo}'
     )
     printer.info('')
     try:
