@@ -905,7 +905,6 @@ If no node can be selected, the test will be marked as a failure with an appropr
       The test is not marked as a failure if not enough nodes are available, but it is skipped instead.
       To enforce a failure, use :option:`--flex-alloc-strict`
 
-
 .. option:: --flex-alloc-strict
 
    Fail flexible tests if their minimum task requirement is not satisfied.
