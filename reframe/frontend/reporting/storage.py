@@ -282,10 +282,12 @@ class _SqlStorage(StorageBackend):
         session_end_unix = report['session_info']['time_end_unix']
         session_uuid = report['session_info']['uuid']
         # Pass dict directly for JSONB
+        report_json = jsonext.dumps(report)
+        # Choose payload shape per backend
         if self.__connector.json_column_type is JSONB:
-            json_payload = report
+            json_payload = json.loads(report_json)  
         else:
-            json_payload = jsonext.dumps(report)
+            json_payload = report_json
 
         conn.execute(
             self.__sessions_table.insert().values(
