@@ -1059,6 +1059,8 @@ The way the tests are generated and how they interact with the test filtering op
       ``--distribute=NODESTATE`` now matches nodes that are exclusively in state ``NODESTATE``, so that the default ``--distribute=idle`` will match only the Slurm nodes that are in the ``IDLE`` state exclusively.
       To achieve the previous behaviour, you should use ``--distribute=idle*``.
 
+   .. versionchanged:: 4.9
+      ``--distribute=NODESTATE`` now allows you to specify multiple valid states using the ``|`` character.
 
 .. option:: -P, --parameterize=[TEST.]VAR=VAL0,VAL1,...
 

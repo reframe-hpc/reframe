@@ -161,11 +161,27 @@ def filter_nodes_by_state(nodelist, state):
         If ``all``, the initial list is returned untouched.
         If ``avail``, only the available nodes will be returned.
         All other values are interpreted as a state string.
+        The pipe character ``|`` can be used as to specify multiple
+        alternative node states.
         State match is exclusive unless the ``*`` is added at the end of the
         state string.
+        When defining multiple states using ``|``, ``*`` has to be added at
+        the end of each alternative state for which a non-exclusive match is
+        required.
+
     :returns: the filtered node list
+
+    .. versionchanged:: 4.9
+       Support the ``|`` character to filter according to alternative states.
     '''
-    if state == 'avail':
+    if '|' in state:
+        allowed_states = state.split('|')
+        final_nodelist = set()
+        for s in allowed_states:
+            final_nodelist.update(filter_nodes_by_state(nodelist, s))
+
+        nodelist = final_nodelist
+    elif state == 'avail':
         nodelist = {n for n in nodelist if n.is_avail()}
     elif state != 'all':
         if state.endswith('*'):
