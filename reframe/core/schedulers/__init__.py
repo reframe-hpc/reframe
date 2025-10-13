@@ -162,7 +162,7 @@ def filter_nodes_by_state(nodelist, state):
         If ``avail``, only the available nodes will be returned.
         All other values are interpreted as a state string.
         The pipe character ``|`` can be used as to specify multiple
-        alternative node states and has the highest priority.
+        alternative node states.
         State match is exclusive unless the ``*`` is added at the end of the
         state string.
         When defining multiple states using ``|``, ``*`` has to be added at

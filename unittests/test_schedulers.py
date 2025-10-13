@@ -1247,17 +1247,29 @@ def test_flex_alloc_not_enough_nodes_constraint_expr(make_flexible_job):
         prepare_job(job)
 
 
-def test_flex_alloc_allocated_or_idle_partition(make_flexible_job):
+def test_flex_alloc_alloc_state_OR(make_flexible_job):
     job = make_flexible_job('allocated|idle')
     job.options = ['--partition=p3']
     prepare_job(job)
     assert job.num_tasks == 12
 
-
-def test_flex_alloc_maint_star_or_allocated(make_flexible_job):
     job = make_flexible_job('maint*|idle')
     prepare_job(job)
     assert job.num_tasks == 16
+
+    job = make_flexible_job('maint|avail')
+    job.options = ['--partition=p1']
+    prepare_job(job)
+    assert job.num_tasks == 12
+
+    job = make_flexible_job('all|idle')
+    prepare_job(job)
+    assert job.num_tasks == 16
+
+    job = make_flexible_job('allocated|idle|maint')
+    job.options = ['--partition=p1']
+    prepare_job(job)
+    assert job.num_tasks == 12
 
 
 @pytest.fixture
