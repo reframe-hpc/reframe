@@ -17,6 +17,7 @@ import socket
 import sys
 import time
 import urllib
+from datetime import datetime
 
 import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
@@ -301,11 +302,18 @@ class MultiFileHandler(logging.FileHandler):
 
 
 def _format_time_rfc3339(timestamp, datefmt):
-    tz_suffix = time.strftime('%z', timestamp)
-    tz_rfc3339 = tz_suffix[:-2] + ':' + tz_suffix[-2:]
+    if timestamp is None:
+        timestamp = time.time()
 
-    # Python < 3.7 truncates the `%`, whereas later versions don't
-    return re.sub(r'(%)?\:z', tz_rfc3339, time.strftime(datefmt, timestamp))
+    date = datetime.fromtimestamp(timestamp).astimezone()
+    if r'%:z' in datefmt:
+        tz_suffix = date.strftime(r'%z')
+        tz_rfc3339 = tz_suffix[:-2] + ':' + tz_suffix[-2:]
+
+        # Python < 3.7 truncates the `%`, whereas later versions don't
+        return re.sub(r'(%)?\:z', tz_rfc3339, date.strftime(datefmt))
+
+    return date.strftime(datefmt)
 
 
 def _xfmt(val):
@@ -399,7 +407,7 @@ class CheckFieldFormatter(logging.Formatter):
         ct = record.check_job_completion_time_unix
         if ct is not None:
             record_proxy['check_job_completion_time'] = _format_time_rfc3339(
-                time.localtime(ct), datefmt
+                ct, datefmt
             )
 
         try:
@@ -412,11 +420,7 @@ class CheckFieldFormatter(logging.Formatter):
 class RFC3339Formatter(CheckFieldFormatter):
     def formatTime(self, record, datefmt=None):
         datefmt = datefmt or self.default_time_format
-        if '%:z' not in datefmt:
-            return super().formatTime(record, datefmt)
-        else:
-            timestamp = self.converter(record.created)
-            return _format_time_rfc3339(timestamp, datefmt)
+        return _format_time_rfc3339(record.created, datefmt)
 
 
 def _create_logger(site_config, *handlers_groups):
@@ -926,8 +930,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         # Add special extras
         self.extra['check_info'] = self.check.info()
         self.extra['check_job_completion_time'] = _format_time_rfc3339(
-            time.localtime(self.extra['check_job_completion_time_unix']),
-            '%FT%T%:z'
+            self.extra['check_job_completion_time_unix'], r'%FT%T%:z'
         )
 
     def log_performance(self, level, task, msg=None, multiline=False):
