@@ -205,7 +205,7 @@ class PbsJobScheduler(sched.JobScheduler):
         # With PBS Pro we can obtain the exit status of a past job
         extended_info = osext.run_command(f'qstat -xf {job.jobid}')
         exit_status_match = re.search(
-            r'^ *Exit_status *= *(?P<exit_status>\d+)', extended_info.stdout,
+            r'^ *Exit_status *= *(?P<exit_status>-?\d+)', extended_info.stdout,
             flags=re.MULTILINE,
         )
         if exit_status_match:
