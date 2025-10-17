@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import abc
+import contextlib
 import functools
 import json
 import os
@@ -59,6 +60,18 @@ class _ConnectionStrategy:
         '''Return the JSON column type to use for JSON payloads'''
         return Text
 
+    @contextlib.contextmanager
+    def db_read(self, *args, **kwargs):
+        '''Default read context yields a transactional connection'''
+        with self.engine.begin() as conn:
+            yield conn
+
+    @contextlib.contextmanager
+    def db_write(self, *args, **kwargs):
+        '''Default write context yields a transactional connection'''
+        with self.engine.begin() as conn:
+            yield conn
+
 
 class _SqliteConnector(_ConnectionStrategy):
     def __init__(self):
@@ -72,6 +85,11 @@ class _SqliteConnector(_ConnectionStrategy):
             self.__db_file_mode = int(mode, base=8)
         else:
             self.__db_file_mode = mode
+
+        self.__db_lock = osext.ReadWriteFileLock(
+            os.path.join(os.path.dirname(self.__db_file), '.db.lock'),
+            self.__db_file_mode
+        )
 
         prefix = os.path.dirname(self.__db_file)
         if not os.path.exists(self.__db_file):
@@ -103,6 +121,18 @@ class _SqliteConnector(_ConnectionStrategy):
     def _connection_kwargs(self):
         timeout = runtime().get_option('storage/0/sqlite_conn_timeout')
         return {'connect_args': {'timeout': timeout}}
+
+    @contextlib.contextmanager
+    def db_read(self, *args, **kwargs):
+        with self.__db_lock.read_lock():
+            with self.engine.begin() as conn:
+                yield conn
+
+    @contextlib.contextmanager
+    def db_write(self, *args, **kwargs):
+        with self.__db_lock.write_lock():
+            with self.engine.begin() as conn:
+                yield conn
 
 
 class _PostgresConnector(_ConnectionStrategy):
@@ -243,10 +273,6 @@ class _SqlStorage(StorageBackend):
 
         return eval(expr, None, item)
 
-    def _db_connect(self):
-        with getprofiler().time_region(f'{self.__connector.engine.url.drivername} connect'):
-            return self.__connector.engine.begin()
-
     def _db_create(self):
         clsname = type(self).__name__
         getlogger().debug(
@@ -255,14 +281,14 @@ class _SqlStorage(StorageBackend):
         self.__metadata.create_all(self.__connector.engine)
 
     def _db_schema_check(self):
-        with self._db_connect() as conn:
+        with self.__connector.db_read() as conn:
             results = conn.execute(
                 self.__metadata_table.select()
             ).fetchall()
 
         if not results:
             # DB is new, insert the schema version
-            with self._db_connect() as conn:
+            with self.__connector.db_write() as conn:
                 conn.execute(
                     self.__metadata_table.insert().values(
                         schema_version=self.SCHEMA_VERSION
@@ -285,7 +311,7 @@ class _SqlStorage(StorageBackend):
         report_json = jsonext.dumps(report)
         # Choose payload shape per backend
         if self.__connector.json_column_type is JSONB:
-            json_payload = json.loads(report_json)  
+            json_payload = json.loads(report_json)
         else:
             json_payload = report_json
 
@@ -319,7 +345,7 @@ class _SqlStorage(StorageBackend):
 
     @time_function
     def store(self, report, report_file=None):
-        with self._db_connect() as conn:
+        with self.__connector.db_write() as conn:
             return self._db_store_report(conn, report, report_file)
 
     @time_function
@@ -376,7 +402,7 @@ class _SqlStorage(StorageBackend):
         # Retrieve relevant session info and index it in Python
         getprofiler().enter_region(
             f'{self.__connector.engine.url.drivername} session query')
-        with self._db_connect() as conn:
+        with self.__connector.db_read() as conn:
             query = (
                 select(
                     self.__sessions_table.c.uuid,
@@ -404,7 +430,7 @@ class _SqlStorage(StorageBackend):
         # Extract the test case data by extracting their UUIDs
         getprofiler().enter_region(
             f'{self.__connector.engine.url.drivername} testcase query')
-        with self._db_connect() as conn:
+        with self.__connector.db_read() as conn:
             query = select(self.__testcases_table.c.uuid).where(
                 condition).order_by(order_by)
             getlogger().debug(query)
@@ -449,7 +475,7 @@ class _SqlStorage(StorageBackend):
 
         getprofiler().enter_region(
             f'{self.__connector.engine.url.drivername} session query')
-        with self._db_connect() as conn:
+        with self.__connector.db_read() as conn:
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
@@ -516,7 +542,7 @@ class _SqlStorage(StorageBackend):
 
         getprofiler().enter_region(
             f'{self.__connector.engine.url.drivername} session query')
-        with self._db_connect() as conn:
+        with self.__connector.db_read() as conn:
             getlogger().debug(query)
             results = conn.execute(query).fetchall()
 
@@ -570,7 +596,7 @@ class _SqlStorage(StorageBackend):
             uuids = [sess['session_info']['uuid']
                      for sess in self.fetch_sessions(selector)]
 
-        with self._db_connect() as conn:
+        with self.__connector.db_write() as conn:
             if getattr(conn.dialect, 'delete_returning', False):
                 return self._do_remove2(conn, uuids)
             else:
