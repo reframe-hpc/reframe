@@ -395,7 +395,7 @@ class RunReport:
 
                 if entry['job_completion_time_unix']:
                     entry['job_completion_time'] = _format_time_rfc3339(
-                        time.localtime(entry['job_completion_time_unix']),
+                        entry['job_completion_time_unix'],
                         '%FT%T%:z'
                     )
 

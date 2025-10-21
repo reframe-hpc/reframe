@@ -1338,6 +1338,8 @@ All logging handlers share the following set of common attributes:
 
 .. py:attribute:: logging.handlers.datefmt
 
+   :default: ``"%FT%T.%f"``
+
 .. object:: logging.handlers_perflog.datefmt
 
    :required: No
@@ -1346,6 +1348,13 @@ All logging handlers share the following set of common attributes:
    Time format to be used for printing timestamps fields.
    There are two timestamp fields available: ``%(asctime)s`` and ``%(check_job_completion_time)s``.
    In addition to the format directives supported by the standard library's `time.strftime() <https://docs.python.org/3.8/library/time.html#time.strftime>`__ function, ReFrame allows you to use the ``%:z`` directive -- a GNU ``date`` extension --  that will print the time zone difference in a RFC3339 compliant way, i.e., ``+/-HH:MM`` instead of ``+/-HHMM``.
+
+.. note::
+
+   The default format for non-perflog log handlers includes now the microseconds.
+   Note also that the ``%f`` format string is not supported in ``datefmt`` for versions < 4.9.
+
+   .. versionchanged:: 4.9
 
 
 .. _file-handler:
