@@ -953,7 +953,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         if msg is None:
             msg = 'sent by ' + self.extra['osuser']
 
-        if multiline:
+        if self.check.is_performance_check() and multiline:
             # Log one record for each performance variable
             for var, info in self.check.perfvalues.items():
                 val, ref, lower, upper, unit, result = info
@@ -964,16 +964,6 @@ class LoggerAdapter(logging.LoggerAdapter):
                 self.extra['check_perf_upper_thres'] = upper
                 self.extra['check_perf_unit'] = unit
                 self.extra['check_perf_result'] = result
-                self.log(level, msg)
-
-            if not self.check.perfvalues:
-                self.extra['check_perf_var'] = "$sanity_dummy"
-                self.extra['check_perf_value'] = None
-                self.extra['check_perf_ref'] = None
-                self.extra['check_perf_lower_thres'] = None
-                self.extra['check_perf_upper_thres'] = None
-                self.extra['check_perf_unit'] = None
-                self.extra['check_perf_result'] = None
                 self.log(level, msg)
         else:
             self.log(level, msg)
