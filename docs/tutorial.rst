@@ -2074,7 +2074,7 @@ Let's rerun our STREAM example using the new configuration:
 
 .. note::
 
-   After Reframe 4.9 ReFrame will add entries in the perflogs for all tests, not only performance tests.
+   ReFrame will now add entries in the perflogs for all tests, not only for performance tests.
 
 .. code-block:: bash
    :caption: Run with the Docker compose setup.

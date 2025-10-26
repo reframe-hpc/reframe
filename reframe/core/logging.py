@@ -933,9 +933,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['check_job_completion_time_unix'], r'%FT%T%:z'
         )
 
-    def log_result(
-            self, level, task, msg=None, multiline=False
-    ):
+    def log_result(self, level, task, msg=None, multiline=False):
         if self.check is None:
             return
 
