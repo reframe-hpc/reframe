@@ -2072,6 +2072,10 @@ Let's walk briefly through the most important parts of its configuration:
 
 Let's rerun our STREAM example using the new configuration:
 
+.. note::
+
+   ReFrame will now add entries in the perflogs for all tests, not only for performance tests.
+
 .. code-block:: bash
    :caption: Run with the Docker compose setup.
 
