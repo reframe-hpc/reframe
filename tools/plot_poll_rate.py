@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+#
+# Utility script to plot ReFrame's polling rate.
+#
+# Usage:
+#   ./plot_poll_rate.py LOGFILE
+#
+#   This produces a diagram of the polling rate.
+#
+#   ./plot_poll_rate.py LOGFILE...
+#
+#   This produces a histogram of the polling counts from different ReFrame
+#   processes.
+#
+# The log files must contain `debug2` information.
 
 import io
 import re
@@ -44,8 +58,10 @@ def plot_poll_histogram(logfiles):
                 df.with_columns(pl.lit(filename).alias('filename'))
             )
 
-    fig = px.histogram(pl.concat(dataframes).sort('timestamp'), x='timestamp', color='filename', nbins=100)
+    fig = px.histogram(pl.concat(dataframes).sort('timestamp'), x='timestamp',
+                       color='filename', nbins=100)
     fig.show()
+    # fig.write_image('hist.svg')
 
 
 def main():
