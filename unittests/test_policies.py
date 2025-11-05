@@ -17,6 +17,7 @@ import reframe.utility.osext as osext
 import unittests.utility as test_util
 
 from reframe.core.exceptions import (AbortTaskError,
+                                     ConfigError,
                                      FailureLimitError,
                                      ForceExitError,
                                      RunSessionTimeout)
@@ -760,3 +761,61 @@ def test_expected_failures(make_runner, make_loader, make_exec_ctx):
     assert len(runner.stats.failed()) == 4
     assert len(runner.stats.xfailed()) == 2
     assert len(runner.stats.xpassed()) == 2
+
+
+@pytest.fixture(params=[[100, 200], [-200, -100], [0, -100]])
+def invalid_poll_randomize_range(request):
+    return request.param
+
+
+def test_invalid_poll_randomize_ms(make_runner, make_exec_ctx,
+                                   invalid_poll_randomize_range):
+    make_exec_ctx(
+        options={'general/poll_randomize_ms': invalid_poll_randomize_range}
+    )
+    with pytest.raises(ConfigError):
+        make_runner()
+
+
+@pytest.fixture(params=[-1, 2])
+def invalid_poll_rate_decay(request):
+    return request.param
+
+
+def test_invalid_poll_rate_decay(make_runner, make_exec_ctx,
+                                 invalid_poll_rate_decay):
+    make_exec_ctx(
+        options={'general/poll_rate_decay': invalid_poll_rate_decay}
+    )
+    with pytest.raises(ConfigError):
+        make_runner()
+
+
+@pytest.fixture(params=[-1])
+def invalid_poll_rate(request):
+    return request.param
+
+
+def test_invalid_poll_rate_min(make_runner, make_exec_ctx, invalid_poll_rate):
+    make_exec_ctx(
+        options={'general/poll_rate_min': invalid_poll_rate}
+    )
+    with pytest.raises(ConfigError):
+        make_runner()
+
+
+def test_invalid_poll_rate_max(make_runner, make_exec_ctx, invalid_poll_rate):
+    make_exec_ctx(
+        options={'general/poll_rate_max': invalid_poll_rate}
+    )
+    with pytest.raises(ConfigError):
+        make_runner()
+
+
+def test_poll_randomize_range_ms(make_runner, make_exec_ctx, make_cases):
+    make_exec_ctx(
+        options={'general/poll_randomize_ms': [-100, 500]}
+    )
+    runner = make_runner()
+    runner.runall(make_cases())
+    assert_runall(runner)
