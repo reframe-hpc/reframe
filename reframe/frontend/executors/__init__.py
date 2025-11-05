@@ -232,9 +232,9 @@ class RegressionTask:
 
         # Performance logging
         self._perflogger = logging.null_logger
-        self._perflog_compat = runtime.runtime().get_option(
-            'logging/0/perflog_compat'
-        )
+        self._perflog_multiline = runtime.runtime().get_option(
+            'logging/0/perflog_multiline'
+        ) or runtime.runtime().get_option('logging/0/perflog_compat')
 
     def duration(self, phase):
         # Treat pseudo-phases first
@@ -526,7 +526,7 @@ class RegressionTask:
         self._notify_listeners('on_task_success')
         try:
             self._perflogger.log_result(logging.INFO, self,
-                                        multiline=self._perflog_compat)
+                                        multiline=self._perflog_multiline)
         except LoggingError as e:
             getlogger().warning(
                 f'could not log performance data for {self.testcase}: {e}'
@@ -551,7 +551,7 @@ class RegressionTask:
         self._notify_listeners(callback)
         try:
             self._perflogger.log_result(logging.INFO, self,
-                                        multiline=self._perflog_compat)
+                                        multiline=self._perflog_multiline)
         except LoggingError as e:
             getlogger().warning(
                 f'could not log performance data for {self.testcase}: {e}'
