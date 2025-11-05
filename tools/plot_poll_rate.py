@@ -15,6 +15,7 @@
 # The log files must contain `debug2` information.
 
 import io
+import math
 import re
 import sys
 
@@ -37,29 +38,40 @@ def read_logfile(logfile):
     df = pl.read_csv(
         io.StringIO(csv_data),
         has_header=False,
-        new_columns=['timestamp', 'sleep_time', 'pr_desired',
-                     'pr_current', 'pr_global']
+        new_columns=['Timestamp', 'sleep_time', 'Instant rate (desired)',
+                     'Instant rate (current)', 'Global rate']
     ).with_columns(
-        pl.col('timestamp').str.to_datetime()
+        pl.col('Timestamp').str.to_datetime()
     )
     return df
 
 
 def plot_poll_rates(logfile):
-    px.line(read_logfile(logfile),
-            x='timestamp', y=['pr_desired', 'pr_current', 'pr_global']).show()
+    fig = px.line(
+        read_logfile(logfile),
+        x='Timestamp',
+        y=['Instant rate (desired)', 'Instant rate (current)', 'Global rate'],
+        labels={'value': 'Polling Rate (Hz)', 'variable': 'Polling rates'}
+    )
+    fig.show()
+    # fig.write_image('plot.svg')
 
 
 def plot_poll_histogram(logfiles):
     dataframes = []
+    rfm_procs = 0
     for filename in logfiles:
         if not (df := read_logfile(filename)).is_empty():
+            rfm_procs += 1
             dataframes.append(
-                df.with_columns(pl.lit(filename).alias('filename'))
+                df.with_columns(pl.lit(f'Process {rfm_procs}').alias('ReFrame process'))
             )
 
-    fig = px.histogram(pl.concat(dataframes).sort('timestamp'), x='timestamp',
-                       color='filename', nbins=100)
+    df = pl.concat(dataframes).sort('Timestamp')
+    nbins = math.ceil((df['Timestamp'].max() - df['Timestamp'].min()).total_seconds())
+    fig = px.histogram(
+        df, x='Timestamp', color='ReFrame process', nbins=nbins
+    ).update_layout(yaxis_title='Poll count')
     fig.show()
     # fig.write_image('hist.svg')
 

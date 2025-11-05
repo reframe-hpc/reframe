@@ -1936,6 +1936,8 @@ General Configuration
    Timeout value in seconds used when checking if a git repository exists.
 
 
+.. _polling_config:
+
 .. py:attribute:: general.poll_randomize_ms
 
    :required: No

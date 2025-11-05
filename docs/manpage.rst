@@ -2100,6 +2100,8 @@ Whenever an environment variable is associated with a configuration option, its 
    .. versionadded:: 3.10.0
 
 
+.. _polling_envvars:
+
 .. envvar:: RFM_POLL_RANDOMIZE_MS
 
    Range of randomization of the polling interval in milliseconds.
