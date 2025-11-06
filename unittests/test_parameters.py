@@ -199,10 +199,10 @@ def test_simple_test_decorator():
 
 
 def test_param_space_clash():
-    class Spam(rfm.RegressionMixin):
+    class Spam(rfm.RegressionTestPlugin):
         P0 = parameter([1])
 
-    class Ham(rfm.RegressionMixin):
+    class Ham(rfm.RegressionTestPlugin):
         P0 = parameter([2])
 
     with pytest.raises(ReframeSyntaxError):
@@ -211,10 +211,10 @@ def test_param_space_clash():
 
 
 def test_multiple_inheritance():
-    class Spam(rfm.RegressionMixin):
+    class Spam(rfm.RegressionTestPlugin):
         P0 = parameter()
 
-    class Ham(rfm.RegressionMixin):
+    class Ham(rfm.RegressionTestPlugin):
         P0 = parameter([2])
 
     class Eggs(Spam, Ham):
@@ -276,7 +276,7 @@ def test_param_access():
 
 
 def test_param_space_read_only():
-    class Foo(rfm.RegressionMixin):
+    class Foo(rfm.RegressionTestPlugin):
         pass
 
     with pytest.raises(ValueError):

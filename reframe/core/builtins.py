@@ -109,7 +109,7 @@ def sanity_function(fn):
     '''Decorate a test member function to mark it as a sanity check.
 
     This decorator will convert the given function into a
-    :func:`~RegressionMixin.deferrable` and mark it to be executed during the
+    :func:`~RegressionTestPlugin.deferrable` and mark it to be executed during the
     test's sanity stage. When this decorator is used, manually assigning a
     value to :attr:`~RegressionTest.sanity_patterns` in the test is not
     allowed.
@@ -118,7 +118,7 @@ def sanity_function(fn):
     classes may also decorate a different method as the test's sanity
     function. Decorating multiple member functions in the same class is not
     allowed. However, a :class:`RegressionTest` may inherit from multiple
-    :class:`RegressionMixin` classes with their own sanity functions. In this
+    :class:`RegressionTestPlugin` classes with their own sanity functions. In this
     case, the derived class will follow Python's `MRO
     <https://docs.python.org/3/library/stdtypes.html#class.__mro__>`_ to find
     a suitable sanity function.

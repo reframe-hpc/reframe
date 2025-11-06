@@ -1065,7 +1065,7 @@ def test_inherited_hooks(HelloTest, local_exec_ctx):
         def x(self):
             self.var += 1
 
-    class C(rfm.RegressionMixin):
+    class C(rfm.RegressionTestPlugin):
         @run_before('run')
         def y(self):
             self.foo = 1
@@ -1099,7 +1099,7 @@ def weird_mro_test(HelloTest):
     # See example in https://www.python.org/download/releases/2.3/mro/
     #
     # The MRO of A is ABECDFX, which means that E is more specialized than C!
-    class X(rfm.RegressionMixin):
+    class X(rfm.RegressionTestPlugin):
         pass
 
     class D(X):
