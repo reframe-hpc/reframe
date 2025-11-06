@@ -938,6 +938,13 @@ def main():
         site_config = config.load_config(*conf_files)
         site_config.validate()
 
+        # Issue deprecation warnings
+        if site_config.get('logging/0/perflog_compat'):
+            printer.warning(
+                'the `perflog_compat` configuration option is deprecated; '
+                'please use `perflog_multiline` instead'
+            )
+
         if options.autodetect_method:
             printer.warning('RFM_AUTODETECT_METHOD is deprecated; '
                             'please use RFM_AUTODETECT_METHODS instead')

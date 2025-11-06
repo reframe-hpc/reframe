@@ -1141,7 +1141,23 @@ You may define different logger objects per system but *not* per partition.
    :default: :obj:`False`
 
    Emit a separate log record for each performance variable.
+
    Set this option to :obj:`True` if you want to keep compatibility with the performance logging prior to ReFrame 4.0.
+
+   .. deprecated:: 4.9
+
+      Please use :attr:`~config.logging.perflog_multiline` instead.
+
+
+.. py:attribute:: logging.perflog_multiline
+
+   :required: No
+   :default: :obj:`False`
+
+   Emit a separate log record for each performance variable.
+
+   .. versionadded:: 4.9
+
 
 .. py:attribute:: logging.target_systems
 
