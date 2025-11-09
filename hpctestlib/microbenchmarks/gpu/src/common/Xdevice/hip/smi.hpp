@@ -33,7 +33,7 @@ void Smi::setCpuAffinity(int id)
 {
   checkGpuIdIsSensible(id);
 
-  uint32_t numa_node;
+  int32_t numa_node;
   rsmiCheck( rsmi_topo_numa_affinity_get( id, &numa_node) );
   numa_run_on_node(numa_node);
 }

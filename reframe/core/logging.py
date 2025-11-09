@@ -933,8 +933,8 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['check_job_completion_time_unix'], r'%FT%T%:z'
         )
 
-    def log_performance(self, level, task, msg=None, multiline=False):
-        if self.check is None or not self.check.is_performance_check():
+    def log_result(self, level, task, msg=None, multiline=False):
+        if self.check is None:
             return
 
         _, part, env = task.testcase
@@ -951,7 +951,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         if msg is None:
             msg = 'sent by ' + self.extra['osuser']
 
-        if multiline:
+        if self.check.is_performance_check() and multiline:
             # Log one record for each performance variable
             for var, info in self.check.perfvalues.items():
                 val, ref, lower, upper, unit, result = info
