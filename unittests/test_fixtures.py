@@ -20,48 +20,48 @@ def test_fixture_class_types():
     # Wrong fixture classes
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(Foo)
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
-            f = fixture(rfm.RegressionMixin)
+        class MyTest(rfm.RegressionTestPlugin):
+            f = fixture(rfm.RegressionTestPlugin)
 
     # Session and partition scopes must be run-only.
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(rfm.RegressionTest, scope='session')
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(rfm.RegressionTest, scope='partition')
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(rfm.CompileOnlyRegressionTest, scope='session')
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(rfm.CompileOnlyRegressionTest, scope='partition')
 
 
 def test_fixture_args():
     '''Test invalid fixture arguments.'''
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(rfm.RegressionTest, scope='other')
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(rfm.RegressionTest, action='other')
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(rfm.RegressionTest, variants='other')
 
     with pytest.raises(TypeError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(rfm.RegressionTest, variables='other')
 
 
@@ -72,7 +72,7 @@ def test_abstract_fixture():
         p = parameter()
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(Foo)
 
 
@@ -83,15 +83,15 @@ def test_fixture_variants():
         p = parameter(range(4))
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(Foo, variants={'p': lambda x: x > 10})
 
     with pytest.raises(ValueError):
-        class MyTest(rfm.RegressionMixin):
+        class MyTest(rfm.RegressionTestPlugin):
             f = fixture(Foo, variants=())
 
     # Test default variants argument 'all'
-    class MyTest(rfm.RegressionMixin):
+    class MyTest(rfm.RegressionTestPlugin):
         f = fixture(Foo, variants='all')
 
     assert MyTest.fixture_space['f'].variants == (0, 1, 2, 3,)
@@ -103,7 +103,7 @@ def test_fork_join_variants():
     class Foo(rfm.RegressionTest):
         p = parameter(range(4))
 
-    class MyTest(rfm.RegressionMixin):
+    class MyTest(rfm.RegressionTestPlugin):
         f0 = fixture(Foo, action='fork')
         f1 = fixture(Foo, action='join')
 
@@ -119,7 +119,7 @@ def test_fork_join_variants():
 
 
 def test_default_args():
-    class Foo(rfm.RegressionMixin):
+    class Foo(rfm.RegressionTestPlugin):
         f = fixture(rfm.RegressionTest)
 
     assert Foo.fixture_space['f'].variables == {}
@@ -132,10 +132,10 @@ def test_fixture_inheritance():
     class Fix(rfm.RunOnlyRegressionTest):
         pass
 
-    class Foo(rfm.RegressionMixin):
+    class Foo(rfm.RegressionTestPlugin):
         f0 = fixture(Fix, scope='test')
 
-    class Bar(rfm.RegressionMixin):
+    class Bar(rfm.RegressionTestPlugin):
         f1 = fixture(Fix, scope='environment')
         f2 = fixture(Fix, scope='partition')
 
@@ -151,10 +151,10 @@ def test_fixture_inheritance():
 def test_fixture_inheritance_clash():
     '''Fixture name clash is not permitted.'''
 
-    class Foo(rfm.RegressionMixin):
+    class Foo(rfm.RegressionTestPlugin):
         f0 = fixture(rfm.RegressionTest)
 
-    class Bar(rfm.RegressionMixin):
+    class Bar(rfm.RegressionTestPlugin):
         f0 = fixture(rfm.RegressionTest)
 
     # Multiple inheritance clash
@@ -166,7 +166,7 @@ def test_fixture_inheritance_clash():
 def test_fixture_override():
     '''A child class may only redefine a fixture with the fixture builtin.'''
 
-    class Foo(rfm.RegressionMixin):
+    class Foo(rfm.RegressionTestPlugin):
         f0 = fixture(rfm.RegressionTest)
 
     class Bar(Foo):
@@ -180,14 +180,14 @@ def test_fixture_override():
         Bar.f0 = 4
 
     with pytest.raises(ReframeSyntaxError):
-        class Baz(rfm.RegressionMixin):
+        class Baz(rfm.RegressionTestPlugin):
             f0 = fixture(rfm.RegressionTest)
             f0 = 4
 
 
 def test_fixture_access_in_class_body():
     with pytest.raises(ReframeSyntaxError):
-        class Foo(rfm.RegressionMixin):
+        class Foo(rfm.RegressionTestPlugin):
             f0 = fixture(rfm.RegressionTest)
             print(f0)
 
@@ -218,7 +218,7 @@ def test_fixture_space_access():
     class P0(rfm.RunOnlyRegressionTest):
         p0 = parameter(range(2))
 
-    class Foo(rfm.RegressionMixin):
+    class Foo(rfm.RegressionTestPlugin):
         f0 = fixture(P0, scope='test', action='fork')
         f1 = fixture(P0, scope='environment', action='join')
         f2 = fixture(P0, scope='partition', action='fork')

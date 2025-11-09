@@ -496,7 +496,7 @@ class TestFixture:
     that these classes can use the same built-in functionalities as in regular
     tests decorated with
     :func:`@rfm.simple_test<reframe.core.decorators.simple_test>`. This
-    includes the :func:`~reframe.core.pipeline.RegressionMixin.parameter`
+    includes the :func:`~reframe.core.pipeline.RegressionTestPlugin.parameter`
     built-in, where fixtures may have more than one
     :ref:`variant<test-variants>`. When this occurs, a parent test may select
     to either treat a parameterized fixture as a test parameter, or instead,
@@ -595,7 +595,7 @@ class TestFixture:
     A parent test may also specify the value of different variables in the
     fixture class to be set before its instantiation. Each variable must have
     been declared in the fixture class with the
-    :func:`~reframe.core.pipeline.RegressionMixin.variable` built-in,
+    :func:`~reframe.core.pipeline.RegressionTestPlugin.variable` built-in,
     otherwise it is silently ignored. This variable specification is
     equivalent to deriving a new class from the fixture class, and setting
     these variable values in the class body of a newly derived class.

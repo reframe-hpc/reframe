@@ -114,8 +114,8 @@ class ConvertibleType(abc.ABCMeta):
     For example, a class whose constructor accepts and :class:`int` may need
     to support a cast-from-string conversion. This is particular useful if you
     want a custom-typed test
-    :attr:`~reframe.core.pipeline.RegressionMixin.variable` to be able to be
-    set from the command line using the :option:`-S` option.
+    :attr:`~reframe.core.pipeline.RegressionTestPlugin.variable` to be able to
+    be set from the command line using the :option:`-S` option.
 
     In order to support such conversions, a class must use this metaclass and
     define a class method, named as :obj:`__rfm_cast_<type>__`, for each of
