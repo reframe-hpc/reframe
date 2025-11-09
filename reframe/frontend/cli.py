@@ -1127,7 +1127,9 @@ def main():
                                   lambda htype: htype != 'stream')
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
-            printer.info(reporting.session_info(options.describe_stored_sessions))
+            printer.info(
+                reporting.session_info(options.describe_stored_sessions)
+            )
             sys.exit(0)
 
     if options.describe_stored_testcases:
