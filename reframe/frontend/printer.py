@@ -286,7 +286,8 @@ class PrettyPrinter:
 
         table_format = rt.runtime().get_option('general/0/table_format')
         if table_format == 'csv':
-            return self._table_as_csv(data)
+            self._table_as_csv(data)
+            return
 
         # Map our options to tabulate
         if table_format == 'plain':
