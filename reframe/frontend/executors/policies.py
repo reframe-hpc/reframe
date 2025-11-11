@@ -50,13 +50,13 @@ def _print_perf(task):
     for key, info in perfvars.items():
         val, ref, lower, upper, unit, result = info
         name = key.split(':')[-1]
-        
-        # Build reference info string only if all three reference value components are defined
-        if ref is not None and lower is not None and upper is not None:
-            msg = f'P: {name}: {val} {unit} (r:{ref}, l:{lower}, u:{upper})'
-        else:
+
+        # Build reference info string only if reference is defined
+        if ref == 0 and lower is None and upper is None:
             msg = f'P: {name}: {val} {unit}'
-            
+        else:
+            msg = f'P: {name}: {val} {unit} (r:{ref}, l:{lower}, u:{upper})'
+
         if result == 'xfail':
             msg = color.colorize(msg, color.MAGENTA)
         elif result == 'fail' or result == 'xpass':
