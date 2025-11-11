@@ -163,6 +163,13 @@ The :ref:`logging` section article describes how logging can be configured in mo
 Once a performance test finishes, its figures of merit are printed immediately using the ``P:`` prefix.
 This can be suppressed by increasing the level at which this information is logged using the :envvar:`RFM_PERF_INFO_LEVEL` environment variable.
 
+.. note::
+
+   .. versionchanged:: 4.9
+
+      If the test sets no references, then the reference tuples are not printed in the ``P:`` line.
+
+
 .. _run-reports-and-performance-logging:
 
 Run reports and performance logging
