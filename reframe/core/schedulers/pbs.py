@@ -14,6 +14,7 @@ import os
 import itertools
 import re
 import time
+import json
 
 import reframe.core.schedulers as sched
 import reframe.utility.osext as osext
@@ -47,6 +48,7 @@ JOB_STATES = {
     'W': 'WAITING',
     'S': 'SUSPENDED',
     'C': 'COMPLETED',
+    "F": "COMPLETED",
 }
 
 
@@ -323,3 +325,83 @@ class TorqueJobScheduler(PbsJobScheduler):
 
         # Torque does not provide a way to retrieve the history of jobs
         return None
+
+@register_scheduler('pbspro')
+class PbsProJobScheduler(PbsJobScheduler):
+    def poll(self, *jobs):
+        '''Poll checking PBS jobs for updated states.'''
+        if jobs:
+            # Filter out non-jobs
+            jobs = [job for job in jobs if job is not None]
+        if not jobs:
+            return
+
+        # query status of all jobs
+        job_status = osext.run_command(
+            f"qstat -xf -F json {' '.join(job.jobid for job in jobs)}"
+        )
+
+        # from Table 14-1: Error Codes in
+        # https://help.altair.com/2024.1.0/PBS%20Professional/PBSReferenceGuide2024.1.pdf,
+        # we have the codes PBS returns in case of an error with exit(error_code),
+        # like exit(15001) for unknown Job ID. however, only the last 8 bits
+        # of the exit code are returned, so what we get as the actual error code
+        # is exit_code % 256, which is for example 153 for Unknown Job Identifier.
+        # 153 is returned if any job id in the list is unknown, even if some others
+        # are known. these unknown jobids will be caught in the loop over jobs
+        # below so we can pass on for now. previously 35 was checked here,
+        # but we only get that for a "History job ID" (when qstat -f is used
+        # on a jobid that has already ended. Since above we use "-x" we should not
+        # get exit code 35 anymore)
+        if job_status.returncode in [153, 0]:
+            pass
+        elif job_status.returncode == 255:
+
+            # try again, qstat is having a problem
+            self.log(f'qstat failed with exit code {completed.returncode} '
+                     f'(standard error follows):\n{completed.stderr}\n retrying')
+            return
+        else:
+            raise JobSchedulerError(
+                f'qstat failed with exit code {completed.returncode} '
+                f'(standard error follows):\n{completed.stderr}'
+            )
+
+        job_status_json = json.loads(job_status.stdout)
+
+        # loop over each job
+        for job in jobs:
+
+            # check if the job is in the json
+            if job.jobid in job_status_json["Jobs"]:
+
+                # get information (status and nodelist) about the job
+                job_info = job_status_json["Jobs"][job.jobid]
+                state = job_info["job_state"]
+                self.log(f"Job {job.jobid} known to scheduler, state: {state}")
+                job._state = JOB_STATES[state]
+
+                # check if exec_host is in the ouput since exec_host is only in
+                # the output if job has started to run (not if it's just queued)
+                if "exec_host" in job_info:
+                    nodespec = job_info["exec_host"]
+                    self._update_nodelist(job, nodespec)
+
+                # set state of job depending on the output from qstat
+                if job.state == "COMPLETED":
+                    exit_code = job_info["Exit_status"]
+                    job._exitcode = int(exit_code)
+                    job._completed = True
+                elif job.state in ["QUEUED", "HELD", "WAITING"]:
+                    if (job.max_pending_time and
+                            (time.time() - job.submit_time) >= job.max_pending_time):
+                        self.cancel(job)
+                        job._exception = JobError(
+                            "maximum pending time exceeded", job.jobid
+                        )
+            else:
+                self.log(f"Job {job.jobid} not known to scheduler")
+                job._state = "COMPLETED"
+                self.log(f"Assuming job {job.jobid} completed")
+                job._completed = True
+
