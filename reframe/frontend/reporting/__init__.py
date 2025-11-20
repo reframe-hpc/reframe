@@ -690,10 +690,11 @@ def compare_testcase_data(base_testcases, target_testcases, query):
 
 @time_function
 def performance_compare(cmp, report=None, namepatt=None,
-                        filterA=None, filterB=None):
+                        filterA=None, filterB=None,
+                        term_lhs=None, term_rhs=None):
     with reraise_as(ReframeError, (ValueError,),
                     'could not parse comparison spec'):
-        query = parse_cmp_spec(cmp)
+        query = parse_cmp_spec(cmp, term_lhs, term_rhs)
 
     backend = StorageBackend.default()
     if query.lhs is None:
