@@ -285,13 +285,16 @@ class _QueryMatch:
                  rhs: QuerySelectorTestcase,
                  aggregation: Aggregation,
                  groups: List[str],
-                 columns: List[str]):
+                 columns: List[str],
+                 term_lhs: str, term_rhs: str):
         self.__lhs: QuerySelectorTestcase = lhs
         self.__rhs: QuerySelectorTestcase = rhs
         self.__aggregation: Aggregation = aggregation
         self.__tc_group_by: List[str] = groups
         self.__tc_attrs: List[str] = []
         self.__col_variants: Dict[str, List[str]] = {}
+        self.__lhs_term: str = term_lhs or 'lhs'
+        self.__rhs_term: str = term_rhs or 'rhs'
 
         if self.is_compare() and 'pval' not in columns:
             # Always add `pval` if the query is a performance comparison
@@ -340,7 +343,7 @@ class _QueryMatch:
     @property
     def lhs_column_suffix(self):
         '''The suffix of the lhs column in a comparison'''
-        return ' (lhs)'
+        return f' ({self.__lhs_term})'
 
     @property
     def lhs_select_suffix(self):
@@ -350,7 +353,7 @@ class _QueryMatch:
     @property
     def rhs_column_suffix(self):
         '''The suffix of the rhs column in a comparison'''
-        return ' (rhs)'
+        return f' ({self.__rhs_term})'
 
     @property
     def rhs_select_suffix(self):
@@ -406,7 +409,7 @@ class _QueryMatch:
 DEFAULT_GROUP_BY = ['name', 'sysenv', 'pvar', 'punit']
 
 
-def parse_cmp_spec(spec):
+def parse_cmp_spec(spec, term_lhs=None, term_rhs=None):
     parts = spec.split('/')
     if len(parts) == 3:
         base_spec, target_spec, aggr, cols = None, *parts
@@ -421,4 +424,5 @@ def parse_cmp_spec(spec):
 
     # Update base columns for listing
     columns = _parse_columns(cols, group_cols + aggr.attributes())
-    return _QueryMatch(base, target, aggr, group_cols, columns)
+    return _QueryMatch(base, target, aggr, group_cols, columns,
+                       term_lhs, term_rhs)
