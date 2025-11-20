@@ -17,7 +17,7 @@ from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger, time_function, getprofiler
 from reframe.core.runtime import runtime
 from reframe.utility import nodelist_abbrev
-from ..reporting.utility import QuerySelector
+from ..reporting.utility import QuerySelectorTestcase
 
 
 class StorageBackend:
@@ -41,7 +41,7 @@ class StorageBackend:
         '''Store the given report'''
 
     @abc.abstractmethod
-    def fetch_testcases(self, selector: QuerySelector, name_patt=None,
+    def fetch_testcases(self, selector: QuerySelectorTestcase, name_patt=None,
                         test_filter=None):
         '''Fetch test cases based on the specified query selector.
 
@@ -54,7 +54,7 @@ class StorageBackend:
         '''
 
     @abc.abstractmethod
-    def fetch_sessions(self, selector: QuerySelector, decode=True):
+    def fetch_sessions(self, selector: QuerySelectorTestcase, decode=True):
         '''Fetch sessions based on the specified query selector.
 
         :arg selector: an instance of :class:`QuerySelector` that will specify
@@ -65,7 +65,7 @@ class StorageBackend:
         '''
 
     @abc.abstractmethod
-    def remove_sessions(self, selector: QuerySelector):
+    def remove_sessions(self, selector: QuerySelectorTestcase):
         '''Remove sessions based on the specified query selector
 
         :arg selector: an instance of :class:`QuerySelector` that will specify
@@ -382,7 +382,7 @@ class _SqliteStorage(StorageBackend):
         return [*filter(filt_fn, testcases)]
 
     @time_function
-    def fetch_testcases(self, selector: QuerySelector,
+    def fetch_testcases(self, selector: QuerySelectorTestcase,
                         name_patt=None, test_filter=None):
         if selector.by_session():
             return self._fetch_testcases_from_session(
@@ -394,7 +394,7 @@ class _SqliteStorage(StorageBackend):
             )
 
     @time_function
-    def fetch_sessions(self, selector: QuerySelector, decode=True):
+    def fetch_sessions(self, selector: QuerySelectorTestcase, decode=True):
         query = 'SELECT uuid, json_blob FROM sessions'
         if selector.by_time_period():
             ts_start, ts_end = selector.time_period
@@ -448,7 +448,7 @@ class _SqliteStorage(StorageBackend):
         return [rec[0] for rec in results]
 
     @time_function
-    def remove_sessions(self, selector: QuerySelector):
+    def remove_sessions(self, selector: QuerySelectorTestcase):
         if selector.by_session_uuid():
             uuids = [selector.uuid]
         else:
