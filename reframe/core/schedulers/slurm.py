@@ -445,7 +445,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         flags_match = re.search(r'Flags=(\S+)', completed.stdout)
         if flags_match:
-            if 'MAINT' in flags_match[1].split(','):
+            if 'MAINT' in flags_match.group(1).split(','):
                 self.node_available_states.add('MAINTENANCE')
         else:
             self.log(f"could not extract the reservation flags for "
