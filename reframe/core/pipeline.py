@@ -8,8 +8,8 @@
 #
 
 __all__ = [
-    'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
-    'RegressionMixin'
+    'CompileOnlyRegressionTest', 'RegressionMixin',
+    'RegressionTest', 'RunOnlyRegressionTest', 'RegressionTestPlugin'
 ]
 
 
@@ -47,6 +47,7 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      ReframeError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
+from reframe.core.warnings import user_deprecation_warning
 
 
 class _NoRuntime(ContainerPlatform):
@@ -103,23 +104,67 @@ _RFM_TEST_KIND_COMPILE = 1
 _RFM_TEST_KIND_RUN = 2
 
 
-class RegressionMixin(metaclass=RegressionTestMeta):
+class RegressionTestPlugin(metaclass=RegressionTestMeta):
+    '''A reusable test plugin.
+
+    This is a non-test base class that other tests can inherit from in order
+    to augment their behaviour. A plugin can define variables, parameters,
+    hooks etc. The following example shows a plugin that defines a variable
+    and adds a specific job option for every test that uses it.
+
+    .. code-block:: python
+
+        class MyPlugin(RegressionTestPlugin):
+            foo = variable(int, value=0)
+
+            @run_before('run', always_last=True)
+            def add_foo_opt(self):
+                if self.foo:
+                    self.job.options = [f'--foo={self.foo}']
+
+
+        @simple_test
+        class MyTestA(RegressionTest, MyPlugin):
+            """A test using the plugin"""
+
+        @simple_test
+        class MyTestB(RegressionTest, MyPlugin):
+            """Another test using the plugin"""
+
+
+    This class is equivalent to the deprecated :class:`RegressionMixin`.
+
+    .. versionadded:: 4.9
+    '''
+    _rfm_regression_class_kind = _RFM_TEST_KIND_MIXIN
+
+
+class RegressionMixin(RegressionTestPlugin):
     '''Base mixin class for regression tests.
 
-    Multiple inheritance from more than one
-    :class:`RegressionTest` class is not allowed in ReFrame. Hence, mixin
-    classes provide the flexibility to bundle reusable test add-ons, leveraging
-    the metaclass magic implemented in
+    Multiple inheritance from more than one :class:`RegressionTest` class is
+    not allowed. Hence, mixin classes provide the flexibility to bundle
+    reusable test add-ons, leveraging the metaclass magic implemented in
     :class:`RegressionTestMeta`. Using this metaclass allows mixin classes to
     use powerful ReFrame features, such as hooks, parameters or variables.
 
     .. versionadded:: 3.4.2
+
+    .. deprecated:: 4.9
+
+        Use :class:`RegressionTestPlugin` instead.
     '''
 
-    _rfm_regression_class_kind = _RFM_TEST_KIND_MIXIN
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        user_deprecation_warning(
+            '`RegressionMixin` is deprecated; '
+            'please inherit from `RegresssionTestPlugin` instead'
+        )
 
 
-class RegressionTest(RegressionMixin, jsonext.JSONSerializable):
+class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     '''Base class for regression tests.
 
     All regression tests must eventually inherit from this class.

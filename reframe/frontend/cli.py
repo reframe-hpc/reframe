@@ -808,6 +808,38 @@ def main():
         type=float
     )
     argparser.add_argument(
+        dest='poll_randomize_ms',
+        envvar='RFM_POLL_RANDOMIZE_MS',
+        configvar='general/poll_randomize_ms',
+        action='store',
+        type=typ.List[int],
+        help='Randomize the sleep interval between polls'
+    )
+    argparser.add_argument(
+        dest='poll_rate_decay',
+        envvar='RFM_POLL_RATE_DECAY',
+        configvar='general/poll_rate_decay',
+        action='store',
+        type=float,
+        help='Poll rate decay'
+    )
+    argparser.add_argument(
+        dest='poll_rate_max',
+        envvar='RFM_POLL_RATE_MAX',
+        configvar='general/poll_rate_max',
+        action='store',
+        type=float,
+        help='Maximum poll rate'
+    )
+    argparser.add_argument(
+        dest='poll_rate_min',
+        envvar='RFM_POLL_RATE_MIN',
+        configvar='general/poll_rate_min',
+        action='store',
+        type=float,
+        help='Minimum poll rate'
+    )
+    argparser.add_argument(
         dest='remote_detect',
         envvar='RFM_REMOTE_DETECT',
         configvar='general/remote_detect',

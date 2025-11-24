@@ -2100,6 +2100,69 @@ Whenever an environment variable is associated with a configuration option, its 
    .. versionadded:: 3.10.0
 
 
+.. _polling_envvars:
+
+.. envvar:: RFM_POLL_RANDOMIZE_MS
+
+   Range of randomization of the polling interval in milliseconds.
+
+   The range is specified in the form ``l,h``.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.general.poll_randomize_ms`
+      ================================== ==================
+
+   .. versionadded:: 4.9
+
+.. envvar:: RFM_POLL_RATE_DECAY
+
+   The decay factor of the polling rate.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.general.poll_rate_decay`
+      ================================== ==================
+
+   .. versionadded:: 4.9
+
+
+.. envvar:: RFM_POLL_RATE_MAX
+
+   The maximum desired polling rate.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.general.poll_rate_max`
+      ================================== ==================
+
+   .. versionadded:: 4.9
+
+
+.. envvar:: RFM_POLL_RATE_MIN
+
+   The minimum desired polling rate.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.general.poll_rate_min`
+      ================================== ==================
+
+   .. versionadded:: 4.9
+
+
 .. envvar:: RFM_PREFIX
 
    General directory prefix for ReFrame-generated directories.

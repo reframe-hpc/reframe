@@ -1,0 +1,4 @@
+kaleido
+matplotlib
+polars
+plotly-express

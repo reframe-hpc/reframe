@@ -62,11 +62,11 @@ def test_redeclare_var_clash(OneVarTest):
 
 
 def test_inheritance_clash(NoVarsTest):
-    class MyMixin(rfm.RegressionMixin):
+    class MyPlugin(rfm.RegressionTestPlugin):
         name = variable(str)
 
     with pytest.raises(ReframeSyntaxError):
-        class MyTest(NoVarsTest, MyMixin):
+        class MyTest(NoVarsTest, MyPlugin):
             '''Trigger error from inheritance clash.'''
 
 
@@ -83,10 +83,10 @@ def test_instantiate_and_inherit(OneVarTest):
 
 
 def test_var_space_clash():
-    class Spam(rfm.RegressionMixin):
+    class Spam(rfm.RegressionTestPlugin):
         v0 = variable(int, value=1)
 
-    class Ham(rfm.RegressionMixin):
+    class Ham(rfm.RegressionTestPlugin):
         v0 = variable(int, value=2)
 
     with pytest.raises(ReframeSyntaxError):
@@ -212,19 +212,19 @@ def test_var_deepcopy():
 
 
 def test_variable_access():
-    class Foo(rfm.RegressionMixin):
+    class Foo(rfm.RegressionTestPlugin):
         my_var = variable(str, value='bananas')
         x = f'accessing {my_var!r} works because it has a default value.'
 
     assert 'bananas' in getattr(Foo, 'x')
     with pytest.raises(ReframeSyntaxError):
-        class Foo(rfm.RegressionMixin):
+        class Foo(rfm.RegressionTestPlugin):
             my_var = variable(int)
             x = f'accessing {my_var} fails because its value is not set.'
 
 
 def test_var_space_is_read_only():
-    class Foo(rfm.RegressionMixin):
+    class Foo(rfm.RegressionTestPlugin):
         pass
 
     with pytest.raises(ValueError):
@@ -461,7 +461,7 @@ def test_var_deprecation():
     from reframe.core.variables import DEPRECATE_RD, DEPRECATE_WR
 
     # Check read deprecation
-    class A(rfm.RegressionMixin):
+    class A(rfm.RegressionTestPlugin):
         x = deprecate(variable(int, value=3),
                       'accessing x is deprecated', DEPRECATE_RD)
         y = deprecate(variable(int, value=5),
@@ -491,23 +491,23 @@ def test_var_deprecation():
 def test_var_aliases():
     with pytest.raises(ValueError,
                        match=r'alias variables do not accept default values'):
-        class T(rfm.RegressionMixin):
+        class T(rfm.RegressionTestPlugin):
             x = variable(int, value=1)
             y = variable(alias=x, value=2)
 
     with pytest.raises(TypeError, match=r"'alias' must refer to a variable"):
-        class T(rfm.RegressionMixin):
+        class T(rfm.RegressionTestPlugin):
             x = variable(int, value=1)
             y = variable(alias=10)
 
     with pytest.raises(ValueError, match=r"'field' cannot be set"):
         from reframe.core.fields import TypedField
 
-        class T(rfm.RegressionMixin):
+        class T(rfm.RegressionTestPlugin):
             x = variable(int, value=1)
             y = variable(alias=x, field=TypedField)
 
-    class T(rfm.RegressionMixin):
+    class T(rfm.RegressionTestPlugin):
         x = variable(int, value=0)
         y = variable(alias=x)
         z = variable(alias=y)
@@ -530,7 +530,7 @@ def test_var_aliases():
 
     # Test inheritance
 
-    class T(rfm.RegressionMixin):
+    class T(rfm.RegressionTestPlugin):
         x = variable(int, value=1)
 
     class S(T):
@@ -623,16 +623,16 @@ def test_inherit_mutable_aliases_deprecated():
         assert y.y == [2]
 
 
-class _MergeMixin(rfm.RegressionMixin):
+class _MergePlugin(rfm.RegressionTestPlugin):
     x = variable(typ.List[int], value=[],
                  merge_func=lambda x, y: x + y)
 
 
 def test_merge_base_vars():
-    class X(_MergeMixin):
+    class X(_MergePlugin):
         x = [3, 4]
 
-    class Y(_MergeMixin):
+    class Y(_MergePlugin):
         x = [10, 1]
 
     class Z(X, Y):
@@ -642,10 +642,10 @@ def test_merge_base_vars():
 
 
 def test_merge_base_vars_undefined_lhs():
-    class X(_MergeMixin):
+    class X(_MergePlugin):
         x = required
 
-    class Y(_MergeMixin):
+    class Y(_MergePlugin):
         x = [10, 1]
 
     class Z(X, Y):
@@ -655,10 +655,10 @@ def test_merge_base_vars_undefined_lhs():
 
 
 def test_merge_base_vars_undefined_rhs():
-    class X(_MergeMixin):
+    class X(_MergePlugin):
         x = [3, 4]
 
-    class Y(_MergeMixin):
+    class Y(_MergePlugin):
         x = required
 
     class Z(X, Y):
@@ -668,10 +668,10 @@ def test_merge_base_vars_undefined_rhs():
 
 
 def test_merge_base_vars_undefined_both():
-    class X(_MergeMixin):
+    class X(_MergePlugin):
         x = required
 
-    class Y(_MergeMixin):
+    class Y(_MergePlugin):
         x = required
 
     class Z(X, Y):
@@ -682,5 +682,11 @@ def test_merge_base_vars_undefined_both():
 
 def test_merge_func_not_callable():
     with pytest.raises(TypeError):
-        class _MergeMixin(rfm.RegressionMixin):
+        class _MergeMixin(rfm.RegressionTestPlugin):
             x = variable(typ.List[int], value=[], merge_func=1)
+
+
+def test_mixin_deprecation():
+    with pytest.warns(ReframeDeprecationWarning):
+        class _MyMixin(rfm.RegressionMixin):
+            pass

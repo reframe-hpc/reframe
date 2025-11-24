@@ -71,7 +71,7 @@ It consists of the following properties, which we also call conventionally *conf
 
    :required: No
 
-   A list of `general configuration objects <#general-configuration>`__.
+   A list of :ref:`general configuration objects <general-configuration>`.
 
 .. py:data:: storage
 
@@ -1843,6 +1843,8 @@ Result storage configuration
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
 
+.. _general-configuration:
+
 General Configuration
 =====================
 
@@ -1932,6 +1934,67 @@ General Configuration
    :default: 5
 
    Timeout value in seconds used when checking if a git repository exists.
+
+
+.. _polling_config:
+
+.. py:attribute:: general.poll_randomize_ms
+
+   :required: No
+   :default: :obj:`None`
+
+   .. versionadded:: 4.9
+
+   Range of randomization of the polling interval in milliseconds.
+
+   If not :obj:`None`, ReFrame will randomize its polling interval within the given range, otherwise no randomization will occur.
+   The range value must be in the form ``[l, h]`` where ``l``, ``h`` are integers such that ``l<=0`` and ``h>=0``.
+
+   See ":ref:`poll-control`" for more details.
+
+
+.. py:attribute:: general.poll_rate_decay
+
+   :required: No
+   :default: 0.1
+
+   .. versionadded:: 4.9
+
+   The decay factor of the polling rate.
+
+   This is a real number in the range ``[0,1]``.
+   If the decay is ``0``, then the polling rate will be constant at :attr:`~general.poll_rate_max`.
+   If the decay is ``1``, then the polling rate will be binary taking either the :attr:`~general.poll_rate_max` or :attr:`~general.poll_rate_min` values.
+
+   See ":ref:`poll-control`" for more details.
+
+
+.. py:attribute:: general.poll_rate_max
+
+   :required: No
+   :default: 10
+
+   .. versionadded:: 4.9
+
+   The maximum desired polling rate.
+
+   If :attr:`~general.poll_randomize_ms` is set to a range that allows the polling interval to be decreased (``l<0``), then the effective polling rate can exceed instantaneously the maximum desired rate.
+
+   See ":ref:`poll-control`" for more details.
+
+
+.. py:attribute:: general.poll_rate_min
+
+   :required: No
+   :default: 0.1
+
+   .. versionadded:: 4.9
+
+   The minimum desired polling rate.
+
+   When the desired polling rate reaches this value, ReFrame will not decrease it further.
+
+   See ":ref:`poll-control`" for more details.
 
 
 .. py:attribute:: general.pipeline_timeout
