@@ -38,7 +38,11 @@ def getallnodes(state, jobs_cli_options=None):
             f'Total available nodes for {part.name}: {len(available_nodes)}'
         )
 
-        available_nodes = filter_nodes_by_state(available_nodes, state)
+        available_nodes = filter_nodes_by_state(
+            available_nodes,
+            state,
+            part.scheduler
+        )
         nodes[part.fullname] = [n.name for n in available_nodes]
 
     return nodes

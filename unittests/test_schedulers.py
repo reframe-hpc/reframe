@@ -41,6 +41,8 @@ def slurm_only(scheduler):
     if scheduler.registered_name not in ('slurm', 'squeue'):
         pytest.skip('test is relevant only for Slurm backends')
 
+    return scheduler
+
 
 @pytest.fixture
 def local_only(scheduler):
@@ -1455,7 +1457,8 @@ def test_slurm_node_in_state(slurm_node_allocated,
 
 def test_slurm_node_is_down(slurm_node_allocated,
                             slurm_node_idle,
-                            slurm_node_nopart):
-    assert not slurm_node_allocated.is_down()
-    assert not slurm_node_idle.is_down()
-    assert slurm_node_nopart.is_down()
+                            slurm_node_nopart,
+                            slurm_only):
+    assert not slurm_only().is_node_down(slurm_node_allocated)
+    assert not slurm_only().is_node_down(slurm_node_idle)
+    assert slurm_only().is_node_down(slurm_node_nopart)

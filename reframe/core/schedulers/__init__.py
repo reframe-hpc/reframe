@@ -153,7 +153,7 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         getlogger().log(level, f'[S] {self.registered_name}: {message}')
 
 
-def filter_nodes_by_state(nodelist, state):
+def filter_nodes_by_state(nodelist, state, scheduler):
     '''Filter nodes by their state
 
     :arg nodelist: List of :class:`Node` instances to filter.
@@ -178,11 +178,13 @@ def filter_nodes_by_state(nodelist, state):
         allowed_states = state.split('|')
         final_nodelist = set()
         for s in allowed_states:
-            final_nodelist.update(filter_nodes_by_state(nodelist, s))
+            final_nodelist.update(
+                filter_nodes_by_state(nodelist, s, scheduler)
+            )
 
         nodelist = final_nodelist
     elif state == 'avail':
-        nodelist = {n for n in nodelist if n.is_avail()}
+        nodelist = {n for n in nodelist if scheduler.is_node_avail(n)}
     elif state != 'all':
         if state.endswith('*'):
             # non-exclusive state match
@@ -618,18 +620,21 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
             f'[F] Total available nodes: {len(available_nodes)}'
         )
 
-        # Try to guess the number of tasks now
-        available_nodes = filter_nodes_by_state(
-            available_nodes, self.sched_flex_alloc_nodes.lower()
-        )
-        getlogger().debug(
-            f'[F] Total available in state='
-            f'{self.sched_flex_alloc_nodes.lower()}: {len(available_nodes)}'
-        )
         available_nodes = self.scheduler.filternodes(self, available_nodes)
         getlogger().debug(
             f'[F] Total available after scheduler filter: '
             f'{len(available_nodes)}'
+        )
+
+        # Try to guess the number of tasks now
+        available_nodes = filter_nodes_by_state(
+            available_nodes,
+            self.sched_flex_alloc_nodes.lower(),
+            self.scheduler
+        )
+        getlogger().debug(
+            f'[F] Total available in state='
+            f'{self.sched_flex_alloc_nodes.lower()}: {len(available_nodes)}'
         )
         return len(available_nodes) * num_tasks_per_node
 
@@ -694,17 +699,6 @@ class Node(abc.ABC):
                      :class:`False` otherwise.
         '''
 
-    @abc.abstractmethod
-    def is_avail(self):
-        '''Check whether the node is available for scheduling jobs.'''
-
-    def is_down(self):
-        '''Check whether node is down.
-
-        This is the inverse of :func:`is_avail`.
-        '''
-        return not self.is_avail()
-
 
 class AlwaysIdleNode(Node):
     def __init__(self, name):
@@ -714,9 +708,6 @@ class AlwaysIdleNode(Node):
     @property
     def name(self):
         return self._name
-
-    def is_avail(self):
-        return True
 
     def in_statex(self, state):
         return state.lower() == self._state
