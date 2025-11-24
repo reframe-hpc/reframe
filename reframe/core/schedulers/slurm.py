@@ -441,9 +441,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         if flags_match:
             if 'MAINT' in flags_match[1].split(','):
                 self.addl_avail_states.add('MAINTENANCE')
-        # else:
-        #     raise JobSchedulerError(f"could not extract the reservation "
-        #                             f"flags for reservation '{reservation}'")
+        else:
+            self.log(f"could not extract the reservation flags for "
+                     f"reservation '{reservation}'")
 
         completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
         node_descriptions = completed.stdout.splitlines()
