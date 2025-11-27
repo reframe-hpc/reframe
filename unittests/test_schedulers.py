@@ -20,6 +20,7 @@ from reframe.core.exceptions import (
 )
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
+from reframe.utility import nodelist_expand
 
 
 @pytest.fixture
@@ -868,15 +869,18 @@ def test_cancel_term_ignore(minimal_job, scheduler, local_only):
 
 
 @pytest.fixture
-def slurm_nodes():
+def slurm_nodes(tmp_path):
     '''Dummy Slurm node descriptions'''
-    return ['NodeName=nid00001 Arch=x86_64 CoresPerSocket=12 '
+
+    nodemap = {
+        'nid0001': (
+            'NodeName=nid0001 Arch=x86_64 CoresPerSocket=12 '
             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
             'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
-            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
-            'NodeHostName=nid00001 Version=10.00 OS=Linux '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0001 '
+            'NodeHostName=nid0001 Version=10.00 OS=Linux '
             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
-            'Sockets=1 Boards=1 State=MAINT+DRAIN '
+            'Sockets=1 Boards=1 State=MAINTENANCE '
             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
             'MCS_label=N/A Partitions=p1,p2,pdef '
             'BootTime=01 Jan 2018 '
@@ -886,15 +890,16 @@ def slurm_nodes():
             'LowestJoules=100000000 ConsumedJoules=0 '
             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
             'ExtSensorsTemp=n/s Reason=Foo/ '
-            'failed [reframe_user@01 Jan 2018]',
-
-            'NodeName=nid00002 Arch=x86_64 CoresPerSocket=12 '
+            'failed [reframe_user@01 Jan 2018]'
+        ),
+        'nid0002': (
+            'NodeName=nid0002 Arch=x86_64 CoresPerSocket=12 '
             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
             'AvailableFeatures=f2,f3 ActiveFeatures=f2,f3 '
-            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00002 '
-            'NodeHostName=nid00002 Version=10.00 OS=Linux '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0002 '
+            'NodeHostName=nid0002 Version=10.00 OS=Linux '
             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
-            'Sockets=1 Boards=1 State=MAINT+DRAIN '
+            'Sockets=1 Boards=1 State=MAINTENANCE+DRAIN '
             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
             'MCS_label=N/A Partitions=p2,p3,pdef '
             'BootTime=01 Jan 2018 '
@@ -904,15 +909,15 @@ def slurm_nodes():
             'LowestJoules=100000000 ConsumedJoules=0 '
             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
             'ExtSensorsTemp=n/s Reason=Foo/ '
-            'failed [reframe_user@01 Jan 2018]',
-
-            'Node invalid_node1 not found',
-
-            'NodeName=nid00003 Arch=x86_64 CoresPerSocket=12 '
+            'failed [reframe_user@01 Jan 2018]'
+        ),
+        'invalid_node1': 'Node invalid_node1 not found',
+        'nid0003': (
+            'NodeName=nid0003 Arch=x86_64 CoresPerSocket=12 '
             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
             'AvailableFeatures=f1,f3 ActiveFeatures=f1,f3 '
-            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00003'
-            'NodeHostName=nid00003 Version=10.00 OS=Linux '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0003'
+            'NodeHostName=nid0003 Version=10.00 OS=Linux '
             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
             'Sockets=1 Boards=1 State=IDLE '
             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
@@ -924,13 +929,14 @@ def slurm_nodes():
             'LowestJoules=100000000 ConsumedJoules=0 '
             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
             'ExtSensorsTemp=n/s Reason=Foo/ '
-            'failed [reframe_user@01 Jan 2018]',
-
-            'NodeName=nid00004 Arch=x86_64 CoresPerSocket=12 '
+            'failed [reframe_user@01 Jan 2018]'
+        ),
+        'nid0004': (
+            'NodeName=nid0004 Arch=x86_64 CoresPerSocket=12 '
             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
             'AvailableFeatures=f1,f4 ActiveFeatures=f1,f4 '
-            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00004'
-            'NodeHostName=nid00004 Version=10.00 OS=Linux '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0004'
+            'NodeHostName=nid0004 Version=10.00 OS=Linux '
             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
             'Sockets=1 Boards=1 State=IDLE '
             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
@@ -941,13 +947,14 @@ def slurm_nodes():
             'AllocTRES= CapWatts=n/a CurrentWatts=100 '
             'LowestJoules=100000000 ConsumedJoules=0 '
             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
-            'ExtSensorsTemp=n/s Reason=Foo/ ',
-
-            'NodeName=nid00005 Arch=x86_64 CoresPerSocket=12 '
+            'ExtSensorsTemp=n/s Reason=Foo/ '
+        ),
+        'nid0005': (
+            'NodeName=nid0005 Arch=x86_64 CoresPerSocket=12 '
             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
             'AvailableFeatures=f5 ActiveFeatures=f5 '
-            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00005'
-            'NodeHostName=nid00005 Version=10.00 OS=Linux '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0005'
+            'NodeHostName=nid0005 Version=10.00 OS=Linux '
             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
             'Sockets=1 Boards=1 State=ALLOCATED '
             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
@@ -959,15 +966,16 @@ def slurm_nodes():
             'LowestJoules=100000000 ConsumedJoules=0 '
             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
             'ExtSensorsTemp=n/s Reason=Foo/ '
-            'failed [reframe_user@01 Jan 2018]',
-
-            'NodeName=nid00006 Arch=x86_64 CoresPerSocket=12 '
+            'failed [reframe_user@01 Jan 2018]'
+        ),
+        'nid0006': (
+            'NodeName=nid0006 Arch=x86_64 CoresPerSocket=12 '
             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
             'AvailableFeatures=f6 ActiveFeatures=f6 '
-            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00006'
-            'NodeHostName=nid00006 Version=10.00 OS=Linux '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0006'
+            'NodeHostName=nid0006 Version=10.00 OS=Linux '
             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
-            'Sockets=1 Boards=1 State=MAINT '
+            'Sockets=1 Boards=1 State=MAINTENANCE '
             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
             'MCS_label=N/A Partitions=p4 '
             'BootTime=01 Jan 2018 '
@@ -977,30 +985,106 @@ def slurm_nodes():
             'LowestJoules=100000000 ConsumedJoules=0 '
             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
             'ExtSensorsTemp=n/s Reason=Foo/ '
-            'failed [reframe_user@01 Jan 2018]',
+            'failed [reframe_user@01 Jan 2018]'
+        ),
+        'invalid_node2': 'Node invalid_node2 not found'
+    }
 
-            'Node invalid_node2 not found']
+    def _dump_nodes(nodelist):
+        if nodelist is None:
+            nodelist = list(nodemap.keys())
+        else:
+            nodelist = nodelist_expand(nodelist)
+
+        nodes_file = tmp_path / 'nodes.txt'
+        with open(nodes_file, 'w') as fp:
+            for node in nodelist:
+                fp.write(f'{nodemap[node]}\n')
+
+        return nodes_file
+
+    return _dump_nodes
 
 
 @pytest.fixture
-def slurm_scheduler_patched(slurm_nodes):
-    ret = getscheduler('slurm')()
-    ret.allnodes = lambda: _create_nodes(slurm_nodes)
-    ret._get_default_partition = lambda: 'pdef'
-    ret._get_reservation_nodes = lambda res: {
-        n for n in ret.allnodes() if n.name != 'nid00001'
-    }
-    ret._get_nodes_by_name = lambda name: {
-        n for n in ret.allnodes() if n.name == name
-    }
-    return ret
+def slurm_reservation(tmp_path):
+    resv_file = tmp_path / 'resv.txt'
+    with open(resv_file, 'w') as fp:
+        fp.write('ReservationName=dummy StartTime=2018-01-01T00:00:00 '
+                 'EndTime=2019-01-01T00:00:00 Duration=365-00:00:00 '
+                 'Nodes=nid[0001-0002,0006] NodeCnt=3 CoreCnt=72 '
+                 'Features=(null) PartitionName=(null) '
+                 'Flags=MAINT,IGNORE_JOBS,SPEC_NODES TRES=cpu=72 '
+                 'Users=(null) Groups=(null) Accounts=admin Licenses=(null) '
+                 'State=ACTIVE BurstBuffer=(null) MaxStartDelay=(null)\n')
+
+    return resv_file
 
 
 @pytest.fixture
-def make_flexible_job(slurm_scheduler_patched, tmp_path):
+def slurm_partitions(tmp_path):
+    def _gen_partition(name, nodelist, default=False):
+        nodes = nodelist_expand(nodelist)
+        ans = 'YES' if default else 'NO'
+        return (f'PartitionName={name} AllowGroups=ALL AllowAccounts=ALL '
+                f'AllowQos=ALL AllocNodes=ALL Default={ans} QoS=partition '
+                'DefaultTime=02:00:00 DisableRootJobs=NO ExclusiveUser=NO '
+                'ExclusiveTopo=NO GraceTime=0 Hidden=NO MaxNodes=8 '
+                'MaxTime=1-00:00:00 MinNodes=0 LLN=NO '
+                'MaxCPUsPerNode=UNLIMITED MaxCPUsPerSocket=UNLIMITED '
+                f'NodeSets=nid-nodeset Nodes={nodelist} PriorityJobFactor=1 '
+                'PriorityTier=1 RootOnly=NO ReqResv=NO '
+                'OverSubscribe=EXCLUSIVE OverTimeLimit=NONE PreemptMode=OFF '
+                f'State=UP TotalCPUs={24*len(nodes)} TotalNodes={len(nodes)} '
+                'SelectTypeParameters=NONE JobDefaults=(null) '
+                'DefMemPerNode=UNLIMITED MaxMemPerNode=UNLIMITED '
+                f'TRES=cpu={24*len(nodes)},mem={32220*len(nodes)}M,'
+                f'node={len(nodes)},billing={len(nodes)} '
+                'TRESBillingWeights=Node=1\n')
+
+    part_file = tmp_path / 'partitions.txt'
+    with open(part_file, 'w') as fp:
+        fp.write(_gen_partition('p1', 'nid[0001,0003-0004,0005]'))
+        fp.write(_gen_partition('p2', 'nid[0001-0002]'))
+        fp.write(_gen_partition('p3', 'nid[0002-0005]'))
+        fp.write(_gen_partition('p4', 'nid0006'))
+        fp.write(_gen_partition('pdef', 'nid[0001-0004]', default=True))
+
+    return part_file
+
+
+@pytest.fixture
+def slurm_commands(monkeypatch, slurm_nodes,
+                   slurm_reservation, slurm_partitions):
+    run_command = osext.run_command
+
+    def _run_command_patched(cmd, *args, **kwargs):
+        print(f'{cmd}')
+        node_match = re.match(r'scontrol -a show -o nodes (\S+)', cmd)
+        if cmd == 'scontrol -a show -o reservations dummy':
+            cmd = f'cat {slurm_reservation}'
+        elif cmd == 'scontrol -a show -o nodes':
+            cmd = f'cat {slurm_nodes(None)}'
+        elif node_match:
+            cmd = f'cat {slurm_nodes(node_match.group(1))}'
+        elif cmd == 'scontrol -a show -o partitions':
+            cmd = f'cat {slurm_partitions}'
+
+        print(f'-> {cmd}')
+        return run_command(cmd, *args, **kwargs)
+
+    import functools
+    import reframe.core.schedulers.slurm as slurm
+    monkeypatch.setattr(osext, 'run_command', _run_command_patched)
+    monkeypatch.setattr(slurm, '_run_strict',
+                        functools.partial(_run_command_patched, check=True))
+
+
+@pytest.fixture
+def make_flexible_job(tmp_path, slurm_commands):
     def _make_flexible_job(flex_type, **jobargs):
         ret = Job.create(
-            slurm_scheduler_patched, getlauncher('local')(),
+            getscheduler('slurm')(), getlauncher('local')(),
             name='testjob',
             workdir=tmp_path,
             script_filename=str(tmp_path / 'job.sh'),
@@ -1153,27 +1237,27 @@ def test_flex_alloc_valid_reservation_cmd(make_flexible_job):
                             sched_options=['--reservation=dummy'])
 
     prepare_job(job)
-    assert job.num_tasks == 4
+    assert job.num_tasks == 8
 
 
 def test_flex_alloc_valid_reservation_option(make_flexible_job):
     job = make_flexible_job('all', sched_access=['--constraint=f2'])
     job.options = ['--reservation=dummy']
     prepare_job(job)
-    assert job.num_tasks == 4
+    assert job.num_tasks == 8
 
 
 def test_flex_alloc_exclude_nodes_cmd(make_flexible_job):
     job = make_flexible_job('all',
                             sched_access=['--constraint=f1'],
-                            sched_options=['--exclude=nid00001'])
+                            sched_options=['--exclude=nid0001'])
     prepare_job(job)
     assert job.num_tasks == 8
 
 
 def test_flex_alloc_exclude_nodes_opt(make_flexible_job):
     job = make_flexible_job('all', sched_access=['--constraint=f1'])
-    job.options = ['-x nid00001']
+    job.options = ['-x nid0001']
     prepare_job(job)
     assert job.num_tasks == 8
 
@@ -1199,7 +1283,7 @@ def test_flex_alloc_not_enough_idle_nodes(make_flexible_job, strict_flex):
 
 
 def test_flex_alloc_maintenance_nodes(make_flexible_job):
-    job = make_flexible_job('maint')
+    job = make_flexible_job('maintenance')
     job.options = ['--partition=p4']
     prepare_job(job)
     assert job.num_tasks == 4
@@ -1255,33 +1339,56 @@ def test_flex_alloc_alloc_state_OR(make_flexible_job):
     prepare_job(job)
     assert job.num_tasks == 12
 
-    job = make_flexible_job('maint*|idle')
+    job = make_flexible_job('maintenance*|idle')
     prepare_job(job)
     assert job.num_tasks == 16
 
-    job = make_flexible_job('maint|avail')
+    job = make_flexible_job('maintenance|avail')
     job.options = ['--partition=p1']
     prepare_job(job)
-    assert job.num_tasks == 12
+    assert job.num_tasks == 16
 
     job = make_flexible_job('all|idle')
     prepare_job(job)
     assert job.num_tasks == 16
 
-    job = make_flexible_job('allocated|idle|maint')
+    job = make_flexible_job('allocated|idle|maintenance')
     job.options = ['--partition=p1']
     prepare_job(job)
+    assert job.num_tasks == 16
+
+
+def test_flex_alloc_avail(make_flexible_job):
+    job = make_flexible_job('avail')
+    prepare_job(job)
+    assert job.num_tasks == 8
+
+    job = make_flexible_job('avail')
+    job.options = ['--partition=p3']
+    prepare_job(job)
     assert job.num_tasks == 12
+
+    # `MAINTENANCE` state is treated as available for reservations with
+    # Flags=MAINT
+    job = make_flexible_job('avail')
+    job.options = ['--reservation=dummy']
+    prepare_job(job)
+    assert job.num_tasks == 4
+
+    job = make_flexible_job('avail')
+    job.options = ['--reservation=dummy', '--partition=p4']
+    prepare_job(job)
+    assert job.num_tasks == 4
 
 
 @pytest.fixture
 def slurm_node_allocated():
     return _SlurmNode(
-        'NodeName=nid00001 Arch=x86_64 CoresPerSocket=12 '
+        'NodeName=nid0001 Arch=x86_64 CoresPerSocket=12 '
         'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
         'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
-        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
-        'NodeHostName=nid00001 Version=10.00 OS=Linux '
+        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0001 '
+        'NodeHostName=nid0001 Version=10.00 OS=Linux '
         'RealMemory=32220 AllocMem=0 FreeMem=10000 '
         'Sockets=1 Boards=1 State=ALLOCATED '
         'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
@@ -1300,11 +1407,11 @@ def slurm_node_allocated():
 @pytest.fixture
 def slurm_node_idle():
     return _SlurmNode(
-        'NodeName=nid00002 Arch=x86_64 CoresPerSocket=12 '
+        'NodeName=nid0002 Arch=x86_64 CoresPerSocket=12 '
         'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
         'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
-        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
-        'NodeHostName=nid00001 Version=10.00 OS=Linux '
+        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0001 '
+        'NodeHostName=nid0001 Version=10.00 OS=Linux '
         'RealMemory=32220 AllocMem=0 FreeMem=10000 '
         'Sockets=1 Boards=1 State=IDLE '
         'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
@@ -1323,11 +1430,11 @@ def slurm_node_idle():
 @pytest.fixture
 def slurm_node_drained():
     return _SlurmNode(
-        'NodeName=nid00003 Arch=x86_64 CoresPerSocket=12 '
+        'NodeName=nid0003 Arch=x86_64 CoresPerSocket=12 '
         'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
         'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
-        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
-        'NodeHostName=nid00001 Version=10.00 OS=Linux '
+        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0001 '
+        'NodeHostName=nid0001 Version=10.00 OS=Linux '
         'RealMemory=32220 AllocMem=0 FreeMem=10000 '
         'Sockets=1 Boards=1 State=IDLE+DRAIN '
         'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
@@ -1346,11 +1453,11 @@ def slurm_node_drained():
 @pytest.fixture
 def slurm_node_nopart():
     return _SlurmNode(
-        'NodeName=nid00004 Arch=x86_64 CoresPerSocket=12 '
+        'NodeName=nid0004 Arch=x86_64 CoresPerSocket=12 '
         'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
         'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
-        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
-        'NodeHostName=nid00001 Version=10.00 OS=Linux '
+        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0001 '
+        'NodeHostName=nid0001 Version=10.00 OS=Linux '
         'RealMemory=32220 AllocMem=0 FreeMem=10000 '
         'Sockets=1 Boards=1 State=IDLE+DRAIN '
         'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
@@ -1368,13 +1475,13 @@ def slurm_node_nopart():
 @pytest.fixture
 def slurm_node_maintenance():
     return _SlurmNode(
-        'NodeName=nid00006 Arch=x86_64 CoresPerSocket=12 '
+        'NodeName=nid0006 Arch=x86_64 CoresPerSocket=12 '
         'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
         'AvailableFeatures=f6 ActiveFeatures=f6 '
-        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00006'
-        'NodeHostName=nid00006 Version=10.00 OS=Linux '
+        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0006'
+        'NodeHostName=nid0006 Version=10.00 OS=Linux '
         'RealMemory=32220 AllocMem=0 FreeMem=10000 '
-        'Sockets=1 Boards=1 State=MAINT '
+        'Sockets=1 Boards=1 State=MAINTENANCE '
         'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
         'MCS_label=N/A Partitions=p4 '
         'BootTime=01 Jan 2018 '
@@ -1394,8 +1501,8 @@ def test_slurm_node_noname():
             'Arch=x86_64 CoresPerSocket=12 '
             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
             'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
-            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
-            'NodeHostName=nid00001 Version=10.00 OS=Linux '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid0001 '
+            'NodeHostName=nid0001 Version=10.00 OS=Linux '
             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
             'Sockets=1 Boards=1 State=IDLE+DRAIN '
             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
@@ -1425,10 +1532,10 @@ def test_slurm_node_equals(slurm_node_allocated, slurm_node_idle):
 
 
 def test_slurm_node_attributes(slurm_node_allocated, slurm_node_nopart):
-    assert slurm_node_allocated.name == 'nid00001'
+    assert slurm_node_allocated.name == 'nid0001'
     assert slurm_node_allocated.partitions == {'p1', 'p2'}
     assert slurm_node_allocated.active_features == {'f1', 'f2'}
-    assert slurm_node_nopart.name == 'nid00004'
+    assert slurm_node_nopart.name == 'nid0004'
     assert slurm_node_nopart.partitions == set()
     assert slurm_node_nopart.active_features == {'f1', 'f2'}
 
@@ -1439,7 +1546,7 @@ def test_hash(slurm_node_allocated):
 
 
 def test_str(slurm_node_allocated):
-    assert 'nid00001' == str(slurm_node_allocated)
+    assert 'nid0001' == str(slurm_node_allocated)
 
 
 def test_slurm_node_in_state(slurm_node_allocated,

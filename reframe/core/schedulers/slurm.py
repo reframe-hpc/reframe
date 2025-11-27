@@ -434,29 +434,31 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         return nodes
 
-    def _get_reservation_nodes(self, reservation):
-        completed = _run_strict('scontrol -a show res %s' % reservation)
-        node_match = re.search(r'(Nodes=\S+)', completed.stdout)
+    def _get_reservation_nodes(self, resv):
+        completed = _run_strict(f'scontrol -a show -o reservations {resv}')
+        node_match = re.search(r'Nodes=(\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
         else:
-            raise JobSchedulerError("could not extract the node names for "
-                                    "reservation '%s'" % reservation)
+            raise JobSchedulerError('could not extract the node names for '
+                                    f'reservation {resv!r}')
 
         flags_match = re.search(r'Flags=(\S+)', completed.stdout)
         if flags_match:
             if 'MAINT' in flags_match.group(1).split(','):
                 self.node_available_states.add('MAINTENANCE')
         else:
-            self.log(f"could not extract the reservation flags for "
-                     f"reservation '{reservation}'")
+            self.log('could not extract the reservation flags for '
+                     f'reservation {resv!r}')
 
-        completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
+        completed = _run_strict(
+            f'scontrol -a show -o nodes {reservation_nodes}'
+        )
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
     def _get_nodes_by_name(self, nodespec):
-        completed = osext.run_command('scontrol -a show -o node %s' %
+        completed = osext.run_command('scontrol -a show -o nodes %s' %
                                       nodespec)
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
@@ -747,6 +749,9 @@ class _SlurmNode(sched.Node):
 
     def __hash__(self):
         return hash(self.name)
+
+    def __repr__(self):
+        return f'_SlurmNode({self.name!r})'
 
     def in_state(self, state):
         return all([self._states >= set(state.upper().split('+')),
