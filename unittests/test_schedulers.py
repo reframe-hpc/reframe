@@ -19,7 +19,7 @@ from reframe.core.exceptions import (
     ConfigError, JobError, JobNotStartedError, JobSchedulerError, SkipTestError
 )
 from reframe.core.schedulers import Job
-from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
+from reframe.core.schedulers.slurm import _SlurmNode
 from reframe.utility import nodelist_expand
 
 
