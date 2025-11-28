@@ -147,6 +147,13 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._sched_access_in_submit = self.get_option(
             'sched_access_in_submit'
         )
+        self._available_states = {
+            'ALLOCATED',
+            'COMPLETING',
+            'IDLE',
+            'PLANNED',
+            'RESERVED'
+        }
 
     def make_job(self, *args, **kwargs):
         return _SlurmJob(*args, **kwargs)
@@ -427,21 +434,30 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         return nodes
 
-    def _get_reservation_nodes(self, reservation):
-        completed = _run_strict('scontrol -a show res %s' % reservation)
-        node_match = re.search(r'(Nodes=\S+)', completed.stdout)
+    def _get_reservation_nodes(self, resv):
+        completed = _run_strict(f'scontrol -a show -o reservations {resv}')
+        self.log(f'reservation info:\n{completed.stdout}')
+
+        node_match = re.search(r'Nodes=(\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
         else:
-            raise JobSchedulerError("could not extract the node names for "
-                                    "reservation '%s'" % reservation)
+            raise JobSchedulerError('could not extract the node names for '
+                                    f'reservation {resv!r}')
 
-        completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
+        flags_match = re.search(r'Flags=(\S+)', completed.stdout)
+        if flags_match:
+            if 'MAINT' in flags_match.group(1).split(','):
+                self._available_states.add('MAINTENANCE')
+
+        completed = _run_strict(
+            f'scontrol -a show -o nodes {reservation_nodes}'
+        )
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
     def _get_nodes_by_name(self, nodespec):
-        completed = osext.run_command('scontrol -a show -o node %s' %
+        completed = osext.run_command('scontrol -a show -o nodes %s' %
                                       nodespec)
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
@@ -594,7 +610,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                         self.log(f'Checking if nodes {node_names!r} '
                                  f'are indeed unavailable')
                         nodes = self._get_nodes_by_name(node_names)
-                        if not any(n.is_down() for n in nodes):
+                        if not any(self.is_node_down(n) for n in nodes):
                             return
 
                         self.cancel(job)
@@ -629,6 +645,12 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def finished(self, job):
         return slurm_state_completed(job.state)
+
+    def is_node_avail(self, node):
+        return node.states <= self._available_states
+
+    def is_node_down(self, node):
+        return not self.is_node_avail(node)
 
 
 @register_scheduler('squeue')
@@ -727,25 +749,15 @@ class _SlurmNode(sched.Node):
     def __hash__(self):
         return hash(self.name)
 
+    def __repr__(self):
+        return f'_SlurmNode({self.name!r})'
+
     def in_state(self, state):
         return all([self._states >= set(state.upper().split('+')),
                     self._partitions, self._active_features, self._states])
 
     def in_statex(self, state):
         return self._states == set(state.upper().split('+'))
-
-    def is_avail(self):
-        available_states = {
-            'ALLOCATED',
-            'COMPLETING',
-            'IDLE',
-            'PLANNED',
-            'RESERVED'
-        }
-        return self._states <= available_states
-
-    def is_down(self):
-        return not self.is_avail()
 
     def satisfies(self, slurm_constraint):
         # Convert the Slurm constraint to a Python expression and evaluate it,

@@ -14,7 +14,7 @@ from reframe.core.exceptions import ReframeError
 from reframe.core.fields import make_convertible
 from reframe.core.logging import getlogger, time_function
 from reframe.core.meta import make_test
-from reframe.core.schedulers import Job, filter_nodes_by_state
+from reframe.core.schedulers import Job
 from reframe.frontend.executors import generate_testcases
 
 
@@ -38,7 +38,9 @@ def getallnodes(state, jobs_cli_options=None):
             f'Total available nodes for {part.name}: {len(available_nodes)}'
         )
 
-        available_nodes = filter_nodes_by_state(available_nodes, state)
+        available_nodes = part.scheduler.filternodes_by_state(
+            available_nodes, state
+        )
         nodes[part.fullname] = [n.name for n in available_nodes]
 
     return nodes
