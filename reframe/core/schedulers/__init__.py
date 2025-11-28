@@ -100,6 +100,57 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         :meta private:
         '''
 
+    def filternodes_by_state(self, nodelist, state):
+        '''Filter nodes by their state
+
+        :arg nodelist: List of :class:`Node` instances to filter.
+        :arg state: The state of the nodes.
+            If ``all``, the initial list is returned untouched.
+            If ``avail``, only the available nodes will be returned.
+            All other values are interpreted as a state string.
+            The pipe character ``|`` can be used as to specify multiple
+            alternative node states.
+            State match is exclusive unless the ``*`` is added at the end of the
+            state string.
+            When defining multiple states using ``|``, ``*`` has to be added at
+            the end of each alternative state for which a non-exclusive match is
+            required.
+
+        :returns: the filtered node list
+
+        .. versionchanged:: 4.9
+
+           Support the ``|`` character to filter according to alternative states.
+
+        .. versionchanged:: 4.10
+
+           Moved inside the :class:`JobShceduler` class.
+        '''
+        if '|' in state:
+            allowed_states = state.split('|')
+            final_nodelist = set()
+            for s in allowed_states:
+                final_nodelist.update(
+                    self.filternodes_by_state(nodelist, s)
+                )
+
+            nodelist = final_nodelist
+        elif state == 'avail':
+            nodelist = {n for n in nodelist if self.is_node_avail(n)}
+        elif state != 'all':
+            if state.endswith('*'):
+                # non-exclusive state match
+                state = state[:-1]
+                nodelist = {
+                    n for n in nodelist if n.in_state(state)
+                }
+            else:
+                nodelist = {
+                    n for n in nodelist if n.in_statex(state)
+                }
+
+        return nodelist
+
     @abc.abstractmethod
     def submit(self, job):
         '''Submit a job.
@@ -151,53 +202,6 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         :meta private:
         '''
         getlogger().log(level, f'[S] {self.registered_name}: {message}')
-
-
-def filter_nodes_by_state(nodelist, state, scheduler):
-    '''Filter nodes by their state
-
-    :arg nodelist: List of :class:`Node` instances to filter.
-    :arg state: The state of the nodes.
-        If ``all``, the initial list is returned untouched.
-        If ``avail``, only the available nodes will be returned.
-        All other values are interpreted as a state string.
-        The pipe character ``|`` can be used as to specify multiple
-        alternative node states.
-        State match is exclusive unless the ``*`` is added at the end of the
-        state string.
-        When defining multiple states using ``|``, ``*`` has to be added at
-        the end of each alternative state for which a non-exclusive match is
-        required.
-
-    :returns: the filtered node list
-
-    .. versionchanged:: 4.9
-       Support the ``|`` character to filter according to alternative states.
-    '''
-    if '|' in state:
-        allowed_states = state.split('|')
-        final_nodelist = set()
-        for s in allowed_states:
-            final_nodelist.update(
-                filter_nodes_by_state(nodelist, s, scheduler)
-            )
-
-        nodelist = final_nodelist
-    elif state == 'avail':
-        nodelist = {n for n in nodelist if scheduler.is_node_avail(n)}
-    elif state != 'all':
-        if state.endswith('*'):
-            # non-exclusive state match
-            state = state[:-1]
-            nodelist = {
-                n for n in nodelist if n.in_state(state)
-            }
-        else:
-            nodelist = {
-                n for n in nodelist if n.in_statex(state)
-            }
-
-    return nodelist
 
 
 class Job(jsonext.JSONSerializable, metaclass=JobMeta):
@@ -627,10 +631,9 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         )
 
         # Try to guess the number of tasks now
-        available_nodes = filter_nodes_by_state(
+        available_nodes = self.scheduler.filternodes_by_state(
             available_nodes,
-            self.sched_flex_alloc_nodes.lower(),
-            self.scheduler
+            self.sched_flex_alloc_nodes.lower()
         )
         getlogger().debug(
             f'[F] Total available in state='

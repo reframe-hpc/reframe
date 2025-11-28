@@ -147,7 +147,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._sched_access_in_submit = self.get_option(
             'sched_access_in_submit'
         )
-        self.node_available_states = {
+        self._available_states = {
             'ALLOCATED',
             'COMPLETING',
             'IDLE',
@@ -436,6 +436,8 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def _get_reservation_nodes(self, resv):
         completed = _run_strict(f'scontrol -a show -o reservations {resv}')
+        self.log(f'reservation info:\n{completed.stdout}')
+
         node_match = re.search(r'Nodes=(\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
@@ -446,10 +448,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         flags_match = re.search(r'Flags=(\S+)', completed.stdout)
         if flags_match:
             if 'MAINT' in flags_match.group(1).split(','):
-                self.node_available_states.add('MAINTENANCE')
-        else:
-            self.log('could not extract the reservation flags for '
-                     f'reservation {resv!r}')
+                self._available_states.add('MAINTENANCE')
 
         completed = _run_strict(
             f'scontrol -a show -o nodes {reservation_nodes}'
@@ -648,7 +647,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         return slurm_state_completed(job.state)
 
     def is_node_avail(self, node):
-        return node.states <= self.node_available_states
+        return node.states <= self._available_states
 
     def is_node_down(self, node):
         return not self.is_node_avail(node)
