@@ -1032,6 +1032,7 @@ The way the tests are generated and how they interact with the test filtering op
    - ``all``: Tests will run on all the nodes of their respective valid partitions regardless of the node state.
    - ``avail``: Tests will run on all the nodes of their respective valid partitions that are available for running jobs.
      Note that if a node is currently allocated to another job it is still considered as "available."
+     Also, for ReFrame partitions using the Slurm backends, if this option is used on a reservation with the ``MAINT`` flag set, then nodes in ``MAINTENANCE`` state will also be considered as available.
    - ``NODESTATE``: Tests will run on all the nodes of their respective valid partitions that are exclusively in state ``NODESTATE``.
      If ``NODESTATE`` is not specified, ``idle`` is assumed.
    - ``NODESTATE*``: Tests will run on all the nodes of their respective valid partitions that are at least in state ``NODESTATE``.
@@ -1060,7 +1061,12 @@ The way the tests are generated and how they interact with the test filtering op
       To achieve the previous behaviour, you should use ``--distribute=idle*``.
 
    .. versionchanged:: 4.9
+
       ``--distribute=NODESTATE`` now allows you to specify multiple valid states using the ``|`` character.
+
+   .. versionchanged:: 4.10
+
+      Nodes in ``MAINTENANCE`` state are considered available, if this option is run on a Slurm reservation with the ``MAINT`` flag set.
 
 .. option:: -P, --parameterize=[TEST.]VAR=VAL0,VAL1,...
 
