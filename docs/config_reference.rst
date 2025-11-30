@@ -298,7 +298,8 @@ System Partition Configuration
    - ``local``: Jobs will be launched locally without using any job scheduler.
    - ``lsf``: Jobs will be launched using the `LSF <https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=lsf-session-scheduler>`__ scheduler.
    - ``oar``: Jobs will be launched using the `OAR <https://oar.imag.fr/>`__ scheduler.
-   - ``pbs``: Jobs will be launched using the `PBS Pro <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
+   - ``pbs``: Jobs will be launched using the `PBS <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
+   - ``pbspro``: Jobs will be launched using the `PBS Professional<https://altair.com/pbs-professional>`__ scheduler.
    - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
    - ``slurm``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend requires job accounting to be enabled in the target system.
@@ -339,6 +340,9 @@ System Partition Configuration
    .. versionchanged:: 4.8.1
       All ``SBATCH_*`` variables are unset before submitting a job through the Slurm-based backends.
       See note below for information.
+
+   .. versionadded:: 4.10
+      The ``pbspro`` scheduler is added.
 
    .. note::
       The Slurm-based backends unset all ``SBATCH_*`` environment variables before submitting a job.
