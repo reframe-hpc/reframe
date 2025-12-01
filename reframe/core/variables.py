@@ -930,7 +930,7 @@ class VarSpace(namespaces.Namespace):
         for key in self._namespace:
             if key in illegal_names and key not in self._injected_vars:
                 raise ReframeSyntaxError(
-                    f'{key!r} already defined in one of base clasess of '
+                    f'{key!r} already defined in one of base classes of '
                     f'{cls.__qualname__!r}', with_code_context=True
                 )
 
