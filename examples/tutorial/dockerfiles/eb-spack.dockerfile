@@ -36,4 +36,4 @@ RUN mkdir .local && cd .local && \
     git clone --branch releases/v${_SPACK_VER} --depth 1 https://github.com/spack/spack
 
 RUN echo '. /usr/local/lmod/lmod/init/profile && . /home/user/.local/spack/share/spack/setup-env.sh' > /home/user/.profile
-ENV BASH_ENV /home/user/.profile
+ENV BASH_ENV=/home/user/.profile

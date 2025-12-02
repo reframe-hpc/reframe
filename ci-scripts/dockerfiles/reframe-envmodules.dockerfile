@@ -2,7 +2,7 @@
 # Execute this from the top-level ReFrame source directory
 #
 
-FROM ghcr.io/reframe-hpc/tmod:4.6.0
+FROM ghcr.io/reframe-hpc/envmodules:5.6.1
 
 
 # ReFrame requirements
@@ -21,6 +21,5 @@ COPY --chown=rfmuser . /home/rfmuser/reframe/
 WORKDIR /home/rfmuser/reframe
 
 RUN ./bootstrap.sh
-RUN pip install pytest-cov
 
-CMD ["/bin/bash", "-c", "./test_reframe.py --cov=reframe --cov-report=xml --rfm-user-config=ci-scripts/configs/tmod4.py"]
+CMD ["/bin/bash", "-c", "./test_reframe.py --cov=reframe --cov-report=xml --rfm-user-config=ci-scripts/configs/envmod.py"]

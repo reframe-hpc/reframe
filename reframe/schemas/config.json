@@ -270,7 +270,7 @@
                     "max_local_jobs": {"type": "number"},
                     "modules_system": {
                         "type": "string",
-                        "enum": ["tmod", "tmod31", "tmod32", "tmod4",
+                        "enum": ["tmod4", "envmod",
                                  "lmod", "nomod", "spack"]
                     },
                     "modules": {"$ref": "#/defs/modules_list"},

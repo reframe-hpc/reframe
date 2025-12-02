@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-ARG PYTHON_VERSION=3.6
+ARG PYTHON_VERSION=3.9
 
 FROM docker.io/python:${PYTHON_VERSION}
 
@@ -18,6 +18,5 @@ COPY --chown=rfmuser . /home/rfmuser/reframe/
 WORKDIR /home/rfmuser/reframe
 
 RUN ./bootstrap.sh +docs
-RUN pip install pytest-cov
 
 CMD ["/bin/bash", "-c", "./test_reframe.py --cov=reframe --cov-report=xml"]

@@ -3,7 +3,7 @@
 #
 
 
-FROM ghcr.io/reframe-hpc/lmod:8.4.12
+FROM ghcr.io/reframe-hpc/lmod:9.0.4
 
 # Install ReFrame unit test requirements
 RUN apt-get -y update && \
@@ -20,6 +20,5 @@ COPY --chown=rfmuser . /home/rfmuser/reframe/
 WORKDIR /home/rfmuser/reframe
 
 RUN ./bootstrap.sh
-RUN pip install pytest-cov
 
 CMD ["/bin/bash", "-c", "./test_reframe.py --cov=reframe --cov-report=xml --rfm-user-config=ci-scripts/configs/lmod.py"]

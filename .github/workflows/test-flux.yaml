@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ['fluxrm/flux-sched:focal']
+        container: ['fluxrm/flux-sched:noble']
 
     container:
       image: ${{ matrix.container }}
@@ -30,7 +30,6 @@ jobs:
         run: |
           apt-get update && apt-get install -y python3-pip
           ./bootstrap.sh
-          pip install pytest-cov
           export PATH=$PWD/bin:$PATH
           which reframe
 

@@ -1,8 +1,8 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 ENV TZ=Europe/Zurich
 ENV DEBIAN_FRONTEND=noninteractive
-ENV _LMOD_VER=8.4.12
+ENV _LMOD_VER=9.0.4
 
 # Setup apt
 RUN \
@@ -11,7 +11,7 @@ RUN \
   update-ca-certificates
 
 # Required utilities
-RUN apt-get -y install wget
+RUN apt-get -y install bc wget
 
 # Install Lmod
 RUN \

@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
@@ -24,28 +24,11 @@ jobs:
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4.2.0
 
-  unittest-py-eol:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.6', '3.7']
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build Image for Python ${{ matrix.python-version }}
-      run: |
-        docker build --build-arg PYTHON_VERSION=${{ matrix.python-version }} -f ci-scripts/dockerfiles/reframe-python.dockerfile -t reframe-python${{ matrix.python-version }}:latest .
-    - name: Run Unittests
-      run: |
-        docker run --name reframe-python${{ matrix.python-version }} reframe-python${{ matrix.python-version }}:latest
-        docker cp reframe-python${{ matrix.python-version }}:/home/rfmuser/reframe/coverage.xml .
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v4.2.0
-
   unittest-macos:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
@@ -66,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        modules-version: [lmod, lmod77, tmod32, tmod4]
+        modules-version: [lmod, envmodules]
     steps:
     - uses: actions/checkout@v4
     - name: Login to GitHub Container Registry
@@ -121,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
       - name: Setup up Python ${{ matrix.python-version }}
@@ -144,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
