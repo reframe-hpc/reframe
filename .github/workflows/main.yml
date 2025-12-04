@@ -19,8 +19,9 @@ jobs:
         ./bootstrap.sh
     - name: Generic Unittests
       run: |
-        pip install pytest-cov
-        ./test_reframe.py --cov=reframe --cov-report=xml
+        pip install coverage
+        coverage run --source=reframe ./test_reframe.py
+        coverage xml -o coverage.xml
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4.2.0
 
@@ -40,8 +41,9 @@ jobs:
         ./bootstrap.sh
     - name: Generic Unittests
       run: |
-        pip install pytest-cov
-        ./test_reframe.py --cov=reframe --cov-report=xml
+        pip install coverage
+        coverage run --source=reframe ./test_reframe.py
+        coverage xml -o coverage.xml
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4.2.0
 

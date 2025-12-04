@@ -17,6 +17,8 @@ COPY --chown=rfmuser . /home/rfmuser/reframe/
 
 WORKDIR /home/rfmuser/reframe
 
-RUN ./bootstrap.sh +docs
+RUN ./bootstrap.sh
+RUN pip install --break-system-packages coverage
+ENV BASH_ENV=/home/rfmuser/.profile
 
-CMD ["/bin/bash", "-c", "./test_reframe.py --cov=reframe --cov-report=xml"]
+CMD ["/bin/bash", "-c", "coverage run --source=reframe ./test_reframe.py; coverage xml -o coverage.xml"]
