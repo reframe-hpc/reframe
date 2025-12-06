@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        modules-version: [lmod, envmodules]
+        modules-version: [envmodules, lmod, spack]
     steps:
     - uses: actions/checkout@v4
     - name: Login to GitHub Container Registry

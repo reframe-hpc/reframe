@@ -19,9 +19,7 @@ RUN useradd -ms /bin/bash rfmuser
 USER rfmuser
 
 # Install Spack
-RUN git clone --branch v${_SPACK_VER} https://github.com/spack/spack ~/spack && \
-    cd ~/spack
-
+RUN git clone --branch v${_SPACK_VER} --depth 1 https://github.com/spack/spack ~/spack
 RUN pip3 install --break-system-packages easybuild==${_EB_VER}
 
 ENV PATH="/home/rfmuser/.local/bin:${PATH}"

@@ -3,7 +3,9 @@
 #
 
 
-FROM ghcr.io/reframe-hpc/lmod:9.0.4
+FROM ubuntu:24.04
+
+ENV _SPACK_VER=1.1.0
 
 # Install ReFrame unit test requirements
 RUN apt-get -y update && \
@@ -14,6 +16,9 @@ RUN useradd -ms /bin/bash rfmuser
 
 USER rfmuser
 
+# Install Spack
+RUN git clone --branch v${_SPACK_VER} https://github.com/spack/spack ~/spack
+
 # Install ReFrame from the current directory
 COPY --chown=rfmuser . /home/rfmuser/reframe/
 
@@ -21,7 +26,8 @@ WORKDIR /home/rfmuser/reframe
 
 RUN ./bootstrap.sh
 RUN pip install --break-system-packages coverage
-RUN echo '. /usr/local/lmod/lmod/init/profile' >> /home/rfmuser/.profile
+
+RUN echo '. /home/rfmuser/spack/share/spack/setup-env.sh' >> /home/rfmuser/.profile
 ENV BASH_ENV=/home/rfmuser/.profile
 
-CMD ["/bin/bash", "-c", "coverage run --source=reframe ./test_reframe.py -v --rfm-user-config=ci-scripts/configs/lmod.py; coverage xml -o coverage.xml"]
+CMD ["/bin/bash", "-c", "coverage run --source=reframe ./test_reframe.py -v --rfm-user-config=ci-scripts/configs/spack.py; coverage xml -o coverage.xml"]
