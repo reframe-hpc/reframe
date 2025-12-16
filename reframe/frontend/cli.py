@@ -1164,8 +1164,9 @@ def main():
 
     if options.performance_compare:
         namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
-        with exit_gracefully_on_error('failed to generate performance report',
-                                      printer):
+        with exit_gracefully_on_error(
+            'failed to generate performance comparison', printer
+        ):
             filt = [None, None]
             if options.filter_expr is not None:
                 if len(options.filter_expr) == 1:
