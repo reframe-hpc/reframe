@@ -8,7 +8,6 @@ import pytest
 import shutil
 
 import reframe as rfm
-import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.frontend.loader import RegressionCheckLoader
 
@@ -148,7 +147,7 @@ def test_relative_import_outside_rfm_prefix(loader, tmp_path):
     # imported as a hierarchical module. If not, we want to make sure that
     # reframe will still load its parent modules
 
-    osext.copytree(
+    shutil.copytree(
         os.path.abspath('unittests/resources/checks_unlisted/testlib'),
         tmp_path / 'testlib', dirs_exist_ok=True
     )

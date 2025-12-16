@@ -27,6 +27,7 @@ import reframe
 import reframe.utility as util
 from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
                                      SpawnedProcessTimeout)
+from reframe.core.warnings import user_deprecation_warning
 from . import OrderedSet
 
 
@@ -409,52 +410,20 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
 
     This function will automatically delegate to :py:func:`shutil.copytree`
     for Python versions >= 3.8.
+
+    .. deprecated:: 4.10
+
+       Please use :py:func:`shutil.copytree` directly.
     '''
+    user_deprecation_warning('`osext.copytree()` is deprecated; '
+                             'please use `shutil.copytree()` directly')
+
     if src == os.path.commonpath([src, dst]):
         raise ValueError("cannot copy recursively the parent directory "
                          "`%s' into one of its descendants `%s'" % (src, dst))
 
-    if sys.version_info[1] >= 8:
-        return shutil.copytree(src, dst, symlinks, ignore, copy_function,
-                               ignore_dangling_symlinks, dirs_exist_ok)
-
-    if not dirs_exist_ok:
-        return shutil.copytree(src, dst, symlinks, ignore, copy_function,
-                               ignore_dangling_symlinks)
-
-    # dirs_exist_ok=True and Python < 3.8
-    if not os.path.exists(dst):
-        return shutil.copytree(src, dst, symlinks, ignore, copy_function,
-                               ignore_dangling_symlinks)
-
-    # dst exists; manually descend into the subdirectories, but do some sanity
-    # checking first
-
-    # We raise the following errors to comply with the copytree()'s behaviour
-
-    if not os.path.isdir(dst):
-        raise FileExistsError(errno.EEXIST, 'File exists', dst)
-
-    if not os.path.exists(src):
-        raise FileNotFoundError(errno.ENOENT, 'No such file or directory', src)
-
-    if not os.path.isdir(src):
-        raise NotADirectoryError(errno.ENOTDIR, 'Not a directory', src)
-
-    _, subdirs, files = list(os.walk(src))[0]
-    ignore_paths = ignore(src, os.listdir(src)) if ignore else {}
-    for f in files:
-        if f not in ignore_paths:
-            copy_function(os.path.join(src, f), os.path.join(dst, f),
-                          follow_symlinks=not symlinks)
-
-    for d in subdirs:
-        if d not in ignore_paths:
-            copytree(os.path.join(src, d), os.path.join(dst, d),
-                     symlinks, ignore, copy_function,
-                     ignore_dangling_symlinks, dirs_exist_ok)
-
-    return dst
+    return shutil.copytree(src, dst, symlinks, ignore, copy_function,
+                           ignore_dangling_symlinks, dirs_exist_ok)
 
 
 def copytree_virtual(src, dst, file_links=None,
@@ -464,10 +433,10 @@ def copytree_virtual(src, dst, file_links=None,
     ``file_links``.
 
     If ``file_links`` is empty or :class:`None`, this is equivalent to
-    :func:`copytree()`. The rest of the arguments are passed as-is to
-    :func:`copytree()`. Paths in ``file_links`` must be relative to ``src``.
-    If you try to pass ``'.'`` in ``file_links``, an :py:class:`OSError` will
-    be raised.
+    :py:func:`shutil.copytree()`. The rest of the arguments are passed as-is
+    to :py:func:`shutil.copytree()`. Paths in ``file_links`` must be relative
+    to ``src``. If you try to pass ``'.'`` in ``file_links``, an
+    :py:class:`OSError` will be raised.
 
     '''
 
@@ -510,8 +479,8 @@ def copytree_virtual(src, dst, file_links=None,
                     if os.path.join(dir, c) in link_targets}
 
     # Copy to dst ignoring the file_links
-    copytree(src, dst, symlinks, ignore,
-             copy_function, ignore_dangling_symlinks, dirs_exist_ok)
+    shutil.copytree(src, dst, symlinks, ignore,
+                    copy_function, ignore_dangling_symlinks, dirs_exist_ok)
 
     # Now create the symlinks
     for f in link_targets:

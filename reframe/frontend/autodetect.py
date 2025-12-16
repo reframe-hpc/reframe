@@ -59,7 +59,7 @@ class _prepare_reframe:
                     src = os.path.join(rfm.INSTALL_PREFIX, p)
                     if os.path.isdir(src):
                         dst = os.path.join(self._workdir, p)
-                        osext.copytree(src, dst, dirs_exist_ok=True)
+                        shutil.copytree(src, dst, dirs_exist_ok=True)
                     else:
                         shutil.copy2(src, self._workdir)
             except FileNotFoundError:

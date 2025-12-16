@@ -161,24 +161,27 @@ System Configuration
    The modules system that should be used for loading environment modules on this system.
    Available values are the following:
 
-   - ``tmod``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.2).
-   - ``tmod31``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.1).
-     A separate backend is required for Tmod 3.1, because Python bindings are different from Tmod 3.2.
-   - ``tmod32``: A synonym of ``tmod``.
-   - ``tmod4``: The `new environment modules <http://modules.sourceforge.net/>`__ implementation (versions older than 4.1 are not supported).
+   - ``envmod``: The `new environment modules <https://modules.readthedocs.io/en/latest/>`__ implementation (versions older than 4.1 are not supported).
    - ``lmod``: The `Lua implementation <https://lmod.readthedocs.io/en/latest/>`__ of the environment modules.
    - ``spack``: `Spack <https://spack.readthedocs.io/en/latest/>`__'s built-in mechanism for managing modules.
+   - ``tmod4``: (deprecated) Synonym of ``envmod``.
    - ``nomod``: This is to denote that no modules system is used by this system.
 
    Normally,  upon loading the configuration of the system ReFrame checks that a sane installation exists for the modules system requested and will issue an error if it fails to find one.
    The modules system sanity check is skipped when the :attr:`~config.general.resolve_module_conflicts` is set to :obj:`False`.
    This is useful in cases where the current system does not have a modules system but the remote partitions have one and you would like ReFrame to generate the module commands.
 
-  .. versionadded:: 3.4
+   .. versionadded:: 3.4
       The ``spack`` backend is added.
 
-  .. versionchanged:: 4.5.0
+   .. versionchanged:: 4.5.0
      The modules system sanity check is skipped when the :attr:`config.general.resolve_module_conflicts` is not set.
+
+   .. versionchanged:: 4.10
+      The ``tmod``, ``tmod31``, ``tmod32`` backends are no more supported.
+
+   .. deprecated:: 4.10
+      The ``tmod4`` backend is deprecated; please use ``envmod`` instead.
 
 
 .. py:attribute:: systems.modules

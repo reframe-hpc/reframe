@@ -5,7 +5,7 @@ Getting Started
 Requirements
 ------------
 
-* Python 3.6 or higher.
+* Python 3.9 or higher.
   Python 2 is not supported.
 * The required Python packages are the following:
 
@@ -16,12 +16,11 @@ Requirements
 .. note::
   .. versionchanged:: 3.0
 
-    Support for Python 3.5 has been dropped.
+      Support for Python 3.5 is dropped.
 
+  .. versionchanged:: 4.10
 
-.. warning::
-   Although ReFrame supports Python 3.6 and 3.7, you should note that these Python versions have reached end-of-life and you are strongly advised to use a newer version.
-   ReFrame installations on these Python versions may use out-of-date dependencies due to incompatibilities.
+      Support for Python < 3.9 is dropped.
 
 
 Getting the Framework

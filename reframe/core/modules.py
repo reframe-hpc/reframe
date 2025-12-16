@@ -112,13 +112,15 @@ class ModulesSystem:
         modules_impl = {
             None: NoModImpl,
             'nomod': NoModImpl,
-            'tmod31': TMod31Impl,
-            'tmod': TModImpl,
-            'tmod32': TModImpl,
-            'tmod4': TMod4Impl,
+            'tmod4': EnvModulesImpl,
+            'envmod': EnvModulesImpl,
             'lmod': LModImpl,
             'spack': SpackImpl
         }
+        if modules_kind == 'tmod4':
+            getlogger().warning("'tmod4' backend is deprecated; "
+                                "please use 'envmod' instead")
+
         try:
             impl_cls = modules_impl[modules_kind]
         except KeyError:
@@ -583,244 +585,8 @@ class ModulesSystemImpl(abc.ABC):
         return self.name() + ' ' + self.version()
 
 
-class TModImpl(ModulesSystemImpl):
-    '''Base class for TMod Module system (Tcl).'''
-
-    MIN_VERSION = (3, 2)
-
-    def __init__(self):
-        self._version = None
-        self._validated = False
-        if self.validate:
-            self._do_validate()
-
-    def _do_validate(self):
-        # Try to figure out if we are indeed using the TCL version
-        try:
-            completed = osext.run_command('modulecmd -V')
-        except OSError as e:
-            raise ConfigError(
-                'could not find a sane TMod installation') from e
-
-        version_match = re.search(r'^VERSION=(\S+)', completed.stdout,
-                                  re.MULTILINE)
-        tcl_version_match = re.search(r'^TCL_VERSION=(\S+)', completed.stdout,
-                                      re.MULTILINE)
-
-        if version_match is None or tcl_version_match is None:
-            raise ConfigError('could not find a sane TMod installation')
-
-        version = version_match.group(1)
-        try:
-            ver_major, ver_minor = [int(v) for v in version.split('.')[:2]]
-        except ValueError:
-            raise ConfigError(
-                'could not parse TMod version string: ' + version) from None
-
-        if (ver_major, ver_minor) < self.MIN_VERSION:
-            raise ConfigError(
-                f'unsupported TMod version: '
-                f'{version} (required >= {self.MIN_VERSION})'
-            )
-
-        self._version = version
-        try:
-            # Try the Python bindings now
-            completed = osext.run_command(self.modulecmd())
-        except OSError as e:
-            raise ConfigError(
-                f'could not get the Python bindings for TMod: {e}'
-            ) from e
-
-        if re.search(r'Unknown shell type', completed.stderr):
-            raise ConfigError(
-                'Python is not supported by this TMod installation'
-            )
-
-        self._validated = True
-
-    def name(self):
-        return 'tmod'
-
-    def version(self):
-        return self._version
-
-    def modulecmd(self, *args):
-        return ' '.join(['modulecmd', 'python', *args])
-
-    def _execute(self, cmd, *args):
-        if not self._validated:
-            self._do_validate()
-
-        modulecmd = self.modulecmd(cmd, *args)
-        completed = osext.run_command(modulecmd)
-        if re.search(r'\bERROR\b', completed.stderr) is not None:
-            raise SpawnedProcessError(modulecmd,
-                                      completed.stdout,
-                                      completed.stderr,
-                                      completed.returncode)
-
-        exec(self.process(completed.stdout))
-        return completed.stderr
-
-    def available_modules(self, substr):
-        output = self.execute('avail', '-t', substr)
-        ret = []
-        for line in output.split('\n'):
-            if not line or line[-1] == ':':
-                # Ignore empty lines and path entries
-                continue
-
-            module = re.sub(r'\(default\)', '', line)
-            ret.append(Module(module))
-
-        return ret
-
-    def loaded_modules(self):
-        try:
-            # LOADEDMODULES may be defined but empty
-            return [Module(m)
-                    for m in os.environ['LOADEDMODULES'].split(':') if m]
-        except KeyError:
-            return []
-
-    def conflicted_modules(self, module):
-        output = self.execute_with_path('show', str(module), path=module.path)
-        return [Module(m.group(1))
-                for m in re.finditer(r'^conflict\s+(\S+)',
-                                     output, re.MULTILINE)]
-
-    def is_module_loaded(self, module):
-        return module in self.loaded_modules()
-
-    def load_module(self, module):
-        self.execute_with_path('load', str(module), path=module.path)
-
-    def unload_module(self, module):
-        self.execute('unload', str(module))
-
-    def unload_all(self):
-        self.execute('purge')
-
-    def searchpath(self):
-        path = os.getenv('MODULEPATH', '')
-        return path.split(':')
-
-    def searchpath_add(self, *dirs):
-        if dirs:
-            self.execute('use', *dirs)
-
-    def searchpath_remove(self, *dirs):
-        if dirs:
-            self.execute('unuse', *dirs)
-
-    def emit_load_instr(self, module):
-        commands = []
-        if module.path:
-            commands.append(f'module use {module.path}')
-
-        commands.append(f'module load {module.fullname}')
-        if module.path:
-            commands.append(f'module unuse {module.path}')
-
-        return commands
-
-    def emit_unload_instr(self, module):
-        return [f'module unload {module}']
-
-
-class TMod31Impl(TModImpl):
-    '''Module system for TMod (Tcl).'''
-
-    MIN_VERSION = (3, 1)
-
-    def __init__(self):
-        self._version = None
-        self._command = None
-        self._validated = False
-        if self.validate:
-            self._do_validate()
-
-    def _do_validate(self):
-        # Try to figure out if we are indeed using the TCL version
-        try:
-            modulecmd = os.getenv('MODULESHOME')
-            modulecmd = os.path.join(modulecmd, 'modulecmd.tcl')
-            completed = osext.run_command(modulecmd)
-        except OSError as e:
-            raise ConfigError(
-                f'could not find a sane TMod31 installation: {e}'
-            ) from e
-
-        version_match = re.search(r'Release Tcl (\S+)', completed.stderr,
-                                  re.MULTILINE)
-        tcl_version_match = version_match
-
-        if version_match is None or tcl_version_match is None:
-            raise ConfigError('could not find a sane TMod31 installation')
-
-        version = version_match.group(1)
-        try:
-            ver_major, ver_minor = [int(v) for v in version.split('.')[:2]]
-        except ValueError:
-            raise ConfigError(
-                'could not parse TMod31 version string: ' + version) from None
-
-        if (ver_major, ver_minor) < self.MIN_VERSION:
-            raise ConfigError(
-                f'unsupported TMod version: {version} '
-                f'(required >= {self.MIN_VERSION})'
-            )
-
-        self._version = version
-        self._command = f'{modulecmd} python'
-        try:
-            # Try the Python bindings now
-            completed = osext.run_command(self._command)
-        except OSError as e:
-            raise ConfigError(
-                f'could not get the Python bindings for TMod31: {e}'
-            )
-
-        if re.search(r'Unknown shell type', completed.stderr):
-            raise ConfigError(
-                'Python is not supported by this TMod installation'
-            )
-
-        self._validated = True
-
-    def name(self):
-        return 'tmod31'
-
-    def modulecmd(self, *args):
-        return ' '.join([self._command, *args])
-
-    def _execute(self, cmd, *args):
-        if not self._validated:
-            self._do_validate()
-
-        modulecmd = self.modulecmd(cmd, *args)
-        completed = osext.run_command(modulecmd)
-        if re.search(r'\bERROR\b', completed.stderr) is not None:
-            raise SpawnedProcessError(modulecmd,
-                                      completed.stdout,
-                                      completed.stderr,
-                                      completed.returncode)
-
-        exec_match = re.search(r"^exec\s'(\S+)'", completed.stdout,
-                               re.MULTILINE)
-        if exec_match is None:
-            raise ConfigError('could not use the python bindings')
-
-        with open(exec_match.group(1), 'r') as content_file:
-            cmd = content_file.read()
-
-        exec(self.process(cmd))
-        return completed.stderr
-
-
-class TMod4Impl(TModImpl):
-    '''Module system for TMod 4.'''
+class EnvModulesImpl(ModulesSystemImpl):
+    '''Module system for Environment Modules.'''
 
     MIN_VERSION = (4, 1)
 
@@ -867,7 +633,10 @@ class TMod4Impl(TModImpl):
         self._validated = True
 
     def name(self):
-        return 'tmod4'
+        return 'envmod'
+
+    def version(self):
+        return self._version
 
     def modulecmd(self, *args):
         return ' '.join(['modulecmd', 'python', *args])
@@ -899,20 +668,34 @@ class TMod4Impl(TModImpl):
             # 'restore' discards previous module path manipulations
             for op, mp in self._extra_module_paths:
                 if op == '+':
-                    super().searchpath_add(mp)
+                    self.execute('use', mp)
                 else:
-                    super().searchpath_remove(mp)
+                    self.execute('unuse', mp)
 
             return []
         else:
-            return super().load_module(module)
+            self.execute_with_path('load', str(module), path=module.path)
 
     def unload_module(self, module):
         if module.collection:
-            # Module collection are not unloaded
+            # Module collections are not unloaded
             return
 
-        super().unload_module(module)
+        self.execute('unload', str(module))
+
+    def loaded_modules(self):
+        try:
+            # LOADEDMODULES may be defined but empty
+            return [Module(m)
+                    for m in os.environ['LOADEDMODULES'].split(':') if m]
+        except KeyError:
+            return []
+
+    def is_module_loaded(self, module):
+        return module in self.loaded_modules()
+
+    def unload_all(self):
+        self.execute('purge')
 
     def conflicted_modules(self, module):
         if module.collection:
@@ -921,7 +704,10 @@ class TMod4Impl(TModImpl):
             # collection
             return []
 
-        return super().conflicted_modules(module)
+        output = self.execute_with_path('show', str(module), path=module.path)
+        return [Module(m.group(1))
+                for m in re.finditer(r'^conflict\s+(\S+)',
+                                     output, re.MULTILINE)]
 
     def _emit_restore_instr(self, module):
         cmds = [f'module restore {module}']
@@ -938,28 +724,51 @@ class TMod4Impl(TModImpl):
         if module.collection:
             return self._emit_restore_instr(module)
 
-        return super().emit_load_instr(module)
+        commands = []
+        if module.path:
+            commands.append(f'module use {module.path}')
+
+        commands.append(f'module load {module.fullname}')
+        if module.path:
+            commands.append(f'module unuse {module.path}')
+
+        return commands
 
     def emit_unload_instr(self, module):
         if module.collection:
             return []
 
-        return super().emit_unload_instr(module)
+        return [f'module unload {module}']
+
+    def searchpath(self):
+        path = os.getenv('MODULEPATH', '')
+        return path.split(':')
 
     def searchpath_add(self, *dirs):
         if dirs:
             self._extra_module_paths += [('+', mp) for mp in dirs]
-
-        super().searchpath_add(*dirs)
+            self.execute('use', *dirs)
 
     def searchpath_remove(self, *dirs):
         if dirs:
             self._extra_module_paths += [('-', mp) for mp in dirs]
+            self.execute('unuse', *dirs)
 
-        super().searchpath_remove(*dirs)
+    def available_modules(self, substr):
+        output = self.execute('avail', '-t', substr)
+        ret = []
+        for line in output.split('\n'):
+            if not line or line[-1] == ':':
+                # Ignore empty lines and path entries
+                continue
+
+            module = re.sub(r'\(default\)', '', line)
+            ret.append(Module(module))
+
+        return ret
 
 
-class LModImpl(TMod4Impl):
+class LModImpl(EnvModulesImpl):
     '''Module system for Lmod (Tcl/Lua).'''
 
     def __init__(self):

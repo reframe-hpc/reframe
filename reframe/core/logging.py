@@ -337,12 +337,8 @@ class CheckFieldFormatter(logging.Formatter):
     # NOTE: This formatter will work only for the '%' style
     def __init__(self, fmt=None, datefmt=None, perffmt=None,
                  ignore_keys=None, style='%'):
-        if sys.version_info[:2] <= (3, 7):
-            super().__init__(fmt, datefmt, style)
-        else:
-            super().__init__(fmt, datefmt, style,
-                             validate=(fmt != '%(check_#ALL)s'))
-
+        super().__init__(fmt, datefmt, style,
+                         validate=(fmt != '%(check_#ALL)s'))
         self.__fmt = fmt
         self.__fmtperf = perffmt[:-1] if perffmt else ''
         self.__specs = re.findall(r'\%\((\S+?)\)s', fmt)
@@ -809,11 +805,10 @@ class Logger(logging.Logger):
     def setLevel(self, level):
         self.level = _check_level(level)
 
-        if sys.version_info[:2] >= (3, 7):
-            # Clear the internal cache of the base logger, otherwise the
-            # logger will remain disabled if its level is raised and then
-            # lowered again
-            self._cache.clear()
+        # Clear the internal cache of the base logger, otherwise the
+        # logger will remain disabled if its level is raised and then
+        # lowered again
+        self._cache.clear()
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):

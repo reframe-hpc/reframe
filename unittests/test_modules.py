@@ -9,10 +9,11 @@ import pytest
 import reframe.core.environments as env
 import reframe.core.modules as modules
 import unittests.utility as test_util
+from reframe.utility.versioning import parse as parse_version
 from reframe.core.exceptions import ConfigError, EnvironError
 
 
-@pytest.fixture(params=['tmod', 'tmod4', 'lmod', 'spack', 'nomod'])
+@pytest.fixture(params=['envmod', 'lmod', 'spack', 'nomod'])
 def modules_system_nopath(request, monkeypatch):
     # Always pretend to be on a clean modules environment
     monkeypatch.setenv('MODULEPATH', '')
@@ -77,7 +78,11 @@ def module_collection(modules_system, tmp_path, monkeypatch):
 
     # Remove the temporary collection
     if modules_system.name == 'lmod':
-        prefix = os.path.join(os.environ['HOME'], '.lmod.d')
+        lmod_version = parse_version(modules_system.version)
+        if lmod_version < (9,):
+            prefix = os.path.join(os.environ['HOME'], '.lmod.d')
+        else:
+            prefix = os.path.join(os.environ['HOME'], '.config', 'lmod')
     else:
         prefix = os.path.join(os.environ['HOME'], '.module')
 

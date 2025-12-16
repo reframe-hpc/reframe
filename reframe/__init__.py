@@ -10,7 +10,7 @@ VERSION = '4.10.0-dev.0'
 INSTALL_PREFIX = os.path.normpath(
     os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 )
-MIN_PYTHON_VERSION = (3, 6, 0)
+MIN_PYTHON_VERSION = (3, 9, 0)
 
 # Check python version
 if sys.version_info[:3] < MIN_PYTHON_VERSION:

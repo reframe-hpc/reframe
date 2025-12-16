@@ -2616,7 +2616,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                     dst = os.path.join(
                         self.outputdir, os.path.relpath(f, self.stagedir)
                     )
-                    osext.copytree(f, dst, dirs_exist_ok=True)
+                    shutil.copytree(f, dst, dirs_exist_ok=True)
                 else:
                     shutil.copy2(f, self.outputdir)
 

@@ -1,8 +1,8 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 ENV TZ=Europe/Zurich
 ENV DEBIAN_FRONTEND=noninteractive
-ENV _TMOD_VER=4.6.0
+ENV _ENVMOD_VER=5.6.1
 
 # Setup apt
 RUN \
@@ -13,14 +13,14 @@ RUN \
 # Required utilities
 RUN apt-get -y install wget less
 
-# Install Tmod4
+# Install Environment Modules
 RUN \
   apt-get -y install autoconf tcl-dev && \
-  wget -q https://github.com/cea-hpc/modules/archive/v${_TMOD_VER}.tar.gz -O tmod.tar.gz && \
+  wget -q https://github.com/cea-hpc/modules/archive/v${_ENVMOD_VER}.tar.gz -O tmod.tar.gz && \
   tar xzf tmod.tar.gz && \
-  cd modules-${_TMOD_VER} && \
+  cd modules-${_ENVMOD_VER} && \
   ./configure && make install && \
-  cd .. && rm -rf tmod.tar.gz modules-${_TMOD_VER} && \
+  cd .. && rm -rf tmod.tar.gz modules-${_ENVMOD_VER} && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 

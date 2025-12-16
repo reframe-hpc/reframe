@@ -3,10 +3,10 @@
 #
 
 
-FROM ghcr.io/reframe-hpc/lmod:8.4.12
+FROM ghcr.io/reframe-hpc/lmod:9.0.4
 
-ENV _SPACK_VER=0.22.2
-ENV _EB_VER=4.9.4
+ENV _SPACK_VER=1.1.0
+ENV _EB_VER=5.1.2
 
 
 # Install ReFrame unit test requirements
@@ -19,10 +19,8 @@ RUN useradd -ms /bin/bash rfmuser
 USER rfmuser
 
 # Install Spack
-RUN git clone --branch v${_SPACK_VER} https://github.com/spack/spack ~/spack && \
-    cd ~/spack
-
-RUN pip3 install easybuild==${_EB_VER}
+RUN git clone --branch v${_SPACK_VER} --depth 1 https://github.com/spack/spack ~/spack
+RUN pip3 install --break-system-packages easybuild==${_EB_VER}
 
 ENV PATH="/home/rfmuser/.local/bin:${PATH}"
 
@@ -35,6 +33,6 @@ RUN ./bootstrap.sh
 
 RUN echo '. /usr/local/lmod/lmod/init/profile && . /home/rfmuser/spack/share/spack/setup-env.sh' > /home/rfmuser/setup.sh
 
-ENV BASH_ENV /home/rfmuser/setup.sh
+ENV BASH_ENV=/home/rfmuser/setup.sh
 
-CMD ["/bin/bash", "-c", "./bin/reframe --system=tutorialsys -r -C examples/tutorial/config/baseline_modules.py -R -c examples/tutorial/easybuild/eb_test.py -c examples/tutorial/spack/spack_test.py"]
+CMD ["/bin/bash", "-c", "./bin/reframe --system=tutorialsys --exec-policy=serial -r -C examples/tutorial/config/baseline_modules.py -R -c examples/tutorial/easybuild/eb_test.py -c examples/tutorial/spack/spack_test.py"]
