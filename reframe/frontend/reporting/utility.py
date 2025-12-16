@@ -32,8 +32,8 @@ class Aggregation:
                     raise ValueError(f'unknown aggregation: {op}')
 
                 if op == 'stats':
-                    agg_ops = ('min', 'p01', 'p05', 'median', 'p95', 'p99',
-                               'max', 'mean', 'std')
+                    agg_ops = ['min', 'p01', 'p05', 'median', 'p95', 'p99',
+                               'max', 'mean', 'std']
                 else:
                     agg_ops = [op]
 

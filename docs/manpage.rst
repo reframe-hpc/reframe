@@ -197,6 +197,17 @@ Result storage commands
 
       The :option:`--filter-expr` can now be passed twice with :option:`--performance-compare`.
 
+
+.. option:: --term-lhs=NAME
+.. option:: --term-rhs=NAME
+
+   Change the default suffix for columns in performance comparisons.
+
+   These options are relevant only in conjunction with the :option:`--performance-compare` and :option:`--performance-report` options
+
+   .. versionadded:: 4.9
+
+
 Other commands
 ^^^^^^^^^^^^^^
 
@@ -1413,14 +1424,21 @@ ReFrame provides several options for querying and inspecting past sessions and t
 All those options follow a common syntax that builds on top of the following elements:
 
 1. Selection of sessions and test cases
-2. Grouping of test cases and performance aggregations
+2. Grouping of test cases and aggregations
 3. Selection of test case attributes to present
 
 Throughout the documentation, we use the ``<select>`` notation for (1), ``<aggr>`` for (2) and ``<cols>`` for (3).
-For the options performing aggregations on test case performance we use the notation ``<cmpspec>`` which can take one of the following forms:
+For the options performing aggregations on test case performance we use the notation ``<cmpspec>`` which takes the following form:
 
-1. ``<cmpspec> := <select>/<select>/<aggr>/<cols>`` for explicit performance comparisons (see :option:`--performance-compare`).
-2. ``<cmpspec> := <select>/<aggr>/<cols>`` for implicit performance comparisons (see :option:`--performance-report`)  or for simple performance aggregations (see :option:`--list-stored-testcases`).
+.. _cmpspec-syntax:
+
+.. code-block:: bnf
+
+   <cmpspec> ::= (<select> "/")? <select> "/" <aggr> "/" <cols>
+
+The first optional ``<select>`` is relevant only for the :option:`--performance-compare` option, where a selection of two test case sets is needed.
+For the rest of the query options, including the :option:`--performance-report` option, which performs an implicit comparison, the single-select syntax is expected.
+In case of performance comparisons, any attribute referring to the first selection group is referred to as left-hand-side or lhs or, simply, left, whereas every attribute referring to the second selection group is referred to as right-hand-side, rhs, or, simple, right.
 
 In the following we present in detail the exact syntax of every of the above syntactic elements.
 
@@ -1429,14 +1447,33 @@ In the following we present in detail the exact syntax of every of the above syn
 Selecting sessions and test cases
 ----------------------------------
 
-The syntax for selecting sessions or test cases can take one of the following forms:
+The syntax for selecting test cases in past results queries is the following:
 
-1. ``<select> := <session_uuid>``: An explicit session UUID.
-2. ``<select> := ?<session_filter>``: A valid Python expression on the available session information including any user-specific session extras (see also :option:`--session-extras`), e.g., ``?'xyz=="123"'``.
-   In this case, the testcases from all sessions matching the filter will be retrieved.
-3. ``<select> := <time_period>``: A time period specification (see below for details).
-4. ``<select> := <time_period>?<session_filter>``: This is a variation of option (2), where sessions are filtered also by the time period.
-   This syntax is useful for limiting the query scope and therefore reducing query times.
+.. code-block:: bnf
+
+   <select> ::= <session_uuid> | <session_filter> | <time_period>
+   <session_uuid> ::= /* any valid UUID */
+   <session_filter> ::= (<time_period>)? "?" <python_expr>
+   <python_expr> ::= /* any valid Python expression */
+
+Test cases can be practically selected in three ways:
+
+1. By an explicit session UUID, such as ``ae43e247-375f-4b05-8ab5-c7a017d4afc3``.
+2. By a time period, such as ``20251201:now`` (the exact syntax of the time period is explained in :ref:`time-periods`).
+3. By filter, which can either take the form of a pure Python expression or a Python expression prefixed by a time period.
+   The expression is evaluated over the session information including any user-specific session extras (see also :option:`--session-extras`).
+   Here are two examples:
+
+   - ``?'tag=="123"'`` will select all stored sessions with ``tag`` set to ``123``.
+   - ``20251201:now?'tag=="123"'`` will select stored sessions from December 2025 with ``tag`` set to ``123``.
+     When filtering using an expression, it is a good idea to limit the scope of the query using a time period as this will reduce significantly the query times in large databases.
+
+.. tip::
+
+   When using session filters to select the test cases, quoting is important.
+   If ``tag=="123"`` was used unquoted in the example above, the shell would remove the double quotes from ``"123"`` and the expression passed to ReFrame would be ``tag==123``.
+   This is a valid expression but will always evaluate to false, since ``tag``, as every session attribute is a string.
+   Single-quoting the expression avoids this and the actual comparison will be ``tag=="123"`` giving the desired outcome.
 
 
 .. note::
@@ -1445,63 +1482,99 @@ The syntax for selecting sessions or test cases can take one of the following fo
       Support for scoping the session filter queries by a time period was added.
 
 
+.. _time-periods:
+
 Time periods
 ^^^^^^^^^^^^
 
-The general syntax of time period specification is the following:
+The syntax for defining time periods in past results queries is the following:
 
-.. code-block:: console
+.. code-block:: bnf
 
-   <time_period> := <ts_start>:<ts_end>
+   <time_period> ::= <timestamp> ":" <timestamp>
+   <timestamp> ::= ("now" | <abs_timestamp>) (("+" | "-") <number> ("w" | "d" | "h" | "m"))?
+   <abs_timestamp> ::= /* any timestamp of the format `%Y%m%d`, `%Y%m%dT%H%M`, `%Y%m%dT%H%M%S` */
+   <number> ::= [0-9]+
 
-``<ts_start>`` and ``<ts_end>`` are timestamp denoting the start and end of the requested period.
-More specifically, the syntax of each timestamp is the following:
-
-.. code-block:: console
-
-   <abs_timestamp>[+|-<amount>w|d|h|m]
-
-The ``<abs_timestamp>`` is an absolute timestamp in one of the following ``strptime``-compatible formats or the special value ``now``: ``%Y%m%d``, ``%Y%m%dT%H%M``, ``%Y%m%dT%H%M%S``, ``%Y%m%dT%H%M%S%z``.
-
+A time period is defined as a starting and ending timestamps separated by colon.
+A timestamp can have any of the following ``strptime``-compatible formats: ``%Y%m%d``, ``%Y%m%dT%H%M``, ``%Y%m%dT%H%M%S``, ``%Y%m%dT%H%M%S%z``.
+A timestamp can also be the special value ``now`` which denotes the current local time.
 Optionally, a shift argument can be appended with ``+`` or ``-`` signs, followed by the number of weeks (``w``), days (``d``), hours (``h``) or minutes (``m``).
-
 For example, the period of the last 10 days can be specified as ``now-10d:now``.
-Similarly, the period of the week starting on August 5, 2024 will be specified as ``20240805:20240805+1w``.
+Similarly, the period of 3 weeks starting on August 5, 2024 can be specified as ``20240805:20240805+3w``.
 
 .. _testcase-grouping:
 
-Grouping test cases and aggregating performance
-------------------------------------------------
+Groupings and aggregations
+--------------------------
 
 The aggregation specification follows the general syntax:
 
-.. code-block:: console
+.. code-block:: bnf
 
-   <aggr> := <aggr_fn>:[<cols>]
+   <aggr> ::= <aggr_list> ":" <cols>?
 
-The ``<aggr_fn>`` is a symbolic name for a function to aggregate the performance of the grouped test cases.
-It can take one of the following values:
+Where ``<aggr_list>`` is a list of aggregation specs and ``<cols>`` is a list of attributes to group the test cases.
+An aggregation spec has the following general syntax:
 
-- ``first``: retrieve the performance data of the first test case only
-- ``last``: retrieve the performance data of the last test case only
-- ``max``: retrieve the maximum of all test cases
-- ``mean``: calculate the mean over all test cases
-- ``median``: retrieve the median of all test cases
-- ``min``: retrieve the minimum of all test cases
+.. code-block:: bnf
 
-The test cases are by default grouped by the following attributes:
+   <aggr_spec> ::= <aggr_any> | <aggr_pval>
+   <aggr_any> ::= <aggr_fn> "(" <attr> ")"
+   <aggr_pval> ::= <aggr_fn>
+
+It can either a single aggregation function name or an aggregation function name followed by a test attribute in parenthesis, e.g., ``max`` or ``max(num_tasks)``.
+A single function name as an aggregation is equivalent to ``fn(pval)``, i.e. the aggregation is applied to performance value, e.g., ``max`` is equivalent to ``max(pval)``.
+The following aggregation functions are supported:
+
+- ``first``: return the first element of every group
+- ``last``: return the last element of every group
+- ``max``: return the maximum value of every group
+- ``mix``: return the minimu value of every group
+- ``mean``: return the minimu value of every group
+- ``std``: return the standard deviation of every group
+- ``sum``: return the sum of every group
+- ``median``: return the median of every group
+- ``p01``: return the 1% percentile of every group
+- ``p05``: return the 5% percentile of every group
+- ``p95``: return the 95% percentile of every group
+- ``p99``: return the 99% percentile of every group
+
+There is also the pseudo-function ``stats``, which is essentially a shortcut for ``min,p01,p05,median,p95,p99,max,mean,std``.
+It can also be applied to any other attribute than ``pval``
+
+When performing aggregations, test cases are grouped by the following attributes by default:
 
 - The test :attr:`~reframe.core.pipeline.RegressionTest.name`
-- The system name
-- The partition name
-- The environment name
+- A unique combination of the system name, partition name and environment name, called ``sysenv``.
+  ``sysenv`` is equivalent to ``<system>:<partition>+<environ>``.
 - The performance variable name (see :func:`@performance_function <reframe.core.builtins.performance_function>` and :attr:`~reframe.core.pipeline.RegressionTest.perf_variables`)
 - The performance variable unit
 
-The ``<cols>`` subspec specifies how the test cases will be grouped and can take one of the two following forms:
+Note that if an aggregation is requested on an attribute, this attribute has to be present in the group-by list, otherwise ReFrame will complain.
+For example, the following spec is problematic as ``num_tasks`` is not in the default group-by list:
 
-1. ``+attr1+attr2...``: In this form the test cases will be grouped based on the default group-by attributes plus the user-specified ones (``attr1``, ``attr2`` etc.)
-2. ``attr1,attr2,...``: In this form the test cases will be grouped based on the user-specified attributes only (``attr1``, ``attr2`` etc.).
+.. code-block:: bash
+
+   # `num_tasks` is not in the group-by list, reframe will complain
+   'now-1d:now/mean,mean(num_tasks):/'
+
+The correct is to add ``num_tasks`` in the group-by list as follows:
+
+.. code-block:: bash
+
+   'now-1d:now/mean,mean(num_tasks):/+num_tasks'
+
+
+The ``<cols>`` spec has the following syntax:
+
+.. code-block:: bnf
+
+   <cols> ::= <extra_cols> | <explicit_cols>
+   <extra_cols> ::= ("+" <attr>)+
+   <explicit_cols> ::= <attr> ("," <attr>)*
+
+Users can either add attributes to the default list by followint the syntax ``+attr1+attr2...`` or can completely override the group-by attributes by providing an explcit list, such as ``attr1,attr2,...``.
 
 As an attribute for grouping test cases, any loggable test variable or parameter can be selected, as well as the following pseudo-attributes which are extracted or calculated on-the-fly:
 
@@ -1515,35 +1588,45 @@ As an attribute for grouping test cases, any loggable test variable or parameter
 - ``punit``: the unit of the performance variable
 - ``presult``: the result (``pass`` or ``fail``) for this performance variable.
   The result is ``pass`` if the obtained performance value is within the acceptable bounds.
-- ``pdiff``: the difference as a percentage between the base and target performance values when a performance comparison is attempted.
-  More specifically, ``pdiff = (pval_base - pval_target) / pval_target``.
+- ``pdiff``: the difference as a percentage between the :ref:`left <cmpspec-syntax>` and :ref:`right <cmpspec-syntax>` performance values when a performance comparison is attempted.
+  More specifically, ``pdiff = (pval_lhs - pval_rhs) / pval_rhs``.
 - ``psamples``: the number of test cases aggregated.
 - ``sysenv``: The system/partition/environment combination as a single string of the form ``{system}:{partition}+{environ}``
 
 .. note::
 
-   For performance comparisons, either implicit or explicit, the aggregation applies to both the base and target test cases.
+   For performance comparisons, either implicit or explicit, the aggregation applies to both the left- and right-hand-side test cases.
 
 .. note::
 
    .. versionadded:: 4.8
       The ``presult`` special column was added.
 
+   .. versionadded:: 4.9
+      More aggregations are added, multiple aggregations at once are supported and the ``stats`` shortcut is introduced.
+
+
 Presenting the results
 ----------------------
 
 The selection of the final columns of the results table is specified by the same syntax as the ``<cols>`` subspec described above.
 
-However, for performance comparisons, ReFrame will generate two columns for every attribute in the subspec that is not also a group-by attribute, suffixed with ``_A`` and ``_B``.
+However, for performance comparisons, ReFrame will generate two columns for every attribute in the subspec that is not also a group-by attribute, suffixed with ``(lhs)`` and ``(rhs)``.
+These suffixes can be changed using the :option:`--term-lhs` and :option:`--term-rhs` options, respectively.
 These columns contain the aggregated values of the corresponding attributes.
-Note that only the aggregation of ``pval`` (i.e. the test case performance)  can be controlled (see :ref:`testcase-grouping`).
-All other attributes are aggregated by joining their unique values.
 
-It possible to select only one of the A/B variants of the extra columns by adding the ``_A`` or ``_B`` suffix to the column name in the ``<cols>`` subspec, e.g., ``+result_A`` will only show the result of the first group of test cases.
+Note that any attributes/columns that are not part of the group-by set will be aggregated by joining their unique values.
+
+It is also possible to select only one of the lhs/rhs variants of the extra columns by adding the ``_lhs`` or ``_rhs`` suffix to the column name in the ``<cols>`` subspec, e.g., ``+result_lhs`` will only show the result of the left selection group in the comparison.
 
 .. versionchanged:: 4.8
 
-   Support for selecting A/B column variants in performance comparisons.
+   Support for selecting lhs/rhs column variants in performance comparisons.
+
+.. versionchanged:: 4.9
+
+   Multiple aggregations at once are supported. New aggregations are added and ``A/B`` column variants are renamed to ``lhs`` and ``rhs``, respectively.
+
 
 Examples
 --------
@@ -1560,7 +1643,7 @@ Here are some examples of performance comparison specs:
 
   .. code-block:: console
 
-     20240701:20240701+1d/20240705:20240705+1d/max:+job_nodelist/+result
+     20240701:20240702/20240705:20240706/max:+job_nodelist/+result
 
 Grammar
 -------
@@ -1571,9 +1654,13 @@ Note that parts that have a grammar defined elsewhere (e.g., Python attributes a
 .. code-block:: bnf
 
    <cmpspec> ::= (<select> "/")? <select> "/" <aggr> "/" <cols>
-   <aggr> ::= <aggr_fn> ":" <cols>
-   <aggr_fn> ::= "first" | "last" | "max" | "min" | "mean" | "median"
-   <cols> ::= <extra_cols> | <explicit_cols> | E
+   <aggr> ::= <aggr_list> ":" <cols>?
+   <aggr_list> ::= <aggr_spec> ("," <aggr_spec>)* | "stats"
+   <aggr_spec> ::= <aggr_any> | <aggr_pval>
+   <aggr_any> ::= <aggr_fn> "(" <attr> ")"
+   <aggr_pval> ::= <aggr_fn>
+   <aggr_fn> ::= "first" | "last" | "max" | "min" | "mean" | "median" | "std" | "sum" | "p01" | "p05" | "p95" | "p99"
+   <cols> ::= <extra_cols> | <explicit_cols>
    <extra_cols> ::= ("+" <attr>)+
    <explicit_cols> ::= <attr> ("," <attr>)*
    <attr> ::= /* any Python attribute */
