@@ -951,8 +951,8 @@ class ScopedDict(UserDict):
 
     '''
 
-    def __init__(self, mapping={}, scope_sep=':', global_scope='*'):
-        super().__init__(mapping)
+    def __init__(self, mapping=None, scope_sep=':', global_scope='*'):
+        super().__init__(mapping or {})
         self._scope_sep = scope_sep
         self._global_scope = global_scope
 

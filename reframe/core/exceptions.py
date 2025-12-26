@@ -349,6 +349,16 @@ class UnexpectedSuccessError(ReframeError):
     '''Raised when a test unexpectedly passes'''
 
 
+class ReferenceParseError(ReframeError):
+    '''Exception raised when a reference file cannot be parsed.
+
+    .. seealso::
+
+       :attr:`~reframe.core.pipeline.RegressionTest.reference` for details on
+       how to set test references.
+    '''
+
+
 def user_frame():
     '''Return the first user frame as a :py:class:`FrameInfo` object.
 

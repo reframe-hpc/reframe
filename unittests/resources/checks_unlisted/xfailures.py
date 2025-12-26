@@ -35,9 +35,13 @@ class XfailTest(rfm.RunOnlyRegressionTest):
         if self.status == 'fail':
             self.reference['*:perf'] = (9, 0, 0, 'GB/s')
         elif self.status == 'xfail':
-            self.reference['*:perf'] = builtins.xfail('xfail perf', (9, 0, 0, 'GB/s'))
+            self.reference['*:perf'] = builtins.xfail(
+                'xfail perf', (9, 0, 0, 'GB/s')
+            )
         elif self.status == 'xpass':
-            self.reference['*:perf'] = builtins.xfail('xfail perf', self.reference['*:perf'])
+            self.reference['*:perf'] = builtins.xfail(
+                'xfail perf', self.reference['*:perf']
+            )
 
     @performance_function('GB/s')
     def perf(self):

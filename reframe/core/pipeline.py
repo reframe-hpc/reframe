@@ -8,24 +8,30 @@
 #
 
 __all__ = [
-    'CompileOnlyRegressionTest', 'RegressionMixin',
-    'RegressionTest', 'RunOnlyRegressionTest', 'RegressionTestPlugin'
+    'CompileOnlyRegressionTest',
+    'RegressionMixin',
+    'RegressionTest',
+    'RegressionTestDict',
+    'RegressionTestDictType',
+    'RegressionTestPlugin',
+    'RunOnlyRegressionTest'
 ]
 
 
 import glob
 import hashlib
-import inspect
+import functools
 import itertools
 import numbers
 import os
+import re
 import shutil
+import yaml
+from collections import UserDict
 from pathlib import Path
 
-import reframe.core.fields as fields
-import reframe.core.hooks as hooks
-import reframe.core.logging as logging
 import reframe.core.runtime as rt
+import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
@@ -33,9 +39,10 @@ import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher, getscheduler
-from reframe.core.builtins import _XFailReference
+from reframe.core.builtins import _XFailReference, xfail
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatform
+from reframe.core.fields import remove_convertible
 from reframe.core.deferrable import (_DeferredExpression,
                                      _DeferredPerformanceExpression)
 from reframe.core.environments import Environment
@@ -44,10 +51,14 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      SanityError, SkipTestError,
                                      ExpectedFailureError,
                                      UnexpectedSuccessError,
+                                     ReferenceParseError,
                                      ReframeError)
+from reframe.core.hooks import attach_hooks
+from reframe.core.logging import getlogger
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.warnings import user_deprecation_warning
+from reframe.utility import ScopedDict
 
 
 class _NoRuntime(ContainerPlatform):
@@ -162,6 +173,330 @@ class RegressionMixin(RegressionTestPlugin):
             '`RegressionMixin` is deprecated; '
             'please inherit from `RegressionTestPlugin` instead'
         )
+
+
+class _KeyMatchingDict(UserDict):
+    '''Dictionary for matching missing keys to existing ones.
+
+    When a key is missing, it will be tried to matched against all other keys
+    in the dictionary, by treating those as regular expressions.
+
+    If a match is not found the ``default_factory`` callable will be called by
+    passing the missing key as its sole argument.
+    '''
+    def __init__(self, default_factory=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._default_factory = default_factory
+
+    def __missing__(self, key):
+        # If an exact key match is not found, treat existing keys as regexes
+        # and try to match the key
+        for k, v in self.data.items():
+            if (isinstance(k, str) and isinstance(key, str) and
+                re.match(f'^{k}$', key)):
+                return v
+
+        # If no other key matches, delegate to user callback
+        if self._default_factory:
+            return self._default_factory(key)
+
+        raise KeyError(key)
+
+
+class RegressionTestDict(UserDict):
+    '''A multi-level dictionary indexed on test attributes.
+
+    This is a dictionary with an arbitrary number of levels. Each level's keys
+    are a subset of the possible values that a test's attribute can take. At
+    the top-level there must be a special key ``$index``, which determines the
+    test attributes that correspond to each dictionary level. If the
+    ``$index`` special key is not present, the dictionary behaves as a normal
+    dictionary. Here is an example:
+
+    .. code-block:: python
+
+        xdict = RegressionTestDict({
+            '$index': ('num_tasks', 'myparam'),
+            8: {
+                'foo': 'xyz',
+                'bar': 'xxx'
+            },
+            16: {
+                'foo': 'abc',
+                'bar': 'aaa'
+            }
+        })
+
+    The ``$index`` special key is consumed upon the dictionary's construction
+    and it can later be retrieved explicitly through the :attr:`index`
+    property. The dictionary can be queried as any other Python dictionary,
+    e.g., ``xdict[16]["bar"]`` will give "aaa". However, if keyed with a test,
+    it will determine the values of every level based on indexed test
+    attributes. For example,
+
+    .. code-block:: python
+
+        xdict[test]
+
+    is roughly equivalent to
+
+    .. code-block:: python
+
+        xdict[test.num_tasks][test.myparam]
+
+    If the test does not have the requested attribute or its value is not in
+    the multilevel dictionary, a :py:class:`KeyError` will be raised.
+
+    The ``$index`` of the dictionary can contain the following special
+    attributes which will access information about the current system and
+    environment of the test:
+
+    - ``$system``: equivalent to ``self.current_system.name``
+    - ``$partition``: equivalent to ``self.current_partition.fullname``
+    - ``$environ``: equivalent to ``self.current_environ.name``
+    - ``$processor.<attr>``: equivalent to a
+      ``self.current_partition.processor.<attr>``
+    - ``$dev.<devtype>.<attr>``: equivalent to
+      ``self.current_partition.select_devices(<devtype>)[0].<attr>``
+
+    Missing index keys
+    ------------------
+
+    If a key is missing and is a string, the dictionary will treat the
+    keys at that level as anchored regular expressions and
+    will match the attribute value against them. The value of the first
+    matching key is used. This allows a single entry to act as a fallback
+    for many keys (e.g. ``r'foo.*'`` will match all keys starting with
+    ``foo``).
+
+    Users can also define a test protocol to handle missing keys instead of
+    raising :class:`KeyError`. This is controlled by the ``protocol`` keyword
+    argument of the dictionary's constructor. The protocol
+    argument s a simple string and once attached, if a key is missing during
+    test-based lookup, the following test callback method will be called, if
+    defined:
+
+    .. code-block:: python
+
+        __<protocol>_missing_<subindex>__(data, key)
+
+    ``data`` is the sub-dictionary at the level of the sub-index and ``key``
+    is the missing key. In case the sub-index has one of the special values
+    above, every special character will be converted to `_` and then the
+    method will be looked up. In the example above, if we constructed the
+    dictionary with ``protocol="proto"``, and tried retrieve its value with a
+    test with ``num_tasks=32``, the following method would be called to
+    retrieve the missing value:
+
+    .. code-block:: python
+
+        test.__proto_missing_num_nodes__(data={
+            8: {
+                'foo': 'xyz',
+                'bar': 'xxx'
+            },
+            16: {
+                'foo': 'abc',
+                'bar': 'aaa'
+            }
+        }, key=32)
+
+    This method should return the missing value or raise :class:`KeyError`.
+
+    Constructor arguments
+    ----------------------
+
+    :user_dict: The user dictionary to be converted to a
+        :class:`RegressionTestDict`.
+    :protocol: The protocol to be used to handle missing keys.
+    '''
+    def __init__(self, user_dict: dict = None, protocol: str = None):
+        super().__init__(user_dict or {})
+        self._protocol = protocol
+        self._index = self.data.pop('$index', None)
+
+        ref3_type = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable]
+        ref4_type = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable, ~Deferrable]
+        reftuple_type = ref3_type | ref4_type | XfailRef
+        if self._index is None:
+            dict_type = typ.Dict[str, typ.Dict[str, reftuple_type]]
+        else:
+            dict_type = typ.Dict[str, reftuple_type]
+            for _ in self._index:
+                dict_type = typ.Dict[~Deferrable, dict_type]
+
+        if not isinstance(self.data, dict_type):
+            raise TypeError(f'user dictionary {self.data} does not match type {dict_type}')
+
+    @property
+    def protocol(self):
+        '''The protocol associated with this dictionary, :obj:`None` otherwise'''
+        return self._protocol
+
+    @property
+    def index(self):
+        '''The index associated with this dictionary, :obj:`None` otherwise'''
+        return self._index
+
+    def __getitem__(self, key):
+        if not isinstance(key, RegressionTestPlugin):
+            return super().__getitem__(key)
+
+        if not self._index:
+            raise KeyError(key)
+
+        test = key
+        try:
+            data = self.data
+            for subkey in self._index:
+                # Attach user's callback for missing keys converting also the
+                # special keys
+                if subkey.startswith('$'):
+                    _subkey  = subkey[1:].replace('.', '_')
+                else:
+                    _subkey = subkey
+
+                user_default_fn = None
+                if self._protocol:
+                    resolve_fn = getattr(test, f'__{self._protocol}_missing_{_subkey}__', None)
+                    if resolve_fn:
+                        user_default_fn = functools.partial(resolve_fn, data)
+
+                data = _KeyMatchingDict(user_default_fn, data)
+
+                subkey_parts = subkey.split('.')
+                if subkey_parts == ['$system']:
+                    data = data[test.current_system.name]
+                elif subkey_parts == ['$partition']:
+                    data = data[test.current_partition.fullname]
+                elif subkey_parts == ['$environ']:
+                    data = data[test.current_environ.name]
+                elif len(subkey_parts) == 2 and subkey_parts[0] == '$processor':
+                    proc = test.current_partition.processor
+                    data = data[getattr(proc, subkey_parts[1])]
+                elif len(subkey_parts) == 3 and subkey_parts[0] == '$dev':
+                    gpus = test.current_partition.select_devices(subkey_parts[1])[0]
+                    data = data[getattr(gpus, subkey_parts[2])]
+                else:
+                    data = data[getattr(test, subkey)]
+        except AttributeError:
+            raise KeyError(subkey) from None
+        else:
+            # If all good, return the final data
+            return data
+
+    def __rfm_json_encode__(self):
+        return self.data
+
+
+def RegressionTestDictType(*args, **kwargs):
+    class RegressionTestDictWithProto(RegressionTestDict):
+        __init__ = functools.partialmethod(RegressionTestDict.__init__,
+                                           *args, **kwargs)
+
+    return RegressionTestDictWithProto
+
+
+class _ReferenceDict(RegressionTestDict):
+    '''A specialized :class:`RegressionTestDict` that can handle also external
+    references
+
+    An external references file can be specified with the special key
+    ``$ref``.
+    '''
+    def __init__(self, user_dict=None, *, test):
+        user_dict = user_dict or {}
+        self.__test_entry_name = type(test).__name__
+
+        # We use the `$ref` file to populate the user_dict to be passed to the
+        # parent constructor.
+        ref_file = user_dict.pop('$ref', None)
+        if ref_file:
+            ref_prefix = rt.runtime().get_option('general/0/reference_prefix')
+            if ref_prefix is None:
+                ref_prefix = test.prefix
+
+            user_dict = self._read_ref_file(os.path.join(ref_prefix, ref_file))
+
+        try:
+            super().__init__(user_dict, protocol='ref')
+        except TypeError as err:
+            if ref_file:
+                # If we read from a reference file, re-raise the TypeError as
+                # a parse error
+                raise ReferenceParseError(f'{ref_file}: {err}') from err
+            else:
+                raise err
+
+    def _read_ref_file(self, filename):
+        def _parse_ref_entry(key, val):
+            try:
+                first = val[0]
+            except (TypeError, IndexError):
+                raise ReferenceParseError(
+                    f'{filename}: invalid reference entry {key!r}: {val}'
+                ) from None
+
+            if first == '$xfail':
+                return xfail(*val[1:-1], tuple(val[-1]))
+            elif isinstance(first, str):
+                raise ReferenceParseError(
+                    f'{filename}: unknown modifier {first!r} in entry {key!r}: {val}'
+                )
+            else:
+                return tuple(val)
+
+        def _entry(key, val, full_key, max_depth):
+            level = len(full_key.split('.')) - 2
+            if level == 0 and key == '$index':
+                return tuple(val)
+
+            if level < max_depth and isinstance(val, dict):
+                return {k: _entry(k, v, f'{full_key}.{k}', max_depth)
+                        for k, v in val.items()}
+
+            if level == max_depth:
+                return _parse_ref_entry(full_key, val)
+
+            return val
+
+        with open(filename) as fp:
+            ref_entries = yaml.safe_load(fp)
+
+        try:
+            ref_yaml = ref_entries[self.__test_entry_name]
+        except KeyError:
+            return {}
+
+        # Convert the yaml references to `reference`
+        mkref = {}
+
+        # Search for an index
+        if '$index' in ref_yaml:
+            index = tuple(ref_yaml['$index'])
+            mkref['$index'] = index
+            max_level = len(index)
+        else:
+            max_level = 1
+
+        for key, val in ref_yaml.items():
+            mkref[key] = _entry(key, val, f'{self.__test_entry_name}.{key}', max_level)
+
+        return mkref
+
+
+class _ReferenceDictField(fields.TypedField):
+    def __set__(self, obj, value):
+        value = remove_convertible(value)
+        if isinstance(value, (ScopedDict, _ReferenceDict)):
+            # Already converted; just set the field
+            value = fields.Field.__set__(self, obj, value)
+        else:
+            value = _ReferenceDict(value, test=obj)
+            if not value.index:
+                value = ScopedDict(value.data)
+
+        return fields.Field.__set__(self, obj, value)
 
 
 class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
@@ -717,7 +1052,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #: :default: :class:`False`
     local = variable(typ.Bool, value=False)
 
-    #: The set of reference values for this test.
+    #: The performance reference values for this test.
     #:
     #: The reference values are specified as a scoped dictionary keyed on the
     #: performance variables defined in :attr:`perf_patterns` and scoped under
@@ -769,6 +1104,8 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #: Marking expected failures
     #: -------------------------
     #:
+    #: .. versionadded:: 4.9
+    #:
     #: You can mark any performance reference tuple as an expected failure
     #: using the :func:`~reframe.core.builtins.xfail` builtin as follows:
     #:
@@ -801,10 +1138,179 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #:   expected failure, then the test is successful and its state is
     #:   ``PASS``.
     #:
-    #: :type: A scoped dictionary with system names as scopes, performance
-    #:   variables as keys and reference tuples as values.
+    #: Custom performance reference indexing
+    #: -------------------------------------
+    #:
+    #: .. versionadded:: 4.10
+    #:
+    #: By default, the reference dictionary is indexed by the system and/or
+    #: system/partition combination. However, references may also depend on
+    #: test variables and/or parameters as well as partition configuration
+    #: options, such as the processor and/or device details. In such cases,
+    #: using a custom reference index is desirable as it expresses better the
+    #: intent of the test.
+    #:
+    #: To create a custom indexing, the special ``$index`` key must be added.
+    #: This is a tuple of test attribute names or some special keys, which we
+    #: will describe later. The special ``$index`` key is consumed upon
+    #: creation and the rest of the dictionary must contain as many levels as
+    #: index keys. Each level's keys correspond to possible values of the
+    #: corresponding attribute or the special keys of the index. Here is an
+    #: example test:
+    #:
+    #: .. code-block:: python
+    #:
+    #:    class MyTest(rfm.RunOnlyRegressionTest):
+    #:        p = parameter(['foo', 'bar'])
+    #:        q = parameter([1, 2, 3])
+    #:        reference = {
+    #:            '$index': ('p', 'q'),
+    #:            'foo': {
+    #:                1: {'throughput': (80, -0.1, 0.2, 'it/s')},
+    #:                2: {'throughput': (95, -0.1, 0.2, 'it/s')},
+    #:                3: {'throughput': (100, -0.1, 0.2, 'it/s')},
+    #:            },
+    #:            'bar': {
+    #:                1: {'throughput': (40, -0.1, 0.2, 'it/s')},
+    #:                2: {'throughput': (45, -0.1, 0.2, 'it/s')},
+    #:                3: {'throughput': (50, -0.1, 0.2, 'it/s')},
+    #:            }
+    #:        }
+    #:        ...
+    #:
+    #:        @performance_function('it/s'):
+    #:        def throughput(self):
+    #:            return sn.extractsingle(r'Throughput: (\S+)', self.stdout, 1, float)
+    #:
+    #: During the performance pipeline stage, ReFrame will resolve the test
+    #: reference using the test's instance ``p`` and ``q`` attributes and will
+    #: pick the right reference tuples for the defined performance variables.
+    #: Note that ``p`` and ``q`` could be any test attribute and not just test
+    #: parameters or variables. As mentioned previously, in addition to test
+    #: attributes, the following special keys can be used in the ``$index``:
+    #:
+    #: - ``$system``: the current system name (equivalent to
+    #:   ``self.current_system.name``).
+    #: - ``$partition``: the current partition full name (equivalent to
+    #:    ``self.current_partition.fullname``).
+    #: - ``$environ``: the current environment name (equivalent to
+    #:   ``self.current_environ.name``).
+    #: - ``$processor.<attr>``: an attribute of the current partition's
+    #:   :attr:`~reframe.core.systems.SystemPartition.processor` (equivelant to
+    #:   ``self.current_partition.processor.<attr>``).
+    #: - ``$dev.<devtype>.<attr>``: an attribute of a specific
+    #:   :class:`~reframe.core.systems.DeviceInfo` type from the current
+    #:   partition (equivalent to
+    #:   ``self.current_partition.select_devices(<devtype>)[0].<attr>). For
+    #:   example, the ``$dev.gpu.model`` would retrieve the current partition's
+    #:   GPU model as an index key.
+    #:
+    #: Missing index keys
+    #: ^^^^^^^^^^^^^^^^^^
+    #:
+    #: If a key is missing and is a string, the framework will treat the
+    #: reference dict keys at that level as anchored regular expressions and
+    #: will match the attribute value against them. The value of the first
+    #: matching key is used. This allows a single entry to act as a fallback
+    #: for many keys (e.g. ``r'foo.*'`` will match all keys starting with
+    #: ``foo``).
+    #:
+    #: If at any given level, no key has been matched, the framework will look
+    #: for a special test protocol method defined as
+    #:
+    #: .. code-block:: python
+    #:
+    #:    def __ref_missing_<subindex>__(self, data, key):
+    #:        ...
+    #:
+    #: where ``<subindex>`` is the index name for that level with special
+    #: characters normalized with underscores, ``data`` is the sub-dictionary
+    #: at that level and ``key`` is the attribute value that is being looked
+    #: up. The method must return a value of the same type as the values of the
+    #: ``data`` subdictionary or raise a :class:`KeyError`. The use of such a
+    #: method is useful when a more complex logic is needed to determine the
+    #: actual reference that cannot be captured by a regex. The following
+    #: example shows how this method can be used to achieve the same effect as
+    #: the ``r'foo.*'`` regex:
+    #:
+    #: .. code-block:: python
+    #:
+    #:    def __ref_missing_processor_arch__(self, data, key):
+    #:        if key.startswith('foo'):
+    #:            return data['foo']
+    #:
+    #:        raise KeyError(key)
+    #:
+    #: Finally, if none of the above lookup methods succeeds, no reference
+    #: will be used.
+    #:
+    #: .. _external-references:
+    #:
+    #: External references
+    #: -------------------
+    #:
+    #: .. versionadded:: 4.10
+    #:
+    #: Reference data may be kept in a separate YAML file instead of in the
+    #: test class. This is useful when references need to be kept in a separate
+    #: repository with different visibility or access rules, or when
+    #: reference-only updates are desired so that reference values can be
+    #: edited without changing test code.
+    #:
+    #: External references can be specified by using the ``$ref`` special key
+    #: in the :attr:`reference` dictionary:
+    #:
+    #: .. code-block:: python
+    #:
+    #:     reference = {'$ref': 'refs.yaml'}
+    #:
+    #: The file is looked up under a *reference prefix* directory. This
+    #: directory can be set via the :attr:`~config.general.reference_prefix`
+    #: configuration option or the :envvar:`RFM_REFERENCE_PREFIX`. When not
+    #: explicitly set, it defaults to the test's :attr:`prefix` directory
+    #: (i.e., the directory containing the test file).
+    #:
+    #: A reference file can contain references for multiple tests as in the following example:
+    #:
+    #: .. code-block:: yaml
+    #:
+    #:     TestA:
+    #:       'sys0:part0':
+    #:         copy_bw: [23890, -0.10, 0.30, 'MB/s']
+    #:         triad_bw: [17064, -0.05, 0.50, 'MB/s']
+    #:       'sys0:part1':
+    #:         copy_bw: [30100, -0.10, 0.30, 'MB/s']
+    #:         triad_bw: ['$xfail', 'known issue', [22000, -0.05, 0.50, 'MB/s']]
+    #:
+    #:     TestB:
+    #:       $index: [num_tasks]
+    #:       1:
+    #:         throughput: [80, -0.1, 0.2, 'MB/s']
+    #:       4:
+    #:         throughput: [100, -0.1, 0.2, 'MB/s']
+    #:
+    #: Tests in the reference file are indexed by the class name (e.g.
+    #: ``TestA``) and the references follow the same structure as the
+    #: :attr:`reference` dictionary inside the test, except that reference
+    #: tuples are now lists. A custom index can also be specified for external
+    #: references using the ``$index`` special key as for the inline
+    #: references. Expected failures can also be marked using the syntax:
+    #:
+    #: .. code-block:: yaml
+    #:
+    #:     ['$xfail', 'message', <reftuple>]
+    #:
+    #: For a step-by-step example, see :ref:`howto-reference-index` in the
+    #: :doc:`howto`.
+    #:
+    #: :type: A dictionary with a special structure as described above.
     #:   The elements of reference tuples cannot be deferrable expressions.
     #: :default: ``{}``
+    #:
+    #: .. note::
+    #:    The reference values dictionary is implemented as a special case of
+    #:    the :class:`RegressionTestDict` that adds support for external
+    #:    references.
     #:
     #: .. note::
     #:     .. versionchanged:: 3.0
@@ -824,14 +1330,11 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 4.9
     #:        Support marking reference tuples as expected failures.
     #:
-    reference = variable(
-        typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable] | XfailRef,
-        typ.Dict[str, typ.Dict[
-            str, typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable, ~Deferrable] | XfailRef
-        ]],
-        XfailRef,
-        field=fields.ScopedDictField, value={}, loggable=False
-    )
+    #:     .. versionadded:: 4.10
+    #:        Support for custom reference indexes as well as external
+    #:        references.
+    reference = variable(_ReferenceDict, field=_ReferenceDictField, value={},
+                         allow_implicit=True, loggable=False)
 
     #: Require that a reference is defined for each system that this test is
     #: run on.
@@ -1250,7 +1753,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
         pipeline_hooks = cls._rfm_pipeline_hooks
         fn = getattr(cls, stage)
-        new_fn = hooks.attach_hooks(pipeline_hooks)(fn)
+        new_fn = attach_hooks(pipeline_hooks)(fn)
         setattr(cls, '_rfm_pipeline_fn_' + stage, new_fn)
 
     def __getattribute__(self, name):
@@ -1537,7 +2040,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
         You can use this logger to log information for your test.
         '''
-        return logging.getlogger()
+        return getlogger()
 
     @loggable
     @property
@@ -2367,6 +2870,21 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         '''Return :obj:`True` if the test is a performance test.'''
         return self.perf_variables or hasattr(self, 'perf_patterns')
 
+    def _resolve_reference(self):
+        '''Determine the reference tuple for this test'''
+
+        if isinstance(self.reference, ScopedDict):
+            return self.reference
+
+        try:
+            return {
+                f'{self.current_partition.fullname}': self.reference[self]
+            }
+        except KeyError as err:
+            getlogger().debug(f'reference look up: key `{err}` not found: '
+                              'no reference will be set')
+            return {}
+
     @final
     def check_performance(self):
         '''The performance checking phase of the regression test pipeline.
@@ -2393,7 +2911,6 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
             return
 
         perf_patterns = getattr(self, 'perf_patterns', None)
-
         if perf_patterns is not None and self.perf_variables:
             # We can only make this check here, because variables can be set
             # anywhere in the test before this point.
@@ -2402,13 +2919,15 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                 "'perf_variables' in a test"
             )
 
+        reference = self._resolve_reference()
+
         # Convert `perf_patterns` to `perf_variables`
         if perf_patterns:
             for var, expr in self.perf_patterns.items():
                 # Retrieve the unit from the reference tuple
                 key = f'{self._current_partition.fullname}:{var}'
                 try:
-                    unit = self.reference[key][3]
+                    unit = reference[key][3]
                     if unit is None:
                         unit = ''
                 except KeyError:
@@ -2425,7 +2944,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                     value = expr.evaluate() if not self.is_dry_run() else None
                     unit = expr.unit
                 except Exception as e:
-                    logging.getlogger().warning(
+                    getlogger().warning(
                         f'skipping evaluation of performance variable '
                         f'{tag!r}: {e}'
                     )
@@ -2433,7 +2952,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
                 key = f'{self._current_partition.fullname}:{tag}'
                 try:
-                    ref = self.reference[key]
+                    ref = reference[key]
                     if isinstance(ref, _XFailReference):
                         xfailures[key] = ref.message
                         ref = ref.data
@@ -2443,7 +2962,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                     # the performance function.
                     if len(ref) == 4:
                         if ref[3] != unit:
-                            logging.getlogger().warning(
+                            getlogger().warning(
                                 f'reference unit ({key!r}) for the '
                                 f'performance variable {tag!r} '
                                 f'does not match the unit specified '
@@ -2542,7 +3061,6 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                     f'{key!r} is not a number: {val}'
                 )
 
-            tag = key.split(':')[-1]
             try:
                 sn.evaluate(
                     sn.assert_reference(val, ref, low_thres, high_thres)
@@ -2755,7 +3273,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     def skip(self, msg=None):
         '''Skip test.
 
-        :arg msg: A message explaining why the test was skipped.
+        :arg msg: A message explaining why the test wasag skipped.
 
         .. versionadded:: 3.5.1
         '''
@@ -2930,3 +3448,4 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
             self.sanity_patterns = sn.assert_true(1)
 
         super().check_sanity()
+

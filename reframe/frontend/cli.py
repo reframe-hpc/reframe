@@ -848,6 +848,13 @@ def main():
         help='Minimum poll rate'
     )
     argparser.add_argument(
+        dest='reference_prefix',
+        envvar='RFM_REFERENCE_PREFIX',
+        configvar='general/reference_prefix',
+        action='store',
+        help='Directory prefix for external references'
+    )
+    argparser.add_argument(
         dest='remote_detect',
         envvar='RFM_REMOTE_DETECT',
         configvar='general/remote_detect',
