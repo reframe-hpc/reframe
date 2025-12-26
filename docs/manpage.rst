@@ -2310,6 +2310,25 @@ Whenever an environment variable is associated with a configuration option, its 
    .. versionadded:: 3.7.0
 
 
+.. envvar:: RFM_REFERENCE_PREFIX
+
+   Directory prefix for resolving paths of external reference files.
+
+   When a test's reference attribute uses the ``$ref`` key to load references
+   from a file, that file is looked up under this prefix. When not set, the
+   test's prefix directory is used.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.general.reference_prefix`
+      ================================== ==================
+
+   .. versionadded:: 4.10
+
+
 .. envvar:: RFM_REPORT_FILE
 
    The file where ReFrame will store its report.
