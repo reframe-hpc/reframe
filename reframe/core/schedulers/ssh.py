@@ -208,10 +208,10 @@ class SSHJobScheduler(JobScheduler):
         if exec_proc.started():
             with osext.change_dir(job.localdir):
                 with open(job.stdout, 'w+') as fout:
-                    fout.write(exec_proc.stdout().read())
+                    fout.write(exec_proc.stdout())
 
                 with open(job.stderr, 'w+') as ferr:
-                    ferr.write(exec_proc.stderr().read())
+                    ferr.write(exec_proc.stderr())
 
         return True
 
