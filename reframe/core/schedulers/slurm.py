@@ -34,7 +34,6 @@ def slurm_state_completed(state):
         'FAILED',
         'NODE_FAIL',
         'OUT_OF_MEMORY',
-        'PREEMPTED',
         'TIMEOUT',
     }
     if state:
@@ -48,6 +47,7 @@ def slurm_state_pending(state):
         'COMPLETING',
         'CONFIGURING',
         'PENDING',
+        'PREEMPTED',
         'RESV_DEL_HOLD',
         'REQUEUE_FED',
         'REQUEUE_HOLD',
