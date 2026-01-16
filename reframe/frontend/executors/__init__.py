@@ -804,6 +804,10 @@ class Runner:
             self._runall(failed_cases)
             failures = _failed_or_deps()
 
+            # Reset the run cases before re-entering the loop to make sure
+            # dependencies will be built correctly
+            cases = failed_cases
+
     def _runall(self, testcases):
         def print_separator(check, prefix):
             self._printer.separator(
