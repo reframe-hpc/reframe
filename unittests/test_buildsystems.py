@@ -78,21 +78,19 @@ def _emit_from_env_CMake(build_system, environ):
     build_system.srcdir = 'src'
     build_system.builddir = 'build/foo'
     build_system.config_opts = ['-DFOO=1']
-    build_system.make_opts = ['install']
+    build_system.build_opts = ['install']
     build_system.max_concurrency = 32
     expected = [
         'cd src',
         'mkdir -p build/foo',
-        'cd build/foo',
         'cmake -DCMAKE_C_COMPILER="gcc" -DCMAKE_CXX_COMPILER="g++" '
         '-DCMAKE_Fortran_COMPILER="gfortran" '
         '-DCMAKE_CUDA_COMPILER="nvcc" '
         '-DCMAKE_C_FLAGS="-DNDEBUG -Wall -std=c99" '
         '-DCMAKE_CXX_FLAGS="-DNDEBUG -Wall -std=c++11" '
         '-DCMAKE_Fortran_FLAGS="-DNDEBUG -Wall" '
-        '-DCMAKE_EXE_LINKER_FLAGS="-dynamic" -DFOO=1 ../..',
-        'make -j 32 install'
-
+        '-DCMAKE_EXE_LINKER_FLAGS="-dynamic" -DFOO=1 -S . -B build/foo',
+        'cmake --build build/foo -j 32 -- install'
     ]
     assert expected == build_system.emit_build_commands(environ)
 
@@ -101,7 +99,7 @@ def _emit_from_env_Autotools(build_system, environ):
     build_system.srcdir = 'src'
     build_system.builddir = 'build/foo'
     build_system.config_opts = ['FOO=1']
-    build_system.make_opts = ['check']
+    build_system.build_opts = ['check']
     build_system.max_concurrency = 32
     expected = [
         'cd src',
@@ -154,15 +152,13 @@ def _emit_from_buildsystem_CMake(build_system_with_flags, environ):
     build_system_with_flags.max_concurrency = None
     expected = [
         'mkdir -p build/foo',
-        'cd build/foo',
         'cmake -DCMAKE_C_COMPILER="cc" -DCMAKE_CXX_COMPILER="CC" '
         '-DCMAKE_Fortran_COMPILER="ftn" -DCMAKE_CUDA_COMPILER="clang" '
         '-DCMAKE_C_FLAGS="-DFOO -Wall -std=c99 -O2" '
         '-DCMAKE_CXX_FLAGS="-DFOO -Wall -std=c++11 -O2" '
         '-DCMAKE_Fortran_FLAGS="-DFOO -Wall -O2" '
-        '-DCMAKE_EXE_LINKER_FLAGS="-static" -DFOO=1 ../..',
-        'make -j'
-
+        '-DCMAKE_EXE_LINKER_FLAGS="-static" -DFOO=1 -S . -B build/foo',
+        'cmake --build build/foo --parallel'
     ]
     assert expected == build_system_with_flags.emit_build_commands(environ)
 
@@ -208,7 +204,7 @@ def _emit_no_env_defaults_Make(build_system, environ):
 
 def _emit_no_env_defaults_CMake(build_system, environ):
     build_system.flags_from_environ = False
-    assert (['cmake .', 'make -j 1'] ==
+    assert (['cmake -S . -B .', 'cmake --build . -j 1'] ==
             build_system.emit_build_commands(environ))
 
 
