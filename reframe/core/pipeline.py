@@ -80,7 +80,7 @@ _FKV = rf'({_F}|{_KV})'     # feature | key/value pair
 _VALID_ENV_SYNTAX = rf'^({_NW}|{_FKV}(\s+{_FKV})*)$'
 
 _S = rf'({_NW}(:{_NW})?)'   # system/partition
-_VALID_SYS_SYNTAX = rf'^({_S}|{_FKV}(\s+{_FKV})*)$'
+_VALID_SYS_SYNTAX = rf'^(({_FKV}\s+)*{_S}(\s+{_FKV})*|{_FKV}(\s+{_FKV})*)$'
 
 
 _PIPELINE_STAGES = (

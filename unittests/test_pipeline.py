@@ -359,6 +359,8 @@ def test_valid_systems_syntax(hellotest):
     hellotest.valid_systems = ['+x0 -y0 %z0=w0']
     hellotest.valid_systems = ['-y0 +x0 %z0=w0']
     hellotest.valid_systems = ['%z0=w0 +x0 -y0']
+    hellotest.valid_systems = ['sys:part +x0']
+    hellotest.valid_systems = ['+x0 sys:part']
 
     with pytest.raises(TypeError):
         hellotest.valid_systems = ['']
