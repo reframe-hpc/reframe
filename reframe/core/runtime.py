@@ -309,7 +309,7 @@ def _is_valid_part(part, valid_systems):
             elif subspec.startswith('%'):
                 key, val = subspec[1:].split('=')
                 props[key] = val
-            elif ':' in subspec and not subspec.startswith(('+', '-', '%')):
+            elif not subspec.startswith(('+', '-', '%')):
                 # If there is a system:partition specified, make sure it
                 # matches one of the items in valid_matches
                 syspart_match = True if subspec in valid_matches else False
