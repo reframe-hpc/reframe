@@ -79,7 +79,7 @@ class Aggregation:
             elif op == 'mean':
                 return pl.col(col).mean().alias(f'{col} (mean)')
             elif op == 'std':
-                return pl.col(col).std().alias(f'{col} (stddev)')
+                return pl.col(col).std().alias(f'{col} (std)')
             elif op == 'first':
                 return pl.col(col).first().alias(f'{col} (first)')
             elif op == 'last':
@@ -286,7 +286,7 @@ class _QueryMatch:
                  aggregation: Aggregation,
                  groups: List[str],
                  columns: List[str],
-                 term_lhs: str, term_rhs: str):
+                 term_lhs: str, term_rhs: str, comparison: bool):
         self.__lhs: QuerySelectorTestcase = lhs
         self.__rhs: QuerySelectorTestcase = rhs
         self.__aggregation: Aggregation = aggregation
@@ -295,13 +295,14 @@ class _QueryMatch:
         self.__col_variants: Dict[str, List[str]] = {}
         self.__lhs_term: str = term_lhs or 'lhs'
         self.__rhs_term: str = term_rhs or 'rhs'
+        self.__comparison: bool = comparison
 
-        if self.is_compare() and 'pval' not in columns:
+        if self.is_comparison() and 'pval' not in columns:
             # Always add `pval` if the query is a performance comparison
             columns.append('pval')
 
         for col in columns:
-            if self.is_compare():
+            if self.is_comparison():
                 # This is a comparison; trim any column suffixes and store
                 # them for later selection
                 if col.endswith(self.lhs_select_suffix):
@@ -336,9 +337,9 @@ class _QueryMatch:
             else:
                 self.__col_variants_agg.append(col)
 
-    def is_compare(self):
+    def is_comparison(self):
         '''Check if this query is a performance comparison'''
-        return self.__lhs is not None
+        return self.__comparison
 
     @property
     def lhs_column_suffix(self):
@@ -409,7 +410,7 @@ class _QueryMatch:
 DEFAULT_GROUP_BY = ['name', 'sysenv', 'pvar', 'punit']
 
 
-def parse_cmp_spec(spec, term_lhs=None, term_rhs=None):
+def parse_cmp_spec(spec, term_lhs=None, term_rhs=None, comparison=False):
     parts = spec.split('/')
     if len(parts) == 3:
         base_spec, target_spec, aggr, cols = None, *parts
@@ -425,4 +426,4 @@ def parse_cmp_spec(spec, term_lhs=None, term_rhs=None):
     # Update base columns for listing
     columns = _parse_columns(cols, group_cols + aggr.attributes())
     return _QueryMatch(base, target, aggr, group_cols, columns,
-                       term_lhs, term_rhs)
+                       term_lhs, term_rhs, comparison)

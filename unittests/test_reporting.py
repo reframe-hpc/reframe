@@ -265,7 +265,7 @@ def test_parse_cmp_spec_aggregations(aggregator):
         assert 'pval (mean)' in agg.columns
         assert agg['pval (mean)'][0] == 1.45
     elif aggregator == 'std':
-        assert 'pval (stddev)' in agg.columns
+        assert 'pval (std)' in agg.columns
     elif aggregator == 'stats':
         assert 'pval (min)' in agg.columns
         assert 'pval (p01)' in agg.columns
@@ -275,7 +275,7 @@ def test_parse_cmp_spec_aggregations(aggregator):
         assert 'pval (p99)' in agg.columns
         assert 'pval (max)' in agg.columns
         assert 'pval (mean)' in agg.columns
-        assert 'pval (stddev)' in agg.columns
+        assert 'pval (std)' in agg.columns
     elif aggregator == 'sum':
         assert 'pval (sum)' in agg.columns
         assert agg['pval (sum)'][0] == 14.5
@@ -328,7 +328,7 @@ def columns(request):
 def test_parse_cmp_spec_extra_cols(columns):
     spec, expected = columns
     match = parse_cmp_spec(
-        f'now-1m:now/now-1d:now/min:/{spec}'
+        f'now-1m:now/now-1d:now/min:/{spec}', comparison=True
     )
 
     # `pval` is always added in case of comparisons

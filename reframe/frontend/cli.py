@@ -1782,7 +1782,8 @@ def main():
                 try:
                     if rt.get_option('storage/0/enable'):
                         data = reporting.performance_compare(
-                            rt.get_option('general/0/perf_report_spec'), report,
+                            rt.get_option('general/0/perf_report_spec'),
+                            report,
                             term_lhs=options.term_lhs,
                             term_rhs=options.term_rhs
                         )
