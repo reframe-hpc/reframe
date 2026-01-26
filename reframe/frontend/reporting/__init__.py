@@ -692,7 +692,7 @@ def performance_compare(cmp, report=None, namepatt=None,
                         term_lhs=None, term_rhs=None):
     with reraise_as(ReframeError, (ValueError,),
                     'could not parse comparison spec'):
-        query = parse_cmp_spec(cmp, term_lhs, term_rhs)
+        query = parse_cmp_spec(cmp, term_lhs, term_rhs, True)
 
     backend = StorageBackend.default()
     if query.lhs is None:
