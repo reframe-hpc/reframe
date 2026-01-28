@@ -483,7 +483,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 self._num_sacct_failures = 0
             except SpawnedProcessError as e:
                 self._num_sacct_failures += 1
-                if self._num_sacct_failures > self._max_sacct_failures:
+                if self._num_sacct_failures < self._max_sacct_failures:
                     self.log(
                         f'sacct failed ({self._num_sacct_failures}/'
                         f'{self._max_sacct_failures}): {e.stderr}',
