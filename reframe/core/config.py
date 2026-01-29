@@ -466,12 +466,18 @@ class _SiteConfig:
         getlogger().debug('Looking for a matching configuration entry')
         for system in self._site_config['systems']:
             for patt in system['hostnames']:
-                if re.match(patt, hostname):
+                try:
                     sysname = system['name']
-                    getlogger().debug(
-                        f'Configuration found: picking system {sysname!r}'
+                    if re.match(patt, hostname):
+                        getlogger().debug(
+                            f'Configuration found: picking system {sysname!r}'
+                        )
+                        return sysname
+                except re.error as err:
+                    raise ConfigError(
+                        "invalid regular expression for "
+                        f"'systems/@{sysname}/hostnames': {patt!r}: {err}"
                     )
-                    return sysname
 
         raise ConfigError(f'could not find a configuration entry '
                           f'for the current system: {hostname!r}')
