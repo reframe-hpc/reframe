@@ -562,6 +562,8 @@ class CMake(ConfigureBasedBuildSystem):
         .. code-block:: python
 
             self.build_system.config_opts = ['-G', 'Ninja']
+
+        The minimum CMake version supported is 3.13.
     '''
 
     def _combine_flags(self, cppflags, xflags):
