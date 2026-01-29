@@ -496,23 +496,41 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #:        (:class:`Autotools`, :class:`CMake`).
     configuredir = variable(str, value='.')
 
-    #: The CMake build directory, where all the generated files will be placed.
-    #:
-    #: :type: :class:`str`
-    #: :default: :class:`None`
-    builddir = variable(str, type(None), value=None)
-
     #: Additional configuration options to be passed to the configure step.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     config_opts = variable(typ.List[str], value=[])
 
+    #: The build directory, where the generated files will be placed.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``"."``
+    #:
+    #: .. versionchanged:: 4.10
+    #:    Default value changed to ``.`` explicitly, :obj:`None` is not
+    #:    supported anymore.
+    builddir = variable(str, value='.')
+
+    #: Options to be passed to the underlying build command.
+    #:
+    #: For :class:`Autotools` projects, these options will be passed to the
+    #: ``make`` invocation. For :class:`CMake`, these options will be passed to
+    #: whatever is the underlying build command.
+    #:
+    #: .. versionadded:: 4.10
+    build_opts = variable(typ.List[str], value=[])
+
     #: Options to be passed to the subsequent ``make`` invocation.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    make_opts = variable(typ.List[str], value=[])
+    #:
+    #: .. deprecated:: 4.10
+    #:    Please use :attr:`build_opts` instead.
+    make_opts = deprecate(variable(alias=build_opts),
+                          "'make_opts' is deprecated; "
+                          "please use 'build_opts' instead")
 
     #: Same as for the :attr:`Make` build system.
     #:
@@ -529,8 +547,23 @@ class CMake(ConfigureBasedBuildSystem):
     1. Create a build directory if :attr:`builddir` is not :class:`None` and
        change to it.
     2. Invoke ``cmake`` to configure the project by setting the corresponding
-       CMake flags for compilers and compiler flags.
-    3. Issue ``make`` to compile the code.
+       CMake flags for compilers and compiler flags if
+       :attr:`flags_from_environ` is set.
+    3. Issue the build command `using `cmake --build`` to compile the code.
+
+    .. note::
+        .. versionchanged:: 4.10
+
+        The backend now uses ``cmake --build`` to build the code instead of
+        ``make``. This allows to use alternative build generators by requesting
+        them in the :attr:`config_opts`. For example, to build with Ninja, you
+        need to set the following in your test:
+
+        .. code-block:: python
+
+            self.build_system.config_opts = ['-G', 'Ninja']
+
+        The minimum CMake version supported is 3.13.
     '''
 
     def _combine_flags(self, cppflags, xflags):
@@ -548,14 +581,14 @@ class CMake(ConfigureBasedBuildSystem):
         if self.srcdir:
             prepare_cmd += [f'cd {self.srcdir}']
 
-        if self.builddir:
-            prepare_cmd += [f'mkdir -p {self.builddir}',
-                            f'cd {self.builddir}']
+        self.builddir = self.builddir.strip()
+        if self.builddir != '.':
+            prepare_cmd += [f'mkdir -p {self.builddir}']
 
         cmake_cmd = ['cmake']
-        cc = self._cc(environ)
-        cxx = self._cxx(environ)
-        ftn = self._ftn(environ)
+        cc   = self._cc(environ)
+        cxx  = self._cxx(environ)
+        ftn  = self._ftn(environ)
         nvcc = self._nvcc(environ)
         cppflags = self._cppflags(environ)
         cflags   = self._combine_flags(cppflags, self._cflags(environ))
@@ -593,21 +626,20 @@ class CMake(ConfigureBasedBuildSystem):
         if self.config_opts:
             cmake_cmd += self.config_opts
 
+        cmake_cmd += ['-S', self.configuredir]
         if self.builddir:
-            cmake_cmd += [os.path.join(
-                os.path.relpath(self.configuredir, self.builddir)
-            )]
+            cmake_cmd += ['-B', self.builddir]
+
+        build_cmd = ['cmake', '--build', self.builddir]
+        if self.max_concurrency is None:
+            build_cmd += ['--parallel']
         else:
-            cmake_cmd += [self.configuredir]
+            build_cmd += ['-j', str(self.max_concurrency)]
 
-        make_cmd = ['make -j']
-        if self.max_concurrency is not None:
-            make_cmd += [str(self.max_concurrency)]
+        if self.build_opts:
+            build_cmd += ['--', *self.build_opts]
 
-        if self.make_opts:
-            make_cmd += self.make_opts
-
-        return prepare_cmd + [' '.join(cmake_cmd), ' '.join(make_cmd)]
+        return prepare_cmd + [' '.join(cmake_cmd), ' '.join(build_cmd)]
 
 
 class Autotools(ConfigureBasedBuildSystem):
@@ -627,7 +659,8 @@ class Autotools(ConfigureBasedBuildSystem):
         if self.srcdir:
             prepare_cmd += [f'cd {self.srcdir}']
 
-        if self.builddir:
+        self.builddir = self.builddir.strip()
+        if self.builddir != '.':
             prepare_cmd += [f'mkdir -p {self.builddir}',
                             f'cd {self.builddir}']
 
@@ -682,8 +715,8 @@ class Autotools(ConfigureBasedBuildSystem):
         if self.max_concurrency is not None:
             make_cmd += [str(self.max_concurrency)]
 
-        if self.make_opts:
-            make_cmd += self.make_opts
+        if self.build_opts:
+            make_cmd += self.build_opts
 
         return prepare_cmd + [' '.join(configure_cmd), ' '.join(make_cmd)]
 
