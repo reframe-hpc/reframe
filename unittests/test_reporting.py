@@ -6,6 +6,7 @@
 import json
 import jsonschema
 import os
+import polars as pl
 import pytest
 import sys
 import time
@@ -18,14 +19,13 @@ import reframe.frontend.dependencies as dependencies
 import reframe.frontend.reporting as reporting
 import reframe.frontend.reporting.storage as report_storage
 from reframe.frontend.reporting.utility import (parse_cmp_spec, is_uuid,
-                                                QuerySelector,
-                                                DEFAULT_GROUP_BY,
-                                                DEFAULT_EXTRA_COLS)
+                                                QuerySelectorTestcase,
+                                                DEFAULT_GROUP_BY)
 from reframe.core.exceptions import ReframeError
 from reframe.frontend.reporting import RunReport
 
 
-_DEFAULT_BASE_COLS = DEFAULT_GROUP_BY + DEFAULT_EXTRA_COLS
+_DEFAULT_BASE_COLS = DEFAULT_GROUP_BY + ['pval']
 
 
 # NOTE: We could move this to utility
@@ -211,7 +211,7 @@ def test_parse_cmp_spec_period(time_period):
     spec, duration = time_period
     duration = int(duration)
     match = parse_cmp_spec(f'{spec}/{spec}/mean:/')
-    for query in ('base', 'target'):
+    for query in ('lhs', 'rhs'):
         assert getattr(match, query).by_time_period()
         ts_start, ts_end = getattr(match, query).time_period
         if 'now' in spec:
@@ -223,36 +223,74 @@ def test_parse_cmp_spec_period(time_period):
 
     # Check variant without base period
     match = parse_cmp_spec(f'{spec}/mean:/')
-    assert match.base is None
+    assert match.lhs is None
 
 
 @pytest.fixture(params=['first', 'last', 'mean', 'median',
-                        'min', 'max', 'count'])
+                        'min', 'max', 'std', 'stats', 'sum',
+                        'p01', 'p05', 'p95', 'p99'])
 def aggregator(request):
     return request.param
 
 
 def test_parse_cmp_spec_aggregations(aggregator):
     match = parse_cmp_spec(f'now-1m:now/now-1d:now/{aggregator}:/')
-    data = [1, 2, 3, 4, 5]
+    num_recs = 10
+    nodelist = [f'nid{i}' for i in range(num_recs)]
+    df = pl.DataFrame({
+        'name': ['test' for i in range(num_recs)],
+        'pvar': ['time' for i in range(num_recs)],
+        'unit': ['s' for i in range(num_recs)],
+        'pval': [1 + i/10 for i in range(num_recs)],
+        'node': nodelist
+    })
+    agg = df.group_by('name').agg(match.aggregation.col_spec(['node']))
+    assert set(agg['node'][0].split('\n')) == set(nodelist)
     if aggregator == 'first':
-        match.aggregator(data) == data[0]
+        assert 'pval (first)' in agg.columns
+        assert agg['pval (first)'][0] == 1
     elif aggregator == 'last':
-        match.aggregator(data) == data[-1]
+        assert 'pval (last)' in agg.columns
+        assert agg['pval (last)'][0] == 1.9
     elif aggregator == 'min':
-        match.aggregator(data) == 1
+        assert 'pval (min)' in agg.columns
+        assert agg['pval (min)'][0] == 1
     elif aggregator == 'max':
-        match.aggregator(data) == 5
+        assert 'pval (max)' in agg.columns
+        assert agg['pval (max)'][0] == 1.9
     elif aggregator == 'median':
-        match.aggregator(data) == 3
+        assert 'pval (median)' in agg.columns
+        assert agg['pval (median)'][0] == 1.45
     elif aggregator == 'mean':
-        match.aggregator(data) == sum(data) / len(data)
-    elif aggregator == 'count':
-        match.aggregator(data) == len(data)
+        assert 'pval (mean)' in agg.columns
+        assert agg['pval (mean)'][0] == 1.45
+    elif aggregator == 'std':
+        assert 'pval (std)' in agg.columns
+    elif aggregator == 'stats':
+        assert 'pval (min)' in agg.columns
+        assert 'pval (p01)' in agg.columns
+        assert 'pval (p05)' in agg.columns
+        assert 'pval (median)' in agg.columns
+        assert 'pval (p95)' in agg.columns
+        assert 'pval (p99)' in agg.columns
+        assert 'pval (max)' in agg.columns
+        assert 'pval (mean)' in agg.columns
+        assert 'pval (std)' in agg.columns
+    elif aggregator == 'sum':
+        assert 'pval (sum)' in agg.columns
+        assert agg['pval (sum)'][0] == 14.5
+    elif aggregator == 'p01':
+        assert agg['pval (p01)'][0] == 1
+    elif aggregator == 'p05':
+        assert agg['pval (p05)'][0] == 1
+    elif aggregator == 'p01':
+        assert agg['pval (p95)'][0] == 10
+    elif aggregator == 'p05':
+        assert agg['pval (p99)'][0] == 10
 
     # Check variant without base period
     match = parse_cmp_spec(f'now-1d:now/{aggregator}:/')
-    assert match.base is None
+    assert match.lhs is None
 
 
 @pytest.fixture(params=[('',  DEFAULT_GROUP_BY),
@@ -270,11 +308,11 @@ def test_parse_cmp_spec_group_by(group_by_columns):
     match = parse_cmp_spec(
         f'now-1m:now/now-1d:now/min:{spec}/'
     )
-    assert match.groups == expected
+    assert match.group_by == expected
 
     # Check variant without base period
     match = parse_cmp_spec(f'now-1d:now/min:{spec}/')
-    assert match.base is None
+    assert match.lhs is None
 
 
 @pytest.fixture(params=[('',  _DEFAULT_BASE_COLS),
@@ -290,13 +328,19 @@ def columns(request):
 def test_parse_cmp_spec_extra_cols(columns):
     spec, expected = columns
     match = parse_cmp_spec(
-        f'now-1m:now/now-1d:now/min:/{spec}'
+        f'now-1m:now/now-1d:now/min:/{spec}', comparison=True
     )
-    assert match.columns == expected
+
+    # `pval` is always added in case of comparisons
+    if spec == 'col1,col2':
+        assert match.attributes == expected + ['pval']
+    else:
+        assert match.attributes == expected
 
     # Check variant without base period
     match = parse_cmp_spec(f'now-1d:now/min:/{spec}')
-    assert match.base is None
+    assert match.lhs is None
+    assert match.attributes == expected
 
 
 def test_is_uuid():
@@ -340,11 +384,11 @@ def test_parse_cmp_spec_with_uuid(uuid_spec):
 
     match = parse_cmp_spec(uuid_spec)
     base_uuid, target_uuid = _uuids(uuid_spec)
-    if match.base.by_session_uuid():
-        assert match.base.uuid == base_uuid
+    if match.lhs.by_session_uuid():
+        assert match.lhs.uuid == base_uuid
 
-    if match.target.by_session_uuid():
-        assert match.target.uuid == target_uuid
+    if match.rhs.by_session_uuid():
+        assert match.rhs.uuid == target_uuid
 
 
 @pytest.fixture(params=[
@@ -358,16 +402,16 @@ def sess_filter(request):
 
 def test_parse_cmp_spec_with_filter(sess_filter):
     match = parse_cmp_spec(sess_filter)
-    if match.base:
-        assert match.base.by_session_filter()
-        assert match.base.sess_filter == 'xyz == "123"'
+    if match.lhs:
+        assert match.lhs.by_session_filter()
+        assert match.lhs.sess_filter == 'xyz == "123"'
 
-    assert match.target.by_session_filter()
-    assert match.target.sess_filter == 'xyz == "789"'
+    assert match.rhs.by_session_filter()
+    assert match.rhs.sess_filter == 'xyz == "789"'
 
     if sess_filter.startswith('now'):
-        assert match.target.by_time_period()
-        ts_start, ts_end = match.target.time_period
+        assert match.rhs.by_time_period()
+        ts_start, ts_end = match.rhs.time_period
         assert int(ts_end - ts_start) == 86400
 
 
@@ -423,7 +467,6 @@ def test_parse_cmp_spec_invalid_extra_cols(invalid_col_spec):
                         'now-1m:now/now-1d:now',
                         'now-1m:now/now-1d:now/mean',
                         'now-1m:now/now-1d:now/mean:',
-                        'now-1m:now/now-1d:now/mean:',
                         '/now-1d:now/mean:/',
                         'now-1m:now//mean:'])
 def various_invalid_specs(request):
@@ -446,13 +489,13 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
         return count
 
     def from_time_period(ts_start, ts_end):
-        return QuerySelector(time_period=(ts_start, ts_end))
+        return QuerySelectorTestcase(time_period=(ts_start, ts_end))
 
     def from_session_uuid(x):
-        return QuerySelector(uuid=x)
+        return QuerySelectorTestcase(uuid=x)
 
     def from_session_filter(filt, ts_start, ts_end):
-        return QuerySelector(time_period=(ts_start, ts_end), sess_filter=filt)
+        return QuerySelectorTestcase(time_period=(ts_start, ts_end), sess_filter=filt)
 
     monkeypatch.setenv('HOME', str(tmp_path))
     uuids = []
