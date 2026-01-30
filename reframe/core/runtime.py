@@ -289,50 +289,60 @@ def is_env_loaded(environ):
 
 
 def _is_valid_part(part, valid_systems):
+    # Get sysname and partname for the partition being checked and construct
+    # all valid_matches for the partition being checked
+    sysname, partname = part.fullname.split(':')
+    valid_matches = ['*', '*:*', sysname, f'{sysname}:*', f'*:{partname}',
+                     f'{part.fullname}']
+
+    # If any of the specs in valid_systems matches, this is a valid partition
     for spec in valid_systems:
-        if spec[0] not in ('+', '-', '%'):
-            # This is the standard case
-            sysname, partname = part.fullname.split(':')
-            valid_matches = ['*', '*:*', sysname, f'{sysname}:*',
-                             f'*:{partname}', f'{part.fullname}']
-            if spec in valid_matches:
-                return True
-        else:
-            plus_feats = []
-            minus_feats = []
-            props = {}
-            for subspec in spec.split(' '):
-                if subspec.startswith('+'):
-                    plus_feats.append(subspec[1:])
-                elif subspec.startswith('-'):
-                    minus_feats.append(subspec[1:])
-                elif subspec.startswith('%'):
-                    key, val = subspec[1:].split('=')
-                    props[key] = val
+        plus_feats = []
+        minus_feats = []
+        props = {}
+        syspart_match = True
+        for subspec in spec.split(' '):
+            if subspec.startswith('+'):
+                plus_feats.append(subspec[1:])
+            elif subspec.startswith('-'):
+                minus_feats.append(subspec[1:])
+            elif subspec.startswith('%'):
+                key, val = subspec[1:].split('=')
+                props[key] = val
+            elif not subspec.startswith(('+', '-', '%')):
+                # If there is a system:partition specified, make sure it
+                # matches one of the items in valid_matches
+                syspart_match = True if subspec in valid_matches else False
 
-            have_plus_feats = all(
-                (ft in part.features or
-                 ft in part.resources or ft in part.extras)
-                for ft in plus_feats
-            )
-            have_minus_feats = any(
-                (ft in part.features or
-                 ft in part.resources or ft in part.extras)
-                for ft in minus_feats
-            )
-            try:
-                have_props = True
-                for k, v in props.items():
-                    extra_value = part.extras[k]
-                    extra_type  = type(extra_value)
-                    if extra_value != extra_type(v):
-                        have_props = False
-                        break
-            except (KeyError, ValueError):
-                have_props = False
+        have_plus_feats = all(
+            (ft in part.features or
+             ft in part.resources or ft in part.extras)
+            for ft in plus_feats
+        )
+        have_minus_feats = any(
+            (ft in part.features or
+             ft in part.resources or ft in part.extras)
+            for ft in minus_feats
+        )
+        try:
+            have_props = True
+            for k, v in props.items():
+                extra_value = part.extras[k]
+                extra_type  = type(extra_value)
+                if extra_value != extra_type(v):
+                    have_props = False
+                    break
+        except (KeyError, ValueError):
+            have_props = False
 
-            if have_plus_feats and not have_minus_feats and have_props:
-                return True
+        # If the partition has all the plus features, none of the minus
+        # all of the properties and the system:partition spec (if any)
+        # matched, this partition is valid
+        if (
+            have_plus_feats and not have_minus_feats and have_props
+            and syspart_match
+        ):
+            return True
 
     return False
 
