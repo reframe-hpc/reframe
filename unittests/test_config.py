@@ -176,6 +176,13 @@ def test_select_subconfig_autodetect_failure():
         site_config.select_subconfig()
 
 
+def test_select_subconfig_autodetect_invalid_regex():
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config['systems'][0]['hostnames'] = ['*']
+    with pytest.raises(ConfigError, match=r'invalid regular expression'):
+        site_config.select_subconfig()
+
+
 def test_select_subconfig_unknown_system():
     site_config = config.load_config('reframe/core/settings.py')
     with pytest.raises(

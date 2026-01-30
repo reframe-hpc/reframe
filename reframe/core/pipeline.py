@@ -160,7 +160,7 @@ class RegressionMixin(RegressionTestPlugin):
         super().__init_subclass__(**kwargs)
         user_deprecation_warning(
             '`RegressionMixin` is deprecated; '
-            'please inherit from `RegresssionTestPlugin` instead'
+            'please inherit from `RegressionTestPlugin` instead'
         )
 
 

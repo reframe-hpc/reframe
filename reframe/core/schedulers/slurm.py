@@ -34,7 +34,6 @@ def slurm_state_completed(state):
         'FAILED',
         'NODE_FAIL',
         'OUT_OF_MEMORY',
-        'PREEMPTED',
         'TIMEOUT',
     }
     if state:
@@ -48,6 +47,7 @@ def slurm_state_pending(state):
         'COMPLETING',
         'CONFIGURING',
         'PENDING',
+        'PREEMPTED',
         'RESV_DEL_HOLD',
         'REQUEUE_FED',
         'REQUEUE_HOLD',
@@ -499,7 +499,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 self._num_sacct_failures = 0
             except SpawnedProcessError as e:
                 self._num_sacct_failures += 1
-                if self._num_sacct_failures > self._max_sacct_failures:
+                if self._num_sacct_failures <= self._max_sacct_failures:
                     self.log(
                         f'sacct failed ({self._num_sacct_failures}/'
                         f'{self._max_sacct_failures}): {e.stderr}',

@@ -311,6 +311,16 @@ def test_pass_in_retries(make_runner, make_cases, tmp_path, common_exec_ctx):
     assert 0 == len(runner.stats.failed())
 
 
+def test_retries_fixtures(make_runner, make_loader, common_exec_ctx):
+    runner = make_runner(max_retries=2)
+    runner.runall(executors.generate_testcases(
+        make_loader([
+            'unittests/resources/checks_unlisted/fixtures_retries.py'
+        ]).load_all()
+    ))
+    assert len(runner.stats.failed()) == 0
+
+
 @pytest.fixture(params=[signal.SIGTERM, signal.SIGHUP])
 def signum(request):
     return request.param
