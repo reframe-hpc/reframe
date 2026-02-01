@@ -662,9 +662,9 @@ def compare_testcase_data(base_testcases, target_testcases, query):
     pval = query.aggregation.column_names('pval')[0]
     pval_lhs = f'{pval}{query.lhs_column_suffix}'
     pval_rhs = f'{pval}{query.rhs_column_suffix}'
-    cols = OrderedSet(query.group_by) | OrderedSet(query.aggregated_variants)
+    cols = query.columns
     if not df_base.is_empty() and not df_target.is_empty():
-        cols |= {query.diff_column}
+        cols.append(query.diff_column)
         df = df_base.join(df_target, on=query.group_by).with_columns(
             (100*(pl.col(pval_lhs) - pl.col(pval_rhs)) / pl.col(pval_rhs))
             .round(2).alias(query.diff_column)
@@ -772,7 +772,8 @@ def testcase_data(spec, namepatt=None, test_filter=None):
     storage = StorageBackend.default()
     df = _aggregate_data(
         storage.fetch_testcases(query.rhs, namepatt, test_filter), query
-    )
+    ).select(query.columns)
+
     data = [df.columns]
     for row in df.iter_rows():
         data.append(row)

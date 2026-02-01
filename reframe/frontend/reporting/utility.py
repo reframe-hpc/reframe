@@ -297,8 +297,11 @@ class _QueryMatch:
         self.__rhs_term: str = term_rhs or 'rhs'
         self.__comparison: bool = comparison
 
-        if self.is_comparison() and 'pval' not in columns:
-            # Always add `pval` if the query is a performance comparison
+        has_pval = {'pval', f'pval{self.lhs_select_suffix}',
+                    f'pval{self.rhs_select_suffix}'} & set(columns)
+        if self.is_comparison() and not has_pval:
+            # Always add `pval` if the query is a performance comparison and
+            # the user has not requested it
             columns.append('pval')
 
         for col in columns:
@@ -320,8 +323,8 @@ class _QueryMatch:
 
             self.__tc_attrs.append(col)
 
-        self.__tc_attrs_agg: List[str] = (OrderedSet(self.__tc_attrs) -
-                                          OrderedSet(self.__tc_group_by))
+        self.__tc_attrs_agg: List[str] = list(OrderedSet(self.__tc_attrs) -
+                                              OrderedSet(self.__tc_group_by))
         self.__aggregated_cols: List[str] = []
         for col in self.__tc_attrs_agg:
             self.__aggregated_cols += self.__aggregation.column_names(col)
@@ -336,6 +339,11 @@ class _QueryMatch:
                 ]
             else:
                 self.__col_variants_agg.append(col)
+
+        # Final list of columns
+        group_by_cols = list(OrderedSet(self.__tc_attrs) &
+                             OrderedSet(self.__tc_group_by))
+        self.__cols = group_by_cols + self.__col_variants_agg
 
     def is_comparison(self):
         '''Check if this query is a performance comparison'''
@@ -390,6 +398,11 @@ class _QueryMatch:
     def aggregated_attributes(self) -> List[str]:
         '''Test attributes whose values must be aggregated'''
         return self.__tc_attrs_agg
+
+    @property
+    def columns(self) -> List[str]:
+        '''Final set of column names to be selected'''
+        return self.__cols
 
     @property
     def aggregated_columns(self) -> List[str]:
