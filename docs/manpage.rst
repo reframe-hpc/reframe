@@ -1535,10 +1535,7 @@ The following aggregation functions are supported:
 - ``std``: return the standard deviation of every group
 - ``sum``: return the sum of every group
 - ``median``: return the median of every group
-- ``p01``: return the 1% percentile of every group
-- ``p05``: return the 5% percentile of every group
-- ``p95``: return the 95% percentile of every group
-- ``p99``: return the 99% percentile of every group
+- ``p<QQ>``: return the QQ% percentile of every group. Two digits a required even for quantiles less than 10%, e.g., the 5% percentile should be requested as ``p05``.
 
 There is also the pseudo-function ``stats``, which is essentially a shortcut for ``min,p01,p05,median,p95,p99,max,mean,std``.
 It can also be applied to any other attribute than ``pval``
@@ -1589,7 +1586,7 @@ As an attribute for grouping test cases, any loggable test variable or parameter
 - ``presult``: the result (``pass`` or ``fail``) for this performance variable.
   The result is ``pass`` if the obtained performance value is within the acceptable bounds.
 - ``pdiff``: the difference as a percentage between the :ref:`left <cmpspec-syntax>` and :ref:`right <cmpspec-syntax>` performance values when a performance comparison is attempted.
-  More specifically, ``pdiff = (pval_lhs - pval_rhs) / pval_rhs``.
+  More specifically, ``pdiff = (pval_L - pval_R) / pval_R``.
 - ``psamples``: the number of test cases aggregated.
 - ``sysenv``: The system/partition/environment combination as a single string of the form ``{system}:{partition}+{environ}``
 
@@ -1617,7 +1614,7 @@ These columns contain the aggregated values of the corresponding attributes.
 
 Note that any attributes/columns that are not part of the group-by set will be aggregated by joining their unique values.
 
-It is also possible to select only one of the lhs/rhs variants of the extra columns by adding the ``_lhs`` or ``_rhs`` suffix to the column name in the ``<cols>`` subspec, e.g., ``+result_lhs`` will only show the result of the left selection group in the comparison.
+It is also possible to select only one of the lhs/rhs variants of the extra columns by adding the ``_L`` or ``_R`` suffix to the column name in the ``<cols>`` subspec, e.g., ``+result_R`` will only show the result of the left selection group in the comparison.
 
 .. versionchanged:: 4.8
 
@@ -1625,7 +1622,7 @@ It is also possible to select only one of the lhs/rhs variants of the extra colu
 
 .. versionchanged:: 4.9
 
-   Multiple aggregations at once are supported. New aggregations are added and ``A/B`` column variants are renamed to ``lhs`` and ``rhs``, respectively.
+   Multiple aggregations at once are supported. New aggregations are added and ``A/B`` column variants are renamed to ``lhs`` and ``rhs`` and can be selected with the ``_L`` and ``_R`` suffixes, respectively.
 
 
 Examples
@@ -1659,7 +1656,8 @@ Note that parts that have a grammar defined elsewhere (e.g., Python attributes a
    <aggr_spec> ::= <aggr_any> | <aggr_pval>
    <aggr_any> ::= <aggr_fn> "(" <attr> ")"
    <aggr_pval> ::= <aggr_fn>
-   <aggr_fn> ::= "first" | "last" | "max" | "min" | "mean" | "median" | "std" | "sum" | "p01" | "p05" | "p95" | "p99"
+   <aggr_fn> ::= "first" | "last" | "max" | "min" | "mean" | "median" | "std" | "sum" | <quantile>
+   <quantile> ::= "p" [0-9] [0-9]
    <cols> ::= <extra_cols> | <explicit_cols>
    <extra_cols> ::= ("+" <attr>)+
    <explicit_cols> ::= <attr> ("," <attr>)*

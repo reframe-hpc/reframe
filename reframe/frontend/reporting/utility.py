@@ -15,20 +15,22 @@ from reframe.utility import OrderedSet
 class Aggregation:
     '''Represents a user aggregation'''
 
-    OP_REGEX = re.compile(r'(?P<op>\S+)\((?P<col>\S+)\)|(?P<op2>\S+)')
-    OP_VALID = {'min', 'max', 'median', 'mean', 'std', 'first', 'last',
-                'sum', 'p01', 'p05', 'p95', 'p99', 'stats'}
+    AGG_REGEX = re.compile(r'(?P<op>\S+)\((?P<col>\S+)\)|(?P<op2>\S+)')
+    OP_REGEX = re.compile(
+        r'min|max|median|mean|std|first|last|sum|stats|p\d{2}'
+    )
+    Q_REGEX = re.compile(r'p(\d{2})')
 
     def __init__(self, agg_spec: str):
         '''Create an Aggregation from an aggretion spec'''
         self._aggregations: Dict[str, List[str]] = {}
         self._agg_names: Dict[str, str] = {}
         for agg in agg_spec.split(','):
-            m = self.OP_REGEX.match(agg)
+            m = self.AGG_REGEX.match(agg)
             if m:
                 op = m.group('op') or m.group('op2')
                 col = m.group('col') or 'pval'
-                if op not in self.OP_VALID:
+                if not self.OP_REGEX.match(op):
                     raise ValueError(f'unknown aggregation: {op}')
 
                 if op == 'stats':
@@ -69,6 +71,7 @@ class Aggregation:
 
     def col_spec(self, extra_cols: List[str]) -> List[pl.Expr]:
         '''Return a list of polars expressions for this aggregation'''
+
         def _expr_from_op(col, op):
             if op == 'min':
                 return pl.col(col).min().alias(f'{col} (min)')
@@ -84,16 +87,16 @@ class Aggregation:
                 return pl.col(col).first().alias(f'{col} (first)')
             elif op == 'last':
                 return pl.col(col).last().alias(f'{col} (last)')
-            elif op == 'p01':
-                return pl.col(col).quantile(0.01).alias(f'{col} (p01)')
-            elif op == 'p05':
-                return pl.col(col).quantile(0.05).alias(f'{col} (p05)')
-            elif op == 'p95':
-                return pl.col(col).quantile(0.95).alias(f'{col} (p95)')
-            elif op == 'p99':
-                return pl.col(col).quantile(0.99).alias(f'{col} (p99)')
             elif op == 'sum':
                 return pl.col(col).sum().alias(f'{col} (sum)')
+            elif m := self.Q_REGEX.match(op):
+                perc = m.group(1)
+                if perc == '00':
+                    q = 0.0
+                else:
+                    q = int(perc.lstrip('0')) / 100.
+
+                return pl.col(col).quantile(q).alias(f'{col} ({op})')
 
         specs = []
         for col, ops in self._aggregations.items():

@@ -228,7 +228,7 @@ def test_parse_cmp_spec_period(time_period):
 
 @pytest.fixture(params=['first', 'last', 'mean', 'median',
                         'min', 'max', 'std', 'stats', 'sum',
-                        'p01', 'p05', 'p95', 'p99'])
+                        'p00', 'p01', 'p05', 'p95', 'p99'])
 def aggregator(request):
     return request.param
 
@@ -279,6 +279,8 @@ def test_parse_cmp_spec_aggregations(aggregator):
     elif aggregator == 'sum':
         assert 'pval (sum)' in agg.columns
         assert agg['pval (sum)'][0] == 14.5
+    elif aggregator == 'p00':
+        assert agg['pval (p00)'][0] == 1
     elif aggregator == 'p01':
         assert agg['pval (p01)'][0] == 1
     elif aggregator == 'p05':
