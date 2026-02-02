@@ -1608,7 +1608,7 @@ Presenting the results
 
 The selection of the final columns of the results table is specified by the same syntax as the ``<cols>`` subspec described above.
 
-However, for performance comparisons, ReFrame will generate two columns for every attribute in the subspec that is not also a group-by attribute, suffixed with ``(lhs)`` and ``(rhs)``.
+However, for performance comparisons, specifically, ReFrame will always add the ``pdiff (%)`` column and it will also generate two column variants for every attribute in the subspec that is not also a group-by attribute, suffixed with ``(lhs)`` and ``(rhs)``.
 These suffixes can be changed using the :option:`--term-lhs` and :option:`--term-rhs` options, respectively.
 These columns contain the aggregated values of the corresponding attributes.
 

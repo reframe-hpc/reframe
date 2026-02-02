@@ -335,9 +335,9 @@ def test_parse_cmp_spec_extra_cols(columns):
 
     # `pval` is always added in case of comparisons
     if spec == 'col1,col2':
-        assert match.attributes == expected + ['pval']
+        assert match.attributes == expected + ['pval', 'pdiff (%)']
     else:
-        assert match.attributes == expected
+        assert match.attributes == expected + ['pdiff (%)']
 
     # Check variant without base period
     match = parse_cmp_spec(f'now-1d:now/min:/{spec}')

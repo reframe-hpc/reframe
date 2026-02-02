@@ -664,7 +664,6 @@ def compare_testcase_data(base_testcases, target_testcases, query):
     pval_rhs = f'{pval}{query.rhs_column_suffix}'
     cols = query.columns
     if not df_base.is_empty() and not df_target.is_empty():
-        cols.append(query.diff_column)
         df = df_base.join(df_target, on=query.group_by).with_columns(
             (100*(pl.col(pval_lhs) - pl.col(pval_rhs)) / pl.col(pval_rhs))
             .round(2).alias(query.diff_column)

@@ -326,6 +326,10 @@ class _QueryMatch:
 
             self.__tc_attrs.append(col)
 
+        if self.is_comparison():
+            # Add the diff column without the lhs/rhs variants
+            self.__tc_attrs.append(self.diff_column)
+
         self.__tc_attrs_agg: List[str] = list(OrderedSet(self.__tc_attrs) -
                                               OrderedSet(self.__tc_group_by))
         self.__aggregated_cols: List[str] = []
