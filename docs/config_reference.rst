@@ -1643,8 +1643,11 @@ The additional properties for the ``httpjson`` handler are the following:
    :required: No
    :default: ``{}``
 
-   A set of optional key/value pairs to be sent as HTTP message headers (e.g. API keys).
+   A set of optional key/value pairs to be sent as HTTP message headers (e.g. Static API keys).
    These may depend on the server configuration.
+
+   .. note::
+      If you specify an authorization header here, it will be evaluated at the start of the test session and potentially expire. Consider using the :attr:`~config.logging.handlers_perflog..httpjson..authorization_header` parameter instead for dynamic authorization headers.
 
    .. versionadded:: 4.2
 
@@ -1675,7 +1678,7 @@ An example configuration of this handler for performance logging is shown here:
        'type': 'httpjson',
        'url': 'http://httpjson-server:12345/rfm',
        'level': 'info',
-       'extra_headers': {'Authorization': 'Token YOUR_API_TOKEN'},
+       'extra_headers': {'key': 'value'},
        'extras': {
            'facility': 'reframe',
            'data-version': '1.0'
@@ -1717,6 +1720,27 @@ This handler transmits the whole log record, meaning that all the information wi
       This configuration parameter can only be used in a Python configuration file.
 
    .. versionadded:: 4.1
+
+
+.. py:attribute:: logging.handlers_perflog..httpjson..authorization_header
+
+   :required: No
+   :default: :obj:``None``
+
+   A callable to set the authorization header before sending the HTTP request.
+   If not specified, no authorization header will be sent unless statically set via :attr:`~config.logging.handlers_perflog..httpjson..extra_headers`.
+
+   .. py:function:: authorization_header() -> str
+
+      :returns: The value of the authorization header, including the scheme.
+
+   .. note::
+      Setting the authorization header here will override any static authorization header set via :attr:`~config.logging.handlers_perflog..httpjson..extra_headers`.
+
+   .. note::
+      This configuration parameter can only be used in a Python configuration file.
+
+   .. versionadded:: 4.10
 
 
 .. py:attribute:: logging.handlers_perflog..httpjson..backoff_intervals
