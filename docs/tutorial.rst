@@ -2155,8 +2155,23 @@ Inspecting past results
 
 .. versionadded:: 4.7
 
-For every session that has run at least one test case, ReFrame stores all its details, including the test cases, in a database.
-Essentially, the stored information is the same as the one found in the :ref:`report file <run-reports-and-performance-logging>`.
+ReFrame supports storing its detailed run results in a database.
+This can be enabled by setting ``RFM_ENABLE_RESULTS_STORAGE=y`` in the environment.
+The stored information is essentially the same as the one found in the :ref:`report file <run-reports-and-performance-logging>`.
+
+.. note::
+
+   To run the examples from this section of the tutorial, you need to rerun some of the previous experiments with results storage enabled.
+
+
+To keep the output compact you can also set the following environment variable:
+
+.. code-block::
+
+   export RFM_TABLE_FORMAT=plain
+
+The default table format is ``pretty`` which also draws lines in the table.
+
 
 To list the stored sessions use the :option:`--list-stored-sessions` option:
 
@@ -2170,59 +2185,38 @@ its unique identifier, its start and end time and how many test cases have run:
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
-   │ UUID                                 │ Start time           │ End time             │   Num runs │   Num cases │
-   ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
-   │ dbdb5f94-d1b2-4a11-aadc-57591d4a8496 │ 20241105T150144+0000 │ 20241105T150147+0000 │          1 │           1 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ eba49e9c-81f2-45b7-8680-34a5c9e08ac2 │ 20241105T150202+0000 │ 20241105T150205+0000 │          1 │           1 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 62e6e1e8-dd3a-4e70-a452-5c416a8f4d0b │ 20241105T150216+0000 │ 20241105T150219+0000 │          1 │           1 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 4ad75077-f2c5-4331-baf6-564275397f98 │ 20241105T150236+0000 │ 20241105T150237+0000 │          1 │           2 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 0507e4a0-f44c-45af-a068-9da842498c1f │ 20241105T150253+0000 │ 20241105T150254+0000 │          1 │           4 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ a7c2ffa9-482e-403f-9a78-5727262f6c7f │ 20241105T150304+0000 │ 20241105T150305+0000 │          1 │           4 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 47e8d98f-e2b9-4019-9a41-1c44d8a53d1b │ 20241105T150321+0000 │ 20241105T150332+0000 │          1 │          26 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ d0aa023b-2ebf-43d4-a0df-e809492434b5 │ 20241105T150352+0000 │ 20241105T150356+0000 │          1 │          10 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 8d2f6493-2f5f-4e20-8a8d-1f1b7b1285b0 │ 20241105T150415+0000 │ 20241105T150416+0000 │          1 │          10 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 1dd5da33-4e71-484a-b8e6-13ac4d513a66 │ 20241105T150436+0000 │ 20241105T150436+0000 │          1 │           4 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 216559ed-be1e-4289-9c88-c9e6b20d2e2e │ 20241105T150447+0000 │ 20241105T150448+0000 │          1 │          10 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ b387ee78-a44b-4711-ad81-629ebf578e53 │ 20241105T150448+0000 │ 20241105T150448+0000 │          1 │           1 │
-   ├──────────────────────────────────────┼──────────────────────┼──────────────────────┼────────────┼─────────────┤
-   │ 4bc5ba16-1a4a-4b27-b75c-407f01f1d292 │ 20241105T150503+0000 │ 20241105T150503+0000 │          1 │           5 │
-   ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
+   UUID                                  Start time            End time              Num runs    Num cases
+   ------------------------------------  --------------------  --------------------  ----------  -----------
+   f3c4c583-ee79-4611-ac99-e2fe6c53a9a0  20251223T182627+0000  20251223T182638+0000  1           1
+   fc3cc1eb-e79e-4516-9066-087667b83dde  20251223T182639+0000  20251223T182647+0000  1           1
+   be3ae2a0-47e9-4bbf-8501-cc6af40a47ce  20251223T182648+0000  20251223T182656+0000  1           1
+   6c4e2e00-b3c0-4f1b-a3fa-546ab4b60ceb  20251223T182657+0000  20251223T182700+0000  1           2
+   46f6e9fe-2a78-46c9-bafd-74b0d5d3d59d  20251223T182702+0000  20251223T182705+0000  1           4
+   0b48e28c-247b-49fc-a087-7154cc2c704a  20251223T182705+0000  20251223T182708+0000  1           4
+   ca0bb17e-dc8b-4acf-b7a1-db884afe8b18  20251223T182709+0000  20251223T182712+0000  1           4
+   c1295482-d278-495b-9425-de1ed405e236  20251223T182713+0000  20251223T182736+0000  1           26
+   84c0cbb8-72d8-4e5d-88b2-fd41bd2957fe  20251223T182737+0000  20251223T182747+0000  1           10
+   32bc4ce7-3e95-4f01-a4f6-33f9e7c6b01c  20251223T182748+0000  20251223T182750+0000  1           10
 
 
 You can use :option:`--list-stored-testcases` to list the test cases of a specific session or those that have run within a certain period of time.
-In the following example, we list the test cases of session ``0507e4a0-f44c-45af-a068-9da842498c1f`` showing the maximum performance for every performance variable.
+In the following example, we list the test cases of session ``46f6e9fe-2a78-46c9-bafd-74b0d5d3d59d`` showing the maximum performance for every performance variable.
 Note that a session may contain multiple runs of the same test.
 
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=0507e4a0-f44c-45af-a068-9da842498c1f/max:/
+   reframe --list-stored-testcases=46f6e9fe-2a78-46c9-bafd-74b0d5d3d59d/max:/
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┑
-   │ name        │ sysenv                    │ pvar     │ punit   │    pval │
-   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┥
-   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ MB/s    │ 45454.4 │
-   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ MB/s    │ 39979.1 │
-   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ MB/s    │ 43220.8 │
-   ├─────────────┼───────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test │ tutorialsys:default+clang │ triad_bw │ MB/s    │ 38759.9 │
-   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
+   name         sysenv                     pvar      punit      pval (max)
+   -----------  -------------------------  --------  -------  ------------
+   stream_test  tutorialsys:default+clang  copy_bw   MB/s          19538.5
+   stream_test  tutorialsys:default+clang  triad_bw  MB/s          15299.1
+   stream_test  tutorialsys:default+gnu    copy_bw   MB/s          25944.8
+   stream_test  tutorialsys:default+gnu    triad_bw  MB/s          13701.7
+
 
 The grouping of the test cases, the aggregation and the actual columns shown in the final table are fully configurable.
 The exact syntax and the various posibilities are described in :ref:`querying-past-results`.
@@ -2237,27 +2231,33 @@ For example, the following will list the mean performance of all test cases that
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━┑
-   │ name                                                │ sysenv                       │ pvar     │ punit   │    pval │
-   ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━┥
-   │ stream_test                                         │ generic:default+builtin      │ copy_bw  │ MB/s    │ 40302.2 │
-   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test                                         │ generic:default+builtin      │ triad_bw │ MB/s    │ 30565.7 │
-   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test                                         │ tutorialsys:default+baseline │ copy_bw  │ MB/s    │ 40386.6 │
-   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test                                         │ tutorialsys:default+baseline │ triad_bw │ MB/s    │ 30565.5 │
-   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
+   name                                                 sysenv                        pvar      punit      pval (mean)
+   ---------------------------------------------------  ----------------------------  --------  -------  -------------
+   stream_build_test                                    tutorialsys:default+clang     copy_bw   MB/s           29203.2
+   stream_build_test                                    tutorialsys:default+clang     triad_bw  MB/s           17112.3
+   stream_build_test                                    tutorialsys:default+gnu       copy_bw   MB/s             27388
+   stream_build_test                                    tutorialsys:default+gnu       triad_bw  MB/s           14969.9
+   stream_test                                          generic:default+builtin       copy_bw   MB/s           18355.1
+   stream_test                                          generic:default+builtin       triad_bw  MB/s           13377.6
+   stream_test                                          tutorialsys:default+baseline  copy_bw   MB/s           18007.3
+   stream_test                                          tutorialsys:default+baseline  triad_bw  MB/s           13461.9
+   stream_test                                          tutorialsys:default+clang     copy_bw   MB/s             26024
+   stream_test                                          tutorialsys:default+clang     triad_bw  MB/s           15363.5
+   stream_test                                          tutorialsys:default+gnu       copy_bw   MB/s           25785.3
+   stream_test                                          tutorialsys:default+gnu       triad_bw  MB/s           14217.4
+   stream_test %num_threads=1 %thread_placement=close   tutorialsys:default+clang     copy_bw   MB/s           22808.3
+   stream_test %num_threads=1 %thread_placement=close   tutorialsys:default+clang     triad_bw  MB/s           14398.8
+   stream_test %num_threads=1 %thread_placement=close   tutorialsys:default+gnu       copy_bw   MB/s             21593
    ...
-   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+gnu      │ copy_bw  │ MB/s    │ 47490.5 │
-   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+gnu      │ triad_bw │ MB/s    │ 34848.5 │
-   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+clang    │ copy_bw  │ MB/s    │ 47618.6 │
-   ├─────────────────────────────────────────────────────┼──────────────────────────────┼──────────┼─────────┼─────────┤
-   │ stream_test %num_threads=1 %thread_placement=close  │ tutorialsys:default+clang    │ triad_bw │ MB/s    │ 36237.2 │
-   ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━┙
+   stream_test %num_threads=8 %thread_placement=spread  tutorialsys:default+clang     copy_bw   MB/s           27782.6
+   stream_test %num_threads=8 %thread_placement=spread  tutorialsys:default+clang     triad_bw  MB/s           15491.9
+   stream_test %num_threads=8 %thread_placement=spread  tutorialsys:default+gnu       copy_bw   MB/s           28964.9
+   stream_test %num_threads=8 %thread_placement=spread  tutorialsys:default+gnu       triad_bw  MB/s           15645.3
+   stream_test %num_threads=8 %thread_placement=true    tutorialsys:default+clang     copy_bw   MB/s           26886.6
+   stream_test %num_threads=8 %thread_placement=true    tutorialsys:default+clang     triad_bw  MB/s             16554
+   stream_test %num_threads=8 %thread_placement=true    tutorialsys:default+gnu       copy_bw   MB/s             30292
+   stream_test %num_threads=8 %thread_placement=true    tutorialsys:default+gnu       triad_bw  MB/s           15811.4
+
 
 Note that the :option:`--list-stored-testcases` will list only performance tests.
 You can get all the details of stored sessions or a set of test cases using the :option:`--describe-stored-sessions` and :option:`--describe-stored-testcases` options which will return a detailed JSON record.
@@ -2267,35 +2267,31 @@ You can also combine :option:`--list-stored-testcases` and :option:`--describe-s
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=now-1d:now/mean:/ -n 'stream_test %' -E 'num_threads == 2'
+   reframe --list-stored-testcases=now-1d:now/mean:/ -n stream_test% -E 'num_threads == 2'
 
 
 Comparing performance of test cases
 -----------------------------------
 
 ReFrame can be used to compare the performance of the same test cases run in different time periods using the :option:`--performance-compare` option.
-The following will compare the performance of the test cases of the session ``0507e4a0-f44c-45af-a068-9da842498c1f`` with any other same test case that has run the last 24h:
+The following will compare the performance of the test cases of the session ``46f6e9fe-2a78-46c9-bafd-74b0d5d3d59d`` with any other same test case that has run the last 24h:
 
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --performance-compare=0507e4a0-f44c-45af-a068-9da842498c1f/now-1d:now/mean:/
+   reframe --performance-compare=46f6e9fe-2a78-46c9-bafd-74b0d5d3d59d/now-1d:now/mean:/
 
 .. code-block:: console
 
-   ┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━━━┑
-   │ name        │ sysenv                    │ pvar     │ punit   │   pval_A │   pval_B │ pdiff   │
-   ┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━┥
-   │ stream_test │ tutorialsys:default+gnu   │ copy_bw  │ MB/s    │  45454.4 │  46984.3 │ -3.26%  │
-   ├─────────────┼───────────────────────────┼──────────┼─────────┼──────────┼──────────┼─────────┤
-   │ stream_test │ tutorialsys:default+gnu   │ triad_bw │ MB/s    │  39979.1 │  37726.2 │ +5.97%  │
-   ├─────────────┼───────────────────────────┼──────────┼─────────┼──────────┼──────────┼─────────┤
-   │ stream_test │ tutorialsys:default+clang │ copy_bw  │ MB/s    │  43220.8 │  47949.5 │ -9.86%  │
-   ├─────────────┼───────────────────────────┼──────────┼─────────┼──────────┼──────────┼─────────┤
-   │ stream_test │ tutorialsys:default+clang │ triad_bw │ MB/s    │  38759.9 │  39916.1 │ -2.90%  │
-   ┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━━━┙
+   name         sysenv                     pvar      punit      pval (mean) (lhs)    pval (mean) (rhs)    pdiff (%)
+   -----------  -------------------------  --------  -------  -------------------  -------------------  -----------
+   stream_test  tutorialsys:default+clang  copy_bw   MB/s                 19538.5                26024       -24.92
+   stream_test  tutorialsys:default+clang  triad_bw  MB/s                 15299.1              15363.5        -0.42
+   stream_test  tutorialsys:default+gnu    copy_bw   MB/s                 25944.8              25785.3         0.62
+   stream_test  tutorialsys:default+gnu    triad_bw  MB/s                 13701.7              14217.4        -3.63
 
-Note that the absolute base performance (``pval_A`` column) is listed along with the target performance (``pval_B`` column).
+
+Note that the absolute base performance (``pval (lhs)`` column) is listed along with the target performance (``pval (rhs)`` column).
 
 :option:`--performance-compare` can also be combined with the :option:`-n` and :option:`-E` options in order to restrict the comparison to specific tests only.
 
