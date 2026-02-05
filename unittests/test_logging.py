@@ -556,3 +556,46 @@ def test_httpjson_handler_no_port(make_exec_ctx, config_file,
         })
     )
     rlog.configure_logging(rt.runtime().site_config)
+
+
+def test_httpjson_auth_not_callable_error():
+    with pytest.raises(ConfigError, match=r'authorization_header.* is not a callable'):
+        rlog.HTTPJSONHandler(url='http://xyz/rfm',
+                             authorization_header='NOT CALLABLE')
+
+
+@pytest.fixture
+def record_with_check_tags():
+    record = logging.LogRecord('reframe', rlog.INFO, '',
+                               0, 'test message', None, None)
+
+    record.check_tags = {}
+    return record
+
+
+@pytest.fixture
+def mock_requests_post_200(monkeypatch):
+    def mock_post(url, **kwargs):
+        return type('Response', (object,), {'status_code': 200, 'ok': True})()
+
+    monkeypatch.setattr(rlog.requests, 'post', mock_post)
+
+
+@pytest.fixture
+def httpjson_handler():
+    def mock_get_token():
+        return 'Bearer mocked_token'
+
+    handler = rlog.HTTPJSONHandler(
+        url='http://xyz/rfm', authorization_header=mock_get_token)
+
+    yield handler
+    handler.close()
+
+
+def test_httpjson_auth_header_set(httpjson_handler,
+                                  record_with_check_tags, mock_requests_post_200):
+
+    httpjson_handler.emit(record_with_check_tags)
+    assert httpjson_handler._authorization_header is not None
+    assert httpjson_handler._headers['Authorization'] == 'Bearer mocked_token'
