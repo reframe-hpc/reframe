@@ -769,6 +769,9 @@ def test_sourcesdir_build_system(local_exec_ctx):
 
 
 def test_sourcesdir_git(local_exec_ctx):
+    if test_util.OFFLINE:
+        pytest.skip('offline tests requested')
+
     @test_util.custom_prefix('unittests/resources/checks')
     class MyTest(rfm.RunOnlyRegressionTest):
         sourcesdir = 'https://github.com/reframe-hpc/ci-hello-world.git'

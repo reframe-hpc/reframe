@@ -36,6 +36,9 @@ TEST_CONFIG_FILE = 'unittests/resources/config/settings.py'
 USER_CONFIG_FILE = None
 USER_SYSTEM = None
 
+# Skip unit tests requiring Internet access
+OFFLINE = False
+
 
 def init_runtime():
     site_config = config.load_config('unittests/resources/config/settings.py')

@@ -16,6 +16,8 @@ import reframe.frontend.executors as executors
 from reframe.core.exceptions import ReframeError
 from reframe.frontend.loader import RegressionCheckLoader
 
+import unittests.utility as test_util
+
 
 def _generate_test_cases(checks):
     return dependencies.toposort(
@@ -30,6 +32,9 @@ def hello_test():
 
 
 def test_ci_gitlab_pipeline():
+    if test_util.OFFLINE:
+        pytest.skip('offline tests requested')
+
     loader = RegressionCheckLoader([
         'unittests/resources/checks_unlisted/deps_complex.py'
     ])

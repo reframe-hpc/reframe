@@ -29,6 +29,10 @@ if __name__ == '__main__':
         add_help=False,
         usage='%(prog)s [REFRAME_OPTIONS...] [NOSE_OPTIONS...]')
     parser.add_argument(
+        '--rfm-offline', action='store_true',
+        help='Skip unit tests that require Internet access'
+    )
+    parser.add_argument(
         '--rfm-user-config', action='store', metavar='FILE',
         help='Config file to use for native unit tests.'
     )
@@ -47,6 +51,7 @@ if __name__ == '__main__':
 
     test_util.USER_CONFIG_FILE = user_config
     test_util.USER_SYSTEM = options.rfm_user_system
+    test_util.OFFLINE = options.rfm_offline
     test_util.init_runtime()
 
     # If no positional argument is specified, use the `unittests` directory,
