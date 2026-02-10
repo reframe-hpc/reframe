@@ -476,6 +476,9 @@ def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
 
 
 def test_git_repo_exists(git_only):
+    if test_util.OFFLINE:
+        pytest.skip('offline tests requested')
+
     assert osext.git_repo_exists('https://github.com/reframe-hpc/reframe.git',
                                  timeout=10)
     assert not osext.git_repo_exists('reframe.git', timeout=10)
