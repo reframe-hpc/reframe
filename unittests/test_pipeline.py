@@ -14,6 +14,7 @@ import reframe.core.runtime as rt
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.utility as test_util
+from pathlib import Path
 
 from reframe.core.exceptions import (BuildError,
                                      ExpectedFailureError,
@@ -226,8 +227,8 @@ def test_hellocheck_local_prepost_run(HelloTest, local_exec_ctx):
 
 
 def test_run_only_set_sanity_in_a_hook(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         executable = './hello.sh'
         executable_opts = ['Hello, World!']
         local = True
@@ -244,8 +245,8 @@ def test_run_only_set_sanity_in_a_hook(local_exec_ctx):
 
 
 def test_run_only_decorated_sanity(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         executable = './hello.sh'
         executable_opts = ['Hello, World!']
         local = True
@@ -267,8 +268,7 @@ def test_run_only_decorated_sanity(local_exec_ctx):
 
 
 def test_run_only_no_srcdir(local_exec_ctx):
-    @test_util.custom_prefix('foo/bar/')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest, custom_prefix='foo/bar/'):
         valid_systems = ['*']
         valid_prog_environs = ['*']
         executable = 'echo'
@@ -280,8 +280,7 @@ def test_run_only_no_srcdir(local_exec_ctx):
 
 
 def test_run_only_srcdir_set_to_none(local_exec_ctx):
-    @test_util.custom_prefix('foo/bar/')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest, custom_prefix='foo/bar/'):
         executable = 'echo'
         valid_prog_environs = ['*']
         valid_systems = ['*']
@@ -303,8 +302,8 @@ def test_executable_is_required(local_exec_ctx):
 
 
 def test_compile_only_failure(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcepath = 'compiler_failure.c'
         valid_prog_environs = ['*']
         valid_systems = ['*']
@@ -317,8 +316,8 @@ def test_compile_only_failure(local_exec_ctx):
 
 
 def test_compile_only_warning(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
         build_system = 'SingleSource'
@@ -341,7 +340,7 @@ def test_pinned_test(pinnedtest, local_exec_ctx):
 
     pinned = MyTest()
     expected_prefix = os.path.join(os.getcwd(), 'unittests/resources/checks')
-    assert pinned._prefix == expected_prefix
+    assert pinned.prefix == expected_prefix
 
 
 def test_valid_systems_syntax(hellotest):
@@ -742,8 +741,8 @@ def test_supports_sysenv(testsys_exec_ctx):
 
 
 def test_sourcesdir_none(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RegressionTest):
+    class MyTest(rfm.RegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = None
         valid_prog_environs = ['*']
         valid_systems = ['*']
@@ -753,8 +752,8 @@ def test_sourcesdir_none(local_exec_ctx):
 
 
 def test_sourcesdir_build_system(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RegressionTest):
+    class MyTest(rfm.RegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         build_system = 'Make'
         sourcepath = 'code'
         executable = './code/hello'
@@ -772,8 +771,8 @@ def test_sourcesdir_git(local_exec_ctx):
     if test_util.OFFLINE:
         pytest.skip('offline tests requested')
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = 'https://github.com/reframe-hpc/ci-hello-world.git'
         executable = 'true'
         valid_systems = ['*']
@@ -789,8 +788,8 @@ def test_sourcesdir_git(local_exec_ctx):
 
 
 def test_sourcesdir_none_generated_sources(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RegressionTest):
+    class MyTest(rfm.RegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = None
         prebuild_cmds = [
             "printf '#include <stdio.h>\\n int main(){ "
@@ -809,8 +808,8 @@ def test_sourcesdir_none_generated_sources(local_exec_ctx):
 
 
 def test_sourcesdir_none_compile_only(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = None
         valid_prog_environs = ['*']
         valid_systems = ['*']
@@ -820,8 +819,8 @@ def test_sourcesdir_none_compile_only(local_exec_ctx):
 
 
 def test_sourcesdir_none_run_only(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = None
         executable = 'echo'
         executable_opts = ['Hello, World!']
@@ -836,8 +835,8 @@ def test_sourcesdir_none_run_only(local_exec_ctx):
 
 
 def test_sourcepath_abs(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
 
@@ -849,8 +848,8 @@ def test_sourcepath_abs(local_exec_ctx):
 
 
 def test_sourcepath_upref(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
 
@@ -862,8 +861,8 @@ def test_sourcepath_upref(local_exec_ctx):
 
 
 def test_sourcepath_non_existent(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
 
@@ -876,8 +875,7 @@ def test_sourcepath_non_existent(local_exec_ctx):
 
 
 def test_extra_resources(HelloTest, testsys_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         local = True
 
         @run_after('setup')
@@ -958,8 +956,7 @@ def test_post_init_hook(local_exec_ctx):
 
 
 def test_setup_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         count = variable(int, value=0)
 
         @run_before('setup')
@@ -978,8 +975,7 @@ def test_setup_hooks(HelloTest, local_exec_ctx):
 
 
 def test_compile_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         count = variable(int, value=0)
 
         @run_before('compile')
@@ -999,8 +995,7 @@ def test_compile_hooks(HelloTest, local_exec_ctx):
 
 
 def test_run_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         @run_before('run')
         def setflags(self):
             self.postrun_cmds = ['echo hello > greetings.txt']
@@ -1016,8 +1011,7 @@ def test_run_hooks(HelloTest, local_exec_ctx):
 
 
 def test_multiple_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
 
         @run_after('setup')
@@ -1038,8 +1032,7 @@ def test_multiple_hooks(HelloTest, local_exec_ctx):
 
 
 def test_stacked_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
 
         @run_before('setup')
@@ -1060,8 +1053,7 @@ def test_multiple_inheritance(HelloTest):
 
 
 def test_inherited_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class BaseTest(HelloTest):
+    class BaseTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
 
         @run_after('setup')
@@ -1145,8 +1137,7 @@ def test_inherited_hooks_order(weird_mro_test, local_exec_ctx):
 
 
 def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class T0(HelloTest):
+    class T0(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
 
         @run_after('setup')
@@ -1170,8 +1161,7 @@ def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
 
 
 def test_overriden_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class BaseTest(HelloTest):
+    class BaseTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
         foo = variable(int, value=0)
 
@@ -1200,8 +1190,7 @@ def test_overriden_hooks(HelloTest, local_exec_ctx):
 
 
 def test_overriden_hook_different_stages(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         @run_after('init')
         def foo(self):
             pass
@@ -1215,8 +1204,8 @@ def test_overriden_hook_different_stages(HelloTest, local_exec_ctx):
 
 
 def test_overriden_hook_exec_order():
-    @test_util.custom_prefix('unittests/resources/checks')
-    class X(rfm.RunOnlyRegressionTest):
+    class X(rfm.RunOnlyRegressionTest,
+            custom_prefix='unittests/resources/checks'):
         @run_before('run')
         def foo(self):
             pass
@@ -1298,8 +1287,7 @@ def test_pinned_hooks_multiple_last_inherited():
 
 
 def test_disabled_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class BaseTest(HelloTest):
+    class BaseTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
         foo = variable(int, value=0)
 
@@ -1327,12 +1315,10 @@ def test_require_deps(HelloTest, local_exec_ctx):
     import reframe.frontend.dependencies as dependencies
     import reframe.frontend.executors as executors
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class T0(HelloTest):
+    class T0(HelloTest, custom_prefix='unittests/resources/checks'):
         x = variable(int, value=1)
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class T1(HelloTest):
+    class T1(HelloTest, custom_prefix='unittests/resources/checks'):
         @run_after('init')
         def setdeps(self):
             self.depends_on('T0')
@@ -1363,8 +1349,8 @@ def test_require_deps(HelloTest, local_exec_ctx):
 def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
     rt.runtime().site_config.add_sticky_option('general/trap_job_errors', True)
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
         executable = 'exit 10'
@@ -1376,8 +1362,8 @@ def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
 def test_trap_job_errors_with_sanity_patterns(local_exec_ctx):
     rt.runtime().site_config.add_sticky_option('general/trap_job_errors', True)
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
         prerun_cmds = ['echo hello']
@@ -1419,9 +1405,25 @@ def sanity_file(tmp_path):
 # should not change to the `@performance_function` syntax`
 
 @pytest.fixture
-def dummytest(testsys_exec_ctx, perf_file, sanity_file):
-    class MyTest(rfm.RunOnlyRegressionTest):
-        def __init__(self):
+def dummytest(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix=str(tmp_path)):
+        perf_file = variable(str, Path)
+        reference = {
+            'testsys': {
+                'value1': (1.4, -0.1, 0.1, None),
+                'value2': (1.7, -0.1, 0.1, None),
+            },
+            'testsys:gpu': {
+                'value3': (3.1, -0.1, 0.1, None),
+            }
+        }
+
+        # Since we are in a fixture definition, `perf_file` and `sanity_file`
+        # are still unresolved fixture objects, so we cannot directly use them
+        # in the class body. Instead, we set them in a post-init hook.
+        @run_after('init')
+        def set_perf_file(self):
             self.perf_file = perf_file
             self.sourcesdir = None
             self.reference = {
@@ -1911,8 +1913,8 @@ def test_perf_expected_failures(perftest, sanity_file, perf_file,
 @pytest.fixture
 def container_test(tmp_path):
     def _container_test(platform, image):
-        @test_util.custom_prefix(tmp_path)
-        class ContainerTest(rfm.RunOnlyRegressionTest):
+        class ContainerTest(rfm.RunOnlyRegressionTest,
+                            custom_prefix=tmp_path):
             valid_prog_environs = ['*']
             valid_systems = ['*']
             prerun_cmds = ['touch foo']

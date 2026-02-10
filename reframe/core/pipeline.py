@@ -156,8 +156,8 @@ class RegressionMixin(RegressionTestPlugin):
     '''
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
+    def __init_subclass__(cls):
+        super().__init_subclass__()
         user_deprecation_warning(
             '`RegressionMixin` is deprecated; '
             'please inherit from `RegressionTestPlugin` instead'
@@ -1131,24 +1131,10 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
 
-        # Determine the prefix
-        try:
-            prefix = cls._rfm_custom_prefix
-        except AttributeError:
-            if osext.is_interactive():
-                prefix = os.getcwd()
-            else:
-                try:
-                    prefix = cls._rfm_pinned_prefix
-                except AttributeError:
-                    prefix = os.path.abspath(
-                        os.path.dirname(inspect.getfile(cls))
-                    )
-
         # Prepare initialization of test defaults (variables and parameters are
         # injected after __new__ has returned, so we schedule this function
         # call as a pre-init hook).
-        obj.__deferred_rfm_init = obj.__rfm_init__(prefix)
+        obj.__deferred_rfm_init = obj.__rfm_init__()
 
         # Build pipeline hook registry and add the pre-init hook
         cls._rfm_pipeline_hooks = cls._process_hook_registry()
@@ -1173,9 +1159,9 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         pass
 
     @classmethod
-    def __init_subclass__(cls, *, special=False, pin_prefix=False,
+    def __init_subclass__(cls, *, special=False,
                           require_version=None, **kwargs):
-        super().__init_subclass__(**kwargs)
+        super().__init_subclass__()
         cls._rfm_override_final = special
 
         if require_version:
@@ -1183,21 +1169,13 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         elif not hasattr(cls, '_rfm_required_version'):
             cls._rfm_required_version = []
 
-        # Insert the prefix to pin the test to if the test lives in a test
-        # library with resources in it.
-        if pin_prefix:
-            cls._rfm_pinned_prefix = os.path.abspath(
-                os.path.dirname(inspect.getfile(cls))
-            )
-
     @deferrable
-    def __rfm_init__(self, prefix=None):
+    def __rfm_init__(self):
         self._perfvalues = {}
 
         # Static directories of the regression check
-        self._prefix = os.path.abspath(prefix)
         if (self.sourcesdir == 'src' and
-            not os.path.isdir(os.path.join(self._prefix, self.sourcesdir))):
+            not os.path.isdir(os.path.join(self._rfm_prefix, self.sourcesdir))):
             self.sourcesdir = None
 
         # Runtime information of the test
@@ -1568,7 +1546,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
         :type: :class:`str`.
         '''
-        return self._prefix
+        return self._rfm_prefix
 
     @loggable
     @property
@@ -1997,7 +1975,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                 if osext.is_url(self.sourcesdir):
                     self._clone_to_stagedir(self.sourcesdir)
                 else:
-                    self._copy_to_stagedir(os.path.join(self._prefix,
+                    self._copy_to_stagedir(os.path.join(self._rfm_prefix,
                                                         self.sourcesdir))
 
         # Set executable (only if hasn't been provided)
@@ -2878,7 +2856,7 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
             if osext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
             else:
-                self._copy_to_stagedir(os.path.join(self._prefix,
+                self._copy_to_stagedir(os.path.join(self._rfm_prefix,
                                                     self.sourcesdir))
 
         super().run()

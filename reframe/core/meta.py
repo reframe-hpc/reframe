@@ -9,6 +9,7 @@
 
 import functools
 import inspect
+import os
 import types
 import collections
 
@@ -19,6 +20,7 @@ import reframe.core.variables as variables
 import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
 import reframe.utility as utils
+import reframe.utility.osext as osext
 
 from reframe.core.exceptions import ReframeSyntaxError
 
@@ -426,6 +428,29 @@ class RegressionTestMeta(type):
                         f"\nclass {cls.__name__}({bnames}, special=True):\n",
                         with_code_context=True
                     )
+
+        # Set the test prefix
+        #
+        # First check if the current test pins the prefix and store this, so
+        # as to reuse in derived tests
+        curr_prefix = os.path.abspath(
+            os.path.dirname(inspect.getfile(cls))
+        )
+        if kwargs.pop('pin_prefix', False):
+            cls._rfm_pinned_prefix = curr_prefix
+
+        try:
+            prefix = kwargs['custom_prefix']
+        except KeyError:
+            if osext.is_interactive():
+                prefix = os.getcwd()
+            else:
+                try:
+                    prefix = cls._rfm_pinned_prefix
+                except AttributeError:
+                    prefix = curr_prefix
+
+        cls._rfm_prefix = prefix
 
     def __call__(cls, *args, **kwargs):
         '''Inject test builtins during object construction.
