@@ -1531,6 +1531,8 @@ Here is an example:
 
 .. code-block:: python
 
+   from reframe.core.builtins import xfail
+
    reference = {
       'tutorialsys': {
          'copy_bw':  xfail('demo fail', (100_000, -0.1, 0.1, 'MB/s')),
