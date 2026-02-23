@@ -2573,8 +2573,9 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
                     url = srcdir['url']
                     if not osext.is_url(url):
-                        raise ReframeError(f'The {srcdir} syntax only supports '
+                        raise ReframeError(f'The dictionary syntax only supports '
                                            'git repositories')
+
                     self._clone_to_stagedir(url,
                                             files=srcdir[url]['files'] if 'files'
                                                   in srcdir[url] else None,
