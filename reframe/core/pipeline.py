@@ -2568,14 +2568,17 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                 if not srcdir:
                     return
                 if isinstance(srcdir, dict):
-                    url = next(iter(srcdir))
-                    if not url:
-                        raise ReframeError(f'The {srcdir} misses the url as key')
-                    elif not osext.is_url(url):
+                    if 'url' not in srcdir:
+                        raise ReframeError(f'The {srcdir} misses the url key')
+
+                    url = srcdir['url']
+                    if not osext.is_url(url):
                         raise ReframeError(f'The {srcdir} syntax only supports '
                                            'git repositories')
                     self._clone_to_stagedir(url,
                                             files=srcdir[url]['files'] if 'files'
+                                                  in srcdir[url] else None,
+                                            opts=srcdir[url]['opts'] if 'opts'
                                                   in srcdir[url] else None)
                 elif osext.is_url(srcdir):
                     self._clone_to_stagedir(srcdir)
