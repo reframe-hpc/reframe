@@ -2565,11 +2565,9 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
             if self._requires_stagedir_contents():
                 srcdir = self.sourcesdir
-                if not srcdir:
-                    return
                 if isinstance(srcdir, dict):
                     if 'url' not in srcdir:
-                        raise ReframeError(f'The {srcdir} misses the url key')
+                        raise ReframeError(f'{srcdir} misses the url key')
 
                     url = srcdir['url']
                     if not osext.is_url(url):
