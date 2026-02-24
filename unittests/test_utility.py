@@ -1194,6 +1194,17 @@ def test_scoped_dict_key_resolution():
     assert scoped_dict.scope(None) == {}
 
 
+def test_scoped_dict_non_str_key():
+    scoped_dict = reframe.utility.ScopedDict({
+        'a': {'k1': 1, 'k2': 2},
+        'a:b': {'k1': 3, 'k3': 4},
+        'a:b:c': {'k2': 5, 'k3': 6},
+        '*': {'k1': 7, 'k3': 9, 'k4': 10}
+    })
+    with pytest.raises(KeyError):
+        scoped_dict[3]
+
+
 def test_scoped_dict_setitem():
     scoped_dict = reframe.utility.ScopedDict({
         'a': {'k1': 1, 'k2': 2},

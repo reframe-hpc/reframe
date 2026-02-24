@@ -1059,6 +1059,10 @@ class ScopedDict(UserDict):
             return True
 
     def __getitem__(self, key):
+        if not isinstance(key, str):
+            # Only string keys are stored in ScopedDict
+            raise KeyError(key)
+
         try:
             return self._lookup(key)
         except KeyError:

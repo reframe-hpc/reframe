@@ -315,22 +315,10 @@ class RegressionTestDict(UserDict):
         self._protocol = protocol
         self._index = self.data.pop('$index', None)
 
-        ref3_type = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable]
-        ref4_type = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable, ~Deferrable]
-        reftuple_type = ref3_type | ref4_type | XfailRef
-        if self._index is None:
-            dict_type = typ.Dict[str, typ.Dict[str, reftuple_type]]
-        else:
-            dict_type = typ.Dict[str, reftuple_type]
-            for _ in self._index:
-                dict_type = typ.Dict[~Deferrable, dict_type]
-
-        if not isinstance(self.data, dict_type):
-            raise TypeError(f'user dictionary {self.data} does not match type {dict_type}')
-
     @property
     def protocol(self):
-        '''The protocol associated with this dictionary, :obj:`None` otherwise'''
+        '''The protocol associated with this dictionary,
+        :obj:`None` otherwise'''
         return self._protocol
 
     @property
@@ -358,7 +346,9 @@ class RegressionTestDict(UserDict):
 
                 user_default_fn = None
                 if self._protocol:
-                    resolve_fn = getattr(test, f'__{self._protocol}_missing_{_subkey}__', None)
+                    resolve_fn = getattr(
+                        test, f'__{self._protocol}_missing_{_subkey}__', None
+                    )
                     if resolve_fn:
                         user_default_fn = functools.partial(resolve_fn, data)
 
@@ -371,11 +361,14 @@ class RegressionTestDict(UserDict):
                     data = data[test.current_partition.fullname]
                 elif subkey_parts == ['$environ']:
                     data = data[test.current_environ.name]
-                elif len(subkey_parts) == 2 and subkey_parts[0] == '$processor':
+                elif (len(subkey_parts) == 2 and
+                      subkey_parts[0] == '$processor'):
                     proc = test.current_partition.processor
                     data = data[getattr(proc, subkey_parts[1])]
                 elif len(subkey_parts) == 3 and subkey_parts[0] == '$dev':
-                    gpus = test.current_partition.select_devices(subkey_parts[1])[0]
+                    gpus = test.current_partition.select_devices(
+                        subkey_parts[1]
+                    )[0]
                     data = data[getattr(gpus, subkey_parts[2])]
                 else:
                     data = data[getattr(test, subkey)]
@@ -418,8 +411,9 @@ class _ReferenceDict(RegressionTestDict):
 
             user_dict = self._read_ref_file(os.path.join(ref_prefix, ref_file))
 
+        super().__init__(user_dict, protocol='ref')
         try:
-            super().__init__(user_dict, protocol='ref')
+            self._check_dict_type()
         except TypeError as err:
             if ref_file:
                 # If we read from a reference file, re-raise the TypeError as
@@ -427,6 +421,22 @@ class _ReferenceDict(RegressionTestDict):
                 raise ReferenceParseError(f'{ref_file}: {err}') from err
             else:
                 raise err
+
+    def _check_dict_type(self):
+        ref3_type = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable]
+        ref4_type = typ.Tuple[~Deferrable, ~Deferrable,
+                              ~Deferrable, ~Deferrable]
+        reftuple_type = ref3_type | ref4_type | XfailRef
+        if self.index is None:
+            dict_type = typ.Dict[str, typ.Dict[str, reftuple_type]]
+        else:
+            dict_type = typ.Dict[str, reftuple_type]
+            for _ in self.index:
+                dict_type = typ.Dict[~Deferrable, dict_type]
+
+        if not isinstance(self.data, dict_type):
+            raise TypeError(f'user dictionary {self.data} '
+                            f'does not match type {dict_type}')
 
     def _read_ref_file(self, filename):
         def _parse_ref_entry(key, val):
@@ -441,7 +451,8 @@ class _ReferenceDict(RegressionTestDict):
                 return xfail(*val[1:-1], tuple(val[-1]))
             elif isinstance(first, str):
                 raise ReferenceParseError(
-                    f'{filename}: unknown modifier {first!r} in entry {key!r}: {val}'
+                    f'{filename}: unknown modifier {first!r} '
+                    f'in entry {key!r}: {val}'
                 )
             else:
                 return tuple(val)
@@ -451,14 +462,11 @@ class _ReferenceDict(RegressionTestDict):
             if level == 0 and key == '$index':
                 return tuple(val)
 
-            if level < max_depth and isinstance(val, dict):
+            if level < max_depth:
                 return {k: _entry(k, v, f'{full_key}.{k}', max_depth)
                         for k, v in val.items()}
 
-            if level == max_depth:
-                return _parse_ref_entry(full_key, val)
-
-            return val
+            return _parse_ref_entry(full_key, val)
 
         with open(filename) as fp:
             ref_entries = yaml.safe_load(fp)
@@ -480,7 +488,8 @@ class _ReferenceDict(RegressionTestDict):
             max_level = 1
 
         for key, val in ref_yaml.items():
-            mkref[key] = _entry(key, val, f'{self.__test_entry_name}.{key}', max_level)
+            mkref[key] = _entry(key, val,
+                                f'{self.__test_entry_name}.{key}', max_level)
 
         return mkref
 
@@ -1180,7 +1189,8 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #:
     #:        @performance_function('it/s'):
     #:        def throughput(self):
-    #:            return sn.extractsingle(r'Throughput: (\S+)', self.stdout, 1, float)
+    #:            return sn.extractsingle(r'Throughput: (\S+)',
+    #:                                    self.stdout, 1, float)
     #:
     #: During the performance pipeline stage, ReFrame will resolve the test
     #: reference using the test's instance ``p`` and ``q`` attributes and will
@@ -1270,7 +1280,8 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #: explicitly set, it defaults to the test's :attr:`prefix` directory
     #: (i.e., the directory containing the test file).
     #:
-    #: A reference file can contain references for multiple tests as in the following example:
+    #: A reference file can contain references for multiple tests as in the
+    #: following example:
     #:
     #: .. code-block:: yaml
     #:
@@ -1678,7 +1689,8 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
         # Static directories of the regression check
         if (self.sourcesdir == 'src' and
-            not os.path.isdir(os.path.join(self._rfm_prefix, self.sourcesdir))):
+            not os.path.isdir(os.path.join(self._rfm_prefix,
+                                           self.sourcesdir))):
             self.sourcesdir = None
 
         # Runtime information of the test
@@ -3448,4 +3460,3 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
             self.sanity_patterns = sn.assert_true(1)
 
         super().check_sanity()
-

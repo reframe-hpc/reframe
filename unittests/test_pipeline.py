@@ -1888,8 +1888,8 @@ def test_reference_external_with_index(dummytest, make_path,
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_external_xfail(dummytest_modern, sanity_file, perf_file, ref_file,
-                                  dummy_gpu_exec_ctx):
+def test_reference_external_xfail(dummytest_modern, sanity_file, perf_file,
+                                  ref_file, dummy_gpu_exec_ctx):
     ref_file.write_yaml({
         'MyTest': {
             '$index': ['$processor.arch', '$dev.gpu.model'],
@@ -1905,6 +1905,30 @@ def test_reference_external_xfail(dummytest_modern, sanity_file, perf_file, ref_
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.0\n')
     perf_file.write_text('perf2 = 1.7\n')
+    _run_sanity(dummytest_modern, *dummy_gpu_exec_ctx)
+
+
+def test_reference_external_unknown_test(dummytest_modern, sanity_file,
+                                         perf_file, ref_file,
+                                         dummy_gpu_exec_ctx):
+    ref_file.write_yaml({
+        'MyTest2': {
+            '$index': ['$processor.arch', '$dev.gpu.model'],
+            'skylake': {
+                'p100': {
+                    'value1': [1.4, -0.1, 0.1, None],
+                    'value2': [1.7, -0.1, 0.1, None]
+                }
+            }
+        }
+    })
+    dummytest_modern.reference = {'$ref': ref_file}
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.0\n')
+    perf_file.write_text('perf2 = 1.0\n')
+
+    # This will not raise a PerformanceError as the reference is for another
+    # test
     _run_sanity(dummytest_modern, *dummy_gpu_exec_ctx)
 
 
@@ -1958,7 +1982,19 @@ def test_reference_external_custom_prefix(dummytest_modern, make_path,
                 *custom_exec_ctx({'general/reference_prefix': tmp_path}))
 
 
-def test_regressiondict_custom_protocol(dummy_gpu_exec_ctx):
+def test_regressiontestdict_normal_key():
+    d = rfm.RegressionTestDict({'a': 1, 'b': 2})
+    assert d['a'] == 1
+    assert d['b'] == 2
+
+
+def test_regressiontestdict_noindex(dummytest):
+    d = rfm.RegressionTestDict({'a': 1, 'b': 2})
+    with pytest.raises(KeyError):
+        d[dummytest]
+
+
+def test_regressiontestdict_custom_protocol(dummy_gpu_exec_ctx):
     class _MyTest(rfm.RunOnlyRegressionTest):
         x = variable(int, value=1)
         foo = variable(rfm.RegressionTestDictType(protocol='foo'), value={
