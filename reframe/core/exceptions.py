@@ -83,7 +83,11 @@ class SourceCodeInfo:
     def __init__(self, frame):
         self.__filename = frame.filename
         self.__lineno = frame.lineno
-        self.__line = frame.code_context[frame.index]
+        if frame.code_context:
+            self.__line = frame.code_context[frame.index]
+        else:
+            self.__line = None
+
         if sys.version_info >= (3, 11):
             self.__pos  = frame.positions
         else:
@@ -117,18 +121,20 @@ class SourceCodeInfo:
 
     def __str__(self):
         prefix = '| '
-        ret = f'{prefix}{self.filename}:{self.lineno}\n{prefix}{self.line}'
-        if self.__pos is not None:
-            # Add precise column information
-            l_start, l_end = self.lines
-            c_start, c_end = self.columns
-            if l_start != l_end:
-                # If the code segment is multiline, the columns are not
-                # precise. So we use the full line as span.
-                c_end = len(self.line) - 1
+        ret = f'{prefix}{self.filename}:{self.lineno}'
+        if self.line:
+            ret += f'\n{prefix}{self.line}'
+            if self.__pos is not None:
+                # Add precise column information
+                l_start, l_end = self.lines
+                c_start, c_end = self.columns
+                if l_start != l_end:
+                    # If the code segment is multiline, the columns are not
+                    # precise. So we use the full line as span.
+                    c_end = len(self.line) - 1
 
-            span = c_end - c_start
-            ret += f'{prefix}{" "*c_start}^{"~"*(span-1)}'
+                span = c_end - c_start
+                ret += f'{prefix}{" "*c_start}^{"~"*(span-1)}'
 
         return ret
 

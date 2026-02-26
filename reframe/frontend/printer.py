@@ -113,8 +113,8 @@ class PrettyPrinter:
             lines = [f'--- {filename} (last {num_lines} lines) ---\n']
             try:
                 lines += osext.tail(os.path.join(prefix, filename), num_lines)
-            except OSError as e:
-                lines += [f'--- {filename} ({e}) ---']
+            except (OSError, UnicodeError) as e:
+                lines += [f'--- {filename} (ERROR: {e}) ---']
             else:
                 lines += [f'--- {filename} ---']
 
