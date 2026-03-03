@@ -39,9 +39,11 @@ Builtins
 .. versionadded:: 3.4.2
 
 ReFrame test base classes and, in particular, the :class:`reframe.core.pipeline.RegressionMixin` class, define a set of functions and decorators that can be used to define essential test elements, such as variables, parameters, fixtures, pipeline hooks etc.
-These are called *builtins* because they are directly available for use inside the test class body that is being defined without the need to import any module.
-However, almost all of these builtins are also available from the :obj:`reframe.core.builtins` module.
-The use of this module is required only when creating new tests programmatically using the :func:`~reframe.core.meta.make_test` function.
+Builtins are directly available in the class body of the test, so you can use them without an import.
+However, an import is required when you need to access them in a test hook or when programmatically creating a test with the :func:`~reframe.core.meta.make_test` function.
+
+.. tip:: 
+   A good practice is to always import the builtins, even if not required, since this helps IDEs to parse the code.
 
 .. versionchanged:: 3.7.0
    Expose :func:`@deferrable <reframe.core.builtins.deferrable>` as a builtin.

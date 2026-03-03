@@ -5,6 +5,9 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
+from reframe.core.builtins import (
+    variable, sanity_function, performance_function,
+)
 
 
 class build_stream(rfm.CompileOnlyRegressionTest):
