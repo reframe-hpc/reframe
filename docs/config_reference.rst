@@ -1647,7 +1647,8 @@ The additional properties for the ``httpjson`` handler are the following:
    These may depend on the server configuration.
 
    .. note::
-      If you specify an authorization header here, it will be evaluated at the start of the test session and potentially expire. Consider using the :attr:`~config.logging.handlers_perflog..httpjson..authorization_header` parameter instead for dynamic authorization headers.
+      If you specify an authorization header here, it will be evaluated at the start of the test session and potentially expire. 
+      Consider using the :attr:`~config.logging.handlers_perflog..httpjson..authorization_header` parameter instead for dynamic authorization headers.
 
    .. versionadded:: 4.2
 
@@ -1725,9 +1726,10 @@ This handler transmits the whole log record, meaning that all the information wi
 .. py:attribute:: logging.handlers_perflog..httpjson..authorization_header
 
    :required: No
-   :default: :obj:``None``
+   :default: :obj:`None`
 
    A callable to set the authorization header before sending the HTTP request.
+
    If not specified, no authorization header will be sent unless statically set via :attr:`~config.logging.handlers_perflog..httpjson..extra_headers`.
 
    .. py:function:: authorization_header() -> str

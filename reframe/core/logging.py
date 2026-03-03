@@ -596,7 +596,9 @@ def _create_httpjson_handler(site_config, config_prefix):
     extras = site_config.get(f'{config_prefix}/extras')
     ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
     json_formatter = site_config.get(f'{config_prefix}/json_formatter')
-    authorization_header = site_config.get(f'{config_prefix}/authorization_header')
+    authorization_header = site_config.get(
+        f'{config_prefix}/authorization_header'
+    )
     extra_headers = site_config.get(f'{config_prefix}/extra_headers')
     debug = site_config.get(f'{config_prefix}/debug')
     backoff_intervals = site_config.get(f'{config_prefix}/backoff_intervals')
@@ -693,7 +695,8 @@ class HTTPJSONHandler(logging.Handler):
     }
 
     def __init__(self, url, extras=None, ignore_keys=None,
-                 json_formatter=None, authorization_header=None, extra_headers=None,
+                 json_formatter=None, 
+                 authorization_header=None, extra_headers=None,
                  debug=False, backoff_intervals=(1, 2, 3), retry_timeout=0):
         super().__init__()
         self._url = url
@@ -712,7 +715,7 @@ class HTTPJSONHandler(logging.Handler):
                 "it must be 'json_formatter(record, extras, ignore_keys)'"
             )
 
-        if authorization_header is not None and not callable(authorization_header):
+        if not is_trivially_callable(authorization_header):
             raise ConfigError("httpjson: 'authorization_header' is not a callable")
 
         self._authorization_header = authorization_header
