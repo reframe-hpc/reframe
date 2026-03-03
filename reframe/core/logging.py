@@ -695,7 +695,7 @@ class HTTPJSONHandler(logging.Handler):
     }
 
     def __init__(self, url, extras=None, ignore_keys=None,
-                 json_formatter=None, 
+                 json_formatter=None,
                  authorization_header=None, extra_headers=None,
                  debug=False, backoff_intervals=(1, 2, 3), retry_timeout=0):
         super().__init__()
@@ -716,7 +716,10 @@ class HTTPJSONHandler(logging.Handler):
             )
 
         if not is_trivially_callable(authorization_header):
-            raise ConfigError("httpjson: 'authorization_header' is not a callable")
+            raise ConfigError(
+                "httpjson: 'authorization_header' has the wrong signature: "
+                "it must be 'authorization_header()'"
+            )
 
         self._authorization_header = authorization_header
 
