@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import reframe as rfm
 import reframe.utility.sanity as sn
+from reframe.core.builtins import sanity_function, performance_function  
 
 
 @rfm.simple_test

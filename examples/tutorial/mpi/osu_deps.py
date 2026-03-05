@@ -8,6 +8,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 import reframe.utility.udeps as udeps
+from reframe.core.builtins import require_deps, sanity_function
 
 
 @rfm.simple_test
