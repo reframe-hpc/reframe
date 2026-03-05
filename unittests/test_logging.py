@@ -560,7 +560,7 @@ def test_httpjson_handler_no_port(make_exec_ctx, config_file,
 
 def test_httpjson_auth_not_callable_error():
     with pytest.raises(ConfigError,
-                       match=r'authorization_header.* is not a callable'):
+                       match=r'authorization_header.*has the wrong signature'):
         rlog.HTTPJSONHandler(url='http://xyz/rfm',
                              authorization_header='NOT CALLABLE')
 

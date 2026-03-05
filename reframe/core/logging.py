@@ -711,7 +711,7 @@ class HTTPJSONHandler(logging.Handler):
 
         if not is_trivially_callable(self._json_format, non_def_args=3):
             raise ConfigError(
-                "httpjson: 'json_formatter' has not the right signature: "
+                "httpjson: 'json_formatter' has the wrong signature: "
                 "it must be 'json_formatter(record, extras, ignore_keys)'"
             )
 
