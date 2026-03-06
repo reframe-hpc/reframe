@@ -2090,6 +2090,21 @@ General Configuration
    .. versionadded:: 3.7.0
 
 
+.. py:attribute:: general.reference_prefix
+
+   :required: No
+   :default: :obj:`None`
+
+   Directory prefix for resolving paths of external reference files.
+
+   When a test's :attr:`~reframe.core.pipeline.RegressionTest.reference`
+   attribute uses the ``$ref`` key to load references from an :ref:`external
+   reference file <external-references>`, that file is looked up
+   under this prefix. When not set, the test's prefix directory is used.
+
+   .. versionadded:: 4.10
+
+
 .. py:attribute:: general.ignore_check_conflicts
 
    :required: No

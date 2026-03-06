@@ -951,8 +951,8 @@ class ScopedDict(UserDict):
 
     '''
 
-    def __init__(self, mapping={}, scope_sep=':', global_scope='*'):
-        super().__init__(mapping)
+    def __init__(self, mapping=None, scope_sep=':', global_scope='*'):
+        super().__init__(mapping or {})
         self._scope_sep = scope_sep
         self._global_scope = global_scope
 
@@ -1059,6 +1059,10 @@ class ScopedDict(UserDict):
             return True
 
     def __getitem__(self, key):
+        if not isinstance(key, str):
+            # Only string keys are stored in ScopedDict
+            raise KeyError(key)
+
         try:
             return self._lookup(key)
         except KeyError:

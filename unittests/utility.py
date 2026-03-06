@@ -86,19 +86,6 @@ def has_sane_modules_system():
                           (modules.NoModImpl, modules.SpackImpl))
 
 
-def custom_prefix(prefix):
-    '''Assign a custom prefix to a test.
-
-    This is useful in unit tests when we want to create tests on-the-fly and
-    associate them with existing resources.'''
-
-    def _set_prefix(cls):
-        cls._rfm_custom_prefix = prefix
-        return cls
-
-    return _set_prefix
-
-
 def dispatch(argname, suffix=None):
     '''Dispatch call to the decorated function to another one based on the type
     of the keyword argument ``argname``.
