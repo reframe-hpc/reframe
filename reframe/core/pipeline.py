@@ -413,7 +413,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        Default value is now conditionally set to either ``'src'`` or
     #:        :class:`None`.
-    sourcesdir = variable(str, type(None), value='src')
+    sourcesdir = variable(str, typ.Dict, type(None), value='src')
 
     #: .. versionadded:: 2.14
     #:
@@ -1949,11 +1949,12 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         else:
             self._mark_stagedir()
 
-    def _clone_to_stagedir(self, url):
+    def _clone_to_stagedir(self, url, files=None):
         self.logger.debug(f'Cloning URL {url} into stage directory')
         osext.git_clone(
-            self.sourcesdir, self._stagedir,
-            timeout=rt.runtime().get_option('general/0/git_timeout')
+            url, self._stagedir,
+            timeout=rt.runtime().get_option('general/0/git_timeout'),
+            files=files
         )
         self._mark_stagedir()
 
@@ -1983,7 +1984,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
             try:
                 commonpath = os.path.commonpath([self.sourcesdir,
                                                  self.sourcepath])
-            except ValueError:
+            except (ValueError, TypeError):
                 commonpath = None
 
             if commonpath:
@@ -1994,11 +1995,26 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                 )
 
             if self._requires_stagedir_contents():
-                if osext.is_url(self.sourcesdir):
-                    self._clone_to_stagedir(self.sourcesdir)
+                srcdir = self.sourcesdir
+                if isinstance(srcdir, dict):
+                    if 'url' not in srcdir:
+                        raise ReframeError(f'{srcdir} misses the url key')
+
+                    url = srcdir['url']
+                    if not osext.is_url(url):
+                        raise ReframeError(f'The dictionary syntax only supports '
+                                           'git repositories')
+
+                    self._clone_to_stagedir(url,
+                                            files=srcdir[url]['files'] if 'files'
+                                                  in srcdir[url] else None,
+                                            opts=srcdir[url]['opts'] if 'opts'
+                                                  in srcdir[url] else None)
+                elif osext.is_url(srcdir):
+                    self._clone_to_stagedir(srcdir)
                 else:
                     self._copy_to_stagedir(os.path.join(self._prefix,
-                                                        self.sourcesdir))
+                                                        srcdir))
 
         # Set executable (only if hasn't been provided)
         if not hasattr(self, 'executable'):

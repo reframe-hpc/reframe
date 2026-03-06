@@ -661,7 +661,7 @@ def is_url(s):
     return parsed.scheme != '' and parsed.netloc != ''
 
 
-def git_clone(url, targetdir=None, opts=None, timeout=5):
+def git_clone(url, targetdir=None, opts=None, timeout=5, files=None):
     '''Clone a git repository from a URL.
 
     :arg url: The URL to clone from.
@@ -677,7 +677,13 @@ def git_clone(url, targetdir=None, opts=None, timeout=5):
 
     targetdir = targetdir or ''
     opts = ' '.join(opts) if opts is not None else ''
-    run_command(f'git clone {opts} {url} {targetdir}', check=True)
+    if not files:
+        run_command(f'git clone {opts} {url} {targetdir}', check=True)
+    else:
+        run_command(f'git clone --no-checkout --depth=1 {opts} {url} {targetdir}', check=True)
+        run_command(f'git sparse-checkout set --no-cone {" ".join(files)}', check=True, cwd=targetdir)
+        run_command('git checkout', check=True, cwd=targetdir)
+
 
 
 def git_repo_exists(url, timeout=5):
