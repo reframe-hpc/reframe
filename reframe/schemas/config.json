@@ -175,6 +175,7 @@
                             "items": {"type": "string"}
                         },
                         "json_formatter": {},
+                        "authorization_header": {},
                         "extra_headers": {"type": "object"},
                         "debug": {"type": "boolean"},
                         "backoff_intervals": {
@@ -660,6 +661,7 @@
         "logging/handlers_perflog/httpjson_extras": {},
         "logging/handlers_perflog/httpjson_ignore_keys": [],
         "logging/handlers_perflog/httpjson_json_formatter": null,
+        "logging/handlers_perflog/httpjson_authorization_header": null,
         "logging/handlers_perflog/httpjson_extra_headers": {},
         "logging/handlers_perflog/httpjson_debug": false,
         "logging/handlers_perflog/httpjson_backoff_intervals": [0.1, 0.2, 0.4, 0.8, 1.6, 3.2],

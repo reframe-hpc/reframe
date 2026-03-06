@@ -456,7 +456,7 @@ def is_trivially_callable(fn, *, non_def_args=0):
     '''
 
     if not callable(fn):
-        raise TypeError('argument is not a callable')
+        return False
 
     explicit_args = [p for p in inspect.signature(fn).parameters.values()
                      if p.default is p.empty]

@@ -596,6 +596,9 @@ def _create_httpjson_handler(site_config, config_prefix):
     extras = site_config.get(f'{config_prefix}/extras')
     ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
     json_formatter = site_config.get(f'{config_prefix}/json_formatter')
+    authorization_header = site_config.get(
+        f'{config_prefix}/authorization_header'
+    )
     extra_headers = site_config.get(f'{config_prefix}/extra_headers')
     debug = site_config.get(f'{config_prefix}/debug')
     backoff_intervals = site_config.get(f'{config_prefix}/backoff_intervals')
@@ -641,8 +644,8 @@ def _create_httpjson_handler(site_config, config_prefix):
                             'no data will be sent to the server')
 
     return HTTPJSONHandler(url, extras, ignore_keys, json_formatter,
-                           extra_headers, debug, backoff_intervals,
-                           retry_timeout)
+                           authorization_header, extra_headers, debug,
+                           backoff_intervals, retry_timeout)
 
 
 def _record_to_json(record, extras, ignore_keys):
@@ -692,7 +695,8 @@ class HTTPJSONHandler(logging.Handler):
     }
 
     def __init__(self, url, extras=None, ignore_keys=None,
-                 json_formatter=None, extra_headers=None,
+                 json_formatter=None,
+                 authorization_header=None, extra_headers=None,
                  debug=False, backoff_intervals=(1, 2, 3), retry_timeout=0):
         super().__init__()
         self._url = url
@@ -707,9 +711,17 @@ class HTTPJSONHandler(logging.Handler):
 
         if not is_trivially_callable(self._json_format, non_def_args=3):
             raise ConfigError(
-                "httpjson: 'json_formatter' has not the right signature: "
+                "httpjson: 'json_formatter' has the wrong signature: "
                 "it must be 'json_formatter(record, extras, ignore_keys)'"
             )
+
+        if not is_trivially_callable(authorization_header):
+            raise ConfigError(
+                "httpjson: 'authorization_header' has the wrong signature: "
+                "it must be 'authorization_header()'"
+            )
+
+        self._authorization_header = authorization_header
 
         self._headers = {'Content-type': 'application/json',
                          'Accept-Charset': 'UTF-8'}
@@ -737,7 +749,11 @@ class HTTPJSONHandler(logging.Handler):
 
             return
 
+        if self._authorization_header is not None:
+            self._headers['Authorization'] = self._authorization_header()
+
         timeout_time = time.time() + self._timeout
+
         try:
             backoff_intervals = itertools.cycle(self._backoff_intervals)
             while True:
