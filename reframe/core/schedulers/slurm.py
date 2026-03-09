@@ -147,6 +147,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._sched_access_in_submit = self.get_option(
             'sched_access_in_submit'
         )
+        self._multi_clusters = self.get_option('slurm_multi_cluster_mode')
         self._available_states = {
             'ALLOCATED',
             'COMPLETING',
@@ -154,6 +155,15 @@ class SlurmJobScheduler(sched.JobScheduler):
             'PLANNED',
             'RESERVED'
         }
+
+        # Define the base sacct and squeue commands to account for Slurm's
+        # multiple cluster mode if enabled
+        self._sacct  = 'sacct'
+        self._squeue = 'squeue'
+        if self._multi_clusters:
+            clusters = ",".join(self._multi_clusters)
+            self._sacct  += f' -M {clusters}'
+            self._squeue += f' -M {clusters}'
 
     def make_job(self, *args, **kwargs):
         return _SlurmJob(*args, **kwargs)
@@ -491,7 +501,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             )
             try:
                 completed = _run_strict(
-                    f'sacct -S {t_start} -P '
+                    f'{self._sacct} -S {t_start} -P '
                     f'-j {",".join(job.jobid for job in jobs)} '
                     f'-o jobid,state,exitcode,end,nodelist'
                 )
@@ -570,7 +580,9 @@ class SlurmJobScheduler(sched.JobScheduler):
             return
 
         if not reasons:
-            completed = osext.run_command('squeue -h -j %s -o %%r' % job.jobid)
+            completed = osext.run_command(
+                f'{self._squeue} -h -j {job.jobid} -o %r'
+            )
             reasons = completed.stdout.splitlines()
             if not reasons:
                 # Can't retrieve job's state. Perhaps it has finished already
@@ -677,7 +689,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
         # finished already, squeue might return an error about an invalid
         # job id.
         completed = osext.run_command(
-            f'squeue -h -j {",".join(job.jobid for job in jobs)} '
+            f'{self._squeue} -h -j {",".join(job.jobid for job in jobs)} '
             f'-o "%%i|%%T|%%N|%%r"'
         )
 
