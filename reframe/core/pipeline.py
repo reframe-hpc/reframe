@@ -312,11 +312,18 @@ class RegressionTestDict(UserDict):
     '''
     def __init__(self, user_dict: dict = None, protocol: str = None):
         super().__init__(user_dict or {})
-        self._protocol = protocol
         self._index = self.data.pop('$index', None)
+        self._protocol = protocol
+        self.validate()
 
+    def validate(self):
+        '''Validate the type of the dictionary.
+
+        :raises TypeError: if the dictionary does not match the expected type
+        '''
         ref3_type = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable]
-        ref4_type = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable, ~Deferrable]
+        ref4_type = typ.Tuple[~Deferrable, ~Deferrable,
+                              ~Deferrable, ~Deferrable]
         reftuple_type = ref3_type | ref4_type | XfailRef
         if self._index is None:
             dict_type = typ.Dict[str, typ.Dict[str, reftuple_type]]
@@ -326,11 +333,13 @@ class RegressionTestDict(UserDict):
                 dict_type = typ.Dict[~Deferrable, dict_type]
 
         if not isinstance(self.data, dict_type):
-            raise TypeError(f'user dictionary {self.data} does not match type {dict_type}')
+            raise TypeError(f'user dictionary {self.data} '
+                            f'does not match type {dict_type}')
 
     @property
     def protocol(self):
-        '''The protocol associated with this dictionary, :obj:`None` otherwise'''
+        '''The protocol associated with this dictionary,
+        :obj:`None` otherwise'''
         return self._protocol
 
     @property
@@ -358,7 +367,9 @@ class RegressionTestDict(UserDict):
 
                 user_default_fn = None
                 if self._protocol:
-                    resolve_fn = getattr(test, f'__{self._protocol}_missing_{_subkey}__', None)
+                    resolve_fn = getattr(
+                        test, f'__{self._protocol}_missing_{_subkey}__', None
+                    )
                     if resolve_fn:
                         user_default_fn = functools.partial(resolve_fn, data)
 
@@ -371,15 +382,19 @@ class RegressionTestDict(UserDict):
                     data = data[test.current_partition.fullname]
                 elif subkey_parts == ['$environ']:
                     data = data[test.current_environ.name]
-                elif len(subkey_parts) == 2 and subkey_parts[0] == '$processor':
+                elif (len(subkey_parts) == 2 and
+                      subkey_parts[0] == '$processor'):
                     proc = test.current_partition.processor
                     data = data[getattr(proc, subkey_parts[1])]
                 elif len(subkey_parts) == 3 and subkey_parts[0] == '$dev':
-                    gpus = test.current_partition.select_devices(subkey_parts[1])[0]
+                    gpus = test.current_partition.select_devices(
+                        subkey_parts[1]
+                    )[0]
                     data = data[getattr(gpus, subkey_parts[2])]
                 else:
                     data = data[getattr(test, subkey)]
         except AttributeError:
+            getlogger().warning(f'unknown reference subkey: {subkey}')
             raise KeyError(subkey) from None
         else:
             # If all good, return the final data
@@ -406,27 +421,37 @@ class _ReferenceDict(RegressionTestDict):
     '''
     def __init__(self, user_dict=None, *, test):
         user_dict = user_dict or {}
-        self.__test_entry_name = type(test).__name__
+        self.__ref_file = user_dict.pop('$ref', None)
+        if self.__ref_file:
+            # Reset the user dictionary; it will be populated from the
+            # external reference file
+            user_dict = {}
 
-        # We use the `$ref` file to populate the user_dict to be passed to the
-        # parent constructor.
-        ref_file = user_dict.pop('$ref', None)
-        if ref_file:
+        super().__init__(user_dict, protocol='ref')
+        if self.__ref_file and test is not None:
+            self.resolve_external_references(test)
+
+    def is_external(self):
+        return self.__ref_file is not None
+
+    def resolve_external_references(self, test):
+        assert test is not None
+
+        self.__test_entry_name = type(test).__name__
+        if self.__ref_file:
             ref_prefix = rt.runtime().get_option('general/0/reference_prefix')
             if ref_prefix is None:
                 ref_prefix = test.prefix
 
-            user_dict = self._read_ref_file(os.path.join(ref_prefix, ref_file))
-
-        try:
-            super().__init__(user_dict, protocol='ref')
-        except TypeError as err:
-            if ref_file:
-                # If we read from a reference file, re-raise the TypeError as
-                # a parse error
-                raise ReferenceParseError(f'{ref_file}: {err}') from err
-            else:
-                raise err
+            user_dict = self._read_ref_file(
+                os.path.join(ref_prefix, self.__ref_file)
+            )
+            self._index = user_dict.pop('$index', None)
+            self.data = user_dict
+            try:
+                self.validate()
+            except TypeError as err:
+                raise ReferenceParseError(f'{self.__ref_file}: {err}') from err
 
     def _read_ref_file(self, filename):
         def _parse_ref_entry(key, val):
@@ -441,7 +466,8 @@ class _ReferenceDict(RegressionTestDict):
                 return xfail(*val[1:-1], tuple(val[-1]))
             elif isinstance(first, str):
                 raise ReferenceParseError(
-                    f'{filename}: unknown modifier {first!r} in entry {key!r}: {val}'
+                    f'{filename}: unknown modifier {first!r} in '
+                    f'entry {key!r}: {val}'
                 )
             else:
                 return tuple(val)
@@ -480,7 +506,9 @@ class _ReferenceDict(RegressionTestDict):
             max_level = 1
 
         for key, val in ref_yaml.items():
-            mkref[key] = _entry(key, val, f'{self.__test_entry_name}.{key}', max_level)
+            mkref[key] = _entry(
+                key, val, f'{self.__test_entry_name}.{key}', max_level
+            )
 
         return mkref
 
@@ -493,7 +521,7 @@ class _ReferenceDictField(fields.TypedField):
             value = fields.Field.__set__(self, obj, value)
         else:
             value = _ReferenceDict(value, test=obj)
-            if not value.index:
+            if not value.index and not value.is_external():
                 value = ScopedDict(value.data)
 
         return fields.Field.__set__(self, obj, value)
@@ -1270,7 +1298,8 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #: explicitly set, it defaults to the test's :attr:`prefix` directory
     #: (i.e., the directory containing the test file).
     #:
-    #: A reference file can contain references for multiple tests as in the following example:
+    #: A reference file can contain references for multiple tests as in the
+    #: following example:
     #:
     #: .. code-block:: yaml
     #:
@@ -1678,7 +1707,8 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
         # Static directories of the regression check
         if (self.sourcesdir == 'src' and
-            not os.path.isdir(os.path.join(self._rfm_prefix, self.sourcesdir))):
+            not os.path.isdir(os.path.join(self._rfm_prefix,
+                                           self.sourcesdir))):
             self.sourcesdir = None
 
         # Runtime information of the test
@@ -1717,6 +1747,10 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
         # Disabled hooks
         self._disabled_hooks = set()
+
+        # Resolve any external references from the reference dict
+        if isinstance(self.reference, _ReferenceDict):
+            self.reference.resolve_external_references(self)
 
     @classmethod
     def _process_hook_registry(cls):
@@ -2876,14 +2910,19 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         if isinstance(self.reference, ScopedDict):
             return self.reference
 
-        try:
-            return {
-                f'{self.current_partition.fullname}': self.reference[self]
-            }
-        except KeyError as err:
-            getlogger().debug(f'reference look up: key `{err}` not found: '
-                              'no reference will be set')
-            return {}
+        if not self.reference.index:
+            ret = self.reference
+        else:
+            try:
+                ret = {
+                    f'{self.current_partition.fullname}': self.reference[self]
+                }
+            except KeyError as err:
+                getlogger().debug(f'reference look up: key `{err}` not found: '
+                                'no reference will be set')
+                ret = {}
+
+        return ScopedDict(ret)
 
     @final
     def check_performance(self):
@@ -2927,10 +2966,22 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                 # Retrieve the unit from the reference tuple
                 key = f'{self._current_partition.fullname}:{var}'
                 try:
-                    unit = reference[key][3]
+                    ref = reference[key]
+                    if isinstance(ref, _XFailReference):
+                        unit = ref.data[3]
+                    else:
+                        unit = ref[3]
+
                     if unit is None:
                         unit = ''
                 except KeyError:
+                    if self.require_reference:
+                        raise PerformanceError(
+                            f'no reference value found for '
+                            f'performance variable {var!r} on '
+                            f'system {self._current_partition.fullname!r}'
+                        ) from None
+
                     unit = ''
 
                 self.perf_variables[var] = sn.make_performance_function(expr,
@@ -3448,4 +3499,3 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
             self.sanity_patterns = sn.assert_true(1)
 
         super().check_sanity()
-

@@ -1196,7 +1196,7 @@ def test_overriden_hook_different_stages(HelloTest, local_exec_ctx):
             pass
 
         @run_after('setup')
-        def foo(self):
+        def foo(self):      # noqa: F811
             pass
 
     test = MyTest()
@@ -1434,11 +1434,11 @@ def ref_file(tmp_path):
 # NOTE: The following series of tests test the `perf_patterns` syntax, so they
 # should not change to the `@performance_function` syntax`
 
+
 @pytest.fixture
-def dummytest(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
-    class MyTest(rfm.RunOnlyRegressionTest, custom_prefix=str(tmp_path)):
-        perf_file = variable(str, Path)
-        reference = {
+def make_test_classic(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
+    def _make_test(reference=None):
+        user_reference = reference or {
             'testsys': {
                 'value1': (1.4, -0.1, 0.1, None),
                 'value2': (1.7, -0.1, 0.1, None),
@@ -1448,12 +1448,9 @@ def dummytest(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
             }
         }
 
-        # Since we are in a fixture definition, `perf_file` and `sanity_file`
-        # are still unresolved fixture objects, so we cannot directly use them
-        # in the class body. Instead, we set them in a post-init hook.
-        @run_after('init')
-        def set_perf_file(self):
-            self.perf_patterns = {
+        class MyTest(rfm.RunOnlyRegressionTest, custom_prefix=tmp_path):
+            reference = user_reference
+            perf_patterns = {
                 'value1': sn.extractsingle(
                     r'perf1 = (\S+)', perf_file, 1, float
                 ),
@@ -1464,19 +1461,19 @@ def dummytest(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
                     r'perf3 = (\S+)', perf_file, 1, float
                 )
             }
-            self.sanity_patterns = sn.assert_found(r'result = success',
-                                                   sanity_file)
+            sanity_patterns = sn.assert_found(r'result = success', sanity_file)
 
-    yield MyTest()
+        return MyTest()
+
+    return _make_test
 
 
 @pytest.fixture
-def dummytest_modern(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
+def make_test_modern(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
     '''Modern version of the dummytest above'''
 
-    class MyTest(rfm.RunOnlyRegressionTest, custom_prefix=str(tmp_path)):
-        perf_file = variable(str, Path)
-        reference = {
+    def _make_test(reference=None):
+        user_reference = reference or {
             'testsys': {
                 'value1': (1.4, -0.1, 0.1, None),
                 'value2': (1.7, -0.1, 0.1, None),
@@ -1486,63 +1483,78 @@ def dummytest_modern(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
             }
         }
 
-        @sanity_function
-        def validate(self):
-            return sn.assert_found(r'result = success', sanity_file)
+        class MyTest(rfm.RunOnlyRegressionTest, custom_prefix=tmp_path):
+            perf_file = variable(str, Path)
+            reference = user_reference
 
-        @performance_function('unit')
-        def value1(self):
-            return sn.extractsingle(r'perf1 = (\S+)', perf_file, 1, float)
+            @sanity_function
+            def validate(self):
+                return sn.assert_found(r'result = success', sanity_file)
 
-        @performance_function('unit')
-        def value2(self):
-            return sn.extractsingle(r'perf2 = (\S+)', perf_file, 1, float)
+            @performance_function('unit')
+            def value1(self):
+                return sn.extractsingle(r'perf1 = (\S+)', perf_file, 1, float)
 
-        @performance_function('unit')
-        def value3(self):
-            return sn.extractsingle(r'perf3 = (\S+)', perf_file, 1, float)
+            @performance_function('unit')
+            def value2(self):
+                return sn.extractsingle(r'perf2 = (\S+)', perf_file, 1, float)
 
-        @run_after('init')
-        def set_perf_file(self):
-            self.perf_file = perf_file
+            @performance_function('unit')
+            def value3(self):
+                return sn.extractsingle(r'perf3 = (\S+)', perf_file, 1, float)
 
-    yield MyTest()
+            @run_after('init')
+            def set_perf_file(self):
+                self.perf_file = perf_file
+
+        return MyTest()
+
+    return _make_test
 
 
 @pytest.fixture(params=['classic', 'modern'])
-def dummy_perftest(request, dummytest, dummytest_modern):
-    if request.param == 'modern':
-        return dummytest_modern
-    else:
-        return dummytest
+def make_perftest(request, make_test_modern, make_test_classic):
+    def _make_perftest(reference=None):
+        if request.param == 'modern':
+            return make_test_modern(reference)
+        else:
+            return make_test_classic(reference)
+
+    return _make_perftest
 
 
-def test_sanity_success(dummytest, sanity_file, perf_file, dummy_gpu_exec_ctx):
+def test_sanity_success(make_test_classic, sanity_file, perf_file,
+                        dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
+    dummytest = make_test_classic()
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_sanity_failure(dummytest, sanity_file, dummy_gpu_exec_ctx):
+def test_sanity_failure(make_test_classic, sanity_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = failure\n')
     with pytest.raises(SanityError):
-        _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
+        _run_sanity(make_test_classic(), *dummy_gpu_exec_ctx, skip_perf=True)
 
 
-def test_sanity_failure_noassert(dummytest, sanity_file, dummy_gpu_exec_ctx):
+def test_sanity_failure_noassert(make_test_classic, sanity_file,
+                                 dummy_gpu_exec_ctx):
+    dummytest = make_test_classic()
     dummytest.sanity_patterns = sn.findall(r'result = success', sanity_file)
     sanity_file.write_text('result = failure\n')
     with pytest.raises(SanityError):
         _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
 
 
-def test_sanity_multiple_patterns(dummytest, sanity_file, dummy_gpu_exec_ctx):
+def test_sanity_multiple_patterns(make_test_classic, sanity_file,
+                                  dummy_gpu_exec_ctx):
     sanity_file.write_text('result1 = success\n'
                            'result2 = success\n')
 
     # Simulate a pure sanity test; reset the perf_patterns
+    dummytest = make_test_classic()
     dummytest.perf_patterns = None
     dummytest.sanity_patterns = sn.assert_eq(
         sn.count(sn.findall(r'result\d = success', sanity_file)), 2
@@ -1550,6 +1562,7 @@ def test_sanity_multiple_patterns(dummytest, sanity_file, dummy_gpu_exec_ctx):
     _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
 
     # Require more patterns to be present
+    dummytest = make_test_classic()
     dummytest.sanity_patterns = sn.assert_eq(
         sn.count(sn.findall(r'result\d = success', sanity_file)), 3
     )
@@ -1557,11 +1570,12 @@ def test_sanity_multiple_patterns(dummytest, sanity_file, dummy_gpu_exec_ctx):
         _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
 
 
-def test_sanity_multiple_files(dummytest, tmp_path, dummy_gpu_exec_ctx):
+def test_sanity_multiple_files(make_test_classic, tmp_path, dummy_gpu_exec_ctx):
     file0 = tmp_path / 'out1.txt'
     file1 = tmp_path / 'out2.txt'
     file0.write_text('result = success\n')
     file1.write_text('result = success\n')
+    dummytest = make_test_classic()
     dummytest.sanity_patterns = sn.all([
         sn.assert_found(r'result = success', file0),
         sn.assert_found(r'result = success', file1)
@@ -1569,39 +1583,39 @@ def test_sanity_multiple_files(dummytest, tmp_path, dummy_gpu_exec_ctx):
     _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
 
 
-def test_performance_failure(dummy_perftest, sanity_file,
+def test_performance_failure(make_perftest, sanity_file,
                              perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.0\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
     with pytest.raises(PerformanceError):
-        _run_sanity(dummy_perftest, *dummy_gpu_exec_ctx)
+        _run_sanity(make_perftest(), *dummy_gpu_exec_ctx)
 
 
-def test_reference_unknown_tag(dummytest, sanity_file,
+def test_reference_unknown_tag(make_test_classic, sanity_file,
                                perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {
+    dummytest = make_test_classic({
         'testsys': {
             'value1': (1.4, -0.1, 0.1, None),
             'value2': (1.7, -0.1, 0.1, None),
             'foo': (3.1, -0.1, 0.1, None),
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_unknown_system(dummytest, sanity_file,
+def test_reference_unknown_system(make_test_classic, sanity_file,
                                   perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {
+    dummytest = make_test_classic({
         'testsys:login': {
             'value1': (1.4, -0.1, 0.1, None),
             'value3': (3.1, -0.1, 0.1, None),
@@ -1609,43 +1623,43 @@ def test_reference_unknown_system(dummytest, sanity_file,
         'testsys:login2': {
             'value2': (1.7, -0.1, 0.1, None)
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_empty(dummytest, sanity_file,
+def test_reference_empty(make_test_classic, sanity_file,
                          perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {}
+    dummytest = make_test_classic({})
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_default(dummytest, sanity_file,
+def test_reference_default(make_perftest, sanity_file,
                            perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {
+    dummytest = make_perftest({
         '*': {
             'value1': (1.4, -0.1, 0.1, None),
             'value2': (1.7, -0.1, 0.1, None),
             'value3': (3.1, -0.1, 0.1, None),
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_tag_resolution(dummytest, sanity_file,
+def test_reference_tag_resolution(make_perftest, sanity_file,
                                   perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {
+    dummytest = make_perftest({
         'testsys': {
             'value1': (1.4, -0.1, 0.1, None),
             'value2': (1.7, -0.1, 0.1, None),
@@ -1653,19 +1667,18 @@ def test_reference_tag_resolution(dummytest, sanity_file,
         '*': {
             'value3': (3.1, -0.1, 0.1, None),
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_required_reference(dummy_perftest, sanity_file,
+def test_required_reference(make_perftest, sanity_file,
                             perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
 
-    dummy_perftest.require_reference = True
-    dummy_perftest.reference = {
+    dummy_perftest = make_perftest({
         'testsys:login': {
             'value1': (1.4, -0.1, 0.1, None),
             'value3': (3.1, -0.1, 0.1, None),
@@ -1673,28 +1686,30 @@ def test_required_reference(dummy_perftest, sanity_file,
         'foo': {
             'value2': (1.7, -0.1, 0.1, None)
         }
-    }
-    with pytest.raises(PerformanceError):
+    })
+    dummy_perftest.require_reference = True
+    with pytest.raises(PerformanceError,
+                       match=r"no reference value found for.*'value1'"):
         _run_sanity(dummy_perftest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_deferrable(dummy_perftest):
+def test_reference_deferrable(make_perftest):
     with pytest.raises(TypeError):
-        dummy_perftest.reference = {'*': {'value1': (sn.defer(1), -0.1, -0.1)}}
+        make_perftest({'*': {'value1': (sn.defer(1), -0.1, -0.1)}})
 
     with pytest.raises(TypeError):
         class T(rfm.RegressionTest):
             reference = {'*': {'value1': (sn.defer(1), -0.1, -0.1)}}
 
 
-def test_reference_index(dummytest):
-    dummytest.x = 1
-    dummytest.y = 2
-    dummytest.reference = {
+def test_reference_index(make_perftest):
+    dummytest = make_perftest({
         '$index': ('x', 'y'),
         1: {2: {'value1': (1., -0.1, 0.1, None)}},
         2: {2: {'value1': (2., -0.1, 0.1, None)}}
-    }
+    })
+    dummytest.x = 1
+    dummytest.y = 2
     assert dummytest.reference[dummytest]['value1'] == (1., -0.1, 0.1, None)
 
     dummytest.x = 2
@@ -1705,12 +1720,12 @@ def test_reference_index(dummytest):
         dummytest.reference[dummytest]['value1']
 
 
-def test_reference_index_regex(dummytest):
-    dummytest.x = 'foo'
-    dummytest.reference = {
+def test_reference_index_regex(make_perftest):
+    dummytest = make_perftest({
         '$index': ('x',),
         'foo.*': {'value1': (1., -0.1, 0.1, None)}
-    }
+    })
+    dummytest.x = 'foo'
     assert dummytest.reference[dummytest]['value1'] == (1., -0.1, 0.1, None)
 
     dummytest.x = 'foobar'
@@ -1722,28 +1737,28 @@ def test_reference_index_regex(dummytest):
         assert dummytest.reference[dummytest]
 
 
-def test_reference_index_regex_non_str(dummytest):
+def test_reference_index_regex_non_str(make_perftest):
+    dummytest = make_perftest({
+        '$index': ('x',),
+        '1.*': {'value1': (1., -0.1, 0.1, None)}
+    })
     # Both the attribute and the reference key must be string to treat them as
     # regexes
     dummytest.x = 13
-    dummytest.reference = {
-        '$index': ('x',),
-        1: {'value1': (1., -0.1, 0.1, None)}
-    }
     with pytest.raises(KeyError):
         dummytest.reference[dummytest]['value1']
 
-    dummytest.reference = {
+    dummytest = make_perftest({
         '$index': ('x',),
         '1.*': {'value1': (1., -0.1, 0.1, None)}
-    }
+    })
     with pytest.raises(KeyError):
         dummytest.reference[dummytest]['value1']
 
-    dummytest.reference = {
+    dummytest = make_perftest({
         '$index': ('x',),
         '13': {'value1': (1., -0.1, 0.1, None)}
-    }
+    })
     with pytest.raises(KeyError):
         dummytest.reference[dummytest]['value1']
 
@@ -1757,33 +1772,33 @@ def special_attrs(request):
     return request.param
 
 
-def test_reference_index_special(dummytest, special_attrs,
+def test_reference_index_special(make_perftest, special_attrs,
                                  sanity_file, perf_file,
                                  dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n')
     attr, expected = special_attrs
-    dummytest.reference = {
+    dummytest = make_perftest({
         '$index': (attr,),
         expected: {
             'value1': (1.4, -0.1, 0.1, None)
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
     assert dummytest.reference[dummytest]['value1'] == (1.4, -0.1, 0.1, None)
 
 
-def test_reference_index_special_unknown_attr(dummytest,
+def test_reference_index_special_unknown_attr(make_perftest,
                                               sanity_file, perf_file,
                                               dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n')
-    dummytest.reference = {
+    dummytest = make_perftest({
         '$index': ('$processor.arch', '$dev.gpu.foo'),
         'skylake': {
             'p100': {'value1': (10., -0.1, 0.1, None)}
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
     with pytest.raises(KeyError):
         dummytest.reference[dummytest]
@@ -1795,27 +1810,27 @@ def incomplete_special_attr(request):
     return request.param
 
 
-def test_reference_index_special_incomplete(dummytest,
+def test_reference_index_special_incomplete(make_perftest,
                                             incomplete_special_attr,
                                             sanity_file, perf_file,
                                             dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n')
     index, value = incomplete_special_attr
-    dummytest.reference = {
+    dummytest = make_perftest({
         '$index': (index,),
         value: {
             'value1': (10., -0.1, 0.1, None)
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
     with pytest.raises(KeyError):
         dummytest.reference[dummytest]
 
 
-def test_reference_index_protocol(dummytest, sanity_file, perf_file,
+def test_reference_index_protocol(make_perftest, sanity_file, perf_file,
                                   dummy_gpu_exec_ctx):
-    class _MyTest(type(dummytest)):
+    class _MyTest(type(make_perftest())):
         reference = {
             '$index': ('$dev.gpu.model',),
             'v100': {
@@ -1831,7 +1846,6 @@ def test_reference_index_protocol(dummytest, sanity_file, perf_file,
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n')
     test = _MyTest()
-    print(test.reference)
     _run_sanity(test, *dummy_gpu_exec_ctx)
     assert test.reference[test]['value1'] == (1.4, -0.1, 0.1, None)
 
@@ -1847,7 +1861,7 @@ def make_path(request, tmp_path):
     return _make_path
 
 
-def test_reference_external_noindex(dummytest, make_path,
+def test_reference_external_noindex(make_perftest, make_path,
                                     sanity_file, perf_file, ref_file,
                                     dummy_gpu_exec_ctx):
     ref_file.write_yaml({
@@ -1861,13 +1875,14 @@ def test_reference_external_noindex(dummytest, make_path,
             }
         }
     })
-    dummytest.reference = {'$ref': make_path(ref_file)}
+    dummytest = make_perftest({'$ref': make_path(ref_file)})
+    dummytest.require_reference = True
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n')
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_external_with_index(dummytest, make_path,
+def test_reference_external_with_index(make_perftest, make_path,
                                        sanity_file, perf_file, ref_file,
                                        dummy_gpu_exec_ctx):
     ref_file.write_yaml({
@@ -1876,19 +1891,22 @@ def test_reference_external_with_index(dummytest, make_path,
             'skylake': {
                 'p100': {
                     'value1': [1.4, -0.1, 0.1, None],
-                    'value2': [1.7, -0.1, 0.1, None]
+                    'value2': [1.7, -0.1, 0.1, None],
+                    'value3': [3.1, -0.1, 0.1, None]
                 }
             }
         }
     })
-    dummytest.reference = {'$ref': make_path(ref_file)}
+    dummytest = make_perftest({'$ref': make_path(ref_file)})
+    dummytest.require_reference = True
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n')
     perf_file.write_text('perf2 = 1.7\n')
+    perf_file.write_text('perf3 = 3.1\n')
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_external_xfail(dummytest_modern, sanity_file, perf_file, ref_file,
+def test_reference_external_xfail(make_perftest, sanity_file, perf_file, ref_file,
                                   dummy_gpu_exec_ctx):
     ref_file.write_yaml({
         'MyTest': {
@@ -1896,15 +1914,17 @@ def test_reference_external_xfail(dummytest_modern, sanity_file, perf_file, ref_
             'skylake': {
                 'p100': {
                     'value1': ['$xfail', 'expected', [1.4, -0.1, 0.1, None]],
-                    'value2': [1.7, -0.1, 0.1, None]
+                    'value2': [1.7, -0.1, 0.1, None],
+                    'value3': [3.1, -0.1, 0.1, None]
                 }
             }
         }
     })
-    dummytest_modern.reference = {'$ref': ref_file}
+    dummytest_modern = make_perftest({'$ref': ref_file})
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.0\n')
     perf_file.write_text('perf2 = 1.7\n')
+    perf_file.write_text('perf3 = 3.1\n')
     _run_sanity(dummytest_modern, *dummy_gpu_exec_ctx)
 
 
@@ -1920,7 +1940,7 @@ def invalid_ref_entry(request):
     return request.param
 
 
-def test_reference_external_invalid_ref_entry(dummytest_modern, ref_file,
+def test_reference_external_invalid_ref_entry(make_perftest, ref_file,
                                               invalid_ref_entry):
     ref_file.write_yaml({
         'MyTest': {
@@ -1933,10 +1953,10 @@ def test_reference_external_invalid_ref_entry(dummytest_modern, ref_file,
         }
     })
     with pytest.raises(ReferenceParseError):
-        dummytest_modern.reference = {'$ref': ref_file}
+        make_perftest({'$ref': ref_file})
 
 
-def test_reference_external_custom_prefix(dummytest_modern, make_path,
+def test_reference_external_custom_prefix(make_perftest, make_path,
                                           sanity_file, perf_file, ref_file,
                                           tmp_path, custom_exec_ctx):
     ref_file.write_yaml({
@@ -1945,16 +1965,19 @@ def test_reference_external_custom_prefix(dummytest_modern, make_path,
             'skylake': {
                 'p100': {
                     'value1': [1.4, -0.1, 0.1, None],
-                    'value2': [1.7, -0.1, 0.1, None]
+                    'value2': [1.7, -0.1, 0.1, None],
+                    'value3': [3.1, -0.1, 0.1, None]
                 }
             }
         }
     })
-    dummytest_modern.reference = {'$ref': make_path(ref_file)}
+    dummytest = make_perftest({'$ref': make_path(ref_file)})
+    dummytest.require_reference = True
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n')
     perf_file.write_text('perf2 = 1.7\n')
-    _run_sanity(dummytest_modern,
+    perf_file.write_text('perf3 = 3.1\n')
+    _run_sanity(dummytest,
                 *custom_exec_ctx({'general/reference_prefix': tmp_path}))
 
 
@@ -1996,12 +2019,13 @@ def test_regressiondict_custom_protocol(dummy_gpu_exec_ctx):
         test.foo[test]
 
 
-def test_performance_invalid_value(dummytest, sanity_file,
+def test_performance_invalid_value(make_test_classic, sanity_file,
                                    perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = foo\n'
                          'perf3 = 3.3\n')
+    dummytest = make_test_classic()
     dummytest.perf_patterns = {
         'value1': sn.extractsingle(r'perf1 = (\S+)', perf_file, 1, float),
         'value2': sn.extractsingle(r'perf2 = (\S+)', perf_file, 1, str),
@@ -2011,7 +2035,7 @@ def test_performance_invalid_value(dummytest, sanity_file,
         _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_perf_patterns_evaluation(dummytest, sanity_file,
+def test_perf_patterns_evaluation(make_test_classic, sanity_file,
                                   perf_file, dummy_gpu_exec_ctx):
     # All performance values must be evaluated, despite the first one
     # failing To test this, we need an extract function that will have a
@@ -2033,6 +2057,7 @@ def test_perf_patterns_evaluation(dummytest, sanity_file,
     perf_file.write_text('perf1 = 1.0\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
+    dummytest = make_test_classic()
     dummytest.perf_patterns = {
         'value1': extract_perf(r'perf1 = (?P<v1>\S+)', 'v1'),
         'value2': extract_perf(r'perf2 = (?P<v2>\S+)', 'v2'),
