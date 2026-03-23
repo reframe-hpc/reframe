@@ -30,7 +30,7 @@ from reframe.core.exceptions import (BuildError,
                                      UnexpectedSuccessError)
 from reframe.core.meta import make_test
 from reframe.core.warnings import ReframeDeprecationWarning
-
+from reframe.utility import import_module_from_file
 
 def _run(test, partition, prgenv):
     test.setup(partition, prgenv)
@@ -2393,6 +2393,7 @@ def test_make_test_without_builtins(local_exec_ctx):
 
 
 def test_make_test_with_module():
+    hellomod = import_module_from_file('unittests/resources/checks/hellocheck.py')
     hello_cls = make_test(
         'HelloTest', (rfm.RunOnlyRegressionTest,),
         {
@@ -2401,11 +2402,49 @@ def test_make_test_with_module():
             'executable': 'echo',
             'sanity_patterns': sn.assert_true(1)
         },
-        module='foo'
+        module=hellomod.__name__
     )
 
     assert hello_cls.__name__ == 'HelloTest'
-    assert hello_cls.__module__ == 'foo'
+    assert hello_cls.__module__ == hellomod.__name__
+
+    hello_test = hello_cls()
+    assert hello_test.prefix == os.path.dirname(hellomod.__file__)
+
+
+def test_make_test_with_unknown_module():
+    assert 'no_such_module' not in sys.modules
+    with pytest.raises(ModuleNotFoundError):
+        make_test(
+            'HelloTest', (rfm.RunOnlyRegressionTest,),
+            {
+                'valid_systems': ['*'],
+                'valid_prog_environs': ['*'],
+                'executable': 'echo',
+                'sanity_patterns': sn.assert_true(1)
+            },
+            module='no_such_module'
+        )
+
+
+def test_make_test_autoload_module(tmp_path, monkeypatch):
+    monkeypatch.syspath_prepend(tmp_path)
+    with osext.change_dir(tmp_path):
+        (tmp_path / 'mymodule.py').write_text('XYZ = 1')
+
+    hello_cls = make_test(
+        'HelloTest', (rfm.RunOnlyRegressionTest,),
+        {
+            'valid_systems': ['*'],
+            'valid_prog_environs': ['*'],
+            'executable': 'echo',
+            'sanity_patterns': sn.assert_true(1)
+        },
+        module='mymodule'
+    )
+
+    assert hello_cls.__name__ == 'HelloTest'
+    assert sys.modules[hello_cls.__module__].XYZ == 1
 
 
 def test_make_test_with_builtins(local_exec_ctx):

@@ -8,8 +8,10 @@
 #
 
 import functools
+import importlib
 import inspect
 import os
+import sys
 import types
 import collections
 
@@ -428,29 +430,6 @@ class RegressionTestMeta(type):
                         f"\nclass {cls.__name__}({bnames}, special=True):\n",
                         with_code_context=True
                     )
-
-        # Set the test prefix
-        #
-        # First check if the current test pins the prefix and store this, so
-        # as to reuse in derived tests
-        curr_prefix = os.path.abspath(
-            os.path.dirname(inspect.getfile(cls))
-        )
-        if kwargs.pop('pin_prefix', False):
-            cls._rfm_pinned_prefix = curr_prefix
-
-        try:
-            prefix = kwargs['custom_prefix']
-        except KeyError:
-            if osext.is_interactive():
-                prefix = os.getcwd()
-            else:
-                try:
-                    prefix = cls._rfm_pinned_prefix
-                except AttributeError:
-                    prefix = curr_prefix
-
-        cls._rfm_prefix = prefix
 
     def __call__(cls, *args, **kwargs):
         '''Inject test builtins during object construction.
@@ -985,6 +964,7 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
         name.
     :param module: The module name of the new test class.
         If :obj:`None`, the module of the caller will be used.
+        If the module is not loaded, it will be loaded automatically.
     :param kwargs: Any keyword arguments to be passed to the
         :class:`RegressionTestMeta` metaclass.
 
@@ -1011,11 +991,18 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
     for m in methods:
         namespace[m.__name__] = m
 
-    cls = RegressionTestMeta(name, bases, namespace, **kwargs)
     if not module:
         # Set the test's module to be that of our callers
         caller = inspect.currentframe().f_back
         module = caller.f_globals['__name__']
 
+    try:
+        mod = sys.modules[module]
+    except KeyError:
+        mod = importlib.import_module(module)
+
+    # Infer the prefix of the test based on the module
+    kwargs.setdefault('custom_prefix', os.path.dirname(mod.__file__))
+    cls = RegressionTestMeta(name, bases, namespace, **kwargs)
     cls.__module__ = module
     return cls

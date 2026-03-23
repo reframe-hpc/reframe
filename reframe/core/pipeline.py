@@ -22,6 +22,7 @@ import glob
 import hashlib
 import functools
 import itertools
+import inspect
 import numbers
 import os
 import re
@@ -1691,8 +1692,8 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         pass
 
     @classmethod
-    def __init_subclass__(cls, *, special=False,
-                          require_version=None, **kwargs):
+    def __init_subclass__(cls, *, special=False, pin_prefix=False,
+                          custom_prefix=None, require_version=None, **kwargs):
         super().__init_subclass__()
         cls._rfm_override_final = special
 
@@ -1700,6 +1701,29 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
             cls._rfm_required_version = require_version
         elif not hasattr(cls, '_rfm_required_version'):
             cls._rfm_required_version = []
+
+        # Set the test prefix
+        #
+        # First check if the current test pins the prefix and store this, so
+        # as to reuse in derived tests
+        curr_prefix = os.path.abspath(
+            os.path.dirname(inspect.getfile(cls))
+        )
+        if pin_prefix:
+            cls._rfm_pinned_prefix = curr_prefix
+
+        if custom_prefix:
+            prefix = custom_prefix
+        else:
+            if osext.is_interactive():
+                prefix = os.getcwd()
+            else:
+                try:
+                    prefix = cls._rfm_pinned_prefix
+                except AttributeError:
+                    prefix = curr_prefix
+
+        cls._rfm_prefix = prefix
 
     @deferrable
     def __rfm_init__(self):

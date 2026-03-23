@@ -159,7 +159,8 @@ def distribute_tests(testcases, node_map):
                 # We re-set the valid system in a hook to make sure that it
                 # will not be overwritten by a parent post-init hook
                 builtins.run_after('init')(_rfm_set_valid_systems),
-            ]
+            ],
+            module=cls.__module__
         ), ['.part', '.nid']
 
     return _generate_tests(testcases, _make_dist_test, _GenKind.BY_PARTITION)
@@ -176,7 +177,8 @@ def repeat_tests(testcases, num_repeats):
             {
                 '.repeat_no': builtins.parameter(range(num_repeats),
                                                  loggable=False)
-            }
+            },
+            module=cls.__module__
         ), ['.repeat_no']
 
     return _generate_tests(testcases, _make_repeat_test, _GenKind.BY_CHECK)
@@ -214,6 +216,7 @@ def parameterize_tests(testcases, paramvars):
 
             if var in cls.var_space:
                 body[f'.{var}'] = builtins.parameter(values, loggable=False)
+
                 def _set_vars(self):
                     for var in body.keys():
                         setattr(self, var[1:],
@@ -233,9 +236,10 @@ def parameterize_tests(testcases, paramvars):
 
                 body[var] = builtins.parameter([p.type(v) for v in values], type=p.type)
             else:
-                assert 0, f'[BUG] {var} cannot be defined as both a variable and a parameter'
+                assert 0, f'[BUG] {var} cannot be defined as both a variable and a parameter'   # noqa: E501
 
-        return (make_test(cls.__name__, (cls,), body=body, methods=methods),
+        return (make_test(cls.__name__, (cls,),
+                          body=body, methods=methods, module=cls.__module__),
                 body.keys())
 
     return _generate_tests(testcases, _make_parameterized_test, _GenKind.BY_CHECK)
