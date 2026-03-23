@@ -2943,7 +2943,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                 }
             except KeyError as err:
                 getlogger().debug(f'reference look up: key `{err}` not found: '
-                                'no reference will be set')
+                                  'no reference will be set')
                 ret = {}
 
         return ScopedDict(ret)

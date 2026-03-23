@@ -32,6 +32,7 @@ from reframe.core.meta import make_test
 from reframe.core.warnings import ReframeDeprecationWarning
 from reframe.utility import import_module_from_file
 
+
 def _run(test, partition, prgenv):
     test.setup(partition, prgenv)
     test.compile()

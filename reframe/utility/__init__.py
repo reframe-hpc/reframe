@@ -154,7 +154,6 @@ def import_module_from_file(filename, *, force=False, load_parents=False):
 
     import reframe.utility.osext as osext
 
-
     if not load_parents:
         return _import_module_from_file(filename, force, None)
 

@@ -22,7 +22,6 @@ import reframe.core.variables as variables
 import reframe.core.fixtures as fixtures
 import reframe.core.hooks as hooks
 import reframe.utility as utils
-import reframe.utility.osext as osext
 
 from reframe.core.exceptions import ReframeSyntaxError
 
