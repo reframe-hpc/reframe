@@ -291,6 +291,9 @@ The lower and upper thresholds are deviations from the target reference expresse
 In our example, we allow the ``copy_bw`` to be 10% lower than the target reference and no more than 30% higher.
 Sometimes, especially in microbenchmarks, it is a good practice to set an upper threshold to denote the absolute maximum that cannot be exceeded.
 
+It is also possible to define a custom index for the reference dictionary, that is not based on the system and/or partition combination.
+Check the :ref:`howto-reference-index` in the :doc:`howto` for more details.
+
 
 Dry-run mode
 ------------

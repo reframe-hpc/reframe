@@ -7,6 +7,8 @@ import os
 import pytest
 import re
 import sys
+import yaml
+from pathlib import Path, PosixPath, WindowsPath
 
 import reframe as rfm
 import reframe.core.builtins as builtins
@@ -15,10 +17,12 @@ import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
 import unittests.utility as test_util
 
+
 from reframe.core.exceptions import (BuildError,
                                      ExpectedFailureError,
                                      PerformanceError,
                                      PipelineError,
+                                     ReferenceParseError,
                                      ReframeError,
                                      ReframeSyntaxError,
                                      SanityError,
@@ -26,6 +30,7 @@ from reframe.core.exceptions import (BuildError,
                                      UnexpectedSuccessError)
 from reframe.core.meta import make_test
 from reframe.core.warnings import ReframeDeprecationWarning
+from reframe.utility import import_module_from_file
 
 
 def _run(test, partition, prgenv):
@@ -226,8 +231,8 @@ def test_hellocheck_local_prepost_run(HelloTest, local_exec_ctx):
 
 
 def test_run_only_set_sanity_in_a_hook(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         executable = './hello.sh'
         executable_opts = ['Hello, World!']
         local = True
@@ -244,8 +249,8 @@ def test_run_only_set_sanity_in_a_hook(local_exec_ctx):
 
 
 def test_run_only_decorated_sanity(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         executable = './hello.sh'
         executable_opts = ['Hello, World!']
         local = True
@@ -267,8 +272,7 @@ def test_run_only_decorated_sanity(local_exec_ctx):
 
 
 def test_run_only_no_srcdir(local_exec_ctx):
-    @test_util.custom_prefix('foo/bar/')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest, custom_prefix='foo/bar/'):
         valid_systems = ['*']
         valid_prog_environs = ['*']
         executable = 'echo'
@@ -280,8 +284,7 @@ def test_run_only_no_srcdir(local_exec_ctx):
 
 
 def test_run_only_srcdir_set_to_none(local_exec_ctx):
-    @test_util.custom_prefix('foo/bar/')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest, custom_prefix='foo/bar/'):
         executable = 'echo'
         valid_prog_environs = ['*']
         valid_systems = ['*']
@@ -303,8 +306,8 @@ def test_executable_is_required(local_exec_ctx):
 
 
 def test_compile_only_failure(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcepath = 'compiler_failure.c'
         valid_prog_environs = ['*']
         valid_systems = ['*']
@@ -317,8 +320,8 @@ def test_compile_only_failure(local_exec_ctx):
 
 
 def test_compile_only_warning(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
         build_system = 'SingleSource'
@@ -341,7 +344,7 @@ def test_pinned_test(pinnedtest, local_exec_ctx):
 
     pinned = MyTest()
     expected_prefix = os.path.join(os.getcwd(), 'unittests/resources/checks')
-    assert pinned._prefix == expected_prefix
+    assert pinned.prefix == expected_prefix
 
 
 def test_valid_systems_syntax(hellotest):
@@ -742,8 +745,8 @@ def test_supports_sysenv(testsys_exec_ctx):
 
 
 def test_sourcesdir_none(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RegressionTest):
+    class MyTest(rfm.RegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = None
         valid_prog_environs = ['*']
         valid_systems = ['*']
@@ -753,8 +756,8 @@ def test_sourcesdir_none(local_exec_ctx):
 
 
 def test_sourcesdir_build_system(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RegressionTest):
+    class MyTest(rfm.RegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         build_system = 'Make'
         sourcepath = 'code'
         executable = './code/hello'
@@ -772,8 +775,8 @@ def test_sourcesdir_git(local_exec_ctx):
     if test_util.OFFLINE:
         pytest.skip('offline tests requested')
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = 'https://github.com/reframe-hpc/ci-hello-world.git'
         executable = 'true'
         valid_systems = ['*']
@@ -782,15 +785,14 @@ def test_sourcesdir_git(local_exec_ctx):
 
         @sanity_function
         def validate(self):
-            print(self.stagedir)
             return sn.assert_true(os.path.exists('README.md'))
 
     _run(MyTest(), *local_exec_ctx)
 
 
 def test_sourcesdir_none_generated_sources(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RegressionTest):
+    class MyTest(rfm.RegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = None
         prebuild_cmds = [
             "printf '#include <stdio.h>\\n int main(){ "
@@ -809,8 +811,8 @@ def test_sourcesdir_none_generated_sources(local_exec_ctx):
 
 
 def test_sourcesdir_none_compile_only(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = None
         valid_prog_environs = ['*']
         valid_systems = ['*']
@@ -820,8 +822,8 @@ def test_sourcesdir_none_compile_only(local_exec_ctx):
 
 
 def test_sourcesdir_none_run_only(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = None
         executable = 'echo'
         executable_opts = ['Hello, World!']
@@ -836,8 +838,8 @@ def test_sourcesdir_none_run_only(local_exec_ctx):
 
 
 def test_sourcepath_abs(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
 
@@ -849,8 +851,8 @@ def test_sourcepath_abs(local_exec_ctx):
 
 
 def test_sourcepath_upref(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
 
@@ -862,8 +864,8 @@ def test_sourcepath_upref(local_exec_ctx):
 
 
 def test_sourcepath_non_existent(local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.CompileOnlyRegressionTest):
+    class MyTest(rfm.CompileOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
 
@@ -876,8 +878,7 @@ def test_sourcepath_non_existent(local_exec_ctx):
 
 
 def test_extra_resources(HelloTest, testsys_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         local = True
 
         @run_after('setup')
@@ -958,8 +959,7 @@ def test_post_init_hook(local_exec_ctx):
 
 
 def test_setup_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         count = variable(int, value=0)
 
         @run_before('setup')
@@ -978,8 +978,7 @@ def test_setup_hooks(HelloTest, local_exec_ctx):
 
 
 def test_compile_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         count = variable(int, value=0)
 
         @run_before('compile')
@@ -999,8 +998,7 @@ def test_compile_hooks(HelloTest, local_exec_ctx):
 
 
 def test_run_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         @run_before('run')
         def setflags(self):
             self.postrun_cmds = ['echo hello > greetings.txt']
@@ -1016,8 +1014,7 @@ def test_run_hooks(HelloTest, local_exec_ctx):
 
 
 def test_multiple_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
 
         @run_after('setup')
@@ -1038,8 +1035,7 @@ def test_multiple_hooks(HelloTest, local_exec_ctx):
 
 
 def test_stacked_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
 
         @run_before('setup')
@@ -1060,8 +1056,7 @@ def test_multiple_inheritance(HelloTest):
 
 
 def test_inherited_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class BaseTest(HelloTest):
+    class BaseTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
 
         @run_after('setup')
@@ -1145,8 +1140,7 @@ def test_inherited_hooks_order(weird_mro_test, local_exec_ctx):
 
 
 def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class T0(HelloTest):
+    class T0(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
 
         @run_after('setup')
@@ -1160,9 +1154,7 @@ def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
 
     t0 = T0()
     t1 = T1()
-    print('==> running t0')
     _run(t0, *local_exec_ctx)
-    print('==> running t1')
     _run(t1, *local_exec_ctx)
     assert t0.var == 1
     assert t1.var == 1
@@ -1170,8 +1162,7 @@ def test_inherited_hooks_from_instantiated_tests(HelloTest, local_exec_ctx):
 
 
 def test_overriden_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class BaseTest(HelloTest):
+    class BaseTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
         foo = variable(int, value=0)
 
@@ -1200,14 +1191,13 @@ def test_overriden_hooks(HelloTest, local_exec_ctx):
 
 
 def test_overriden_hook_different_stages(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(HelloTest):
+    class MyTest(HelloTest, custom_prefix='unittests/resources/checks'):
         @run_after('init')
         def foo(self):
             pass
 
         @run_after('setup')
-        def foo(self):
+        def foo(self):      # noqa: F811
             pass
 
     test = MyTest()
@@ -1215,8 +1205,8 @@ def test_overriden_hook_different_stages(HelloTest, local_exec_ctx):
 
 
 def test_overriden_hook_exec_order():
-    @test_util.custom_prefix('unittests/resources/checks')
-    class X(rfm.RunOnlyRegressionTest):
+    class X(rfm.RunOnlyRegressionTest,
+            custom_prefix='unittests/resources/checks'):
         @run_before('run')
         def foo(self):
             pass
@@ -1298,8 +1288,7 @@ def test_pinned_hooks_multiple_last_inherited():
 
 
 def test_disabled_hooks(HelloTest, local_exec_ctx):
-    @test_util.custom_prefix('unittests/resources/checks')
-    class BaseTest(HelloTest):
+    class BaseTest(HelloTest, custom_prefix='unittests/resources/checks'):
         var = variable(int, value=0)
         foo = variable(int, value=0)
 
@@ -1327,12 +1316,10 @@ def test_require_deps(HelloTest, local_exec_ctx):
     import reframe.frontend.dependencies as dependencies
     import reframe.frontend.executors as executors
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class T0(HelloTest):
+    class T0(HelloTest, custom_prefix='unittests/resources/checks'):
         x = variable(int, value=1)
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class T1(HelloTest):
+    class T1(HelloTest, custom_prefix='unittests/resources/checks'):
         @run_after('init')
         def setdeps(self):
             self.depends_on('T0')
@@ -1363,8 +1350,8 @@ def test_require_deps(HelloTest, local_exec_ctx):
 def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
     rt.runtime().site_config.add_sticky_option('general/trap_job_errors', True)
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
         executable = 'exit 10'
@@ -1376,8 +1363,8 @@ def test_trap_job_errors_without_sanity_patterns(local_exec_ctx):
 def test_trap_job_errors_with_sanity_patterns(local_exec_ctx):
     rt.runtime().site_config.add_sticky_option('general/trap_job_errors', True)
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         valid_prog_environs = ['*']
         valid_systems = ['*']
         prerun_cmds = ['echo hello']
@@ -1406,6 +1393,17 @@ def dummy_gpu_exec_ctx(testsys_exec_ctx):
 
 
 @pytest.fixture
+def custom_exec_ctx(make_exec_ctx):
+    def _make_ctx(options):
+        make_exec_ctx(test_util.TEST_CONFIG_FILE, 'testsys', options)
+        partition = test_util.partition_by_name('gpu')
+        environ = test_util.environment_by_name('builtin', partition)
+        return partition, environ
+
+    return _make_ctx
+
+
+@pytest.fixture
 def perf_file(tmp_path):
     yield tmp_path / 'perf.out'
 
@@ -1415,25 +1413,45 @@ def sanity_file(tmp_path):
     yield tmp_path / 'sanity.out'
 
 
+@pytest.fixture
+def ref_file(tmp_path):
+    if sys.version_info >= (3, 12):
+        BasePath = Path
+    elif os.name == 'nt':
+        BasePath = WindowsPath
+    else:
+        BasePath = PosixPath
+
+    class YamlFile(BasePath):
+        def write_yaml(self, yaml_contents):
+            with open(self, 'w') as fp:
+                yaml.dump(yaml_contents, fp)
+
+    path = YamlFile(tmp_path / 'references' / 'mytest.yaml')
+    path.parent.mkdir(exist_ok=True)
+    yield path
+
+
 # NOTE: The following series of tests test the `perf_patterns` syntax, so they
 # should not change to the `@performance_function` syntax`
 
+
 @pytest.fixture
-def dummytest(testsys_exec_ctx, perf_file, sanity_file):
-    class MyTest(rfm.RunOnlyRegressionTest):
-        def __init__(self):
-            self.perf_file = perf_file
-            self.sourcesdir = None
-            self.reference = {
-                'testsys': {
-                    'value1': (1.4, -0.1, 0.1, None),
-                    'value2': (1.7, -0.1, 0.1, None),
-                },
-                'testsys:gpu': {
-                    'value3': (3.1, -0.1, 0.1, None),
-                }
+def make_test_classic(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
+    def _make_test(reference=None):
+        user_reference = reference or {
+            'testsys': {
+                'value1': (1.4, -0.1, 0.1, None),
+                'value2': (1.7, -0.1, 0.1, None),
+            },
+            'testsys:gpu': {
+                'value3': (3.1, -0.1, 0.1, None),
             }
-            self.perf_patterns = {
+        }
+
+        class MyTest(rfm.RunOnlyRegressionTest, custom_prefix=tmp_path):
+            reference = user_reference
+            perf_patterns = {
                 'value1': sn.extractsingle(
                     r'perf1 = (\S+)', perf_file, 1, float
                 ),
@@ -1444,20 +1462,19 @@ def dummytest(testsys_exec_ctx, perf_file, sanity_file):
                     r'perf3 = (\S+)', perf_file, 1, float
                 )
             }
-            self.sanity_patterns = sn.assert_found(
-                r'result = success', sanity_file
-            )
+            sanity_patterns = sn.assert_found(r'result = success', sanity_file)
 
-    yield MyTest()
+        return MyTest()
+
+    return _make_test
 
 
 @pytest.fixture
-def dummytest_modern(testsys_exec_ctx, perf_file, sanity_file):
+def make_test_modern(testsys_exec_ctx, perf_file, sanity_file, tmp_path):
     '''Modern version of the dummytest above'''
 
-    class MyTest(rfm.RunOnlyRegressionTest):
-        perf_file = perf_file
-        reference = {
+    def _make_test(reference=None):
+        user_reference = reference or {
             'testsys': {
                 'value1': (1.4, -0.1, 0.1, None),
                 'value2': (1.7, -0.1, 0.1, None),
@@ -1467,59 +1484,78 @@ def dummytest_modern(testsys_exec_ctx, perf_file, sanity_file):
             }
         }
 
-        @sanity_function
-        def validate(self):
-            return sn.assert_found(r'result = success', sanity_file)
+        class MyTest(rfm.RunOnlyRegressionTest, custom_prefix=tmp_path):
+            perf_file = variable(str, Path)
+            reference = user_reference
 
-        @performance_function('unit')
-        def value1(self):
-            return sn.extractsingle(r'perf1 = (\S+)', perf_file, 1, float)
+            @sanity_function
+            def validate(self):
+                return sn.assert_found(r'result = success', sanity_file)
 
-        @performance_function('unit')
-        def value2(self):
-            return sn.extractsingle(r'perf2 = (\S+)', perf_file, 1, float)
+            @performance_function('unit')
+            def value1(self):
+                return sn.extractsingle(r'perf1 = (\S+)', perf_file, 1, float)
 
-        @performance_function('unit')
-        def value3(self):
-            return sn.extractsingle(r'perf3 = (\S+)', perf_file, 1, float)
+            @performance_function('unit')
+            def value2(self):
+                return sn.extractsingle(r'perf2 = (\S+)', perf_file, 1, float)
 
-    yield MyTest()
+            @performance_function('unit')
+            def value3(self):
+                return sn.extractsingle(r'perf3 = (\S+)', perf_file, 1, float)
+
+            @run_after('init')
+            def set_perf_file(self):
+                self.perf_file = perf_file
+
+        return MyTest()
+
+    return _make_test
 
 
 @pytest.fixture(params=['classic', 'modern'])
-def dummy_perftest(request, dummytest, dummytest_modern):
-    if request.param == 'modern':
-        return dummytest_modern
-    else:
-        return dummytest
+def make_perftest(request, make_test_modern, make_test_classic):
+    def _make_perftest(reference=None):
+        if request.param == 'modern':
+            return make_test_modern(reference)
+        else:
+            return make_test_classic(reference)
+
+    return _make_perftest
 
 
-def test_sanity_success(dummytest, sanity_file, perf_file, dummy_gpu_exec_ctx):
+def test_sanity_success(make_test_classic, sanity_file, perf_file,
+                        dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
+    dummytest = make_test_classic()
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_sanity_failure(dummytest, sanity_file, dummy_gpu_exec_ctx):
+def test_sanity_failure(make_test_classic, sanity_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = failure\n')
     with pytest.raises(SanityError):
-        _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
+        _run_sanity(make_test_classic(), *dummy_gpu_exec_ctx, skip_perf=True)
 
 
-def test_sanity_failure_noassert(dummytest, sanity_file, dummy_gpu_exec_ctx):
+def test_sanity_failure_noassert(make_test_classic, sanity_file,
+                                 dummy_gpu_exec_ctx):
+    dummytest = make_test_classic()
     dummytest.sanity_patterns = sn.findall(r'result = success', sanity_file)
     sanity_file.write_text('result = failure\n')
     with pytest.raises(SanityError):
         _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
 
 
-def test_sanity_multiple_patterns(dummytest, sanity_file, dummy_gpu_exec_ctx):
+def test_sanity_multiple_patterns(make_test_classic, sanity_file,
+                                  dummy_gpu_exec_ctx):
     sanity_file.write_text('result1 = success\n'
                            'result2 = success\n')
 
     # Simulate a pure sanity test; reset the perf_patterns
+    dummytest = make_test_classic()
     dummytest.perf_patterns = None
     dummytest.sanity_patterns = sn.assert_eq(
         sn.count(sn.findall(r'result\d = success', sanity_file)), 2
@@ -1527,6 +1563,7 @@ def test_sanity_multiple_patterns(dummytest, sanity_file, dummy_gpu_exec_ctx):
     _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
 
     # Require more patterns to be present
+    dummytest = make_test_classic()
     dummytest.sanity_patterns = sn.assert_eq(
         sn.count(sn.findall(r'result\d = success', sanity_file)), 3
     )
@@ -1534,11 +1571,12 @@ def test_sanity_multiple_patterns(dummytest, sanity_file, dummy_gpu_exec_ctx):
         _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
 
 
-def test_sanity_multiple_files(dummytest, tmp_path, dummy_gpu_exec_ctx):
+def test_sanity_multiple_files(make_test_classic, tmp_path, dummy_gpu_exec_ctx):
     file0 = tmp_path / 'out1.txt'
     file1 = tmp_path / 'out2.txt'
     file0.write_text('result = success\n')
     file1.write_text('result = success\n')
+    dummytest = make_test_classic()
     dummytest.sanity_patterns = sn.all([
         sn.assert_found(r'result = success', file0),
         sn.assert_found(r'result = success', file1)
@@ -1546,39 +1584,39 @@ def test_sanity_multiple_files(dummytest, tmp_path, dummy_gpu_exec_ctx):
     _run_sanity(dummytest, *dummy_gpu_exec_ctx, skip_perf=True)
 
 
-def test_performance_failure(dummytest, sanity_file,
+def test_performance_failure(make_perftest, sanity_file,
                              perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.0\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
     with pytest.raises(PerformanceError):
-        _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+        _run_sanity(make_perftest(), *dummy_gpu_exec_ctx)
 
 
-def test_reference_unknown_tag(dummytest, sanity_file,
+def test_reference_unknown_tag(make_test_classic, sanity_file,
                                perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {
+    dummytest = make_test_classic({
         'testsys': {
             'value1': (1.4, -0.1, 0.1, None),
             'value2': (1.7, -0.1, 0.1, None),
             'foo': (3.1, -0.1, 0.1, None),
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_unknown_system(dummytest, sanity_file,
+def test_reference_unknown_system(make_test_classic, sanity_file,
                                   perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {
+    dummytest = make_test_classic({
         'testsys:login': {
             'value1': (1.4, -0.1, 0.1, None),
             'value3': (3.1, -0.1, 0.1, None),
@@ -1586,43 +1624,43 @@ def test_reference_unknown_system(dummytest, sanity_file,
         'testsys:login2': {
             'value2': (1.7, -0.1, 0.1, None)
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_empty(dummytest, sanity_file,
+def test_reference_empty(make_test_classic, sanity_file,
                          perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {}
+    dummytest = make_test_classic({})
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_default(dummytest, sanity_file,
+def test_reference_default(make_perftest, sanity_file,
                            perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {
+    dummytest = make_perftest({
         '*': {
             'value1': (1.4, -0.1, 0.1, None),
             'value2': (1.7, -0.1, 0.1, None),
             'value3': (3.1, -0.1, 0.1, None),
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_tag_resolution(dummytest, sanity_file,
+def test_reference_tag_resolution(make_perftest, sanity_file,
                                   perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
-    dummytest.reference = {
+    dummytest = make_perftest({
         'testsys': {
             'value1': (1.4, -0.1, 0.1, None),
             'value2': (1.7, -0.1, 0.1, None),
@@ -1630,19 +1668,18 @@ def test_reference_tag_resolution(dummytest, sanity_file,
         '*': {
             'value3': (3.1, -0.1, 0.1, None),
         }
-    }
+    })
     _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_required_reference(dummy_perftest, sanity_file,
+def test_required_reference(make_perftest, sanity_file,
                             perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
 
-    dummy_perftest.require_reference = True
-    dummy_perftest.reference = {
+    dummy_perftest = make_perftest({
         'testsys:login': {
             'value1': (1.4, -0.1, 0.1, None),
             'value3': (3.1, -0.1, 0.1, None),
@@ -1650,26 +1687,346 @@ def test_required_reference(dummy_perftest, sanity_file,
         'foo': {
             'value2': (1.7, -0.1, 0.1, None)
         }
-    }
-    with pytest.raises(PerformanceError):
+    })
+    dummy_perftest.require_reference = True
+    with pytest.raises(PerformanceError,
+                       match=r"no reference value found for.*'value1'"):
         _run_sanity(dummy_perftest, *dummy_gpu_exec_ctx)
 
 
-def test_reference_deferrable(dummy_perftest):
+def test_reference_deferrable(make_perftest):
     with pytest.raises(TypeError):
-        dummy_perftest.reference = {'*': {'value1': (sn.defer(1), -0.1, -0.1)}}
+        make_perftest({'*': {'value1': (sn.defer(1), -0.1, -0.1)}})
 
     with pytest.raises(TypeError):
         class T(rfm.RegressionTest):
             reference = {'*': {'value1': (sn.defer(1), -0.1, -0.1)}}
 
 
-def test_performance_invalid_value(dummytest, sanity_file,
+def test_reference_index(make_perftest):
+    dummytest = make_perftest({
+        '$index': ('x', 'y'),
+        1: {2: {'value1': (1., -0.1, 0.1, None)}},
+        2: {2: {'value1': (2., -0.1, 0.1, None)}}
+    })
+    dummytest.x = 1
+    dummytest.y = 2
+    assert dummytest.reference[dummytest]['value1'] == (1., -0.1, 0.1, None)
+
+    dummytest.x = 2
+    assert dummytest.reference[dummytest]['value1'] == (2., -0.1, 0.1, None)
+
+    dummytest.x = 3
+    with pytest.raises(KeyError):
+        dummytest.reference[dummytest]['value1']
+
+
+def test_reference_index_regex(make_perftest):
+    dummytest = make_perftest({
+        '$index': ('x',),
+        'foo.*': {'value1': (1., -0.1, 0.1, None)}
+    })
+    dummytest.x = 'foo'
+    assert dummytest.reference[dummytest]['value1'] == (1., -0.1, 0.1, None)
+
+    dummytest.x = 'foobar'
+    assert dummytest.reference[dummytest]['value1'] == (1., -0.1, 0.1, None)
+
+    # Verify that a strict match is required
+    dummytest.x = 'barfoo'
+    with pytest.raises(KeyError):
+        assert dummytest.reference[dummytest]
+
+
+def test_reference_index_regex_non_str(make_perftest):
+    dummytest = make_perftest({
+        '$index': ('x',),
+        '1.*': {'value1': (1., -0.1, 0.1, None)}
+    })
+    # Both the attribute and the reference key must be string to treat them as
+    # regexes
+    dummytest.x = 13
+    with pytest.raises(KeyError):
+        dummytest.reference[dummytest]['value1']
+
+    dummytest = make_perftest({
+        '$index': ('x',),
+        '1.*': {'value1': (1., -0.1, 0.1, None)}
+    })
+    with pytest.raises(KeyError):
+        dummytest.reference[dummytest]['value1']
+
+    dummytest = make_perftest({
+        '$index': ('x',),
+        '13': {'value1': (1., -0.1, 0.1, None)}
+    })
+    with pytest.raises(KeyError):
+        dummytest.reference[dummytest]['value1']
+
+
+@pytest.fixture(params=[('$system', 'testsys'),
+                        ('$partition', 'testsys:gpu'),
+                        ('$environ', 'builtin'),
+                        ('$processor.arch', 'skylake'),
+                        ('$dev.gpu.model', 'p100')])
+def special_attrs(request):
+    return request.param
+
+
+def test_reference_index_special(make_perftest, special_attrs,
+                                 sanity_file, perf_file,
+                                 dummy_gpu_exec_ctx):
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n')
+    attr, expected = special_attrs
+    dummytest = make_perftest({
+        '$index': (attr,),
+        expected: {
+            'value1': (1.4, -0.1, 0.1, None)
+        }
+    })
+    _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+    assert dummytest.reference[dummytest]['value1'] == (1.4, -0.1, 0.1, None)
+
+
+def test_reference_index_special_unknown_attr(make_perftest,
+                                              sanity_file, perf_file,
+                                              dummy_gpu_exec_ctx):
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n')
+    dummytest = make_perftest({
+        '$index': ('$processor.arch', '$dev.gpu.foo'),
+        'skylake': {
+            'p100': {'value1': (10., -0.1, 0.1, None)}
+        }
+    })
+    _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+    with pytest.raises(KeyError):
+        dummytest.reference[dummytest]
+
+
+@pytest.fixture(params=[('$processor', 'skylake'),
+                        ('$dev', 'p100'), ('$dev.gpu', 'p100')])
+def incomplete_special_attr(request):
+    return request.param
+
+
+def test_reference_index_special_incomplete(make_perftest,
+                                            incomplete_special_attr,
+                                            sanity_file, perf_file,
+                                            dummy_gpu_exec_ctx):
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n')
+    index, value = incomplete_special_attr
+    dummytest = make_perftest({
+        '$index': (index,),
+        value: {
+            'value1': (10., -0.1, 0.1, None)
+        }
+    })
+    _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+    with pytest.raises(KeyError):
+        dummytest.reference[dummytest]
+
+
+def test_reference_index_protocol(make_perftest, sanity_file, perf_file,
+                                  dummy_gpu_exec_ctx):
+    class _MyTest(type(make_perftest())):
+        reference = {
+            '$index': ('$dev.gpu.model',),
+            'v100': {
+                'value1': (1.4, -0.1, 0.1, None)
+            }
+        }
+
+        def __ref_missing_dev_gpu_model__(self, data, key):
+            # Map p100 to v100 reference values
+            if key == 'p100':
+                return data['v100']
+
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n')
+    test = _MyTest()
+    _run_sanity(test, *dummy_gpu_exec_ctx)
+    assert test.reference[test]['value1'] == (1.4, -0.1, 0.1, None)
+
+
+@pytest.fixture(params=['absolute', 'relative'])
+def make_path(request, tmp_path):
+    def _make_path(path):
+        if request.param == 'absolute':
+            return path
+
+        return path.relative_to(tmp_path)
+
+    return _make_path
+
+
+def test_reference_external_noindex(make_perftest, make_path,
+                                    sanity_file, perf_file, ref_file,
+                                    dummy_gpu_exec_ctx):
+    ref_file.write_yaml({
+        'MyTest': {
+            'testsys': {
+                'value1': [1.4, -0.1, 0.1, None],
+                'value2': [1.7, -0.1, 0.1, None],
+            },
+            'testsys:gpu': {
+                'value3': [3.1, -0.1, 0.1, None],
+            }
+        }
+    })
+    dummytest = make_perftest({'$ref': make_path(ref_file)})
+    dummytest.require_reference = True
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n')
+    _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+
+
+def test_reference_external_with_index(make_perftest, make_path,
+                                       sanity_file, perf_file, ref_file,
+                                       dummy_gpu_exec_ctx):
+    ref_file.write_yaml({
+        'MyTest': {
+            '$index': ['$processor.arch', '$dev.gpu.model'],
+            'skylake': {
+                'p100': {
+                    'value1': [1.4, -0.1, 0.1, None],
+                    'value2': [1.7, -0.1, 0.1, None],
+                    'value3': [3.1, -0.1, 0.1, None]
+                }
+            }
+        }
+    })
+    dummytest = make_perftest({'$ref': make_path(ref_file)})
+    dummytest.require_reference = True
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n')
+    perf_file.write_text('perf2 = 1.7\n')
+    perf_file.write_text('perf3 = 3.1\n')
+    _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+
+
+def test_reference_external_xfail(make_perftest, sanity_file, perf_file, ref_file,
+                                  dummy_gpu_exec_ctx):
+    ref_file.write_yaml({
+        'MyTest': {
+            '$index': ['$processor.arch', '$dev.gpu.model'],
+            'skylake': {
+                'p100': {
+                    'value1': ['$xfail', 'expected', [1.4, -0.1, 0.1, None]],
+                    'value2': [1.7, -0.1, 0.1, None],
+                    'value3': [3.1, -0.1, 0.1, None]
+                }
+            }
+        }
+    })
+    dummytest_modern = make_perftest({'$ref': ref_file})
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.0\n')
+    perf_file.write_text('perf2 = 1.7\n')
+    perf_file.write_text('perf3 = 3.1\n')
+    _run_sanity(dummytest_modern, *dummy_gpu_exec_ctx)
+
+
+@pytest.fixture(params=[
+    ['$invalid_modifier', 'expected', [1.4, -0.1, 0.1, None]],
+    [],
+    'invalid',
+    123,
+    [1.4],
+    [1.4, -0.1]
+])
+def invalid_ref_entry(request):
+    return request.param
+
+
+def test_reference_external_invalid_ref_entry(make_perftest, ref_file,
+                                              invalid_ref_entry):
+    ref_file.write_yaml({
+        'MyTest': {
+            '$index': ['$processor.arch', '$dev.gpu.model'],
+            'skylake': {
+                'p100': {
+                    'value1': invalid_ref_entry,
+                }
+            }
+        }
+    })
+    with pytest.raises(ReferenceParseError):
+        make_perftest({'$ref': ref_file})
+
+
+def test_reference_external_custom_prefix(make_perftest, make_path,
+                                          sanity_file, perf_file, ref_file,
+                                          tmp_path, custom_exec_ctx):
+    ref_file.write_yaml({
+        'MyTest': {
+            '$index': ['$processor.arch', '$dev.gpu.model'],
+            'skylake': {
+                'p100': {
+                    'value1': [1.4, -0.1, 0.1, None],
+                    'value2': [1.7, -0.1, 0.1, None],
+                    'value3': [3.1, -0.1, 0.1, None]
+                }
+            }
+        }
+    })
+    dummytest = make_perftest({'$ref': make_path(ref_file)})
+    dummytest.require_reference = True
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n')
+    perf_file.write_text('perf2 = 1.7\n')
+    perf_file.write_text('perf3 = 3.1\n')
+    _run_sanity(dummytest,
+                *custom_exec_ctx({'general/reference_prefix': tmp_path}))
+
+
+def test_regressiondict_custom_protocol(dummy_gpu_exec_ctx):
+    class _MyTest(rfm.RunOnlyRegressionTest):
+        x = variable(int, value=1)
+        foo = variable(rfm.RegressionTestDictType(protocol='foo'), value={
+            '$index': ('$dev.gpu.model', 'x'),
+            'v100': {
+                2: {'value1': (1.4, -0.1, 0.1, None)},
+                4: {'value1': (2.8, -0.1, 0.1, None)},
+            }
+        }, allow_implicit=True)
+
+        def __foo_missing_dev_gpu_model__(self, data, key):
+            # Map p100 to v100 reference values
+            if key == 'p100':
+                return data['v100']
+
+        def __foo_missing_x__(self, data, key):
+            if key > 4:
+                return data[4]
+
+            raise KeyError(key)
+
+    test = _MyTest()
+    test.x = 2
+    test.setup(*dummy_gpu_exec_ctx)
+    assert test.foo[test] == {'value1': (1.4, -0.1, 0.1, None)}
+
+    test.x = 4
+    assert test.foo[test] == {'value1': (2.8, -0.1, 0.1, None)}
+
+    test.x = 6
+    assert test.foo[test] == {'value1': (2.8, -0.1, 0.1, None)}
+
+    test.x = 1
+    with pytest.raises(KeyError):
+        test.foo[test]
+
+
+def test_performance_invalid_value(make_test_classic, sanity_file,
                                    perf_file, dummy_gpu_exec_ctx):
     sanity_file.write_text('result = success\n')
     perf_file.write_text('perf1 = 1.3\n'
                          'perf2 = foo\n'
                          'perf3 = 3.3\n')
+    dummytest = make_test_classic()
     dummytest.perf_patterns = {
         'value1': sn.extractsingle(r'perf1 = (\S+)', perf_file, 1, float),
         'value2': sn.extractsingle(r'perf2 = (\S+)', perf_file, 1, str),
@@ -1679,7 +2036,7 @@ def test_performance_invalid_value(dummytest, sanity_file,
         _run_sanity(dummytest, *dummy_gpu_exec_ctx)
 
 
-def test_perf_patterns_evaluation(dummytest, sanity_file,
+def test_perf_patterns_evaluation(make_test_classic, sanity_file,
                                   perf_file, dummy_gpu_exec_ctx):
     # All performance values must be evaluated, despite the first one
     # failing To test this, we need an extract function that will have a
@@ -1701,6 +2058,7 @@ def test_perf_patterns_evaluation(dummytest, sanity_file,
     perf_file.write_text('perf1 = 1.0\n'
                          'perf2 = 1.8\n'
                          'perf3 = 3.3\n')
+    dummytest = make_test_classic()
     dummytest.perf_patterns = {
         'value1': extract_perf(r'perf1 = (?P<v1>\S+)', 'v1'),
         'value2': extract_perf(r'perf2 = (?P<v2>\S+)', 'v2'),
@@ -1911,8 +2269,8 @@ def test_perf_expected_failures(perftest, sanity_file, perf_file,
 @pytest.fixture
 def container_test(tmp_path):
     def _container_test(platform, image):
-        @test_util.custom_prefix(tmp_path)
-        class ContainerTest(rfm.RunOnlyRegressionTest):
+        class ContainerTest(rfm.RunOnlyRegressionTest,
+                            custom_prefix=tmp_path):
             valid_prog_environs = ['*']
             valid_systems = ['*']
             prerun_cmds = ['touch foo']
@@ -2036,6 +2394,7 @@ def test_make_test_without_builtins(local_exec_ctx):
 
 
 def test_make_test_with_module():
+    hellomod = import_module_from_file('unittests/resources/checks/hellocheck.py')
     hello_cls = make_test(
         'HelloTest', (rfm.RunOnlyRegressionTest,),
         {
@@ -2044,11 +2403,49 @@ def test_make_test_with_module():
             'executable': 'echo',
             'sanity_patterns': sn.assert_true(1)
         },
-        module='foo'
+        module=hellomod.__name__
     )
 
     assert hello_cls.__name__ == 'HelloTest'
-    assert hello_cls.__module__ == 'foo'
+    assert hello_cls.__module__ == hellomod.__name__
+
+    hello_test = hello_cls()
+    assert hello_test.prefix == os.path.dirname(hellomod.__file__)
+
+
+def test_make_test_with_unknown_module():
+    assert 'no_such_module' not in sys.modules
+    with pytest.raises(ModuleNotFoundError):
+        make_test(
+            'HelloTest', (rfm.RunOnlyRegressionTest,),
+            {
+                'valid_systems': ['*'],
+                'valid_prog_environs': ['*'],
+                'executable': 'echo',
+                'sanity_patterns': sn.assert_true(1)
+            },
+            module='no_such_module'
+        )
+
+
+def test_make_test_autoload_module(tmp_path, monkeypatch):
+    monkeypatch.syspath_prepend(tmp_path)
+    with osext.change_dir(tmp_path):
+        (tmp_path / 'mymodule.py').write_text('XYZ = 1')
+
+    hello_cls = make_test(
+        'HelloTest', (rfm.RunOnlyRegressionTest,),
+        {
+            'valid_systems': ['*'],
+            'valid_prog_environs': ['*'],
+            'executable': 'echo',
+            'sanity_patterns': sn.assert_true(1)
+        },
+        module='mymodule'
+    )
+
+    assert hello_cls.__name__ == 'HelloTest'
+    assert sys.modules[hello_cls.__module__].XYZ == 1
 
 
 def test_make_test_with_builtins(local_exec_ctx):

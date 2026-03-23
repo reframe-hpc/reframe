@@ -314,6 +314,93 @@ In this case, you could set the :attr:`build_system` to ``'CustomBuild'`` and su
     You should use this build system with caution, because environment management, reproducibility and any potential side effects are all controlled by the custom build system.
 
 
+.. _howto-reference-index:
+
+Custom performance reference indexing
+=====================================
+
+.. versionadded:: 4.10
+
+By default the :attr:`~reframe.core.pipeline.RegressionTest.reference` attribute is indexed by the system and/or system/partition combination.
+However, it is often the case that the reference values depend on test variables and/or parameters.
+ReFrame allows you to define a custom index for the reference dictionary by using the special ``$index`` key.
+Here is an example reference definition for the stream benchmark tutorial example where references are defined per number of threads and thread placement:
+
+.. literalinclude:: ../examples/howto/reference_index.py
+   :lines: 5-
+
+Special keys are also supported to allow users to index their references by the system, environment, processor and device details.
+For example, we could define different references for different environments by using the ``$environ`` special key as follows:
+
+.. code-block:: python
+
+    reference = {
+        '$index': ('$environ', 'num_threads'),
+        'gnu': {
+            '1': {
+                'copy_bw': (10000, -0.2, 0.2, 'MB/s'),
+            },
+            '2': {
+                'copy_bw': (20000, -0.2, 0.2, 'MB/s'),
+            },
+            '4': {
+                'copy_bw': (40000, -0.2, 0.2, 'MB/s'),
+            },
+        },
+        'clang': {
+            '1': {
+                'copy_bw': (10000, -0.2, 0.2, 'MB/s'),
+            },
+            '2': {
+                'copy_bw': (20000, -0.2, 0.2, 'MB/s'),
+            },
+            '4': {
+                'copy_bw': (40000, -0.2, 0.2, 'MB/s'),
+            },
+        }
+    }
+
+External references
+-------------------
+
+.. versionadded:: 4.10
+
+Users can also keep test references in a separate YAML file instead of in the test class.
+To achieve this, the special ``$ref`` key must be used in the :attr:`reference` dictionary.
+
+.. code-block:: python
+
+    reference = {'$ref': 'references/stream.yaml'}
+
+By default, reference files are resolved relative to the test's :attr:`prefix` directory, but this can be controlled by the :attr:`~config.general.reference_prefix` configuration option or the :envvar:`RFM_REFERENCE_PREFIX`.
+
+The reference file can contain references for multiple tests and the general structure is an 1-1 match to the inline reference dictionary.
+Here is how the reference file for the previous example would look like:
+
+.. code-block:: yaml
+
+    stream_test:
+      $index: ['$environ', 'num_threads']
+      gnu:
+         1:
+            'copy_bw': [10000, -0.2, 0.2, 'MB/s']
+         2:
+            'copy_bw': [20000, -0.2, 0.2, 'MB/s']
+         4:
+            'copy_bw': [40000, -0.2, 0.2, 'MB/s']
+      clang:
+         1:
+            'copy_bw': [10000, -0.2, 0.2, 'MB/s']
+         2:
+            'copy_bw': [20000, -0.2, 0.2, 'MB/s']
+         4:
+            'copy_bw': [40000, -0.2, 0.2, 'MB/s']
+
+
+.. seealso::
+   Check the API docs for the :attr:`~reframe.core.pipeline.RegressionTest.reference` test's attribute for all the details on how to define references.
+
+
 .. _working-with-environment-modules:
 
 Working with environment modules
