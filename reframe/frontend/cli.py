@@ -883,6 +883,22 @@ def main():
         help='Enable results storage'
     )
     argparser.add_argument(
+        dest='slurm_job_cancel_reasons',
+        envvar='RFM_SLURM_JOB_CANCEL_REASONS',
+        configvar='systems*/sched_options/slurm_job_cancel_reasons',
+        action='store',
+        help='Reasons to cancel a Slurm job',
+        type=typ.List[str]
+    )
+    argparser.add_argument(
+        dest='slurm_pending_job_reason_poll_freq',
+        envvar='RFM_SLURM_PENDING_JOB_REASON_POLL_FREQ',
+        configvar='systems*/sched_options/slurm_pending_job_reason_poll_freq',
+        action='store',
+        help='Frequency of polling for the reason a Slurm job is pending',
+        type=int
+    )
+    argparser.add_argument(
         dest='sqlite_conn_timeout',
         envvar='RFM_SQLITE_CONN_TIMEOUT',
         configvar='storage/sqlite_conn_timeout',
