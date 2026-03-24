@@ -455,11 +455,13 @@ System Partition Configuration
 
    Ignore the ``ReqNodeNotAvail`` Slurm state.
 
-   If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail`` and a list of unavailable nodes is also specified, ReFrame will check the status of the nodes and, if all of them are indeed down, it will cancel the job.
-   Sometimes, however, when Slurm's backfill algorithm takes too long to compute, Slurm will set the pending reason to ``ReqNodeNotAvail`` and mark all system nodes as unavailable, causing ReFrame to kill the job.
+   If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail``, ReFrame will cancel the job.
+   Sometimes, however, when Slurm's backfill algorithm takes too long to compute, Slurm will set the pending reason to ``ReqNodeNotAvail`` and mark all system nodes as unavailable, causing ReFrame to its jobs.
    In such cases, you may set this parameter to :obj:`True` to avoid this.
 
    This option is relevant for the Slurm backends only.
+
+   .. seealso:: :attr:`~config.systems.partitions.sched_options.slurm_job_cancel_reasons`
 
 .. py:attribute:: systems.partitions.sched_options.job_submit_timeout
 
@@ -505,6 +507,45 @@ System Partition Configuration
    This option is relevant for the ``slurm`` backend only.
 
    .. versionadded:: 4.8
+
+
+.. py:attribute:: systems.partitions.sched_options.slurm_job_cancel_reasons
+
+   :required: No
+   :default: ``["ReqNodeNotAvail"]``
+
+   Reasons to proactively cancel a pending Slurm job.
+
+   If a job associated to a test is in pending state with one of the reasons listed here, ReFrame will cancel the job.
+
+   This option is relevant for the Slurm backends only.
+
+   .. versionadded:: 4.10
+
+   .. seealso::
+
+      :attr:`~config.systems.partitions.sched_options.ignore_reqnodenotavail`
+      :attr:`~config.systems.partitions.sched_options.slurm_pending_job_reason_poll_freq`
+
+
+.. py:attribute:: systems.partitions.sched_options.slurm_pending_job_reason_poll_freq
+
+   :required: No
+   :default: ``10``
+
+   Frequency of polling for the reason a Slurm job is pending.
+
+   When using the ``slurm`` backend, ReFrame needs to explicitly issue an ``squeue`` command to get the reason a job is pending, in order to cancel it if it is blocked indefinitely.
+   This option controls the frequency of this polling.
+   It is an integer number counting the number of job polling cycles before issuing the ``squeue`` command.
+   ReFrame will issue a single ``squeue`` command to query all pending jobs at once.
+   However, if your system is sensitive to Slurm RPC calls, you may consider increasing this value.
+
+   This option is relevant for the ``slurm`` backend only.
+
+   .. versionadded:: 4.10
+
+   .. seealso:: :attr:`~config.systems.partitions.sched_options.slurm_job_cancel_reasons`
 
 
 .. py:attribute:: systems.partitions.sched_options.unqualified_hostnames

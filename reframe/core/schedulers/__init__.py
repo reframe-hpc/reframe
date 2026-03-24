@@ -175,6 +175,18 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         :meta private:
         '''
 
+    def cancel_many(self, jobs):
+        '''Cancel multiple jobs at once.
+
+        By default, this method calls :meth:`cancel` for each job. Backends
+        may override this method to implement more efficient cancellation.
+
+        :arg jobs: The job descriptors to cancel.
+        :meta private:
+        '''
+        for job in jobs:
+            self.cancel(job)
+
     @abc.abstractmethod
     def finished(self, job):
         '''Poll a job.
