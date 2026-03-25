@@ -2050,7 +2050,7 @@ Whenever an environment variable is associated with a configuration option, its 
 
 .. envvar:: RFM_IGNORE_REQNODENOTAVAIL
 
-   Do not treat specially jobs in pending state with the reason ``ReqNodeNotAvail`` (Slurm only).
+   Do not cancel jobs that are pending due to the reason ``ReqNodeNotAvail`` (Slurm only).
 
    .. table::
       :align: left
@@ -2400,6 +2400,36 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 .. versionadded:: 4.7
+
+
+.. envvar:: RFM_SLURM_JOB_CANCEL_REASONS
+
+   Reasons to proactively cancel a pending Slurm job.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.systems.partitions.sched_options.slurm_job_cancel_reasons`
+      ================================== ==================
+
+   .. versionadded:: 4.10
+
+
+.. envvar:: RFM_SLURM_PENDING_JOB_REASON_POLL_FREQ
+
+   Frequency of polling for the reason a Slurm job is pending.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.systems.partitions.sched_options.slurm_pending_job_reason_poll_freq`
+      ================================== ==================
+
+   .. versionadded:: 4.10
 
 
 .. envvar:: RFM_STAGE_DIR
