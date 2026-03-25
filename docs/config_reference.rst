@@ -441,6 +441,7 @@ System Partition Configuration
    If empty, only the local cluster is considered.
    If the single value ``all`` is passed, then all clusters will be considered.
    This is translated directly to Slurm's ``-M`` option passed to the ``sacct`` or ``squeue`` commands.
+   If set, the ``-M`` option will also be passed in the partition's :attr:`~config.systems.partitions.access` options.
 
    This option is relevant only for the Slurm backends.
 

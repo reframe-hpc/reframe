@@ -161,11 +161,17 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._sacct  = 'sacct'
         self._squeue = 'squeue'
         if self._multi_clusters:
-            clusters = ",".join(self._multi_clusters)
+            clusters = ','.join(self._multi_clusters)
             self._sacct  += f' -M {clusters}'
             self._squeue += f' -M {clusters}'
 
     def make_job(self, *args, **kwargs):
+        if self._multi_clusters:
+            # Inject the `-M` option in case of multiple clusters
+            sched_access = kwargs.get('sched_access') or []
+            sched_access += [f'-M {",".join(self._multi_clusters)}']
+            kwargs['sched_access'] = sched_access
+
         return _SlurmJob(*args, **kwargs)
 
     def _format_option(self, var, option):
