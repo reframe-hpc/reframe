@@ -18,7 +18,7 @@
 [![DOI](https://zenodo.org/badge/89384186.svg)](https://zenodo.org/badge/latestdoi/89384186)<br/>
 [![Twitter Follow](https://img.shields.io/twitter/follow/ReFrameHPC?style=social)](https://twitter.com/ReFrameHPC)
 
-# ReFrame in a Nutshell
+# Overview
 
 ReFrame is a powerful framework for writing system regression tests and benchmarks, specifically targeted to HPC systems.
 The goal of the framework is to abstract away the complexity of the interactions with the system, separating the logic of a test from the low-level details, which pertain to the system configuration and setup.
@@ -36,49 +36,105 @@ Please visit the project's documentation [page](https://reframe-hpc.readthedocs.
 
 ## Installation
 
-ReFrame is fairly easy to install.
-All you need is Python 3.6 or above and to run its bootstrap script:
+ReFrame is fairly easy to install as PyPI package.
+
+```bash
+# Fetch uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install ReFrame
+uv tool install reframe-hpc
+
+# Check the installation
+reframe -V
+```
+
+This will place the `reframe` executable under `$HOME/.local/bin` and the package under `$HOME/.local/share/uv/tools/reframe-hpc`.
+To make available the manpage and the shell completions add the following lines in your shell's profile script:
+
+### Bash/Zsh
+
+Add the following lines to your `$HOME/.profile`:
+
+```bash
+export MANPATH=${HOME}/.local/share/uv/tools/reframe-hpc/share/man:${MANPATH}:
+source ${HOME}/.local/share/uv/tools/reframe-hpc/share/bash-completion/completions/reframe
+```
+
+### Fish
+
+Add the following lines to your `$HOME/.config/fish/config.fish`:
+
+```bash
+set -apgx MANPATH ${HOME}/.local/share/uv/tools/reframe-hpc/share/man ""
+source ${HOME}/.local/share/uv/tools/reframe-hpc/share/fish/vendor_completions.d/reframe.fish
+```
+
+> NOTE: Using `uv` is not required to install ReFrame.
+> You can use any modern Python build system that recognizes the `pyproject.toml` file.
+
+### Multi-architecture installations on shared filesystem
+
+If you plan to install ReFrame for multiple platforms in a shared installation, you should make sure each installation resides in a different prefix.
+You can achieve this with `uv` as follows:
+
+```bash
+export UV_TOOL_BIN_DIR=$HOME/.local/$(uname -m)/bin
+export UV_TOOL_DIR=$HOME/.local/$(uname -m)/share/uv/tools
+uv tool install reframe-hpc
+export PATH=$UV_TOOL_BIN_DIR:$PATH
+reframe -V
+```
+
+Alternatively, you can use ephemeral venvs and let `uv` handle them with `uvx`:
+
+```bash
+uvx reframe --version
+```
+
+This will pull ReFrame's dependencies and run it.
+It also caches them, so that the next time you invoke it, it will not download and install them again.
+The only "downside" of this method is that you have to always invoke ReFrame through `uvx`, as opposed to the `uv tool install` method, where the `reframe` execcutable is installed in a standard path.
+
+
+## Running from source
+
+If you want to run the latest ReFrame directly from the repo, you can simply clone the repo and `uv run` ReFrame:
 
 ```bash
 git clone https://github.com/reframe-hpc/reframe.git
 cd reframe
-./bootstrap.sh
-./bin/reframe -V
+uv run reframe --version
 ```
-
-If you want a specific release, please refer to the documentation [page](https://reframe-hpc.readthedocs.io/en/stable/started.html).
-
 
 ### Running the unit tests
 
-You can optionally run the framework's unit tests with the following command:
+To run the the framework's unit tests use the following command:
 
 ```bash
-./test_reframe.py -v
+uv sync --group dev
+uv run ./test_reframe.py -v
 ```
 
-NOTE: Unit tests require a POSIX-compliant C compiler (available through the `cc` command), as well as the `make` utility.
+> NOTE: Unit tests require a POSIX-compliant C compiler (available through the `cc` command), as well as the `make` utility.
 
 ### Building the documentation locally
 
-You may build the documentation of the master manually as follows:
+You may also build the documentation locally:
 
-```
-./bootstrap.sh +docs
+```bash
+uv sync --group docs
+uv run make -C docs
 ```
 
 For viewing it, you may do the following:
 
-```
+```bash
 cd docs/html
 python3 -m http.server
 ```
 
 The documentation is now up on [localhost:8000](http://localhost:8000), where you can navigate with your browser.
-
-## Test library
-
-The framework comes with an experimental library of tests that users can either run from the command line directly or extend and fine tune them for their systems. See [here](https://reframe-hpc.readthedocs.io/en/stable/hpctestlib.html) for more details.
 
 ## Public test repositories
 

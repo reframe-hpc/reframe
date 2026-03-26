@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 #
-# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2026 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import argparse
+import pytest
 import os
-import platform
 import sys
 
-prefix = os.path.abspath(os.path.dirname(__file__))
-external = os.path.join(prefix, 'external', platform.machine())
-sys.path = [prefix, external] + sys.path
-
-import argparse                         # noqa: F401, F403
-import pytest                           # noqa: F401, F403
-import unittests.utility as test_util   # noqa: F401, F403
+import unittests.utility as test_util
 
 
-if __name__ == '__main__':
+def main():
     # Unset any ReFrame environment variable; unit tests must start in a clean
     # environment
     for var in list(os.environ.keys()):
@@ -27,7 +22,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         add_help=False,
-        usage='%(prog)s [REFRAME_OPTIONS...] [NOSE_OPTIONS...]')
+        usage='%(prog)s [REFRAME_OPTIONS...] [PYTEST_OPTIONS...]')
     parser.add_argument(
         '--rfm-offline', action='store_true',
         help='Skip unit tests that require Internet access'
@@ -62,3 +57,7 @@ if __name__ == '__main__':
 
     sys.argv = [sys.argv[0], *rem_args]
     sys.exit(pytest.main())
+
+
+if __name__ == '__main__':
+    main()
