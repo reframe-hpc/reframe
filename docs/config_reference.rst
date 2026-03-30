@@ -431,6 +431,23 @@ System Partition Configuration
    List of hosts in a partition that uses the ``ssh`` scheduler.
 
 
+.. py:attribute:: systems.partitions.sched_options.slurm_multi_cluster_mode
+
+   :required: No
+   :default: ``[]``
+
+   List of Slurm clusters to poll for submitted jobs.
+
+   If empty, only the local cluster is considered.
+   If the single value ``all`` is passed, then all clusters will be considered.
+   This is translated directly to Slurm's ``-M`` option passed to the ``sacct`` or ``squeue`` commands.
+   If set, the ``-M`` option will also be passed in the partition's :attr:`~config.systems.partitions.access` options.
+
+   This option is relevant only for the Slurm backends.
+
+   .. versionadded:: 4.10
+
+
 .. py:attribute:: systems.partitions.sched_options.ignore_reqnodenotavail
 
    :required: No
@@ -1647,7 +1664,7 @@ The additional properties for the ``httpjson`` handler are the following:
    These may depend on the server configuration.
 
    .. note::
-      If you specify an authorization header here, it will be evaluated at the start of the test session and potentially expire. 
+      If you specify an authorization header here, it will be evaluated at the start of the test session and potentially expire.
       Consider using the :attr:`~config.logging.handlers_perflog..httpjson..authorization_header` parameter instead for dynamic authorization headers.
 
    .. versionadded:: 4.2

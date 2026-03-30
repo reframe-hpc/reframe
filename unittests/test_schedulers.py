@@ -76,13 +76,25 @@ def exec_ctx(make_exec_ctx, scheduler):
 
 @pytest.fixture
 def make_job(scheduler, launcher, tmp_path):
-    def _make_job(sched_opts=None, **jobargs):
+    def _make_job(sched_opts=None, config_opts=None, **jobargs):
+        sched_type = scheduler
+
+        class PatchedScheduler(sched_type):
+            def get_option(self, name):
+                try:
+                    return config_opts[name]
+                except KeyError:
+                    return super().get_option(name)
+
+        if config_opts:
+            sched_type = PatchedScheduler
+
         if sched_opts:
-            sched = scheduler(**sched_opts)
-        elif scheduler.registered_name == 'ssh':
-            sched = scheduler(hosts=['localhost'])
+            sched = sched_type(**sched_opts)
+        elif sched_type.registered_name == 'ssh':
+            sched = sched_type(hosts=['localhost'])
         else:
-            sched = scheduler()
+            sched = sched_type()
 
         return Job.create(
             sched, launcher(),
@@ -485,6 +497,15 @@ def test_prepare_nodes_option_minimal(make_exec_ctx, make_job, slurm_only):
     prepare_job(job)
     with open(job.script_filename) as fp:
         assert re.search(r'--nodes=16', fp.read()) is not None
+
+
+def test_prepare_multi_cluster(make_job, slurm_only):
+    job = make_job(config_opts={
+        'slurm_multi_cluster_mode': ['cluster1', 'cluster2']
+    })
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        assert re.search(r'-M cluster1,cluster2', fp.read()) is not None
 
 
 def test_submit(make_job, exec_ctx):
