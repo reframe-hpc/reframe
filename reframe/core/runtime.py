@@ -292,15 +292,15 @@ def _is_valid_part(part, valid_systems):
     # Get sysname and partname for the partition being checked and construct
     # all valid_matches for the partition being checked
     sysname, partname = part.fullname.split(':')
-    valid_matches = ['*', '*:*', sysname, f'{sysname}:*', f'*:{partname}',
-                     f'{part.fullname}']
+    syspart_matches = ['*', '*:*', sysname, f'{sysname}:*', f'*:{partname}',
+                       f'{part.fullname}']
 
     # If any of the specs in valid_systems matches, this is a valid partition
     for spec in valid_systems:
         plus_feats = []
         minus_feats = []
         props = {}
-        syspart_match = True
+        valid_match = True
         for subspec in spec.split(' '):
             if subspec.startswith('+'):
                 plus_feats.append(subspec[1:])
@@ -309,7 +309,7 @@ def _is_valid_part(part, valid_systems):
             elif subspec.startswith('%'):
                 key, val = subspec[1:].split('=')
                 props[key] = val
-            elif not subspec.startswith(('+', '-', '%')):
+            else:
                 # If there is a system:partition specified, make sure it
                 # matches one of the items in valid_matches
                 syspart_match = True if subspec in valid_matches else False
@@ -338,10 +338,10 @@ def _is_valid_part(part, valid_systems):
         # If the partition has all the plus features, none of the minus
         # all of the properties and the system:partition spec (if any)
         # matched, this partition is valid
-        if (
-            have_plus_feats and not have_minus_feats and have_props
-            and syspart_match
-        ):
+        if (have_plus_feats and
+            not have_minus_feats and
+            have_props and
+            valid_match):
             return True
 
     return False

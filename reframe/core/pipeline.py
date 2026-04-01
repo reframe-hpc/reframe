@@ -92,7 +92,17 @@ _FKV = rf'({_F}|{_KV})'     # feature | key/value pair
 _VALID_ENV_SYNTAX = rf'^({_NW}|{_FKV}(\s+{_FKV})*)$'
 
 _S = rf'({_NW}(:{_NW})?)'   # system/partition
-_VALID_SYS_SYNTAX = rf'^(({_FKV}\s+)*{_S}(\s+{_FKV})*|{_FKV}(\s+{_FKV})*)$'
+_SE = rf'({_N}(:{_N})?)'    # system/partition (exact match; no wildcards)
+
+# Valid syntax variants
+#
+# _SV1: system/partition combinations w/ wildcards
+# _SV2: features and extras only
+# _SV3: exact system/partition w/ features and extras
+_SV1 = rf'{_S}'
+_SV2 = rf'{_FKV}(\s+{_FKV})*'
+_SV3 = rf'({_FKV}\s+)*{_SE}(\s+{_FKV})*'
+_VALID_SYS_SYNTAX = rf'^({_SV1}|{_SV2}|{_SV3})$'
 
 
 _PIPELINE_STAGES = (
