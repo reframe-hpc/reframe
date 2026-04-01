@@ -313,7 +313,7 @@ def _is_valid_part(part, valid_systems):
             else:
                 # If there is a system:partition specified, make sure it
                 # matches one of the items in syspart_matches
-                syspart_match = True if subspec in syspart_matches else False
+                valid_match = True if subspec in syspart_matches else False
 
         have_plus_feats = all(
             (ft in part.features or
