@@ -290,7 +290,8 @@ def is_env_loaded(environ):
 
 def _is_valid_part(part, valid_systems):
     # Get sysname and partname for the partition being checked and construct
-    # all valid_matches for the partition being checked
+    # all system:partition patterns that would match the sysname and partname
+    # being checked
     sysname, partname = part.fullname.split(':')
     syspart_matches = ['*', '*:*', sysname, f'{sysname}:*', f'*:{partname}',
                        f'{part.fullname}']
@@ -311,8 +312,8 @@ def _is_valid_part(part, valid_systems):
                 props[key] = val
             else:
                 # If there is a system:partition specified, make sure it
-                # matches one of the items in valid_matches
-                syspart_match = True if subspec in valid_matches else False
+                # matches one of the items in syspart_matches
+                syspart_match = True if subspec in syspart_matches else False
 
         have_plus_feats = all(
             (ft in part.features or
