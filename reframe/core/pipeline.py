@@ -92,7 +92,17 @@ _FKV = rf'({_F}|{_KV})'     # feature | key/value pair
 _VALID_ENV_SYNTAX = rf'^({_NW}|{_FKV}(\s+{_FKV})*)$'
 
 _S = rf'({_NW}(:{_NW})?)'   # system/partition
-_VALID_SYS_SYNTAX = rf'^({_S}|{_FKV}(\s+{_FKV})*)$'
+_SE = rf'({_N}(:{_N})?)'    # system/partition (exact match; no wildcards)
+
+# Valid syntax variants
+#
+# _SV1: system/partition combinations w/ wildcards
+# _SV2: features and extras only
+# _SV3: exact system/partition w/ features and extras
+_SV1 = rf'{_S}'
+_SV2 = rf'{_FKV}(\s+{_FKV})*'
+_SV3 = rf'({_FKV}\s+)*{_SE}(\s+{_FKV})*'
+_VALID_SYS_SYNTAX = rf'^({_SV1}|{_SV2}|{_SV3})$'
 
 
 _PIPELINE_STAGES = (
@@ -681,6 +691,22 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #:
     #:    valid_systems = [r'+feat1 +feat2 %foo=1']
     #:
+    #: Features and key/value pairs can also be combined with an explicit
+    #: system partition combination in a single :attr:`valid_systems` entry. In
+    #: this case, the resulting constraint means that the requested system
+    #: partition combination is valid only if it also satisfies the feature and
+    #: key/value pair specification. In the following example, the ``sys:part``
+    #: system will only be selected if it also defines the ``foo`` feature:
+    #:
+    #: .. code-block:: python
+    #:
+    #:    valid_systems = [r'sys:part +foo']
+    #:
+    #: This case is generally useful in cases of parameterization of tests
+    #: based on configuration settings as well as in cases where additional
+    #: constraints can only be determined during the test initialization after
+    #: its parameterization.
+    #:
     #: Any partition/environment extra or
     #: :ref:`partition resource <scheduler-resources>` can be specified as a
     #: feature constraint without having to explicitly state this in the
@@ -720,6 +746,10 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #:
     #:  .. versionchanged:: 3.11.0
     #:     Extend syntax to support features and key/value pairs.
+    #:
+    #:   .. versionchanged:: 4.10
+    #:      Support for combining an explicit system partition combination with
+    #:      features and extras.
     valid_systems = variable(typ.List[typ.Str[_VALID_SYS_SYNTAX]])
 
     #: A detailed description of the test.

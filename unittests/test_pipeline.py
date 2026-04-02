@@ -362,6 +362,10 @@ def test_valid_systems_syntax(hellotest):
     hellotest.valid_systems = ['+x0 -y0 %z0=w0']
     hellotest.valid_systems = ['-y0 +x0 %z0=w0']
     hellotest.valid_systems = ['%z0=w0 +x0 -y0']
+    hellotest.valid_systems = ['sys:part +x0 +y0']
+    hellotest.valid_systems = ['sys:part +x0 +y0 %z0=w0']
+    hellotest.valid_systems = ['+x0 sys:part']
+    hellotest.valid_systems = ['+x0 sys:part +y0 %z0=w0']
 
     with pytest.raises(TypeError):
         hellotest.valid_systems = ['']
@@ -404,6 +408,27 @@ def test_valid_systems_syntax(hellotest):
 
     with pytest.raises(TypeError):
         hellotest.valid_systems = ['%']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['sys:* +foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['*:part +foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['*:* +foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['* +foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['sys0:part0 sys0:part1 +foo']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['sys0:part0 +foo sys0:part1']
+
+    with pytest.raises(TypeError):
+        hellotest.valid_systems = ['+foo sys0:part0 sys0:part1']
 
     for sym in '!@#$^&()=<>':
         with pytest.raises(TypeError):
