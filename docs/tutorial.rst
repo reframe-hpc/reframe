@@ -969,7 +969,8 @@ Instead of the skip hook, we simply unpack the combined parameters in the :func:
    :caption:
    :pyobject: echo_test_v1
 
-The advantage of using parameter packs instead of skipping explicitly the test is that we do not get a warning message and the test is more compact.
+The advantage of using parameter packs instead of skipping the test in a hook is that the test is instantiated only as many times as needed.
+If only few parameter combinations are valid, then parameter packs can speed up test loading.
 
 .. note::
 
@@ -1532,7 +1533,7 @@ Here is an example:
 .. code-block:: python
 
    from reframe.core.builtins import xfail
-   
+
    reference = {
       'tutorialsys': {
          'copy_bw':  xfail('demo fail', (100_000, -0.1, 0.1, 'MB/s')),
