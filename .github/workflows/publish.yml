@@ -9,14 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup up Python 3.13
+      - name: Setup up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: 3.13
+          python-version: 3.14
       - name: Generate dist packages
         run: |
-          python -m pip install --upgrade pip setuptools build
-          python -m build
+          uv build
       - name: Publish ReFrame to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

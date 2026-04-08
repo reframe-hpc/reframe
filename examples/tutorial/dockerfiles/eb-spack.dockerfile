@@ -4,6 +4,7 @@
 
 
 FROM ghcr.io/reframe-hpc/lmod:9.0.4
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 ENV _SPACK_VER=1.1.0
 ENV _EB_VER=5.1.2
@@ -13,13 +14,6 @@ RUN apt-get -y update && \
     apt-get -y install sudo && \
     apt-get -y install python3-pip && \
     apt-get -y install gcc git jq libomp-dev tree vim
-
-# Install reframe
-ARG REFRAME_TAG=develop
-WORKDIR /usr/local/share
-RUN git clone --depth 1 --branch $REFRAME_TAG https://github.com/reframe-hpc/reframe.git && \
-    cd reframe/ && ./bootstrap.sh
-ENV PATH=/usr/local/share/reframe/bin:$PATH
 
 # Install EasyBuild
 RUN pip3 install --break-system-packages easybuild==${_EB_VER}
@@ -34,6 +28,11 @@ WORKDIR /home/user
 # Install Spack
 RUN mkdir .local && cd .local && \
     git clone --branch v${_SPACK_VER} --depth 1 https://github.com/spack/spack
+
+# Install reframe
+COPY . reframe/
+RUN cd reframe && uv tool install . && \
+    echo 'export PATH=/home/user/.local/bin:$PATH' >> /home/user/.profile
 
 RUN echo '. /usr/local/lmod/lmod/init/profile && . /home/user/.local/spack/share/spack/setup-env.sh' >> /home/user/.profile
 ENV BASH_ENV=/home/user/.profile

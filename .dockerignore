@@ -1,7 +1,16 @@
 .git
 __pycache__
-cscs-checks
 external
 Jenkinsfile*
-*.md
 *.log
+
+# Virtual environments
+venv*
+.venv*
+ENV/
+uv.lock
+
+# ReFrame files
+stage/
+output/
+perflogs/
