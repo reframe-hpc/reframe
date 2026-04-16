@@ -655,7 +655,7 @@
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",
         "logging/handlers/*_datefmt": "%FT%T.%f",
-        "logging/handlers_perflog/datefmt": "%FT%T",
+        "logging/handlers_perflog/*_datefmt": "%FT%T",
         "logging/handlers_perflog/filelog_append": true,
         "logging/handlers_perflog/filelog_basedir": "./perflogs",
         "logging/handlers_perflog/filelog_ignore_keys": [],
