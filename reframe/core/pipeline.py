@@ -807,7 +807,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        Default value is now conditionally set to either ``'src'`` or
     #:        :class:`None`.
-    sourcesdir = variable(str, typ.Dict, type(None), value='src')
+    sourcesdir = variable(str, typ.Dict[str, object], type(None), value='src')
 
     #: .. versionadded:: 2.14
     #:
