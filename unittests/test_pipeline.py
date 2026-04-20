@@ -796,13 +796,28 @@ def test_sourcesdir_build_system(local_exec_ctx):
     _run(MyTest(), *local_exec_ctx)
 
 
-def test_sourcesdir_git(local_exec_ctx):
+@pytest.fixture(params=[
+    'https://github.com/reframe-hpc/ci-hello-world.git',
+    {
+        'url': 'https://github.com/reframe-hpc/ci-hello-world.git',
+        'opts': ['--depth 1']
+    },
+    {
+        'url': 'https://github.com/reframe-hpc/ci-hello-world.git',
+        'files': ['README.md']
+    }
+])
+def sourcedir_syntax(request):
+    return request.param
+
+
+def test_sourcesdir_git(local_exec_ctx, sourcedir_syntax):
     if test_util.OFFLINE:
         pytest.skip('offline tests requested')
 
-    class MyTest(rfm.RunOnlyRegressionTest,
-                 custom_prefix='unittests/resources/checks'):
-        sourcesdir = 'https://github.com/reframe-hpc/ci-hello-world.git'
+    @test_util.custom_prefix('unittests/resources/checks')
+    class MyTest(rfm.RunOnlyRegressionTest):
+        sourcesdir = sourcedir_syntax
         executable = 'true'
         valid_systems = ['*']
         valid_prog_environs = ['*']

@@ -9,6 +9,7 @@
 
 import collections.abc
 import errno
+import functools
 import fasteners
 import getpass
 import grp
@@ -665,25 +666,36 @@ def git_clone(url, targetdir=None, opts=None, timeout=5, files=None):
     '''Clone a git repository from a URL.
 
     :arg url: The URL to clone from.
-    :arg opts: List of options to be passed to the `git clone` command
-    :arg timeout: Timeout in seconds when checking if the url is a valid
-         repository.
     :arg targetdir: The directory where the repository will be cloned to. If
         :class:`None`, a new directory will be created with the repository
         name as if ``git clone {url}`` was issued.
+    :arg opts: List of options to be passed to the `git clone` command
+    :arg timeout: Timeout in seconds when checking if the url is a valid
+         repository.
+    :arg files: List of files to be checked out.
+
+    .. versionchanged:: 4.10
+
+       The ``files`` argument was added to support sparse checkout of
+       repositories.
     '''
     if not git_repo_exists(url, timeout=timeout):
         raise ReframeError('git repository does not exist')
 
+    run_command_strict = functools.partial(run_command, check=True)
     targetdir = targetdir or ''
     opts = ' '.join(opts) if opts is not None else ''
     if not files:
         run_command(f'git clone {opts} {url} {targetdir}', check=True)
     else:
-        run_command(f'git clone --no-checkout --depth=1 {opts} {url} {targetdir}', check=True)
-        run_command(f'git sparse-checkout set --no-cone {" ".join(files)}', check=True, cwd=targetdir)
-        run_command('git checkout', check=True, cwd=targetdir)
-
+        run_command_strict(
+            f'git clone --no-checkout --depth=1 {opts} {url} {targetdir}'
+        )
+        run_command_strict(
+            f'git sparse-checkout set --no-cone {" ".join(files)}',
+            cwd=targetdir
+        )
+        run_command_strict('git checkout', check=True, cwd=targetdir)
 
 
 def git_repo_exists(url, timeout=5):

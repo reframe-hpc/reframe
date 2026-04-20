@@ -2518,13 +2518,15 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         else:
             self._mark_stagedir()
 
-    def _clone_to_stagedir(self, url, files=None):
+    def _clone_to_stagedir(self, **sourcesdir):
+        url = sourcesdir.pop('url', None)
+        if not url:
+            raise ReframeError('sourcesdir Git url cannot be empty')
+
         self.logger.debug(f'Cloning URL {url} into stage directory')
-        osext.git_clone(
-            url, self._stagedir,
-            timeout=rt.runtime().get_option('general/0/git_timeout'),
-            files=files
-        )
+        sourcesdir.setdefault('timeout',
+                              rt.runtime().get_option('general/0/git_timeout'))
+        osext.git_clone(url, self._stagedir, **sourcesdir)
         self._mark_stagedir()
 
     @final
@@ -2564,26 +2566,15 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                 )
 
             if self._requires_stagedir_contents():
-                srcdir = self.sourcesdir
-                if isinstance(srcdir, dict):
-                    if 'url' not in srcdir:
-                        raise ReframeError(f'{srcdir} misses the url key')
+                if ((srcdir_extended := isinstance(self.sourcesdir, dict)) or
+                    osext.is_url(self.sourcesdir)):
+                    if not srcdir_extended:
+                        self.sourcesdir = {'url': self.sourcesdir}
 
-                    url = srcdir['url']
-                    if not osext.is_url(url):
-                        raise ReframeError(f'The dictionary syntax only supports '
-                                           'git repositories')
-
-                    self._clone_to_stagedir(url,
-                                            files=srcdir[url]['files'] if 'files'
-                                                  in srcdir[url] else None,
-                                            opts=srcdir[url]['opts'] if 'opts'
-                                                  in srcdir[url] else None)
-                elif osext.is_url(srcdir):
-                    self._clone_to_stagedir(srcdir)
+                    self._clone_to_stagedir(**self.sourcesdir)
                 else:
                     self._copy_to_stagedir(os.path.join(self._rfm_prefix,
-                                                        srcdir))
+                                                        self.sourcesdir))
 
         # Set executable (only if hasn't been provided)
         if not hasattr(self, 'executable'):
@@ -3492,8 +3483,12 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         rest of execution is delegated to the :func:`RegressionTest.run()`.
         '''
         if self.sourcesdir and self._requires_stagedir_contents():
-            if osext.is_url(self.sourcesdir):
-                self._clone_to_stagedir(self.sourcesdir)
+            if ((srcdir_extended := isinstance(self.sourcesdir, dict)) or
+                osext.is_url(self.sourcesdir)):
+                if not srcdir_extended:
+                    self.sourcesdir = {'url': self.sourcesdir}
+
+                self._clone_to_stagedir(**self.sourcesdir)
             else:
                 self._copy_to_stagedir(os.path.join(self._rfm_prefix,
                                                     self.sourcesdir))
