@@ -26,21 +26,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Reframe
+      # Flux Python bindings are installed in the container; we need to create
+      # and include them in the venv, because the simple `uv run` command runs
+      # in an isolated venv
+      - name: Install ReFrame
         run: |
-          apt-get update && apt-get install -y python3-pip
-          ./bootstrap.sh
-          export PATH=$PWD/bin:$PATH
-          which reframe
+          apt-get update && apt-get install -y curl
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          . $HOME/.local/bin/env
+          uv venv --system-site-packages
+          . .venv/bin/activate
+          uv sync --group dev
 
       # Any additional examples added here will be tested
       - name: Start Flux and Run Test
         run: |
-          export PATH=$PWD/bin:$PATH
-          which reframe
-          flux start reframe -c examples/howto/flux -C examples/howto/flux/settings.py -l
-          flux start reframe -c examples/howto/flux -C examples/howto/flux/settings.py -r
-          flux start coverage run --source=reframe ./test_reframe.py --rfm-user-config=examples/howto/flux/settings.py
-          coverage xml -o coverage.xml
+          # export PATH=$PWD/bin:$PATH
+          flux start uv run reframe -c examples/howto/flux -C examples/howto/flux/settings.py -l
+          flux start uv run reframe -c examples/howto/flux -C examples/howto/flux/settings.py -r
+          flux start uv run coverage run --source=reframe ./test_reframe.py --rfm-user-config=examples/howto/flux/settings.py
+          uv run coverage xml -o coverage.xml
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4.2.0

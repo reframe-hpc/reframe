@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 FROM ubuntu:22.04
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -40,8 +41,7 @@ ARG REFRAME_TAG=develop
 ARG REFRAME_REPO=reframe-hpc
 WORKDIR /usr/local/share
 RUN git clone --depth 1 --branch $REFRAME_TAG https://github.com/$REFRAME_REPO/reframe.git && \
-    cd reframe/ && ./bootstrap.sh
-ENV PATH=/usr/local/share/reframe/bin:$PATH
+    cd reframe/ && uv tool install .
 
 WORKDIR /home/admin
 

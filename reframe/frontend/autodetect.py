@@ -47,8 +47,7 @@ class _prepare_reframe:
         self._workdir = os.path.abspath(
             tempfile.mkdtemp(prefix='rfm.', dir=self._prefix)
         )
-        paths = ['bin/', 'reframe/', 'tools/',
-                 'bootstrap.sh', 'requirements.txt']
+        paths = ['reframe/', 'README.md', 'pyproject.toml']
         use_pip = False
         custom_command = runtime.runtime().get_option(
             'general/0/remote_install'
@@ -141,19 +140,15 @@ def _remote_detect(part, cli_job_options):
 
     def _emit_script_for_source(job, env):
         commands = [
-            './bootstrap.sh',
-            './bin/reframe --detect-host-topology=topo.json'
+            'curl -LsSf https://astral.sh/uv/install.sh | sh',
+            'uv run reframe --detect-host-topology=topo.json'
         ]
         job.prepare(commands, env, trap_errors=True, login=use_login_shell)
 
     def _emit_script_for_pip(job, env):
         commands = [
-            'python3 -m venv venv.reframe',
-            'source venv.reframe/bin/activate',
-            'pip install --upgrade pip',
-            f'pip install reframe-hpc=={rfm.VERSION}',
-            'reframe --detect-host-topology=topo.json',
-            'deactivate'
+            'curl -LsSf https://astral.sh/uv/install.sh | sh',
+            f'uvx --from=reframe-hpc@{rfm.VERSION} reframe --detect-host-topology=topo.json',   # noqa: E501
         ]
         job.prepare(commands, env, trap_errors=True, login=use_login_shell)
 

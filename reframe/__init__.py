@@ -1,4 +1,4 @@
-# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# Copyright 2016-2026 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -10,12 +10,12 @@ VERSION = '4.10.0-dev.3'
 INSTALL_PREFIX = os.path.normpath(
     os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 )
-MIN_PYTHON_VERSION = (3, 9, 0)
+MIN_PYTHON_VERSION = (3, 10)
 
 # Check python version
 if sys.version_info[:3] < MIN_PYTHON_VERSION:
     sys.stderr.write('Unsupported Python version: '
-                     'Python >= %d.%d.%d is required\n' % MIN_PYTHON_VERSION)
+                     'Python >= %d.%d is required\n' % MIN_PYTHON_VERSION)
     sys.exit(1)
 
 os.environ['RFM_INSTALL_PREFIX'] = INSTALL_PREFIX
