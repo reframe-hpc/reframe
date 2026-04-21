@@ -815,8 +815,8 @@ def test_sourcesdir_git(local_exec_ctx, sourcedir_syntax):
     if test_util.OFFLINE:
         pytest.skip('offline tests requested')
 
-    @test_util.custom_prefix('unittests/resources/checks')
-    class MyTest(rfm.RunOnlyRegressionTest):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
         sourcesdir = sourcedir_syntax
         executable = 'true'
         valid_systems = ['*']
