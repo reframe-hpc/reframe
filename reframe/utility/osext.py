@@ -679,6 +679,9 @@ def git_clone(url, targetdir=None, opts=None, timeout=5, files=None):
        The ``files`` argument was added to support sparse checkout of
        repositories.
     '''
+    if not url:
+        raise ValueError('git clone URL cannot be empty')
+
     if not git_repo_exists(url, timeout=timeout):
         raise ReframeError('git repository does not exist')
 

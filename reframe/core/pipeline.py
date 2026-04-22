@@ -2519,14 +2519,19 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
             self._mark_stagedir()
 
     def _clone_to_stagedir(self, **sourcesdir):
-        url = sourcesdir.pop('url', None)
-        if not url:
-            raise ReframeError('sourcesdir Git url cannot be empty')
-
-        self.logger.debug(f'Cloning URL {url} into stage directory')
+        url = sourcesdir.get('url')
+        self.logger.debug(f'cloning url {url} into stage directory')
+        sourcesdir['targetdir'] = self._stagedir
         sourcesdir.setdefault('timeout',
                               rt.runtime().get_option('general/0/git_timeout'))
-        osext.git_clone(url, self._stagedir, **sourcesdir)
+
+        try:
+            osext.git_clone(**sourcesdir)
+        except (ValueError, TypeError, OSError) as e:
+            raise PipelineError(
+                f'failed to clone git repository: {url}'
+            ) from e
+
         self._mark_stagedir()
 
     @final

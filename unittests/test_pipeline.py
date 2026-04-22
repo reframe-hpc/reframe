@@ -804,7 +804,7 @@ def test_sourcesdir_build_system(local_exec_ctx):
     },
     {
         'url': 'https://github.com/reframe-hpc/ci-hello-world.git',
-        'files': ['README.md']
+        'files': ['hello.c']
     }
 ])
 def sourcedir_syntax(request):
@@ -821,11 +821,52 @@ def test_sourcesdir_git(local_exec_ctx, sourcedir_syntax):
         executable = 'true'
         valid_systems = ['*']
         valid_prog_environs = ['*']
-        keep_files = ['README.md']
+        keep_files = ['hello.c']
 
         @sanity_function
         def validate(self):
-            return sn.assert_true(os.path.exists('README.md'))
+            return sn.assert_true(os.path.exists('hello.c'))
+
+    _run(MyTest(), *local_exec_ctx)
+
+
+@pytest.fixture(params=[
+    {'url': None},
+    {
+        'opts': ['--depth 1']
+    },
+    {
+        'invalid': 'x'
+    }
+])
+def invalid_sourcesdir_syntax(request):
+    return request.param
+
+
+def test_sourcesdir_invalid_syntax(local_exec_ctx, invalid_sourcesdir_syntax):
+    class MyTest(rfm.RunOnlyRegressionTest,
+                 custom_prefix='unittests/resources/checks'):
+        sourcesdir = invalid_sourcesdir_syntax
+        executable = 'true'
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+        sanity_patterns = sn.assert_true(1)
+
+    with pytest.raises(PipelineError):
+        _run(MyTest(), *local_exec_ctx)
+
+
+def test_sourcesdir_git_compile(local_exec_ctx, sourcedir_syntax):
+    class MyTest(rfm.RegressionTest,
+                 custom_prefix='unittests/resources/checks'):
+        sourcesdir = sourcedir_syntax
+        sourcepath = 'hello.c'
+        valid_systems = ['*']
+        valid_prog_environs = ['*']
+
+        @sanity_function
+        def validate(self):
+            return sn.assert_found(r'Hello, World\!', self.stdout)
 
     _run(MyTest(), *local_exec_ctx)
 
