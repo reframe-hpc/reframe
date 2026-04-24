@@ -516,7 +516,7 @@ System Partition Configuration
 
    Reasons to proactively cancel a pending Slurm job.
 
-   If a job associated to a test is in pending state with one of the reasons listed here, ReFrame will cancel the job.
+   If a job associated to a test is in pending state with one of the reasons listed, ReFrame will cancel the job.
 
    This option is relevant for the Slurm backends only.
 
