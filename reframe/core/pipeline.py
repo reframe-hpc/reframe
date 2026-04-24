@@ -807,7 +807,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #:     .. versionchanged:: 3.0
     #:        Default value is now conditionally set to either ``'src'`` or
     #:        :class:`None`.
-    sourcesdir = variable(str, type(None), value='src')
+    sourcesdir = variable(str, typ.Dict[str, object], type(None), value='src')
 
     #: .. versionadded:: 2.14
     #:
@@ -2518,12 +2518,20 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         else:
             self._mark_stagedir()
 
-    def _clone_to_stagedir(self, url):
-        self.logger.debug(f'Cloning URL {url} into stage directory')
-        osext.git_clone(
-            self.sourcesdir, self._stagedir,
-            timeout=rt.runtime().get_option('general/0/git_timeout')
-        )
+    def _clone_to_stagedir(self, **sourcesdir):
+        url = sourcesdir.get('url')
+        self.logger.debug(f'cloning url {url} into stage directory')
+        sourcesdir['targetdir'] = self._stagedir
+        sourcesdir.setdefault('timeout',
+                              rt.runtime().get_option('general/0/git_timeout'))
+
+        try:
+            osext.git_clone(**sourcesdir)
+        except (ValueError, TypeError, OSError) as e:
+            raise PipelineError(
+                f'failed to clone git repository: {url}'
+            ) from e
+
         self._mark_stagedir()
 
     @final
@@ -2552,7 +2560,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
             try:
                 commonpath = os.path.commonpath([self.sourcesdir,
                                                  self.sourcepath])
-            except ValueError:
+            except (ValueError, TypeError):
                 commonpath = None
 
             if commonpath:
@@ -2563,8 +2571,12 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                 )
 
             if self._requires_stagedir_contents():
-                if osext.is_url(self.sourcesdir):
-                    self._clone_to_stagedir(self.sourcesdir)
+                if ((srcdir_extended := isinstance(self.sourcesdir, dict)) or
+                    osext.is_url(self.sourcesdir)):
+                    if not srcdir_extended:
+                        self.sourcesdir = {'url': self.sourcesdir}
+
+                    self._clone_to_stagedir(**self.sourcesdir)
                 else:
                     self._copy_to_stagedir(os.path.join(self._rfm_prefix,
                                                         self.sourcesdir))
@@ -3476,8 +3488,12 @@ class RunOnlyRegressionTest(RegressionTest, special=True):
         rest of execution is delegated to the :func:`RegressionTest.run()`.
         '''
         if self.sourcesdir and self._requires_stagedir_contents():
-            if osext.is_url(self.sourcesdir):
-                self._clone_to_stagedir(self.sourcesdir)
+            if ((srcdir_extended := isinstance(self.sourcesdir, dict)) or
+                osext.is_url(self.sourcesdir)):
+                if not srcdir_extended:
+                    self.sourcesdir = {'url': self.sourcesdir}
+
+                self._clone_to_stagedir(**self.sourcesdir)
             else:
                 self._copy_to_stagedir(os.path.join(self._rfm_prefix,
                                                     self.sourcesdir))
