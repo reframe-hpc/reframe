@@ -456,7 +456,9 @@ System Partition Configuration
    Ignore the ``ReqNodeNotAvail`` Slurm state.
 
    If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail``, ReFrame will cancel the job.
-   Sometimes, however, when Slurm's backfill algorithm takes too long to compute, Slurm will set the pending reason to ``ReqNodeNotAvail`` and mark all system nodes as unavailable, causing ReFrame to its jobs.
+   Sometimes Slurm's backfill scheduling can take so long to compute that it temporarily sets the pending reason to ``ReqNodeNotAvail`` and reports all nodes as unavailable.
+   ReFrame may interpret this condition and cancel its jobs.
+   If you encounter this scenario, set this parameter to :obj:`True` to prevent ReFrame from killing jobs with the ``ReqNodeNotAvail`` reason.
    In such cases, you may set this parameter to :obj:`True` to avoid this.
 
    This option is relevant for the Slurm backends only.

@@ -583,6 +583,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             # If no jobs are pending or no reasons to cancel a job, return
             return
 
+        pending_reasons = {}
         if reasons:
             for jobid, reason in reasons.items():
                 try:
@@ -595,7 +596,6 @@ class SlurmJobScheduler(sched.JobScheduler):
             completed = osext.run_command(
                 f'{self._squeue} -h -j {job_ids} -o "%A|%r"'
             )
-            pending_reasons = {}
             for line in completed.stdout.splitlines():
                 jobid, reason = line.split('|', maxsplit=1)
                 pending_reasons[pending_jobs[jobid]] = reason
