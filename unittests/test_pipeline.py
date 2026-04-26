@@ -1971,7 +1971,8 @@ def test_reference_external_with_index(make_perftest, make_path,
         'MyTest': {
             '$index': ['$processor.arch', '$dev.gpu.model'],
             'skylake': {
-                'p100': {
+                # We use a regex here to check also regexes in external files
+                'p100.*': {
                     'value1': [1.4, -0.1, 0.1, None],
                     'value2': [1.7, -0.1, 0.1, None],
                     'value3': [3.1, -0.1, 0.1, None]
