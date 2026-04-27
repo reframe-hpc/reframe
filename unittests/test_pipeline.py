@@ -2067,13 +2067,17 @@ def test_reference_external_custom_prefix(make_perftest, make_path,
 def test_regressiondict_custom_protocol(dummy_gpu_exec_ctx):
     class _MyTest(rfm.RunOnlyRegressionTest):
         x = variable(int, value=1)
-        foo = variable(rfm.RegressionTestDictType(protocol='foo'), value={
-            '$index': ('$dev.gpu.model', 'x'),
-            'v100': {
-                2: {'value1': (1.4, -0.1, 0.1, None)},
-                4: {'value1': (2.8, -0.1, 0.1, None)},
-            }
-        }, allow_implicit=True)
+        foo = variable(
+            rfm.RegressionTestDictType(protocol='foo', value_type=str),
+            value={
+                '$index': ('$dev.gpu.model', 'x'),
+                'v100': {
+                    2: 'value1',
+                    4: 'value2',
+                }
+            },
+            allow_implicit=True
+        )
 
         def __foo_missing_dev_gpu_model__(self, data, key):
             # Map p100 to v100 reference values
@@ -2089,13 +2093,13 @@ def test_regressiondict_custom_protocol(dummy_gpu_exec_ctx):
     test = _MyTest()
     test.x = 2
     test.setup(*dummy_gpu_exec_ctx)
-    assert test.foo[test] == {'value1': (1.4, -0.1, 0.1, None)}
+    assert test.foo[test] == 'value1'
 
     test.x = 4
-    assert test.foo[test] == {'value1': (2.8, -0.1, 0.1, None)}
+    assert test.foo[test] == 'value2'
 
     test.x = 6
-    assert test.foo[test] == {'value1': (2.8, -0.1, 0.1, None)}
+    assert test.foo[test] == 'value2'
 
     test.x = 1
     with pytest.raises(KeyError):

@@ -319,12 +319,19 @@ class RegressionTestDict(UserDict):
 
     :user_dict: The user dictionary to be converted to a
         :class:`RegressionTestDict`.
+    :value_type: The type of the dictionary values.
+        If :obj:`None`, the values can be of any type.
     :protocol: The protocol to be used to handle missing keys.
+
+    .. versionadded:: 4.10
+
     '''
-    def __init__(self, user_dict: dict = None, protocol: str = None):
+    def __init__(self, user_dict: dict = None,
+                 value_type: type = None, protocol: str = None):
         super().__init__(user_dict or {})
         self._index = self.data.pop('$index', None)
         self._protocol = protocol
+        self._value_type = value_type or object
         self.validate()
 
     def validate(self):
@@ -332,14 +339,10 @@ class RegressionTestDict(UserDict):
 
         :raises TypeError: if the dictionary does not match the expected type
         '''
-        ref3_type = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable]
-        ref4_type = typ.Tuple[~Deferrable, ~Deferrable,
-                              ~Deferrable, ~Deferrable]
-        reftuple_type = ref3_type | ref4_type | XfailRef
         if self._index is None:
-            dict_type = typ.Dict[str, typ.Dict[str, reftuple_type]]
+            dict_type = typ.Dict[~Deferrable, self._value_type]
         else:
-            dict_type = typ.Dict[str, reftuple_type]
+            dict_type = self._value_type
             for _ in self._index:
                 dict_type = typ.Dict[~Deferrable, dict_type]
 
@@ -438,7 +441,13 @@ class _ReferenceDict(RegressionTestDict):
             # external reference file
             user_dict = {}
 
-        super().__init__(user_dict, protocol='ref')
+        # Reference dictionary value type
+        ref3_type = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable]
+        ref4_type = typ.Tuple[~Deferrable, ~Deferrable,
+                              ~Deferrable, ~Deferrable]
+        reftuple_type = ref3_type | ref4_type | XfailRef
+        value_type = typ.Dict[str, reftuple_type]
+        super().__init__(user_dict, value_type=value_type, protocol='ref')
         if self.__ref_file and test is not None:
             self.resolve_external_references(test)
 
