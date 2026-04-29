@@ -82,6 +82,14 @@ def test_load_fixtures(loader):
     assert 5 == len(tests)
 
 
+def test_load_indexed_refs(loader):
+    # Assert that tests with indexed references are loaded without errors
+    tests = loader.load_from_file(
+        'unittests/resources/checks_unlisted/indexed_refs.py'
+    )
+    assert 2 == len(tests)
+
+
 def test_existing_module_name(loader, tmp_path):
     test_file = tmp_path / 'os.py'
     shutil.copyfile('unittests/resources/checks/emptycheck.py', test_file)
