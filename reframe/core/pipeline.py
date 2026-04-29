@@ -465,7 +465,8 @@ class _ReferenceDict(RegressionTestDict):
                 raise ReferenceParseError(f'{self.__ref_file}: {err}') from err
 
     def _read_ref_file(self, filename):
-        def _parse_ref_entry(key, val):
+        def _parse_ref_entry(key_path, val):
+            key = '.'.join(str(k) for k in key_path)
             try:
                 first = val[0]
             except (TypeError, IndexError):
@@ -483,17 +484,17 @@ class _ReferenceDict(RegressionTestDict):
             else:
                 return tuple(val)
 
-        def _entry(key, val, full_key, max_depth):
-            level = len(full_key.split('.')) - 2
+        def _entry(key, val, key_path, max_depth):
+            level = len(key_path) - 2
             if level == 0 and key == '$index':
                 return tuple(val)
 
             if level < max_depth and isinstance(val, dict):
-                return {k: _entry(k, v, f'{full_key}.{k}', max_depth)
+                return {k: _entry(k, v, key_path + [k], max_depth)
                         for k, v in val.items()}
 
             if level == max_depth:
-                return _parse_ref_entry(full_key, val)
+                return _parse_ref_entry(key_path, val)
 
             return val
 
@@ -518,7 +519,7 @@ class _ReferenceDict(RegressionTestDict):
 
         for key, val in ref_yaml.items():
             mkref[key] = _entry(
-                key, val, f'{self.__test_entry_name}.{key}', max_level
+                key, val, [self.__test_entry_name, key], max_level
             )
 
         return mkref
