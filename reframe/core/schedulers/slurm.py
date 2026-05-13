@@ -717,9 +717,11 @@ class SqueueJobScheduler(SlurmJobScheduler):
             # Use ',' to join nodes to be consistent with Slurm syntax
             job._nodespec = ','.join(m.group('nodespec') for m in job_match)
 
-        self._cancel_if_blocked(
-            jobs, {jobid: s.group('reason') for jobid, s in jobinfo.items()}
-        )
+        pending_reasons = {}
+        for jobid, states in jobinfo.items():
+            pending_reasons[jobid] = [s.group('reason') for s in states]
+
+        self._cancel_if_blocked(jobs, pending_reasons)
         self._cancel_if_pending_too_long(jobs)
 
 
