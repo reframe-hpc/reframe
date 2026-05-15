@@ -1431,6 +1431,44 @@ def test_slurm_node_attributes(slurm_node_allocated, slurm_node_nopart):
     assert slurm_node_nopart.active_features == {'f1', 'f2'}
 
 
+@pytest.fixture
+def slurm_node_dotted_features():
+    return _SlurmNode(
+        'NodeName=nid00007 Arch=x86_64 CoresPerSocket=12 '
+        'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+        'AvailableFeatures=f1.1,f2.2.3,f3 '
+        'ActiveFeatures=f1.1,f2.2.3,f3 '
+        'Gres=gpu:1 NodeAddr=nid00007 '
+        'NodeHostName=nid00007 Version=10.00 OS=Linux '
+        'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+        'Sockets=1 Boards=1 State=IDLE '
+        'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+        'MCS_label=N/A Partitions=p1 '
+        'BootTime=01 Jan 2018 '
+        'SlurmdStartTime=01 Jan 2018 '
+        'CfgTRES=cpu=24,mem=32220M '
+        'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+        'LowestJoules=100000000 ConsumedJoules=0 '
+        'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+        'ExtSensorsTemp=n/s Reason=Foo/ '
+        'failed [reframe_user@01 Jan 2018]'
+    )
+
+
+def test_slurm_node_satisfies_dotted_features(slurm_node_dotted_features):
+    node = slurm_node_dotted_features
+    assert node.active_features == {'f1.1', 'f2.2.3', 'f3'}
+    assert node.satisfies('f1.1')
+    assert node.satisfies('f2.2.3')
+    assert node.satisfies('f1.1&f3')
+    assert node.satisfies('f1.1|f9.9')
+    assert node.satisfies('(f1.1|f9)&f2.2.3')
+    assert not node.satisfies('f9.9')
+    assert not node.satisfies('f1.1&f9.9')
+    assert not node.satisfies('f1.1;f3')
+    assert not node.satisfies('f1.1 f3')
+
+
 def test_hash(slurm_node_allocated):
     assert (hash(slurm_node_allocated) ==
             hash(_SlurmNode(slurm_node_allocated.descr)))
