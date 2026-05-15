@@ -753,11 +753,11 @@ class _SlurmNode(sched.Node):
         # their combinations; since Slurm features are not valid Python
         # identifiers, we replace them with booleans before evaluating.
 
-        if not re.match(r'^[\-\w\(\)\|\&]+$', slurm_constraint):
+        if not re.match(r'^[\-\w.\(\)\|\&]+$', slurm_constraint):
             return False
 
         expr = re.sub(
-            r'[\-\w]+',
+            r'[\-\w.]+',
             lambda m: str(m.group(0) in self.active_features),
             slurm_constraint
         ).replace('|', ' or ').replace('&', ' and ')
