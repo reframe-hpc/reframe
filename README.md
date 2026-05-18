@@ -94,7 +94,7 @@ uvx reframe --version
 
 This will pull ReFrame's dependencies and run it.
 It also caches them, so that the next time you invoke it, it will not download and install them again.
-The only "downside" of this method is that you have to always invoke ReFrame through `uvx`, as opposed to the `uv tool install` method, where the `reframe` execcutable is installed in a standard path.
+The only "downside" of this method is that you have to always invoke ReFrame through `uvx`, as opposed to the `uv tool install` method, where the `reframe` executable is installed in a standard path.
 
 
 ## Running from source
