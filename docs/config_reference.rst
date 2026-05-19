@@ -351,6 +351,7 @@ System Partition Configuration
       The Slurm-based backends unset all ``SBATCH_*`` environment variables before submitting a job.
       This is done to avoid environment variables bypassing ReFrame's configuration.
       For example, if the :attr:`~config.systems.partitions.access` options for a partition used ``-A foo`` and ``SBATCH_ACCOUNT=bar`` was set, then the environment variable would override the configuration, as ReFrame emits those (by default) in the submission script.
+      If this is not desired, environment variables can be explicitly whitelisted using the :attr:`~config.systems.partitions.sched_options.slurm_envvar_whitelist` option.
 
       Job submission in ReFrame is controlled exclusively by the system partition's :attr:`~config.systems.partitions.access` options, the test job's :attr:`~reframe.core.schedulers.Job.options` and the :option:`-J` command-line option.
 
@@ -509,6 +510,18 @@ System Partition Configuration
    This option is relevant for the ``slurm`` backend only.
 
    .. versionadded:: 4.8
+
+
+.. py:attribute:: systems.partitions.sched_options.slurm_envvar_whitelist
+
+   :required: No
+   :default: ``[]``
+
+   List of Slurm environment variables that will not be unset when submitting a job.
+
+   This option is relevant for the Slurm backends only.
+
+   .. versionadded:: 4.10
 
 
 .. py:attribute:: systems.partitions.sched_options.slurm_job_cancel_reasons
