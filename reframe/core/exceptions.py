@@ -365,6 +365,10 @@ class ReferenceParseError(ReframeError):
     '''
 
 
+class WarningAsError(ReframeError):
+    '''Raised when a warning is treated as an error.'''
+
+
 def user_frame():
     '''Return the first user frame as a :py:class:`FrameInfo` object.
 

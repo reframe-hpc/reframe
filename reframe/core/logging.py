@@ -22,7 +22,8 @@ from datetime import datetime
 import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
-from reframe.core.exceptions import ConfigError, LoggingError, what
+from reframe.core.exceptions import (ConfigError, LoggingError,
+                                     WarningAsError, what)
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import is_trivially_callable
 from reframe.utility.profile import TimeProfiler
@@ -903,6 +904,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         )
         self.check = check
         self.colorize = False
+        self.warn_as_error = False
 
     def setLevel(self, level):
         if self.logger:
@@ -999,6 +1001,9 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.log(VERBOSE, message, *args, **kwargs)
 
     def warning(self, message, *args, cache=False, **kwargs):
+        if self.warn_as_error:
+            raise WarningAsError(message)
+
         if cache:
             if message in _WARN_ONCE:
                 return
@@ -1082,7 +1087,7 @@ class logging_context:
         _context_logger = self._orig_logger
 
 
-def configure_logging(site_config):
+def configure_logging(site_config, warn_as_error=False):
     global _logger, _context_logger, _perf_logger
 
     if site_config is None:
@@ -1095,6 +1100,7 @@ def configure_logging(site_config):
     _logger = _create_logger(site_config, 'handlers$', 'handlers')
     _perf_logger = _create_logger(site_config, 'handlers_perflog')
     _context_logger = LoggerAdapter(_logger)
+    _context_logger.warn_as_error = warn_as_error
 
 
 def log_files():

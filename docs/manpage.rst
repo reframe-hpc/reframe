@@ -1254,6 +1254,14 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_VERBOSE` environment variable or the :attr:`~config.general.verbose` general configuration parameter.
 
+.. option:: --warn-as-error
+
+   Treat warnings as errors.
+
+   This option can also be set using the :envvar:`RFM_WARN_AS_ERROR` environment variable.
+
+   .. versionadded:: 4.10
+
 
 .. _test_naming_scheme:
 
@@ -2630,6 +2638,19 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
       Associated command line option     :option:`-v`
       Associated configuration parameter :attr:`~config.general.verbose`
+      ================================== ==================
+
+
+.. envvar:: RFM_WARN_AS_ERROR
+
+   Treat warnings as errors.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--warn-as-error`
+      Associated configuration parameter N/A
       ================================== ==================
 
 
