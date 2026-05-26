@@ -1372,6 +1372,17 @@ def test_testlib_inherit_fixture_in_different_files(run_reframe):
     assert 'FAILED' not in stdout
 
 
+def test_warn_as_error(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['/unknown/path'],
+        more_options=['--warn-as-error']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 1
+    assert 'warning as error' in stdout
+
+
 @pytest.fixture(params=['csv', 'plain', 'pretty'])
 def table_format(request):
     return request.param

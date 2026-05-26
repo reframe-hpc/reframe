@@ -719,6 +719,11 @@ def main():
         '-q', '--quiet', action='count', default=0,
         help='Decrease verbosity level of output',
     )
+    misc_options.add_argument(
+        '--warn-as-error', action='store_true',
+        help='Treat warnings as errors',
+        envvar='RFM_WARN_AS_ERROR'
+    )
 
     # Options not associated with command-line arguments
     argparser.add_argument(
@@ -1076,7 +1081,7 @@ def main():
                 options = argparser.parse_args(namespace=options.cmd_options)
                 options.update_config(site_config)
 
-        logging.configure_logging(site_config)
+        logging.configure_logging(site_config, options.warn_as_error)
     except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
         printer.info(logfiles_message())
