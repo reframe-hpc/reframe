@@ -119,6 +119,10 @@
                     "type": "array",
                     "items": {"type": "string"}
                 },
+                "slurm_envvar_whitelist": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
                 "slurm_job_cancel_reasons": {
                     "type": "array",
                     "items": {"type": "string"}
@@ -720,6 +724,7 @@
         "systems*/sched_options/slurm_multi_cluster_mode": [],
         "systems*/sched_options/ssh_hosts": [],
         "systems*/sched_options/resubmit_on_errors": [],
+        "systems*/sched_options/slurm_envvar_whitelist": [],
         "systems*/sched_options/slurm_job_cancel_reasons": ["ReqNodeNotAvail"],
         "systems*/sched_options/slurm_pending_job_reason_poll_freq": 10,
         "systems*/sched_options/unqualified_hostnames": false,

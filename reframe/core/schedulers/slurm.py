@@ -142,6 +142,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             'PLANNED',
             'RESERVED'
         }
+        self._envvar_whitelist = set(self.get_option('slurm_envvar_whitelist'))
 
         # Define the base sacct and squeue commands to account for Slurm's
         # multiple cluster mode if enabled
@@ -282,7 +283,8 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         with rt.temp_environment():
             for var in [name for name in os.environ.keys()
-                        if name.startswith('SBATCH_')]:
+                        if name.startswith('SBATCH_') and
+                        name not in self._envvar_whitelist]:
                 self.log(f'unsetting environment variable {var}',
                          logging.DEBUG)
                 del os.environ[var]
