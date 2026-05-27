@@ -53,7 +53,7 @@ Once the Docker compose stack is up, you execute the following from a different 
 
 .. code-block::
 
-   docker exec -it $(docker ps -f name=frontend -q) /bin/bash
+   docker exec -it $(docker ps -f name=frontend -q) /bin/bash -l
 
    # Inside the container
    cd reframe-examples/tutorial/

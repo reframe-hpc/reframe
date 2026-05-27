@@ -29,23 +29,21 @@ RUN useradd -m admin -s /usr/bin/bash -d /home/admin && \
     echo "admin:admin" | chpasswd && adduser admin sudo && \
     echo "admin     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-COPY docker-entrypoint.sh /usr/local/bin/
+COPY examples/tutorial/dockerfiles/slurm-cluster/reframe/docker-entrypoint.sh /usr/local/bin/
 
 RUN mkdir /scratch && \
     chown -R admin:admin /scratch
 
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Install reframe
-ARG REFRAME_TAG=develop
-ARG REFRAME_REPO=reframe-hpc
-WORKDIR /usr/local/share
-RUN git clone --depth 1 --branch $REFRAME_TAG https://github.com/$REFRAME_REPO/reframe.git && \
-    cd reframe/ && uv tool install .
+# Prepare reframe installation
+WORKDIR /workspace
+COPY . /workspace/reframe
 
 WORKDIR /home/admin
-
-ENV USER admin
-ENV SHELL bash
+USER admin
+RUN uv tool install /workspace/reframe && \
+    echo "export PATH=/home/admin/.local/bin:\$PATH" >> /home/admin/.profile && \
+    echo "export MANPATH=/home/admin/.local/share/uv/tools/reframe-hpc/share/man:" >> /home/admin/.profile
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

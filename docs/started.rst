@@ -6,11 +6,6 @@ Requirements
 ------------
 
 * Python 3.10 or higher.
-* The required Python packages are the following:
-
-.. literalinclude:: ../requirements.txt
-   :end-before: #+
-
 
 .. note::
   .. versionchanged:: 3.0
