@@ -50,7 +50,7 @@ Test commands
    For more information, have a look in :ref:`generate-ci-pipeline`.
 
    .. note::
-      This option will not work with the :ref:`test generation options <test-generators>`.
+      This option will not work with the :ref:`test generation options <test-generators>` or with test fixtures.
 
 
    .. versionadded:: 3.4.1
