@@ -28,4 +28,4 @@ WORKDIR /home/user
 USER user
 RUN uv tool install /workspace/reframe
 ENV PATH=/home/user/.local/bin:$PATH
-ENV MANPATH=/home/user/.local/share/uv/tools/reframe-hpc/share/man
+ENV MANPATH=/home/user/.local/share/uv/tools/reframe-hpc/share/man:
