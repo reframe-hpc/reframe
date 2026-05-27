@@ -1247,6 +1247,9 @@ You may define different logger objects per system but *not* per partition.
    A list of systems or system/partitions combinations that this logging configuration is valid for.
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
+   .. note::
+      The scope of all logging options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
+
 
 
 Common logging handler properties
@@ -1887,6 +1890,9 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    A list of systems *only* that this execution mode is valid for.
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
+   .. note::
+      The scope of all modes options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
+
 
 .. _storage-configuration:
 
@@ -1947,6 +1953,9 @@ Result storage configuration
    A list of systems *only* that this storage configuration is valid for.
 
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
+
+   .. note::
+      The scope of all storage options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
 
 
 .. _general-configuration:
@@ -2311,6 +2320,15 @@ General Configuration
 
    A list of systems or system/partitions combinations that these general options are valid for.
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
+
+   .. note::
+      The scope of all general options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
+      Exception to this rule are the following options, which have a partition scope:
+
+      - :attr:`~general.git_timeout`
+      - :attr:`~general.use_login_shell`
+      - :attr:`~general.flex_alloc_strict`
+      - :attr:`~general.trap_job_errors`
 
 
 .. py:attribute:: general.table_format
