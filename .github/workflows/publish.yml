@@ -15,6 +15,7 @@ jobs:
           python-version: 3.14
       - name: Generate dist packages
         run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
           uv build
       - name: Publish ReFrame to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
