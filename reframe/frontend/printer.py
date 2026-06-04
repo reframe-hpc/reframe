@@ -104,19 +104,27 @@ class PrettyPrinter:
     def failure_report(self, report, rerun_info=True, global_stats=False):
         '''Print a failure report'''
 
-        def _file_info(filename, prefix):
-            # filename and prefix are `None` before setup
-            if filename is None or prefix is None:
-                return []
+        def _contents(rec, job_key):
+            stdout = rec.get(f'{job_key}_stdout')
+            stdout_contents = rec.get(f'{job_key}_stdout_contents')
+            stderr = rec.get(f'{job_key}_stderr')
+            stderr_contents = rec.get(f'{job_key}_stderr_contents')
 
             num_lines = runtime().get_option('general/0/failure_inspect_lines')
-            lines = [f'--- {filename} (last {num_lines} lines) ---\n']
-            try:
-                lines += osext.tail(os.path.join(prefix, filename), num_lines)
-            except (OSError, UnicodeError) as e:
-                lines += [f'--- {filename} (ERROR: {e}) ---']
-            else:
-                lines += [f'--- {filename} ---']
+            lines = []
+            if stdout is not None and stdout_contents is not None:
+                lines += [
+                    f'--- {stdout} (last {num_lines} lines) ---\n',
+                    stdout_contents,
+                    f'--- {stdout} ---\n'
+                ]
+
+            if stderr is not None and stderr_contents is not None:
+                lines += [
+                    f'--- {stderr} (last {num_lines} lines) ---\n',
+                    stderr_contents,
+                    f'--- {stderr} ---'
+                ]
 
             return lines
 
@@ -131,13 +139,11 @@ class PrettyPrinter:
             self.info(f"  * Test file: {rec['filename']}")
             self.info(f"  * Stage directory: {rec['stagedir']}")
             self.info(f"  * Node list: "
-                      f"{nodelist_abbrev(rec['job_nodelist'])}")
+                      f"{nodelist_abbrev(rec.get('job_nodelist', []))}")
             job_type = 'local' if rec['scheduler'] == 'local' else 'batch job'
-            self.info(f"  * Job type: {job_type} (id={rec['jobid']})")
-            self.info(f"  * Dependencies (conceptual): "
-                      f"{rec['dependencies_conceptual']}")
-            self.info(f"  * Dependencies (actual): "
-                      f"{rec['dependencies_actual']}")
+            self.info(
+                f"  * Job type: {job_type} (id={rec.get('job_id')})"
+            )
             self.info(f"  * Maintainers: {rec['maintainers']}")
             self.info(f"  * Failing phase: {rec['fail_phase']}")
             if rerun_info and not rec['fixture']:
@@ -146,23 +152,10 @@ class PrettyPrinter:
                           f"{rec['system']} -r'")
 
             msg = rec['fail_reason']
-            if isinstance(rec['fail_info']['exc_value'], BuildError):
-                stdout = rec['build_stdout']
-                stderr = rec['build_stderr']
-                print_file_info = True
-            elif isinstance(rec['fail_info']['exc_value'], SanityError):
-                stdout = rec['job_stdout']
-                stderr = rec['job_stderr']
-                print_file_info = True
-            else:
-                print_file_info = False
-
-            if print_file_info:
-                lines = [msg + '\n']
-                lines += _file_info(stdout, prefix=rec['stagedir']) + ['\n']
-                lines += _file_info(stderr, prefix=rec['stagedir'])
-                msg = ''.join(lines)
-
+            lines = [msg + '\n']
+            lines += _contents(rec, 'build_job')
+            lines += _contents(rec, 'job')
+            msg = ''.join(lines)
             self.info(f"  * Reason: {msg}")
             tb = ''.join(traceback.format_exception(
                 *rec['fail_info'].values())

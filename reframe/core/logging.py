@@ -24,7 +24,7 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.core.exceptions import (ConfigError, LoggingError,
                                      WarningAsError, what)
-from reframe.core.warnings import suppress_deprecations
+from reframe.core.warnings import suppress_deprecations, user_deprecation_warning
 from reframe.utility import is_trivially_callable
 from reframe.utility.profile import TimeProfiler
 
@@ -171,6 +171,10 @@ class MultiFileHandler(logging.FileHandler):
         self.__use_locking = use_locking
         self.__lockfile_mode = lockfile_mode
         self.__locks = {}
+
+        # Always ignore the following keys in file logging
+        # NOTE: Consider setting this as the default configuration parameter
+        self.__ignore_keys |= {'check_job_script_contents'}
 
     def __generate_header(self, record):
         # Generate the header from the record and fmt
@@ -331,6 +335,14 @@ def _xfmt(val):
     return _dofmt(val)
 
 
+# Log record placeholders that were renamed; kept here so that format
+# strings referencing the old names keep working, with a deprecation warning
+_DEPRECATED_LOG_ALIASES = {
+    'check_jobid': 'check_job_id',
+    'check_job_submit_time': 'check_job_submit_time_us',
+}
+
+
 class CheckFieldFormatter(logging.Formatter):
     '''Log formatter that dynamically looks up format specifiers inside a
     regression test.'''
@@ -347,6 +359,25 @@ class CheckFieldFormatter(logging.Formatter):
         self.__expand_vars = '%(check_#ALL)s' in self.__fmt
         self.__expanded_fmt = {}
         self.__ignore_keys = set(ignore_keys) if ignore_keys else set()
+
+        # Always ignore the following keys in file logging
+        self.__ignore_keys |= {'check_job_script_contents'}
+
+        # Resolve any deprecated placeholders used in the format string once;
+        # the format string is static, so there is no need to redo this
+        # on every call to formatMessage()
+        self.__alias_map = {}
+        for s in self.__specs:
+            if (new_name := _DEPRECATED_LOG_ALIASES.get(s)) is None:
+                continue
+
+            msg = (f"the '%({s})s' log record placeholder is deprecated; "
+                   f"please use '%({new_name})s' instead")
+            if msg not in _WARN_ONCE:
+                _WARN_ONCE.add(msg)
+                user_deprecation_warning(msg)
+
+            self.__alias_map[s] = new_name
 
     def _expand_fmt(self, record):
         if not self.__expand_vars:
@@ -370,7 +401,7 @@ class CheckFieldFormatter(logging.Formatter):
         for var, info in perfvars.items():
             val, ref, lower, upper, unit, result = info
             record = {
-                'check_perf_var': var.split(':')[-1],
+                'check_perf_var': var,
                 'check_perf_value': val,
                 'check_perf_unit': unit,
                 'check_perf_ref': ref,
@@ -389,7 +420,14 @@ class CheckFieldFormatter(logging.Formatter):
     def formatMessage(self, record):
         fmt = self._expand_fmt(record)
         for s in self.__specs:
-            if s != 'check_#ALL' and not hasattr(record, s):
+            if s == 'check_#ALL' or hasattr(record, s):
+                continue
+
+            # Check if placeholder has an alias
+            new_name = self.__alias_map.get(s)
+            if new_name is not None and hasattr(record, new_name):
+                setattr(record, s, getattr(record, new_name))
+            else:
                 setattr(record, s, None)
 
         record_proxy = dict(record.__dict__)
@@ -918,6 +956,14 @@ class LoggerAdapter(logging.LoggerAdapter):
         else:
             return []
 
+    def _update_job_extras(self, job, prefix):
+        job_type = type(job)
+        for attr, alt_name in job_type.loggable_attrs():
+            extra_name  = alt_name or attr
+            key = f'{prefix}_{extra_name}'
+            self.extra['__rfm_loggable_attrs__'].append(key)
+            self.extra[key] = getattr(job, attr, None)
+
     def _update_check_extras(self):
         '''Return a dictionary with all the check-specific information.'''
 
@@ -941,11 +987,25 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['__rfm_loggable_attrs__'].append(key)
             self.extra[key] = val
 
+        # Add build job and job attributes
+        if self.check.build_job:
+            self._update_job_extras(self.check.build_job, 'check_build_job')
+
+        if self.check.job:
+            self._update_job_extras(self.check.job, 'check_job')
+
         # Add special extras
         self.extra['check_info'] = self.check.info()
-        self.extra['check_job_completion_time'] = _format_time_rfc3339(
-            self.extra['check_job_completion_time_unix'], r'%FT%T%:z'
-        )
+
+        # Add the legacy entries for the job completion times
+        job_completion_time_us = self.extra.get('check_job_completion_time_us')
+        if job_completion_time_us:
+            self.extra['check_job_completion_time_unix'] = (
+                job_completion_time_us / 1_000_000
+            )
+            self.extra['check_job_completion_time'] = _format_time_rfc3339(
+                self.extra['check_job_completion_time_unix'], r'%FT%T%:z'
+            )
 
     def log_result(self, level, task, msg=None, multiline=False):
         if self.check is None:

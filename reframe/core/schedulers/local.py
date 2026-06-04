@@ -82,6 +82,7 @@ class LocalJobScheduler(sched.JobScheduler):
         job._f_stdout = f_stdout
         job._f_stderr = f_stderr
         job._submit_time = time.time()
+        job._start_time = job._submit_time
         job._state = 'RUNNING'
 
     def emit_preamble(self, job):
