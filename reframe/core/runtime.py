@@ -292,7 +292,7 @@ def _is_valid_part(part, valid_systems):
     # Get sysname and partname for the partition being checked and construct
     # all system:partition patterns that would match the sysname and partname
     # being checked
-    sysname, partname = part.fullname.split(':')
+    sysname, partname = part.fullname.split(':', maxsplit=1)
     syspart_matches = ['*', '*:*', sysname, f'{sysname}:*', f'*:{partname}',
                        f'{part.fullname}']
 
