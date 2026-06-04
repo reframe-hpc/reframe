@@ -120,7 +120,7 @@ site_configuration = {
                     'ignore_keys': ['check_perfvalues'],
                     'json_formatter': (_format_record
                                        if os.getenv('CUSTOM_JSON') else None),
-                    'authorization_header': _get_authorization_header()
+                    'authorization_header': _get_authorization_header
                 }
             ]
         }
