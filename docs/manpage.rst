@@ -2453,6 +2453,21 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
 
+.. envvar:: RFM_STAGEDIR_HASHES
+
+   Use parameter hashes in the stage and output directories of parameterized tests.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.general.stagedir_hashes`
+      ================================== ==================
+
+   .. versionadded:: 4.11
+
+
 .. envvar:: RFM_SQLITE_CONN_TIMEOUT
 
    Timeout for SQLite database connections.

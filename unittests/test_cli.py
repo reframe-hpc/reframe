@@ -406,6 +406,22 @@ def test_dont_restage(run_reframe, tmp_path):
     assert returncode != 0
 
 
+def test_stagedir_no_hashes(run_reframe, tmp_path):
+    returncode, stdout, stderr = run_reframe(
+        system='sys2:part2',
+        checkpath=['unittests/resources/checks/hellocheck.py'],
+        more_options=['-n', '^HelloTest$', '--repeat=1', '--keep-stage-files'],
+        action='run'
+    )
+    assert returncode == 0
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert os.path.exists(tmp_path / 'stage' / 'sys2' / 'part2' /
+                          'builtin' / r'HelloTest%.repeat_no=0')
+    assert os.path.exists(tmp_path / 'output' / 'sys2' / 'part2' /
+                          'builtin' / r'HelloTest%.repeat_no=0')
+
+
 def test_checkpath_symlink(run_reframe, tmp_path):
     # FIXME: This should move to test_loader.py
     checks_symlink = tmp_path / 'checks_symlink'
