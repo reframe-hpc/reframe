@@ -145,6 +145,7 @@ class SSHJobScheduler(JobScheduler):
         job._submit_time = time.time()
         job._ssh_options = stripped_opts
         job._host = self._reserve_host(host)
+        job._nodelist = [job._host]
 
         self._push_artefacts(job)
         self._do_submit(job)
