@@ -314,6 +314,7 @@ site_configuration = {
         },
         {
             'git_timeout': 20,
+            'stagedir_hashes': False,
             'target_systems': ['sys2:part2']
         }
     ]

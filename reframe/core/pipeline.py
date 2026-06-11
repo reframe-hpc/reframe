@@ -2407,14 +2407,19 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         self.logger.debug('Setting up test paths')
         try:
             runtime = rt.runtime()
+            if runtime.get_option('general/0/stagedir_hashes'):
+                test_name = self.short_name
+            else:
+                test_name = self.display_name.replace(' %', '%')
+
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.short_name
+                self._current_environ.name, test_name
             )
             if not self.is_dry_run():
                 self._outputdir = runtime.make_outputdir(
                     self.current_system.name, self._current_partition.name,
-                    self._current_environ.name, self.short_name
+                    self._current_environ.name, test_name
                 )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
