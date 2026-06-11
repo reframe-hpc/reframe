@@ -2410,7 +2410,7 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
             if runtime.get_option('general/0/stagedir_hashes'):
                 test_name = self.short_name
             else:
-                test_name = self.display_name.replace(' ', '')
+                test_name = self.display_name.replace(' %', '%')
 
             self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
