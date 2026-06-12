@@ -572,6 +572,10 @@ System Partition Configuration
 
    .. versionadded:: 4.7
 
+   .. versionchanged:: 4.10.1
+
+      Added support for the ``ssh`` scheduler backend.
+
 
 .. py:attribute:: systems.partitions.sched_options.use_nodes_option
 
