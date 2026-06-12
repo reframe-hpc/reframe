@@ -568,7 +568,7 @@ System Partition Configuration
    :required: No
    :default: :obj:`False`
 
-   Use unqualified hostnames in the ``local`` scheduler backend.
+   Use unqualified hostnames in the ``local`` and ``ssh`` scheduler backends.
 
    .. versionadded:: 4.7
 
