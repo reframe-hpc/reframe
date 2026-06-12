@@ -7,6 +7,10 @@ import json
 import os
 
 
+def _get_authorization_header():
+    return 'Bearer YOUR_API_TOKEN'
+
+
 def _format_record(record, extras, ignore_keys):
     data = {}
     for attr, val in record.__dict__.items():
@@ -108,14 +112,15 @@ site_configuration = {
                     'url': 'https://httpjson-server:12345/rfm',
                     'level': 'info',
                     'debug': True,
-                    'extra_headers': {'Authorization': 'Token YOUR_API_TOKEN'},
+                    'extra_headers': {'Key0': 'Value0', 'Key1': 'Value1'},
                     'extras': {
                         'facility': 'reframe',
                         'data-version': '1.0'
                     },
                     'ignore_keys': ['check_perfvalues'],
                     'json_formatter': (_format_record
-                                       if os.getenv('CUSTOM_JSON') else None)
+                                       if os.getenv('CUSTOM_JSON') else None),
+                    'authorization_header': _get_authorization_header()
                 }
             ]
         }

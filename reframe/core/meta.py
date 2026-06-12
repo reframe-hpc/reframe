@@ -8,7 +8,10 @@
 #
 
 import functools
+import importlib
 import inspect
+import os
+import sys
 import types
 import collections
 
@@ -960,6 +963,7 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
         name.
     :param module: The module name of the new test class.
         If :obj:`None`, the module of the caller will be used.
+        If the module is not loaded, it will be loaded automatically.
     :param kwargs: Any keyword arguments to be passed to the
         :class:`RegressionTestMeta` metaclass.
 
@@ -986,11 +990,18 @@ def make_test(name, bases, body, methods=None, module=None, **kwargs):
     for m in methods:
         namespace[m.__name__] = m
 
-    cls = RegressionTestMeta(name, bases, namespace, **kwargs)
     if not module:
         # Set the test's module to be that of our callers
         caller = inspect.currentframe().f_back
         module = caller.f_globals['__name__']
 
+    try:
+        mod = sys.modules[module]
+    except KeyError:
+        mod = importlib.import_module(module)
+
+    # Infer the prefix of the test based on the module
+    kwargs.setdefault('custom_prefix', os.path.dirname(mod.__file__))
+    cls = RegressionTestMeta(name, bases, namespace, **kwargs)
     cls.__module__ = module
     return cls

@@ -1,3 +1,8 @@
+# Copyright 2016-2026 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # LMod versions prior to 8.2 emitted Python commands differently, so we use this
 # Dockerfile to test the bindings of older versions

@@ -154,7 +154,6 @@ def import_module_from_file(filename, *, force=False, load_parents=False):
 
     import reframe.utility.osext as osext
 
-
     if not load_parents:
         return _import_module_from_file(filename, force, None)
 
@@ -456,7 +455,7 @@ def is_trivially_callable(fn, *, non_def_args=0):
     '''
 
     if not callable(fn):
-        raise TypeError('argument is not a callable')
+        return False
 
     explicit_args = [p for p in inspect.signature(fn).parameters.values()
                      if p.default is p.empty]
@@ -951,8 +950,8 @@ class ScopedDict(UserDict):
 
     '''
 
-    def __init__(self, mapping={}, scope_sep=':', global_scope='*'):
-        super().__init__(mapping)
+    def __init__(self, mapping=None, scope_sep=':', global_scope='*'):
+        super().__init__(mapping or {})
         self._scope_sep = scope_sep
         self._global_scope = global_scope
 

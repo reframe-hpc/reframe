@@ -5,6 +5,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
+from reframe.core.builtins import parameter, sanity_function
 
 
 @rfm.simple_test

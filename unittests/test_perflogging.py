@@ -14,6 +14,7 @@ import reframe.core.runtime as rt
 import reframe.frontend.executors as executors
 import reframe.utility.osext as osext
 import reframe.utility.sanity as sn
+from reframe.core.builtins import variable, parameter, xfail
 
 
 class _MyPerfTest(rfm.RunOnlyRegressionTest):
@@ -26,6 +27,7 @@ class _MyPerfTest(rfm.RunOnlyRegressionTest):
             'perf1': (100, -0.05, 0.05, 'unit1')
         }
     }
+    expected_presults = variable(list, value=['pass', 'fail'])
 
     @sanity_function
     def validate(self):
@@ -77,9 +79,30 @@ class _LazyPerfTest(rfm.RunOnlyRegressionTest):
         }
 
 
-@pytest.fixture
-def perf_test():
-    return _MyPerfTest()
+@pytest.fixture(params=['pass', 'xpass', 'xfail'])
+def perf_test(request):
+    match request.param:
+        case 'pass':
+            return _MyPerfTest()
+        case 'xpass':
+            test = _MyPerfTest()
+            test.reference['*:perf0'] = xfail(
+                'xfail', test.reference['*:perf0']
+            )
+            # We make the `perf1` variable pass here, so that its normal
+            # failure will not mask the effect of xpass of `perf0`
+            test.reference['*:perf1'] = (50, -0.05, 0.05, 'unit1')
+            test.expected_presults = ['xpass', 'pass']
+            return test
+        case 'xfail':
+            test = _MyPerfTest()
+            test.reference['*:perf1'] = xfail(
+                'xfail', test.reference['*:perf1']
+            )
+            test.expected_presults = ['pass', 'xfail']
+            return test
+        case _:
+            assert False, f'unexpected parameter value: {request.param}'
 
 
 @pytest.fixture
@@ -338,17 +361,19 @@ def test_perf_logging_multiline(make_runner, make_exec_ctx, perf_test,
 
     version = osext.reframe_version()
     print(''.join(lines))
+    presults = perf_test.expected_presults
     assert lines[0] == ('job_completion_time|reframe version|name|'
                         'perf_var=perf_value|ref=perf_ref '
                         '(l=perf_lower_thres, u=perf_upper_thres)|perf_unit|'
                         'perf_result\n')
     assert lines[1].endswith(
         f'|reframe {version}|_MyPerfTest|'
-        f'perf0=100.0|ref=100 (l=-0.05, u=0.05)|unit0|pass\n'
+        f'perf0=100.0|ref=100 (l=-0.05, u=0.05)|unit0|{presults[0]}\n'
     )
+    ref1 = 50 if presults[1] == 'pass' else 100
     assert lines[2].endswith(
         f'|reframe {version}|_MyPerfTest|'
-        f'perf1=50.0|ref=100 (l=-0.05, u=0.05)|unit1|fail\n'
+        f'perf1=50.0|ref={ref1} (l=-0.05, u=0.05)|unit1|{presults[1]}\n'
     )
 
 

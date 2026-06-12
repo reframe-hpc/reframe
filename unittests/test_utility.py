@@ -22,6 +22,7 @@ import unittests.utility as test_util
 from reframe.core.exceptions import (ConfigError,
                                      SpawnedProcessError,
                                      SpawnedProcessTimeout)
+from reframe.core.warnings import ReframeDeprecationWarning
 
 
 def test_command_success():
@@ -281,7 +282,8 @@ def test_copytree(tmp_path):
     dir_src.mkdir()
     dir_dst = tmp_path / 'dst'
     dir_dst.mkdir()
-    osext.copytree(str(dir_src), str(dir_dst), dirs_exist_ok=True)
+    with pytest.warns(ReframeDeprecationWarning):
+        osext.copytree(str(dir_src), str(dir_dst), dirs_exist_ok=True)
 
 
 def test_copytree_src_parent_of_dst(tmp_path):
@@ -289,7 +291,8 @@ def test_copytree_src_parent_of_dst(tmp_path):
     src_path = (dst_path / '..').resolve()
 
     with pytest.raises(ValueError):
-        osext.copytree(str(src_path), str(dst_path))
+        with pytest.warns(ReframeDeprecationWarning):
+            osext.copytree(str(src_path), str(dst_path))
 
 
 @pytest.fixture(params=['dirs_exist_ok=True', 'dirs_exist_ok=False'])
@@ -303,7 +306,8 @@ def test_copytree_dst_notdir(tmp_path, dirs_exist_ok):
     dst = tmp_path / 'dst'
     dst.touch()
     with pytest.raises(FileExistsError, match=fr'{dst}'):
-        osext.copytree(str(dir_src), str(dst), dirs_exist_ok=dirs_exist_ok)
+        with pytest.warns(ReframeDeprecationWarning):
+            osext.copytree(str(dir_src), str(dst), dirs_exist_ok=dirs_exist_ok)
 
 
 def test_copytree_src_notdir(tmp_path, dirs_exist_ok):
@@ -312,7 +316,8 @@ def test_copytree_src_notdir(tmp_path, dirs_exist_ok):
     dst = tmp_path / 'dst'
     dst.mkdir()
     with pytest.raises(NotADirectoryError, match=fr'{src}'):
-        osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
+        with pytest.warns(ReframeDeprecationWarning):
+            osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
 
 
 def test_copytree_src_does_not_exist(tmp_path, dirs_exist_ok):
@@ -320,7 +325,8 @@ def test_copytree_src_does_not_exist(tmp_path, dirs_exist_ok):
     dst = tmp_path / 'dst'
     dst.mkdir()
     with pytest.raises(FileNotFoundError, match=fr'{src}'):
-        osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
+        with pytest.warns(ReframeDeprecationWarning):
+            osext.copytree(str(src), str(dst), dirs_exist_ok=dirs_exist_ok)
 
 
 @pytest.fixture
@@ -470,6 +476,9 @@ def test_git_repo_hash_no_git_repo(git_only, monkeypatch, tmp_path):
 
 
 def test_git_repo_exists(git_only):
+    if test_util.OFFLINE:
+        pytest.skip('offline tests requested')
+
     assert osext.git_repo_exists('https://github.com/reframe-hpc/reframe.git',
                                  timeout=10)
     assert not osext.git_repo_exists('reframe.git', timeout=10)
@@ -2007,8 +2016,7 @@ def test_is_trivially_callable():
 
     assert util.is_trivially_callable(foo)
     assert util.is_trivially_callable(bar, non_def_args=2)
-    with pytest.raises(TypeError):
-        util.is_trivially_callable(1)
+    assert not util.is_trivially_callable(1)
 
 
 def test_nodelist_utilities():

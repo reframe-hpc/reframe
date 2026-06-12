@@ -72,10 +72,8 @@ services:
   frontend:
     image: slurm-reframe
     build:
-      context: examples/tutorial/dockerfiles/slurm-cluster/reframe
-      args:
-        REFRAME_REPO: reframe-hpc
-        REFRAME_TAG: develop
+      context: .
+      dockerfile: examples/tutorial/dockerfiles/slurm-cluster/reframe/Dockerfile
     container_name: frontend
     hostname: login
     user: admin

@@ -634,8 +634,9 @@ def test_timestamp_option_default(run_reframe):
     assert returncode == 0
 
     matches = re.findall(
-        r'(stage|output) directory: .*\/(\d{8}T\d{6}\+\d{4})', stdout
+        r'(stage|output) directory: .*\/(\d{8}T\d{6}(\+|-)\d{4})', stdout
     )
+    print(stdout)
     assert len(matches) == 2
 
 
@@ -1371,12 +1372,24 @@ def test_testlib_inherit_fixture_in_different_files(run_reframe):
     assert 'FAILED' not in stdout
 
 
+def test_warn_as_error(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['/unknown/path'],
+        more_options=['--warn-as-error']
+    )
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode == 1
+    assert 'warning as error' in stdout
+
+
 @pytest.fixture(params=['csv', 'plain', 'pretty'])
 def table_format(request):
     return request.param
 
 
 def assert_no_crash(returncode, stdout, stderr, exitcode=0):
+    print(stdout)
     assert returncode == exitcode
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
@@ -1528,5 +1541,5 @@ def test_performance_compare(run_reframe, table_format, monkeypatch):
     assert_no_crash(
         *run_reframe2(
             action='--performance-compare=now-1m:now/now-1d:now/mean:+foo/+bar'
-        ), exitcode=1
+        )
     )

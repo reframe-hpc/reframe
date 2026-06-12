@@ -511,6 +511,15 @@ class RegressionTask:
         else:
             self._safe_call(self.check.performance)
 
+    def log_result(self):
+        try:
+            self._perflogger.log_result(logging.INFO, self,
+                                        multiline=self._perflog_multiline)
+        except LoggingError as e:
+            getlogger().warning(
+                f'could not log performance data for {self.testcase}: {e}'
+            )
+
     @logging.time_function
     def finalize(self):
         try:
@@ -524,13 +533,7 @@ class RegressionTask:
 
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
-        try:
-            self._perflogger.log_result(logging.INFO, self,
-                                        multiline=self._perflog_multiline)
-        except LoggingError as e:
-            getlogger().warning(
-                f'could not log performance data for {self.testcase}: {e}'
-            )
+        self.log_result()
 
     @logging.time_function
     def cleanup(self, *args, **kwargs):
@@ -549,13 +552,7 @@ class RegressionTask:
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners(callback)
-        try:
-            self._perflogger.log_result(logging.INFO, self,
-                                        multiline=self._perflog_multiline)
-        except LoggingError as e:
-            getlogger().warning(
-                f'could not log performance data for {self.testcase}: {e}'
-            )
+        self.log_result()
 
     def skip(self, exc_info=None):
         self._skipped = True
@@ -580,12 +577,14 @@ class RegressionTask:
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_xfailure')
+        self.log_result()
 
     def xpass(self, exc_info=None):
         self._xpassed = True
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_xsuccess')
+        self.log_result()
 
     def abort(self, cause=None):
         def _cancel_job(job):

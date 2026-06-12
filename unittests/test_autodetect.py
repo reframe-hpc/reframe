@@ -119,7 +119,7 @@ def test_autotect_with_invalid_files(invalid_topo_exec_ctx):
     assert part.devices == []
 
 
-def test_remote_autodetect(remote_exec_ctx):
+def test_remote_autodetect(remote_exec_ctx, custom_install):
     # All we can do with this test is to trigger the remote auto-detection
     # path; since we don't know what the remote user system is, we cannot test
     # if the topology is right.
@@ -132,7 +132,7 @@ def test_remote_autodetect(remote_exec_ctx):
 
     autodetect.detect_topology()
 
-    if runtime().get_option('general/0/remote_install'):
+    if custom_install:
         remote_workdir = runtime().get_option('general/0/remote_workdir')
         assert os.path.exists(os.path.join(remote_workdir, 'foo.txt'))
         os.remove(os.path.join(remote_workdir, 'foo.txt'))

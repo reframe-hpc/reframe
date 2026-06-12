@@ -20,7 +20,6 @@ import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
-                                     JobError,
                                      JobSchedulerError)
 from reframe.utility import nodelist_abbrev, seconds_to_hms
 
@@ -101,13 +100,6 @@ class _SlurmJob(sched.Job):
 
 @register_scheduler('slurm')
 class SlurmJobScheduler(sched.JobScheduler):
-    # In some systems, scheduler performance is sensitive to the squeue poll
-    # ratio. In this backend, squeue is used to obtain the reason a job is
-    # blocked, so as to cancel it if it is blocked indefinitely. The following
-    # variable controls the frequency of squeue polling compared to the
-    # standard job state polling using sacct.
-    SACCT_SQUEUE_RATIO = 10
-
     # This matches the format for both normal and heterogeneous jobs,
     # as well as job arrays.
     # For heterogeneous jobs, the job_id has the following format:
@@ -125,30 +117,49 @@ class SlurmJobScheduler(sched.JobScheduler):
         # Reasons to cancel a pending job: if the job is expected to remain
         # pending for a much longer time then usual (mostly if a sysadmin
         # intervention is required)
-        self._cancel_reasons = ['FrontEndDown',
-                                'Licenses',         # May require sysadmin
-                                'NodeDown',
-                                'PartitionDown',
-                                'PartitionInactive',
-                                'PartitionNodeLimit',
-                                'QOSJobLimit',
-                                'QOSResourceLimit',
-                                'QOSUsageThreshold']
-        ignore_reqnodenotavail = self.get_option('ignore_reqnodenotavail')
-        if not ignore_reqnodenotavail:
-            self._cancel_reasons.append('ReqNodeNotAvail')
+        self._cancel_reasons = self.get_option('slurm_job_cancel_reasons')
+        if self.get_option('ignore_reqnodenotavail'):
+            with suppress(ValueError):
+                self._cancel_reasons.remove('ReqNodeNotAvail')
 
         self._update_state_count = 0
         self._submit_timeout = self.get_option('job_submit_timeout')
         self._use_nodes_opt = self.get_option('use_nodes_option')
         self._resubmit_on_errors = self.get_option('resubmit_on_errors')
         self._max_sacct_failures = self.get_option('max_sacct_failures')
+        self._pending_job_reason_poll_freq = self.get_option(
+            'slurm_pending_job_reason_poll_freq'
+        )
         self._num_sacct_failures = 0
         self._sched_access_in_submit = self.get_option(
             'sched_access_in_submit'
         )
+        self._multi_clusters = self.get_option('slurm_multi_cluster_mode')
+        self._available_states = {
+            'ALLOCATED',
+            'COMPLETING',
+            'IDLE',
+            'PLANNED',
+            'RESERVED'
+        }
+        self._envvar_whitelist = set(self.get_option('slurm_envvar_whitelist'))
+
+        # Define the base sacct and squeue commands to account for Slurm's
+        # multiple cluster mode if enabled
+        self._sacct  = 'sacct'
+        self._squeue = 'squeue'
+        if self._multi_clusters:
+            clusters = ','.join(self._multi_clusters)
+            self._sacct  += f' -M {clusters}'
+            self._squeue += f' -M {clusters}'
 
     def make_job(self, *args, **kwargs):
+        if self._multi_clusters:
+            # Inject the `-M` option in case of multiple clusters
+            sched_access = kwargs.get('sched_access') or []
+            sched_access += [f'-M {",".join(self._multi_clusters)}']
+            kwargs['sched_access'] = sched_access
+
         return _SlurmJob(*args, **kwargs)
 
     def _format_option(self, var, option):
@@ -272,7 +283,8 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         with rt.temp_environment():
             for var in [name for name in os.environ.keys()
-                        if name.startswith('SBATCH_')]:
+                        if name.startswith('SBATCH_') and
+                        name not in self._envvar_whitelist]:
                 self.log(f'unsetting environment variable {var}',
                          logging.DEBUG)
                 del os.environ[var]
@@ -427,21 +439,30 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         return nodes
 
-    def _get_reservation_nodes(self, reservation):
-        completed = _run_strict('scontrol -a show res %s' % reservation)
-        node_match = re.search(r'(Nodes=\S+)', completed.stdout)
+    def _get_reservation_nodes(self, resv):
+        completed = _run_strict(f'scontrol -a show -o reservations {resv}')
+        self.log(f'reservation info:\n{completed.stdout}')
+
+        node_match = re.search(r'Nodes=(\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
         else:
-            raise JobSchedulerError("could not extract the node names for "
-                                    "reservation '%s'" % reservation)
+            raise JobSchedulerError('could not extract the node names for '
+                                    f'reservation {resv!r}')
 
-        completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
+        flags_match = re.search(r'Flags=(\S+)', completed.stdout)
+        if flags_match:
+            if 'MAINT' in flags_match.group(1).split(','):
+                self._available_states.add('MAINTENANCE')
+
+        completed = _run_strict(
+            f'scontrol -a show -o nodes {reservation_nodes}'
+        )
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
     def _get_nodes_by_name(self, nodespec):
-        completed = osext.run_command('scontrol -a show -o node %s' %
+        completed = osext.run_command('scontrol -a show -o nodes %s' %
                                       nodespec)
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
@@ -475,7 +496,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             )
             try:
                 completed = _run_strict(
-                    f'sacct -S {t_start} -P '
+                    f'{self._sacct} -S {t_start} -P '
                     f'-j {",".join(job.jobid for job in jobs)} '
                     f'-o jobid,state,exitcode,end,nodelist'
                 )
@@ -513,6 +534,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             jobid = re.split(r'_|\+', s.group('jobid'))[0]
             job_info.setdefault(jobid, []).append(s)
 
+        # Update job information
         for job in jobs:
             try:
                 jobarr_info = job_info[job.jobid]
@@ -522,10 +544,6 @@ class SlurmJobScheduler(sched.JobScheduler):
             # Join the states with ',' in case of job arrays|heterogeneous jobs
             job._state = ','.join(m.group('state') for m in jobarr_info)
 
-            if not self._update_state_count % self.SACCT_SQUEUE_RATIO:
-                self._cancel_if_blocked(job)
-
-            self._cancel_if_pending_too_long(job)
             if slurm_state_completed(job.state):
                 # Since Slurm exitcodes are positive take the maximum one
                 job._exitcode = max(
@@ -538,74 +556,74 @@ class SlurmJobScheduler(sched.JobScheduler):
                 job, (m.group('end') for m in jobarr_info)
             )
 
-    def _cancel_if_pending_too_long(self, job):
-        if not job.max_pending_time or not slurm_state_pending(job.state):
+        # Cancel jobs that blocked or pending for too long
+        if not self._update_state_count % self._pending_job_reason_poll_freq:
+            self._cancel_if_blocked(jobs)
+
+        self._cancel_if_pending_too_long(jobs)
+
+    def _cancel_if_pending_too_long(self, jobs):
+        cancel_joblist = []
+        for job in jobs:
+            if not job.max_pending_time or not slurm_state_pending(job.state):
+                continue
+
+            t_pending = time.time() - job.submit_time
+            if t_pending >= job.max_pending_time:
+                self.log('maximum pending time for job exceeded; cancelling it')
+                cancel_joblist.append(job)
+
+        if cancel_joblist:
+            self.cancel_many(cancel_joblist)
+
+    def _cancel_if_blocked(self, jobs, reasons=None):
+        pending_jobs = {
+            job.jobid: job for job in jobs
+            if not job.is_cancelling and slurm_state_pending(job.state)
+        }
+        if not pending_jobs or not self._cancel_reasons:
+            # If no jobs are pending or no reasons to cancel a job, return
             return
 
-        t_pending = time.time() - job.submit_time
-        if t_pending >= job.max_pending_time:
-            self.log('maximum pending time for job exceeded; cancelling it')
-            self.cancel(job)
-            job._exception = JobError('maximum pending time exceeded',
-                                      job.jobid)
+        pending_reasons = {}
+        if reasons:
+            for jobid, reason in reasons.items():
+                try:
+                    pending_reasons[pending_jobs[jobid]] = reason
+                except KeyError:
+                    # Job listed in reasons is not pending
+                    continue
+        else:
+            job_ids = ",".join(pending_jobs.keys())
+            completed = osext.run_command(
+                f'{self._squeue} -h -j {job_ids} -o "%A|%r"'
+            )
+            for line in completed.stdout.splitlines():
+                jobid, reason = line.split('|', maxsplit=1)
+                pending_reasons[pending_jobs[jobid]] = reason
 
-    def _cancel_if_blocked(self, job, reasons=None):
-        if (job.is_cancelling or not slurm_state_pending(job.state)):
+        cancel_joblist = {}
+        for job, reason_descr in pending_reasons.items():
+            # The reason description may have two parts as follows:
+            # "ReqNodeNotAvail, UnavailableNodes:nid00[408,411-415]"
+            reason = reason_descr.split(',', maxsplit=1)[0].strip()
+            if reason not in self._cancel_reasons:
+                continue
+
+            cancel_joblist[job] = reason_descr
+
+        if not cancel_joblist:
             return
 
-        if not reasons:
-            completed = osext.run_command('squeue -h -j %s -o %%r' % job.jobid)
-            reasons = completed.stdout.splitlines()
-            if not reasons:
-                # Can't retrieve job's state. Perhaps it has finished already
-                # and does not show up in the output of squeue
-                return
+        # Cancel all jobs at once
+        self.cancel_many(cancel_joblist.keys())
 
-        # For slurm job arrays the squeue output consists of multiple lines
-        for r in reasons:
-            self._do_cancel_if_blocked(job, r)
-
-    def _do_cancel_if_blocked(self, job, reason_descr):
-        '''Check if blocking reason ``reason_descr`` is unrecoverable and
-        cancel the job in this case.'''
-
-        # The reason description may have two parts as follows:
-        # "ReqNodeNotAvail, UnavailableNodes:nid00[408,411-415]"
-        try:
-            reason, reason_details = reason_descr.split(',', maxsplit=1)
-        except ValueError:
-            # no reason details
-            reason, reason_details = reason_descr, None
-
-        if reason in self._cancel_reasons:
-            if reason == 'ReqNodeNotAvail' and reason_details:
-                self.log('Job blocked due to ReqNodeNotAvail')
-                node_match = re.match(
-                    r'UnavailableNodes:(?P<node_names>\S+)?',
-                    reason_details.strip()
-                )
-                if node_match:
-                    node_names = node_match['node_names']
-                    if node_names:
-                        # Retrieve the info of the unavailable nodes and check
-                        # if they are indeed down. According to Slurm's docs
-                        # this should not be necessary, but we check anyways
-                        # to be on the safe side.
-                        self.log(f'Checking if nodes {node_names!r} '
-                                 f'are indeed unavailable')
-                        nodes = self._get_nodes_by_name(node_names)
-                        if not any(n.is_down() for n in nodes):
-                            return
-
-                        self.cancel(job)
-                        reason_msg = (
-                            'job cancelled because it was blocked due to '
-                            'a perhaps non-recoverable reason: ' + reason
-                        )
-                        if reason_details is not None:
-                            reason_msg += ', ' + reason_details
-
-                        job._exception = JobBlockedError(reason_msg, job.jobid)
+        # Set the job exception
+        for job, reason_descr in cancel_joblist.items():
+            job._exception = JobBlockedError(
+                f'job cancelled because it was blocked '
+                f'due to reason: {reason_descr}', job.jobid
+            )
 
     def wait(self, job):
         # Quickly return in case we have finished already
@@ -624,11 +642,26 @@ class SlurmJobScheduler(sched.JobScheduler):
             self._merge_files(job)
 
     def cancel(self, job):
-        _run_strict(f'scancel {job.jobid}', timeout=self._submit_timeout)
-        job._is_cancelling = True
+        self.cancel_many([job])
+
+    def cancel_many(self, jobs):
+        if not jobs:
+            self.log('no jobs to cancel')
+            return
+
+        _run_strict(f'scancel {" ".join(job.jobid for job in jobs)}',
+                    timeout=self._submit_timeout)
+        for job in jobs:
+            job._is_cancelling = True
 
     def finished(self, job):
         return slurm_state_completed(job.state)
+
+    def is_node_avail(self, node):
+        return node.states <= self._available_states
+
+    def is_node_down(self, node):
+        return not self.is_node_avail(node)
 
 
 @register_scheduler('squeue')
@@ -655,7 +688,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
         # finished already, squeue might return an error about an invalid
         # job id.
         completed = osext.run_command(
-            f'squeue -h -j {",".join(job.jobid for job in jobs)} '
+            f'{self._squeue} -h -j {",".join(job.jobid for job in jobs)} '
             f'-o "%%i|%%T|%%N|%%r"'
         )
 
@@ -685,10 +718,13 @@ class SqueueJobScheduler(SlurmJobScheduler):
 
             # Use ',' to join nodes to be consistent with Slurm syntax
             job._nodespec = ','.join(m.group('nodespec') for m in job_match)
-            self._cancel_if_blocked(
-                job, [s.group('reason') for s in state_match]
-            )
-            self._cancel_if_pending_too_long(job)
+
+        pending_reasons = {}
+        for jobid, states in jobinfo.items():
+            pending_reasons[jobid] = [s.group('reason') for s in states]
+
+        self._cancel_if_blocked(jobs, pending_reasons)
+        self._cancel_if_pending_too_long(jobs)
 
 
 def _create_nodes(descriptions):
@@ -727,6 +763,9 @@ class _SlurmNode(sched.Node):
     def __hash__(self):
         return hash(self.name)
 
+    def __repr__(self):
+        return f'_SlurmNode({self.name!r})'
+
     def in_state(self, state):
         return all([self._states >= set(state.upper().split('+')),
                     self._partitions, self._active_features, self._states])
@@ -734,30 +773,17 @@ class _SlurmNode(sched.Node):
     def in_statex(self, state):
         return self._states == set(state.upper().split('+'))
 
-    def is_avail(self):
-        available_states = {
-            'ALLOCATED',
-            'COMPLETING',
-            'IDLE',
-            'PLANNED',
-            'RESERVED'
-        }
-        return self._states <= available_states
-
-    def is_down(self):
-        return not self.is_avail()
-
     def satisfies(self, slurm_constraint):
         # Convert the Slurm constraint to a Python expression and evaluate it,
         # but restrict our syntax to accept only AND or OR constraints and
         # their combinations; since Slurm features are not valid Python
         # identifiers, we replace them with booleans before evaluating.
 
-        if not re.match(r'^[\-\w\(\)\|\&]+$', slurm_constraint):
+        if not re.match(r'^[\-\w.\(\)\|\&]+$', slurm_constraint):
             return False
 
         expr = re.sub(
-            r'[\-\w]+',
+            r'[\-\w.]+',
             lambda m: str(m.group(0) in self.active_features),
             slurm_constraint
         ).replace('|', ' or ').replace('&', ' and ')

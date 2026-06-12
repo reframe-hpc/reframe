@@ -8,16 +8,14 @@
 #
 
 
-FROM ghcr.io/reframe-hpc/lmod:9.0.4
+FROM ubuntu:24.04
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 ENV _SPACK_VER=1.1.0
-ENV _EB_VER=5.1.2
-
 
 # Install ReFrame unit test requirements
 RUN apt-get -y update && \
-    apt-get -y install gcc git make python3 python3-pip curl
+    apt-get -y install gcc git make python3
 
 # ReFrame user
 RUN useradd -ms /bin/bash rfmuser
@@ -25,9 +23,7 @@ RUN useradd -ms /bin/bash rfmuser
 USER rfmuser
 
 # Install Spack
-RUN git clone --branch v${_SPACK_VER} --depth 1 https://github.com/spack/spack ~/spack
-
-ENV PATH="/home/rfmuser/.local/bin:${PATH}"
+RUN git clone --branch v${_SPACK_VER} https://github.com/spack/spack ~/spack
 
 # Install ReFrame from the current directory
 COPY --chown=rfmuser . /home/rfmuser/reframe/
@@ -35,11 +31,7 @@ COPY --chown=rfmuser . /home/rfmuser/reframe/
 WORKDIR /home/rfmuser/reframe
 
 RUN uv sync --group dev && \
-    echo '. /usr/local/lmod/lmod/init/profile && . /home/rfmuser/spack/share/spack/setup-env.sh' >> /home/rfmuser/.profile
-
-# Install EasyBuild
-RUN uv pip install easybuild==${_EB_VER}
-
+    echo '. /home/rfmuser/spack/share/spack/setup-env.sh' >> /home/rfmuser/.profile
 ENV BASH_ENV=/home/rfmuser/.profile
 
-CMD ["/bin/bash", "-c", "uv run reframe --system=tutorialsys --exec-policy=serial -r -C examples/tutorial/config/baseline_modules.py -R -c examples/tutorial/easybuild/eb_test.py -c examples/tutorial/spack/spack_test.py"]
+CMD ["/bin/bash", "-c", "uv run coverage run --source=reframe ./test_reframe.py -v --rfm-user-config=ci-scripts/configs/spack.py; uv run coverage xml -o coverage.xml"]

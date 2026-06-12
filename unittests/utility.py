@@ -36,6 +36,9 @@ TEST_CONFIG_FILE = 'unittests/resources/config/settings.py'
 USER_CONFIG_FILE = None
 USER_SYSTEM = None
 
+# Skip unit tests requiring Internet access
+OFFLINE = False
+
 
 def init_runtime():
     site_config = config.load_config('unittests/resources/config/settings.py')
@@ -81,19 +84,6 @@ def environment_by_name(name, partition):
 def has_sane_modules_system():
     return not isinstance(rt.runtime().modules_system.backend,
                           (modules.NoModImpl, modules.SpackImpl))
-
-
-def custom_prefix(prefix):
-    '''Assign a custom prefix to a test.
-
-    This is useful in unit tests when we want to create tests on-the-fly and
-    associate them with existing resources.'''
-
-    def _set_prefix(cls):
-        cls._rfm_custom_prefix = prefix
-        return cls
-
-    return _set_prefix
 
 
 def dispatch(argname, suffix=None):

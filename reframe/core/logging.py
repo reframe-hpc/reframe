@@ -22,7 +22,8 @@ from datetime import datetime
 import reframe.utility.color as color
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
-from reframe.core.exceptions import ConfigError, LoggingError, what
+from reframe.core.exceptions import (ConfigError, LoggingError,
+                                     WarningAsError, what)
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import is_trivially_callable
 from reframe.utility.profile import TimeProfiler
@@ -337,12 +338,8 @@ class CheckFieldFormatter(logging.Formatter):
     # NOTE: This formatter will work only for the '%' style
     def __init__(self, fmt=None, datefmt=None, perffmt=None,
                  ignore_keys=None, style='%'):
-        if sys.version_info[:2] <= (3, 7):
-            super().__init__(fmt, datefmt, style)
-        else:
-            super().__init__(fmt, datefmt, style,
-                             validate=(fmt != '%(check_#ALL)s'))
-
+        super().__init__(fmt, datefmt, style,
+                         validate=(fmt != '%(check_#ALL)s'))
         self.__fmt = fmt
         self.__fmtperf = perffmt[:-1] if perffmt else ''
         self.__specs = re.findall(r'\%\((\S+?)\)s', fmt)
@@ -600,6 +597,9 @@ def _create_httpjson_handler(site_config, config_prefix):
     extras = site_config.get(f'{config_prefix}/extras')
     ignore_keys = site_config.get(f'{config_prefix}/ignore_keys')
     json_formatter = site_config.get(f'{config_prefix}/json_formatter')
+    authorization_header = site_config.get(
+        f'{config_prefix}/authorization_header'
+    )
     extra_headers = site_config.get(f'{config_prefix}/extra_headers')
     debug = site_config.get(f'{config_prefix}/debug')
     backoff_intervals = site_config.get(f'{config_prefix}/backoff_intervals')
@@ -645,8 +645,8 @@ def _create_httpjson_handler(site_config, config_prefix):
                             'no data will be sent to the server')
 
     return HTTPJSONHandler(url, extras, ignore_keys, json_formatter,
-                           extra_headers, debug, backoff_intervals,
-                           retry_timeout)
+                           authorization_header, extra_headers, debug,
+                           backoff_intervals, retry_timeout)
 
 
 def _record_to_json(record, extras, ignore_keys):
@@ -696,7 +696,8 @@ class HTTPJSONHandler(logging.Handler):
     }
 
     def __init__(self, url, extras=None, ignore_keys=None,
-                 json_formatter=None, extra_headers=None,
+                 json_formatter=None,
+                 authorization_header=None, extra_headers=None,
                  debug=False, backoff_intervals=(1, 2, 3), retry_timeout=0):
         super().__init__()
         self._url = url
@@ -711,9 +712,17 @@ class HTTPJSONHandler(logging.Handler):
 
         if not is_trivially_callable(self._json_format, non_def_args=3):
             raise ConfigError(
-                "httpjson: 'json_formatter' has not the right signature: "
+                "httpjson: 'json_formatter' has the wrong signature: "
                 "it must be 'json_formatter(record, extras, ignore_keys)'"
             )
+
+        if not is_trivially_callable(authorization_header):
+            raise ConfigError(
+                "httpjson: 'authorization_header' has the wrong signature: "
+                "it must be 'authorization_header()'"
+            )
+
+        self._authorization_header = authorization_header
 
         self._headers = {'Content-type': 'application/json',
                          'Accept-Charset': 'UTF-8'}
@@ -741,7 +750,11 @@ class HTTPJSONHandler(logging.Handler):
 
             return
 
+        if self._authorization_header is not None:
+            self._headers['Authorization'] = self._authorization_header()
+
         timeout_time = time.time() + self._timeout
+
         try:
             backoff_intervals = itertools.cycle(self._backoff_intervals)
             while True:
@@ -809,11 +822,10 @@ class Logger(logging.Logger):
     def setLevel(self, level):
         self.level = _check_level(level)
 
-        if sys.version_info[:2] >= (3, 7):
-            # Clear the internal cache of the base logger, otherwise the
-            # logger will remain disabled if its level is raised and then
-            # lowered again
-            self._cache.clear()
+        # Clear the internal cache of the base logger, otherwise the
+        # logger will remain disabled if its level is raised and then
+        # lowered again
+        self._cache.clear()
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
@@ -892,6 +904,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         )
         self.check = check
         self.colorize = False
+        self.warn_as_error = False
 
     def setLevel(self, level):
         if self.logger:
@@ -988,6 +1001,9 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.log(VERBOSE, message, *args, **kwargs)
 
     def warning(self, message, *args, cache=False, **kwargs):
+        if self.warn_as_error:
+            raise WarningAsError(message)
+
         if cache:
             if message in _WARN_ONCE:
                 return
@@ -1071,7 +1087,7 @@ class logging_context:
         _context_logger = self._orig_logger
 
 
-def configure_logging(site_config):
+def configure_logging(site_config, warn_as_error=False):
     global _logger, _context_logger, _perf_logger
 
     if site_config is None:
@@ -1084,6 +1100,7 @@ def configure_logging(site_config):
     _logger = _create_logger(site_config, 'handlers$', 'handlers')
     _perf_logger = _create_logger(site_config, 'handlers_perflog')
     _context_logger = LoggerAdapter(_logger)
+    _context_logger.warn_as_error = warn_as_error
 
 
 def log_files():

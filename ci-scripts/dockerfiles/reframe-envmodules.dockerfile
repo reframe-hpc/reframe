@@ -7,12 +7,13 @@
 # Execute this from the top-level ReFrame source directory
 #
 
-FROM ghcr.io/reframe-hpc/lmod:9.0.4
+FROM ghcr.io/reframe-hpc/envmodules:5.6.1
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
-# Install ReFrame unit test requirements
-RUN apt-get -y update && \
-    apt-get -y install gcc git make python3
+# ReFrame requirements
+RUN \
+    apt-get -y update && \
+    apt-get -y install gcc make git python3
 
 # ReFrame user
 RUN useradd -ms /bin/bash rfmuser
@@ -28,4 +29,4 @@ RUN uv sync --group dev && \
     echo ". $BASH_ENV" >> /home/rfmuser/.profile
 ENV BASH_ENV=/home/rfmuser/.profile
 
-CMD ["/bin/bash", "-c", "uv run coverage run --source=reframe ./test_reframe.py -v --rfm-user-config=ci-scripts/configs/lmod.py; uv run coverage xml -o coverage.xml"]
+CMD ["/bin/bash", "-c", "uv run coverage run --source=reframe ./test_reframe.py --rfm-user-config=ci-scripts/configs/envmod.py; uv run coverage xml -o coverage.xml"]

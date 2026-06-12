@@ -6,10 +6,10 @@
 site_configuration = {
     'systems': [
         {
-            'name': 'lmodsys',
-            'descr': 'Generic system using Lmod',
+            'name': 'envmodsys',
+            'descr': 'Generic system using Environment Modules',
             'hostnames': ['.*'],
-            'modules_system': 'lmod',
+            'modules_system': 'envmod',
             'partitions': [
                 {
                     'name': 'default',

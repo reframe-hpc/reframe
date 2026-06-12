@@ -1,3 +1,105 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.29"]
+build-backend = "hatchling.build"
+
+[project]
+name = "reframe-hpc"
+dynamic = ["version"]
+authors = [
+    {name = "Swiss National Supercomputing Center (CSCS/ETH Zurich)"},
+    {name = "ReFrame Project Developers"}
+]
+description = "ReFrame is a powerful framework for writing system regression tests and benchmarks, specifically targeted to HPC systems"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: Console",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "archspec >= 0.2.4",
+    "argcomplete ~= 3.6",
+    "ClusterShell ~= 1.9",
+    "fasteners ~= 0.20",
+    "jinja2 ~= 3.1",
+    "jsonschema ~= 4.26",
+    "lxml ~= 6.0",
+    "polars ~= 1.39",
+    "PyYAML ~= 6.0",
+    "requests ~= 2.33",
+    "semver ~= 3.0",
+    "tabulate ~= 0.10",
+]
+keywords = ["benchmarking", "framework", "continuous integration", "hpc",
+            "regresion testing", "performance testing", "validation testing"]
+
+[project.urls]
+documentation = "https://reframe-hpc.readthedocs.io/"
+releasenotes = "https://github.com/reframe-hpc/reframe/releases"
+repository = "https://github.com/reframe-hpc/reframe"
+tracker = "https://github.com/reframe-hpc/reframe/issues"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.scripts]
+reframe = "reframe.frontend.cli:main"
+
+[project.optional-dependencies]
+graylog = ["pygelf ~= 0.4"]
+
+[dependency-groups]
+dev = [
+    "coverage ~= 7.13",
+    "pytest ~= 9.0",
+    "pytest-forked ~= 1.6",
+    "pytest-rerunfailures ~= 16.1"
+]
+docs = [
+    "Sphinx ~= 8.1; python_version == '3.10'",
+    "Sphinx ~= 8.2; python_version >= '3.11'",
+    "sphinx-rtd-theme ~=3.1"
+]
+
+[tool.hatch.version]
+path = "reframe/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/reframe/**/*.py",
+    "/reframe/schemas/**/*",
+    "/docs/man/man1/reframe.1",
+    "/docs/man/man8/reframe.settings.8",
+    "/examples",
+    "/share/completions",
+    "/tools",
+    "/CONTRIBUTING.md",
+    "/LICENSE",
+    "/REAMDE.md",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["reframe"]
+
+
+[tool.hatch.build.targets.wheel.shared-data]
+"docs/man/man1/reframe.1" = "share/man/man1/reframe.1"
+"docs/man/man8/reframe.8" = "share/man/man8/reframe.8"
+"examples" = "share/doc/reframe-hpc/examples"
+"share/completions/reframe.bash" = "share/bash-completion/completions/reframe"
+"share/completions/reframe.fish" = "share/fish/vendor_completions.d/reframe.fish"
+"share/completions/reframe.tcsh" = "share/reframe/completions/reframe.tcsh"
+
+[tool.flake8]
+extend-ignore = "E129,E221,E226,E241,E402,E272,E741,E742,E743,F821,W504"
+exclude = ".git,__pycache__,docs/conf.py,external"

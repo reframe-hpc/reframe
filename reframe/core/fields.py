@@ -94,7 +94,8 @@ class TypedField(Field):
     def __set__(self, obj, value):
         try:
             self._check_type(value)
-        except TypeError:
+        except TypeError as err:
+            last_error = err
             raw_value = remove_convertible(value)
             if raw_value is value and not self._allow_implicit:
                 # value was not convertible and the field does not allow
@@ -106,7 +107,8 @@ class TypedField(Field):
             for t in self._types:
                 try:
                     value = t(value)
-                except TypeError:
+                except TypeError as err:
+                    last_error = err
                     continue
                 else:
                     return super().__set__(obj, value)
@@ -116,7 +118,7 @@ class TypedField(Field):
             raise TypeError(
                 f'failed to set variable {self._name!r}: '
                 f'could not convert to any of the supported types: '
-                f'{typenames}'
+                f'{typenames}: {last_error}'
             )
         else:
             return super().__set__(obj, value)

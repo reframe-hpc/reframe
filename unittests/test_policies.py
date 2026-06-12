@@ -65,8 +65,8 @@ def make_cases_for_skipping(request):
     import reframe.utility.sanity as sn
 
     def _make_cases():
-        @test_util.custom_prefix('unittests/resources/checks')
-        class _T0(rfm.RegressionTest):
+        class _T0(rfm.RegressionTest,
+                  custom_prefix='unittests/resources/checks'):
             valid_systems = ['*']
             valid_prog_environs = ['*']
             sourcepath = 'hello.c'

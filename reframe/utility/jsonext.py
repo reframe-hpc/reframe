@@ -35,7 +35,10 @@ def encode_dict(obj, *, recursive=False):
 
     Use the recursive option to also check the keys in nested dicts.
     '''
-    # FIXME: Need to add support for a decode_dict functionality
+
+    if hasattr(obj, '__rfm_json_encode__'):
+        return obj.__rfm_json_encode__()
+
     if isinstance(obj, MutableMapping):
         if recursive or any(isinstance(k, tuple) for k in obj):
             newobj = type(obj)()

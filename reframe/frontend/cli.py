@@ -703,6 +703,14 @@ def main():
         envvar='RFM_TABLE_FORMAT_DELIM', configvar='general/table_format_delim'
     )
     misc_options.add_argument(
+        '--term-lhs', action='store',
+        help='LHS term in performance comparisons'
+    )
+    misc_options.add_argument(
+        '--term-rhs', action='store',
+        help='RHS term in performance comparisons'
+    )
+    misc_options.add_argument(
         '-v', '--verbose', action='count',
         help='Increase verbosity level of output',
         envvar='RFM_VERBOSE', configvar='general/verbose'
@@ -710,6 +718,11 @@ def main():
     misc_options.add_argument(
         '-q', '--quiet', action='count', default=0,
         help='Decrease verbosity level of output',
+    )
+    misc_options.add_argument(
+        '--warn-as-error', action='store_true',
+        help='Treat warnings as errors',
+        envvar='RFM_WARN_AS_ERROR'
     )
 
     # Options not associated with command-line arguments
@@ -840,6 +853,13 @@ def main():
         help='Minimum poll rate'
     )
     argparser.add_argument(
+        dest='reference_prefix',
+        envvar='RFM_REFERENCE_PREFIX',
+        configvar='general/reference_prefix',
+        action='store',
+        help='Directory prefix for external references'
+    )
+    argparser.add_argument(
         dest='remote_detect',
         envvar='RFM_REMOTE_DETECT',
         configvar='general/remote_detect',
@@ -866,6 +886,22 @@ def main():
         configvar='storage/enable',
         action='store_true',
         help='Enable results storage'
+    )
+    argparser.add_argument(
+        dest='slurm_job_cancel_reasons',
+        envvar='RFM_SLURM_JOB_CANCEL_REASONS',
+        configvar='systems*/sched_options/slurm_job_cancel_reasons',
+        action='store',
+        help='Reasons to cancel a Slurm job',
+        type=typ.List[str]
+    )
+    argparser.add_argument(
+        dest='slurm_pending_job_reason_poll_freq',
+        envvar='RFM_SLURM_PENDING_JOB_REASON_POLL_FREQ',
+        configvar='systems*/sched_options/slurm_pending_job_reason_poll_freq',
+        action='store',
+        help='Frequency of polling for the reason a Slurm job is pending',
+        type=int
     )
     argparser.add_argument(
         dest='sqlite_conn_timeout',
@@ -1045,7 +1081,7 @@ def main():
                 options = argparser.parse_args(namespace=options.cmd_options)
                 options.update_config(site_config)
 
-        logging.configure_logging(site_config)
+        logging.configure_logging(site_config, options.warn_as_error)
     except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
         printer.info(logfiles_message())
@@ -1127,7 +1163,9 @@ def main():
                                   lambda htype: htype != 'stream')
         with exit_gracefully_on_error('failed to retrieve session data',
                                       printer):
-            printer.info(reporting.session_info(options.describe_stored_sessions))
+            printer.info(
+                reporting.session_info(options.describe_stored_sessions)
+            )
             sys.exit(0)
 
     if options.describe_stored_testcases:
@@ -1154,8 +1192,9 @@ def main():
 
     if options.performance_compare:
         namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
-        with exit_gracefully_on_error('failed to generate performance report',
-                                      printer):
+        with exit_gracefully_on_error(
+            'failed to generate performance comparison', printer
+        ):
             filt = [None, None]
             if options.filter_expr is not None:
                 if len(options.filter_expr) == 1:
@@ -1168,8 +1207,10 @@ def main():
                     sys.exit(1)
 
             printer.table(
-                reporting.performance_compare(options.performance_compare,
-                                              None, namepatt, *filt)
+                reporting.performance_compare(
+                    options.performance_compare, None, namepatt, *filt,
+                    options.term_lhs, options.term_rhs
+                )
             )
             sys.exit(0)
 
@@ -1769,7 +1810,10 @@ def main():
                 try:
                     if rt.get_option('storage/0/enable'):
                         data = reporting.performance_compare(
-                            rt.get_option('general/0/perf_report_spec'), report
+                            rt.get_option('general/0/perf_report_spec'),
+                            report,
+                            term_lhs=options.term_lhs,
+                            term_rhs=options.term_rhs
                         )
                     else:
                         data = report.report_data()

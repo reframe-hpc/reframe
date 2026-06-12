@@ -119,7 +119,20 @@
                     "type": "array",
                     "items": {"type": "string"}
                 },
+                "slurm_envvar_whitelist": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "slurm_job_cancel_reasons": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "slurm_multi_cluster_mode": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
                 "sched_access_in_submit": {"type": "boolean"},
+                "slurm_pending_job_reason_poll_freq": {"type": "number"},
                 "unqualified_hostnames": {"type": "boolean"},
                 "use_nodes_option": {"type": "boolean"}
             }
@@ -175,6 +188,7 @@
                             "items": {"type": "string"}
                         },
                         "json_formatter": {},
+                        "authorization_header": {},
                         "extra_headers": {"type": "object"},
                         "debug": {"type": "boolean"},
                         "backoff_intervals": {
@@ -270,7 +284,7 @@
                     "max_local_jobs": {"type": "number"},
                     "modules_system": {
                         "type": "string",
-                        "enum": ["tmod", "tmod31", "tmod32", "tmod4",
+                        "enum": ["tmod4", "envmod",
                                  "lmod", "nomod", "spack"]
                     },
                     "modules": {"$ref": "#/defs/modules_list"},
@@ -650,7 +664,7 @@
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",
         "logging/handlers/*_datefmt": "%FT%T.%f",
-        "logging/handlers_perflog/datefmt": "%FT%T",
+        "logging/handlers_perflog/*_datefmt": "%FT%T",
         "logging/handlers_perflog/filelog_append": true,
         "logging/handlers_perflog/filelog_basedir": "./perflogs",
         "logging/handlers_perflog/filelog_ignore_keys": [],
@@ -660,6 +674,7 @@
         "logging/handlers_perflog/httpjson_extras": {},
         "logging/handlers_perflog/httpjson_ignore_keys": [],
         "logging/handlers_perflog/httpjson_json_formatter": null,
+        "logging/handlers_perflog/httpjson_authorization_header": null,
         "logging/handlers_perflog/httpjson_extra_headers": {},
         "logging/handlers_perflog/httpjson_debug": false,
         "logging/handlers_perflog/httpjson_backoff_intervals": [0.1, 0.2, 0.4, 0.8, 1.6, 3.2],
@@ -706,8 +721,12 @@
         "systems*/sched_options/job_submit_timeout": 60,
         "systems*/sched_options/max_sacct_failures": 3,
         "systems*/sched_options/sched_access_in_submit": false,
+        "systems*/sched_options/slurm_multi_cluster_mode": [],
         "systems*/sched_options/ssh_hosts": [],
         "systems*/sched_options/resubmit_on_errors": [],
+        "systems*/sched_options/slurm_envvar_whitelist": [],
+        "systems*/sched_options/slurm_job_cancel_reasons": ["ReqNodeNotAvail"],
+        "systems*/sched_options/slurm_pending_job_reason_poll_freq": 10,
         "systems*/sched_options/unqualified_hostnames": false,
         "systems*/sched_options/use_nodes_option": false
     }

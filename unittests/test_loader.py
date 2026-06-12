@@ -8,7 +8,6 @@ import pytest
 import shutil
 
 import reframe as rfm
-import reframe.utility.osext as osext
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.frontend.loader import RegressionCheckLoader
 
@@ -83,6 +82,14 @@ def test_load_fixtures(loader):
     assert 5 == len(tests)
 
 
+def test_load_indexed_refs(loader):
+    # Assert that tests with indexed references are loaded without errors
+    tests = loader.load_from_file(
+        'unittests/resources/checks_unlisted/indexed_refs.py'
+    )
+    assert 2 == len(tests)
+
+
 def test_existing_module_name(loader, tmp_path):
     test_file = tmp_path / 'os.py'
     shutil.copyfile('unittests/resources/checks/emptycheck.py', test_file)
@@ -148,7 +155,7 @@ def test_relative_import_outside_rfm_prefix(loader, tmp_path):
     # imported as a hierarchical module. If not, we want to make sure that
     # reframe will still load its parent modules
 
-    osext.copytree(
+    shutil.copytree(
         os.path.abspath('unittests/resources/checks_unlisted/testlib'),
         tmp_path / 'testlib', dirs_exist_ok=True
     )

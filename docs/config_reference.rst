@@ -161,24 +161,27 @@ System Configuration
    The modules system that should be used for loading environment modules on this system.
    Available values are the following:
 
-   - ``tmod``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.2).
-   - ``tmod31``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.1).
-     A separate backend is required for Tmod 3.1, because Python bindings are different from Tmod 3.2.
-   - ``tmod32``: A synonym of ``tmod``.
-   - ``tmod4``: The `new environment modules <http://modules.sourceforge.net/>`__ implementation (versions older than 4.1 are not supported).
+   - ``envmod``: The `new environment modules <https://modules.readthedocs.io/en/latest/>`__ implementation (versions older than 4.1 are not supported).
    - ``lmod``: The `Lua implementation <https://lmod.readthedocs.io/en/latest/>`__ of the environment modules.
    - ``spack``: `Spack <https://spack.readthedocs.io/en/latest/>`__'s built-in mechanism for managing modules.
+   - ``tmod4``: (deprecated) Synonym of ``envmod``.
    - ``nomod``: This is to denote that no modules system is used by this system.
 
    Normally,  upon loading the configuration of the system ReFrame checks that a sane installation exists for the modules system requested and will issue an error if it fails to find one.
    The modules system sanity check is skipped when the :attr:`~config.general.resolve_module_conflicts` is set to :obj:`False`.
    This is useful in cases where the current system does not have a modules system but the remote partitions have one and you would like ReFrame to generate the module commands.
 
-  .. versionadded:: 3.4
+   .. versionadded:: 3.4
       The ``spack`` backend is added.
 
-  .. versionchanged:: 4.5.0
+   .. versionchanged:: 4.5.0
      The modules system sanity check is skipped when the :attr:`config.general.resolve_module_conflicts` is not set.
+
+   .. versionchanged:: 4.10
+      The ``tmod``, ``tmod31``, ``tmod32`` backends are no more supported.
+
+   .. deprecated:: 4.10
+      The ``tmod4`` backend is deprecated; please use ``envmod`` instead.
 
 
 .. py:attribute:: systems.modules
@@ -298,7 +301,8 @@ System Partition Configuration
    - ``local``: Jobs will be launched locally without using any job scheduler.
    - ``lsf``: Jobs will be launched using the `LSF <https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=lsf-session-scheduler>`__ scheduler.
    - ``oar``: Jobs will be launched using the `OAR <https://oar.imag.fr/>`__ scheduler.
-   - ``pbs``: Jobs will be launched using the `PBS Pro <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
+   - ``pbs``: Jobs will be launched using the `PBS <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
+   - ``pbspro``: Jobs will be launched using the `PBS Professional<https://altair.com/pbs-professional>`__ scheduler.
    - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
    - ``slurm``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend requires job accounting to be enabled in the target system.
@@ -340,10 +344,14 @@ System Partition Configuration
       All ``SBATCH_*`` variables are unset before submitting a job through the Slurm-based backends.
       See note below for information.
 
+   .. versionadded:: 4.10
+      The ``pbspro`` scheduler is added.
+
    .. note::
       The Slurm-based backends unset all ``SBATCH_*`` environment variables before submitting a job.
       This is done to avoid environment variables bypassing ReFrame's configuration.
       For example, if the :attr:`~config.systems.partitions.access` options for a partition used ``-A foo`` and ``SBATCH_ACCOUNT=bar`` was set, then the environment variable would override the configuration, as ReFrame emits those (by default) in the submission script.
+      If this is not desired, environment variables can be explicitly whitelisted using the :attr:`~config.systems.partitions.sched_options.slurm_envvar_whitelist` option.
 
       Job submission in ReFrame is controlled exclusively by the system partition's :attr:`~config.systems.partitions.access` options, the test job's :attr:`~reframe.core.schedulers.Job.options` and the :option:`-J` command-line option.
 
@@ -424,6 +432,23 @@ System Partition Configuration
    List of hosts in a partition that uses the ``ssh`` scheduler.
 
 
+.. py:attribute:: systems.partitions.sched_options.slurm_multi_cluster_mode
+
+   :required: No
+   :default: ``[]``
+
+   List of Slurm clusters to poll for submitted jobs.
+
+   If empty, only the local cluster is considered.
+   If the single value ``all`` is passed, then all clusters will be considered.
+   This is translated directly to Slurm's ``-M`` option passed to the ``sacct`` or ``squeue`` commands.
+   If set, the ``-M`` option will also be passed in the partition's :attr:`~config.systems.partitions.access` options.
+
+   This option is relevant only for the Slurm backends.
+
+   .. versionadded:: 4.10
+
+
 .. py:attribute:: systems.partitions.sched_options.ignore_reqnodenotavail
 
    :required: No
@@ -431,11 +456,15 @@ System Partition Configuration
 
    Ignore the ``ReqNodeNotAvail`` Slurm state.
 
-   If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail`` and a list of unavailable nodes is also specified, ReFrame will check the status of the nodes and, if all of them are indeed down, it will cancel the job.
-   Sometimes, however, when Slurm's backfill algorithm takes too long to compute, Slurm will set the pending reason to ``ReqNodeNotAvail`` and mark all system nodes as unavailable, causing ReFrame to kill the job.
+   If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail``, ReFrame will cancel the job.
+   Sometimes Slurm's backfill scheduling can take so long to compute that it temporarily sets the pending reason to ``ReqNodeNotAvail`` and reports all nodes as unavailable.
+   ReFrame may interpret this condition and cancel its jobs.
+   If you encounter this scenario, set this parameter to :obj:`True` to prevent ReFrame from killing jobs with the ``ReqNodeNotAvail`` reason.
    In such cases, you may set this parameter to :obj:`True` to avoid this.
 
    This option is relevant for the Slurm backends only.
+
+   .. seealso:: :attr:`~config.systems.partitions.sched_options.slurm_job_cancel_reasons`
 
 .. py:attribute:: systems.partitions.sched_options.job_submit_timeout
 
@@ -481,6 +510,57 @@ System Partition Configuration
    This option is relevant for the ``slurm`` backend only.
 
    .. versionadded:: 4.8
+
+
+.. py:attribute:: systems.partitions.sched_options.slurm_envvar_whitelist
+
+   :required: No
+   :default: ``[]``
+
+   List of Slurm environment variables that will not be unset when submitting a job.
+
+   This option is relevant for the Slurm backends only.
+
+   .. versionadded:: 4.10
+
+
+.. py:attribute:: systems.partitions.sched_options.slurm_job_cancel_reasons
+
+   :required: No
+   :default: ``["ReqNodeNotAvail"]``
+
+   Reasons to proactively cancel a pending Slurm job.
+
+   If a job associated to a test is in pending state with one of the reasons listed, ReFrame will cancel the job.
+
+   This option is relevant for the Slurm backends only.
+
+   .. versionadded:: 4.10
+
+   .. seealso::
+
+      :attr:`~config.systems.partitions.sched_options.ignore_reqnodenotavail`
+      :attr:`~config.systems.partitions.sched_options.slurm_pending_job_reason_poll_freq`
+
+
+.. py:attribute:: systems.partitions.sched_options.slurm_pending_job_reason_poll_freq
+
+   :required: No
+   :default: ``10``
+
+   Frequency of polling for the reason a Slurm job is pending.
+
+   When using the ``slurm`` backend, ReFrame needs to explicitly issue an ``squeue`` command to get the reason a job is pending, in order to cancel it if it is blocked indefinitely.
+   This option controls the frequency of this polling.
+   It is an integer number counting the number of job polling cycles before issuing the ``squeue`` command.
+   ReFrame will issue a single ``squeue`` command to query all pending jobs at once.
+   However, if your system is sensitive to Slurm RPC calls, you may consider increasing this value.
+
+   This option is relevant for the ``slurm`` backend only.
+
+   .. versionadded:: 4.10
+
+   .. seealso:: :attr:`~config.systems.partitions.sched_options.slurm_job_cancel_reasons`
 
 
 .. py:attribute:: systems.partitions.sched_options.unqualified_hostnames
@@ -1167,6 +1247,9 @@ You may define different logger objects per system but *not* per partition.
    A list of systems or system/partitions combinations that this logging configuration is valid for.
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
+   .. note::
+      The scope of all logging options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
+
 
 
 Common logging handler properties
@@ -1636,8 +1719,12 @@ The additional properties for the ``httpjson`` handler are the following:
    :required: No
    :default: ``{}``
 
-   A set of optional key/value pairs to be sent as HTTP message headers (e.g. API keys).
+   A set of optional key/value pairs to be sent as HTTP message headers (e.g. Static API keys).
    These may depend on the server configuration.
+
+   .. note::
+      If you specify an authorization header here, it will be evaluated at the start of the test session and potentially expire.
+      Consider using the :attr:`~config.logging.handlers_perflog..httpjson..authorization_header` parameter instead for dynamic authorization headers.
 
    .. versionadded:: 4.2
 
@@ -1668,7 +1755,7 @@ An example configuration of this handler for performance logging is shown here:
        'type': 'httpjson',
        'url': 'http://httpjson-server:12345/rfm',
        'level': 'info',
-       'extra_headers': {'Authorization': 'Token YOUR_API_TOKEN'},
+       'extra_headers': {'key': 'value'},
        'extras': {
            'facility': 'reframe',
            'data-version': '1.0'
@@ -1710,6 +1797,28 @@ This handler transmits the whole log record, meaning that all the information wi
       This configuration parameter can only be used in a Python configuration file.
 
    .. versionadded:: 4.1
+
+
+.. py:attribute:: logging.handlers_perflog..httpjson..authorization_header
+
+   :required: No
+   :default: :obj:`None`
+
+   A callable to set the authorization header before sending the HTTP request.
+
+   If not specified, no authorization header will be sent unless statically set via :attr:`~config.logging.handlers_perflog..httpjson..extra_headers`.
+
+   .. py:function:: authorization_header() -> str
+
+      :returns: The value of the authorization header, including the scheme.
+
+   .. note::
+      Setting the authorization header here will override any static authorization header set via :attr:`~config.logging.handlers_perflog..httpjson..extra_headers`.
+
+   .. note::
+      This configuration parameter can only be used in a Python configuration file.
+
+   .. versionadded:: 4.10
 
 
 .. py:attribute:: logging.handlers_perflog..httpjson..backoff_intervals
@@ -1781,6 +1890,9 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    A list of systems *only* that this execution mode is valid for.
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
 
+   .. note::
+      The scope of all modes options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
+
 
 .. _storage-configuration:
 
@@ -1841,6 +1953,9 @@ Result storage configuration
    A list of systems *only* that this storage configuration is valid for.
 
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
+
+   .. note::
+      The scope of all storage options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
 
 
 .. _general-configuration:
@@ -2057,6 +2172,21 @@ General Configuration
    .. versionadded:: 3.7.0
 
 
+.. py:attribute:: general.reference_prefix
+
+   :required: No
+   :default: :obj:`None`
+
+   Directory prefix for resolving paths of external reference files.
+
+   When a test's :attr:`~reframe.core.pipeline.RegressionTest.reference`
+   attribute uses the ``$ref`` key to load references from an :ref:`external
+   reference file <external-references>`, that file is looked up
+   under this prefix. When not set, the test's prefix directory is used.
+
+   .. versionadded:: 4.10
+
+
 .. py:attribute:: general.ignore_check_conflicts
 
    :required: No
@@ -2190,6 +2320,15 @@ General Configuration
 
    A list of systems or system/partitions combinations that these general options are valid for.
    For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
+
+   .. note::
+      The scope of all general options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
+      Exception to this rule are the following options, which have a partition scope:
+
+      - :attr:`~general.git_timeout`
+      - :attr:`~general.use_login_shell`
+      - :attr:`~general.flex_alloc_strict`
+      - :attr:`~general.trap_job_errors`
 
 
 .. py:attribute:: general.table_format

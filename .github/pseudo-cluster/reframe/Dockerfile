@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 FROM ubuntu:22.04
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 ARG DEBIAN_FRONTEND=noninteractive
 

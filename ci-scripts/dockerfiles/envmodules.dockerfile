@@ -7,7 +7,7 @@ FROM ubuntu:24.04
 
 ENV TZ=Europe/Zurich
 ENV DEBIAN_FRONTEND=noninteractive
-ENV _LMOD_VER=9.0.4
+ENV _ENVMOD_VER=5.6.1
 
 # Setup apt
 RUN \
@@ -16,17 +16,17 @@ RUN \
   update-ca-certificates
 
 # Required utilities
-RUN apt-get -y install bc wget
+RUN apt-get -y install wget less
 
-# Install Lmod
+# Install Environment Modules
 RUN \
-  apt-get -y install lua5.3 lua-bit32:amd64 lua-posix:amd64 lua-posix-dev liblua5.3-0:amd64 liblua5.3-dev:amd64 tcl tcl-dev tcl8.6 tcl8.6-dev:amd64 libtcl8.6:amd64 && \
-  wget -q https://github.com/TACC/Lmod/archive/${_LMOD_VER}.tar.gz -O lmod.tar.gz && \
-  tar xzf lmod.tar.gz && \
-  cd Lmod-${_LMOD_VER} && \
+  apt-get -y install autoconf tcl-dev && \
+  wget -q https://github.com/cea-hpc/modules/archive/v${_ENVMOD_VER}.tar.gz -O tmod.tar.gz && \
+  tar xzf tmod.tar.gz && \
+  cd modules-${_ENVMOD_VER} && \
   ./configure && make install && \
-  cd .. && rm -rf lmod.tar.gz Lmod-${_LMOD_VER} && \
+  cd .. && rm -rf tmod.tar.gz modules-${_ENVMOD_VER} && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-ENV BASH_ENV=/usr/local/lmod/lmod/init/profile
+ENV BASH_ENV=/usr/local/Modules/init/profile.sh

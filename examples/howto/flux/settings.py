@@ -16,7 +16,7 @@ site_configuration = {
             'partitions': [
                 {
                     'name': 'default',
-                    'scheduler': 'flux',                    
+                    'scheduler': 'flux',
                     'launcher': 'local',
                     'environs': ['builtin']
                 }
@@ -66,4 +66,20 @@ site_configuration = {
             ]
         }
     ],
+    'general': [
+        {
+            # Flux Python bindings are supplied by the container, so reframe's
+            # default uv run method will not work, as it runs in an isolated
+            # environment. The unit tests create a venv pulling in system site
+            # packages, so here we install reframe in that venv.
+            #
+            # FIXME: Ideally, Flux bindings should be added and installed as a
+            # ReFrame extra, but this at the moment does not seem
+            # straightforward.
+            'remote_install': [
+                'cp -t . -r ../reframe ../README.md ../pyproject.toml',  # noqa: E501
+                'uv tool install .'
+            ]
+        }
+    ]
 }
