@@ -68,7 +68,7 @@ class Aggregation:
         '''Strip aggregation suffix from column'''
         return self._agg_names.get(col, col)
 
-    def col_spec(self, extra_cols: List[str]) -> List[pl.Expr]:
+    def col_spec(self, extra_cols: List[str]):
         '''Return a list of polars expressions for this aggregation'''
 
         import polars as pl
