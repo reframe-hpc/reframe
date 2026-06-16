@@ -142,6 +142,36 @@ This will install the man pages as well as the `Graylog <https://docs.graylog.or
    This is maintained by the EasyBuild community and it may not be up to date with the latest ReFrame releases.
 
 
+-------------------
+Installation extras
+-------------------
+
+When installing ReFrame you can opt-in or opt-out from certain features.
+Using ``pip`` you can do this as follows:
+
+.. code-block:: bash
+
+    # Opt-in for an extra
+    pip instal reframe-hpc[extra]
+
+    # Opt-out from a feature
+    pip install reframe-hpc[no-extra]
+
+Check your preferred package manager on how it treats optional dependencies.
+
+Here is a list of the available extras during installation:
+
+.. table::
+   :align: center
+
+   ================ ====================
+   Extra            Description
+   ================ ====================
+   ``graylog``      Install Graylog bindings
+   ``no-analytics`` Do not install the analytics layers; this will disable results storage feature but will make the installation more compact.
+   ================ ====================
+
+
 Enabling auto-completion
 ------------------------
 

@@ -11,7 +11,6 @@ import jsonschema
 import lxml.etree as etree
 import math
 import os
-import polars as pl
 import re
 import socket
 import time
@@ -608,6 +607,8 @@ class _TCProxy(UserDict):
 
 @time_function
 def _create_dataframe(testcases, groups, columns):
+    import polars as pl
+
     record_cols = list(OrderedSet(groups) | OrderedSet(columns))
     data = []
     for tc in map(_TCProxy, testcases):
@@ -653,6 +654,8 @@ def _aggregate_data(testcases, query):
 
 @time_function
 def compare_testcase_data(base_testcases, target_testcases, query):
+    import polars as pl
+
     df_base = _aggregate_data(base_testcases, query).with_columns(
         pl.col(query.aggregated_columns).name.suffix(query.lhs_column_suffix)
     )

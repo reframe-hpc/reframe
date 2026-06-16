@@ -33,7 +33,7 @@ dependencies = [
     "jinja2 ~= 3.1",
     "jsonschema ~= 4.26",
     "lxml ~= 6.0",
-    "polars ~= 1.39",
+    "polars ~= 1.39; extra != 'no-analytics'",
     "PyYAML ~= 6.0",
     "requests ~= 2.33",
     "semver ~= 3.0",
@@ -57,6 +57,7 @@ reframe = "reframe.frontend.cli:main"
 
 [project.optional-dependencies]
 graylog = ["pygelf ~= 0.4"]
+no-analytics = []
 
 [dependency-groups]
 dev = [
