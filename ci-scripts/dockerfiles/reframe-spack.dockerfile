@@ -34,4 +34,4 @@ RUN uv sync --group dev && \
     echo '. /home/rfmuser/spack/share/spack/setup-env.sh' >> /home/rfmuser/.profile
 ENV BASH_ENV=/home/rfmuser/.profile
 
-CMD ["/bin/bash", "-c", "uv run coverage run --source=reframe ./test_reframe.py -v --rfm-user-config=ci-scripts/configs/spack.py; uv run coverage xml -o coverage.xml"]
+CMD ["/bin/bash", "-c", "uv run coverage run --source=reframe ./test_reframe.py -v --rfm-user-config=ci-scripts/configs/spack.py; rv=$?; uv run coverage xml -o coverage.xml; exit $rv"]

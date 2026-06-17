@@ -62,6 +62,7 @@ no-analytics = []
 [dependency-groups]
 dev = [
     "coverage ~= 7.13",
+    "polars ~= 1.39",
     "pytest ~= 9.0",
     "pytest-forked ~= 1.6",
     "pytest-rerunfailures ~= 16.1"
