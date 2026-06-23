@@ -5,11 +5,11 @@
     "defs": {
         "alphanum_string": {
             "type": "string",
-            "pattern": "([a-zA-Z_][a-zA-Z0-9_]*)"
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
         },
         "alphanum_ext_string": {
             "type": "string",
-            "pattern": "([a-zA-Z_]([a-zA-Z0-9_]|-)*)"
+            "pattern": "^[a-zA-Z_](?:[a-zA-Z0-9_-])*$"
         },
         "system_ref": {
             "type": "array",
