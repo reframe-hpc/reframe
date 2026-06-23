@@ -2275,6 +2275,24 @@ You can also combine :option:`--list-stored-testcases` and :option:`--describe-s
 
    reframe --list-stored-testcases=now-1d:now/mean:/ -n stream_test% -E 'num_threads == 2'
 
+To list individual results from past tests, artificially aggregate on a unique field, e.g., `uuid`:
+
+.. code-block:: bash
+   :caption: Run in the single-node container.
+
+   reframe --list-stored-testcases=now-1d:now/mean:uuid/name,sysenv,pvar,punit,pval
+
+.. code-block:: console
+
+   name         sysenv                   pvar              punit      pval (mean)
+   -----------  -----------------------  ----------------  -------  -------------
+   stream_test  generic:default+builtin  copy_bw|triad_bw  MB/s           28583.8
+   stream_test  generic:default+builtin  copy_bw|triad_bw  MB/s           28281.3
+   ...
+   stream_test  generic:default+builtin  copy_bw|triad_bw  MB/s           28539.7
+   stream_test  generic:default+builtin  copy_bw|triad_bw  MB/s           28755.4
+
+Note that although `pval` is annotated with the aggregation function `mean` in the output, it is not applied to the variable.
 
 Comparing performance of test cases
 -----------------------------------
