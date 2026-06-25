@@ -228,7 +228,8 @@ def test_parse_cmp_spec_period(time_period):
 
 @pytest.fixture(params=['first', 'last', 'mean', 'median',
                         'min', 'max', 'std', 'stats', 'sum',
-                        'p00', 'p01', 'p05', 'p95', 'p99'])
+                        'p00', 'p01', 'p05', 'p95', 'p99',
+                        'count'])
 def aggregator(request):
     return request.param
 
@@ -289,6 +290,8 @@ def test_parse_cmp_spec_aggregations(aggregator):
         assert agg['pval (p95)'][0] == 10
     elif aggregator == 'p05':
         assert agg['pval (p99)'][0] == 10
+    elif aggregator == 'count':
+        assert 'pval (count)' in agg.columns
 
     # Check variant without base period
     match = parse_cmp_spec(f'now-1d:now/{aggregator}:/')

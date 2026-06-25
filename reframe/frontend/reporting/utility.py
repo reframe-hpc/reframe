@@ -17,7 +17,7 @@ class Aggregation:
 
     AGG_REGEX = re.compile(r'(?P<op>\S+)\((?P<col>\S+)\)|(?P<op2>\S+)')
     OP_REGEX = re.compile(
-        r'min|max|median|mean|std|first|last|sum|stats|p\d{2}'
+        r'min|max|median|mean|std|first|last|sum|stats|count|p\d{2}'
     )
     Q_REGEX = re.compile(r'p(\d{2})')
 
@@ -89,6 +89,8 @@ class Aggregation:
                 return pl.col(col).last().alias(f'{col} (last)')
             elif op == 'sum':
                 return pl.col(col).sum().alias(f'{col} (sum)')
+            elif op == 'count':
+                return pl.col(col).count().alias(f'{col} (count)')
             elif m := self.Q_REGEX.match(op):
                 perc = m.group(1)
                 if perc == '00':
