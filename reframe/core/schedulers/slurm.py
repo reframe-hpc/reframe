@@ -600,17 +600,21 @@ class SlurmJobScheduler(sched.JobScheduler):
             )
             for line in completed.stdout.splitlines():
                 jobid, reason = line.split('|', maxsplit=1)
-                pending_reasons[pending_jobs[jobid]] = reason
+
+                # pending_reasons is a list to accommodate for job arrays
+                pending_job = pending_jobs[jobid]
+                pending_reasons[pending_job].setdefault([])
+                pending_reasons[pending_job].append(reason)
 
         cancel_joblist = {}
-        for job, reason_descr in pending_reasons.items():
-            # The reason description may have two parts as follows:
-            # "ReqNodeNotAvail, UnavailableNodes:nid00[408,411-415]"
-            reason = reason_descr.split(',', maxsplit=1)[0].strip()
-            if reason not in self._cancel_reasons:
-                continue
-
-            cancel_joblist[job] = reason_descr
+        for job, reasons in pending_reasons.items():
+            for reason_descr in reasons:
+                # The reason description may have two parts as follows:
+                # "ReqNodeNotAvail, UnavailableNodes:nid00[408,411-415]"
+                reason = reason_descr.split(',', maxsplit=1)[0].strip()
+                if reason in self._cancel_reasons:
+                    cancel_joblist[job] = reason_descr
+                    break
 
         if not cancel_joblist:
             return

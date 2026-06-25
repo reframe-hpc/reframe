@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import polars as pl
 import re
 from datetime import datetime, timedelta, timezone
 from numbers import Number
@@ -69,8 +68,10 @@ class Aggregation:
         '''Strip aggregation suffix from column'''
         return self._agg_names.get(col, col)
 
-    def col_spec(self, extra_cols: List[str]) -> List[pl.Expr]:
+    def col_spec(self, extra_cols: List[str]):
         '''Return a list of polars expressions for this aggregation'''
+
+        import polars as pl
 
         def _expr_from_op(col, op):
             if op == 'min':

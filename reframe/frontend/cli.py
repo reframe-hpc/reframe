@@ -274,13 +274,25 @@ def validate_storage_options(namespace, cmd_options):
     storage_enabled = runtime.runtime().get_option('storage/0/enable')
     for arg in cmd_options:
         attr = arg[2:].replace('-', '_')
-        if not storage_enabled and getattr(namespace, attr, None):
-            logging.getlogger().error(
-                f'option `{arg}` requires results storage; '
-                'either set `RFM_ENABLE_RESULTS_STORAGE=1` or set '
-                '`"storage": [{"enable": True}]` in the configuration file'
-            )
-            return False
+        if getattr(namespace, attr, None):
+            if not storage_enabled:
+                logging.getlogger().error(
+                    f'option `{arg}` requires results storage; '
+                    'either set `RFM_ENABLE_RESULTS_STORAGE=1` or set '
+                    '`"storage": [{"enable": True}]` in the configuration file'
+                )
+                return False
+
+            # Results storage is enable; try to import polars to make sure the
+            # installation is sane
+            try:
+                import polars   # noqa: F401
+            except ImportError:
+                logging.getlogger().error(
+                    'results storage requires polars to be installed; '
+                    'reinstall reframe-hpc with analytics turned on'
+                )
+                return False
 
     return True
 

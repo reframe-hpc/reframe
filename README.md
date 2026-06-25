@@ -16,7 +16,7 @@
 [![Slack](https://badgen.net/badge/icon/slack?icon=slack&label)](https://join.slack.com/t/reframetalk/shared_invite/zt-3706f0tj6-2CjHh07HdQNbmLw1qAasjg)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![DOI](https://zenodo.org/badge/89384186.svg)](https://zenodo.org/badge/latestdoi/89384186)<br/>
-[![Twitter Follow](https://img.shields.io/twitter/follow/ReFrameHPC?style=social)](https://twitter.com/ReFrameHPC)
+
 
 # Overview
 
@@ -38,6 +38,27 @@ Please visit the project's documentation [page](https://reframe-hpc.readthedocs.
 
 ReFrame is fairly easy to install as PyPI package.
 
+### Installing using `pip`
+
+```bash
+pip install reframe-hpc
+```
+
+This will also install the manpages and the shell completions under your pip's virtual environment:
+
+| | |
+|---|---|
+| `reframe` executable | `${VIRTUAL_ENV}/bin` |
+| Man pages | `${VIRTUAL_ENV}/share/man` |
+| Bash/Zsh completions | `${VIRTUAL_ENV}/share/bash-completion/completions/reframe` |
+| Fish completions | `${VIRTUAL_ENV}/share/fish/vendor_completions.d/reframe.fish` |
+
+
+### Installing using `uv`
+
+You can use any package manager that understands `pyproject.toml`-based Python projects to install ReFrame.
+In this section we describe in more detail handling an installation using `uv`.
+
 ```bash
 # Fetch uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -52,7 +73,7 @@ reframe -V
 This will place the `reframe` executable under `$HOME/.local/bin` and the package under `$HOME/.local/share/uv/tools/reframe-hpc`.
 To make available the manpage and the shell completions add the following lines in your shell's profile script:
 
-### Bash/Zsh
+#### Bash/Zsh
 
 Add the following lines to your `$HOME/.profile`:
 
@@ -61,7 +82,7 @@ export MANPATH=${HOME}/.local/share/uv/tools/reframe-hpc/share/man:${MANPATH}:
 source ${HOME}/.local/share/uv/tools/reframe-hpc/share/bash-completion/completions/reframe
 ```
 
-### Fish
+#### Fish
 
 Add the following lines to your `$HOME/.config/fish/config.fish`:
 
@@ -70,10 +91,7 @@ set -apgx MANPATH ${HOME}/.local/share/uv/tools/reframe-hpc/share/man ""
 source ${HOME}/.local/share/uv/tools/reframe-hpc/share/fish/vendor_completions.d/reframe.fish
 ```
 
-> NOTE: Using `uv` is not required to install ReFrame.
-> You can use any modern Python build system that recognizes the `pyproject.toml` file.
-
-### Multi-architecture installations on shared filesystem
+#### Multi-architecture installations on shared filesystem
 
 If you plan to install ReFrame for multiple platforms in a shared installation, you should make sure each installation resides in a different prefix.
 You can achieve this with `uv` as follows:
@@ -95,6 +113,29 @@ uvx reframe --version
 This will pull ReFrame's dependencies and run it.
 It also caches them, so that the next time you invoke it, it will not download and install them again.
 The only "downside" of this method is that you have to always invoke ReFrame through `uvx`, as opposed to the `uv tool install` method, where the `reframe` executable is installed in a standard path.
+
+
+### Installation extras
+
+When installing ReFrame you can opt-in or opt-out from certain features.
+For example, using `pip` you can use the brackets syntax:
+
+```bash
+# Opt-in for an extra
+pip install reframe-hpc[extra]
+
+# Opt-out from a feature
+pip install reframe-hpc[no-feature]
+```
+
+With `uv` you can either use the brackets notation or use the `--extra` option.
+
+Here is a list of the available extras during installation:
+
+| Extra | Description |
+|---|---|
+| `graylog` | Install Graylog bindings |
+| `no-analytics` | Do not install the analytics layers; this will disable results storage feature but will make the installation more compact. |
 
 
 ## Running from source

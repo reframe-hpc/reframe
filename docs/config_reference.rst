@@ -568,9 +568,13 @@ System Partition Configuration
    :required: No
    :default: :obj:`False`
 
-   Use unqualified hostnames in the ``local`` scheduler backend.
+   Use unqualified hostnames in the ``local`` and ``ssh`` scheduler backends.
 
    .. versionadded:: 4.7
+
+   .. versionchanged:: 4.10.1
+
+      Added support for the ``ssh`` scheduler backend.
 
 
 .. py:attribute:: systems.partitions.sched_options.use_nodes_option
