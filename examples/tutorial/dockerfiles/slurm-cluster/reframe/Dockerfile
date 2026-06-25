@@ -42,7 +42,7 @@ COPY . /workspace/reframe
 
 WORKDIR /home/admin
 USER admin
-RUN uv tool install /workspace/reframe && \
+RUN uv tool install --reinstall /workspace/reframe && \
     echo "export PATH=/home/admin/.local/bin:\$PATH" >> /home/admin/.profile && \
     echo "export MANPATH=/home/admin/.local/share/uv/tools/reframe-hpc/share/man:" >> /home/admin/.profile
 
