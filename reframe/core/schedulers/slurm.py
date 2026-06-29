@@ -603,7 +603,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
                 # pending_reasons is a list to accommodate for job arrays
                 pending_job = pending_jobs[jobid]
-                pending_reasons[pending_job].setdefault([])
+                pending_reasons.setdefault(pending_job, [])
                 pending_reasons[pending_job].append(reason)
 
         cancel_joblist = {}
