@@ -350,7 +350,7 @@
                                 "devices": {"$ref": "#/defs/devices"},
                                 "features": {
                                     "type": "array",
-                                    "items": {"$ref": "#/defs/alphanum_string"}
+                                    "items": {"$ref": "#/defs/alphanum_ext_string"}
                                 },
                                 "extras": {
                                     "type": "object",
@@ -429,7 +429,7 @@
                     },
                     "features": {
                         "type": "array",
-                        "items": {"$ref": "#/defs/alphanum_string"}
+                        "items": {"$ref": "#/defs/alphanum_ext_string"}
                     },
                     "resources": {
                         "type": "object",
