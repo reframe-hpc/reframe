@@ -292,6 +292,7 @@ def test_parse_cmp_spec_aggregations(aggregator):
         assert agg['pval (p99)'][0] == 10
     elif aggregator == 'count':
         assert 'pval (count)' in agg.columns
+        assert agg['pval (count)'][0] == num_recs
 
     # Check variant without base period
     match = parse_cmp_spec(f'now-1d:now/{aggregator}:/')
