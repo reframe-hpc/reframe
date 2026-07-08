@@ -1544,6 +1544,7 @@ The following aggregation functions are supported:
 - ``sum``: return the sum of every group
 - ``median``: return the median of every group
 - ``p<QQ>``: return the QQ% percentile of every group. Two digits a required even for quantiles less than 10%, e.g., the 5% percentile should be requested as ``p05``.
+- ``count``: return the number of elements of every group
 
 There is also the pseudo-function ``stats``, which is essentially a shortcut for ``min,p01,p05,median,p95,p99,max,mean,std``.
 It can also be applied to any other attribute than ``pval``
@@ -1664,7 +1665,7 @@ Note that parts that have a grammar defined elsewhere (e.g., Python attributes a
    <aggr_spec> ::= <aggr_any> | <aggr_pval>
    <aggr_any> ::= <aggr_fn> "(" <attr> ")"
    <aggr_pval> ::= <aggr_fn>
-   <aggr_fn> ::= "first" | "last" | "max" | "min" | "mean" | "median" | "std" | "sum" | <quantile>
+   <aggr_fn> ::= "first" | "last" | "max" | "min" | "mean" | "median" | "std" | "sum" | <quantile> | "count"
    <quantile> ::= "p" [0-9] [0-9]
    <cols> ::= <extra_cols> | <explicit_cols>
    <extra_cols> ::= ("+" <attr>)+
