@@ -32,7 +32,7 @@ site_configuration = {
                     'launcher': 'local',
                     'environs': ['PrgEnv-cray', 'PrgEnv-gnu'],
                     'descr': 'Login nodes',
-                    'features': ['cross_compile'],
+                    'features': ['cross-compile'],
                     'container_platforms': [
                         {'type': 'Sarus'},
                         {'type': 'Docker', 'default': True},

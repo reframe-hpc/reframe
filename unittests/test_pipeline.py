@@ -740,7 +740,7 @@ def test_supports_sysenv(testsys_exec_ctx):
         }
     )
     _assert_supported(
-        valid_systems=['+cross_compile'],
+        valid_systems=['+cross-compile'],
         valid_prog_environs=['-cxx14'],
         expected={
             'testsys:login': []
