@@ -935,6 +935,13 @@ def main():
         help='DB file permissions (SQLite backend)',
         type=functools.partial(int, base=8)
     )
+    output_options.add_argument(
+        dest='stagedir_hashes',
+        envvar='RFM_STAGEDIR_HASHES',
+        configvar='general/stagedir_hashes',
+        action='store_true',
+        help='Use hashes in stage and output directory names',
+    )
     argparser.add_argument(
         dest='syslog_address',
         envvar='RFM_SYSLOG_ADDRESS',
