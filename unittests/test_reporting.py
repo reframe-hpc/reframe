@@ -85,6 +85,15 @@ def _generate_runreport(run_stats, time_start=None, time_end=None):
     return report
 
 
+def test_tail_file(tmp_path):
+    filename = tmp_path / 'output.txt'
+    filename.write_text('line1\nline2\nline3\n')
+
+    assert reporting._tail_file(filename, 20) == 'line1\nline2\nline3\n'
+    assert reporting._tail_file(filename, 2) == 'line2\nline3\n'
+    assert reporting._tail_file(tmp_path / 'missing.txt', 20) == ''
+
+
 def test_run_report(make_runner, make_cases, common_exec_ctx, tmp_path):
     runner = make_runner()
     with _timer() as tm:
