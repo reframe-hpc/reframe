@@ -172,6 +172,14 @@ class _RestoredSessionInfo:
                 f'could not restore testcase {testcase!r}') from e
 
 
+def _tail_file(filename, num_lines):
+    try:
+        with open(filename, encoding='utf-8', errors='replace') as fp:
+            return ''.join(fp.readlines()[-num_lines:])
+    except OSError:
+        return ''
+
+
 def _expand_report_filename(filepatt, *, newfile):
     if '{sessionid}' not in os.fspath(filepatt):
         return filepatt
@@ -539,7 +547,28 @@ class RunReport:
                         testcase, 'failure', attrib={'type': 'failure',
                                                      'message': fail_phase}
                     )
-                    testcase_msg.text = f"{tc['fail_phase']}: {fail_reason}"
+                    workdir = tc.get('outputdir') or tc.get('stagedir') or ''
+                    stdout = ''
+                    stderr = ''
+                    if workdir:
+                        job_stdout = tc.get('job_stdout')
+                        if job_stdout:
+                            stdout = _tail_file(
+                                os.path.join(workdir, job_stdout), 20
+                            )
+
+                        job_stderr = tc.get('job_stderr')
+                        if job_stderr:
+                            stderr = _tail_file(
+                                os.path.join(workdir, job_stderr), 20
+                            )
+
+                    testcase_msg.text = '\n\n'.join([
+                        f"{tc['fail_phase']}: {fail_reason}",
+                        workdir,
+                        stdout,
+                        stderr
+                    ])
 
             testsuite_stdout = etree.SubElement(xml_testsuite, 'system-out')
             testsuite_stdout.text = ''
