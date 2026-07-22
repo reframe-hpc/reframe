@@ -480,6 +480,23 @@ class SlurmJobScheduler(sched.JobScheduler):
         if ct:
             job._completion_time = max(ct)
 
+    def _update_start_time(self, job, timestamps):
+        # ``sacct``'s ``Start`` field is ``Unknown`` while a job is still
+        # pending, so only set this once and only from a value that parses
+        # as a real timestamp; this mirrors _update_completion_time() and
+        # keeps start_time queue-wait-free (excludes PENDING time) instead
+        # of falling back to submit_time, which includes it.
+        if job._start_time is not None:
+            return
+
+        st = []
+        for ts in timestamps:
+            with suppress(ValueError):
+                st.append(float(ts))
+
+        if st:
+            job._start_time = min(st)
+
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
 
@@ -498,7 +515,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 completed = _run_strict(
                     f'{self._sacct} -S {t_start} -P '
                     f'-j {",".join(job.jobid for job in jobs)} '
-                    f'-o jobid,state,exitcode,end,nodelist'
+                    f'-o jobid,state,exitcode,start,end,nodelist'
                 )
                 # Reset the retry counter if the command succeeds
                 self._num_sacct_failures = 0
@@ -519,8 +536,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         # We need the match objects, so we have to use finditer()
         state_match = list(re.finditer(
             fr'^(?P<jobid>{self._jobid_patt})\|(?P<state>\S+)([^\|]*)\|'
-            fr'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<end>\S+)\|'
-            fr'(?P<nodespec>.*)', completed.stdout, re.MULTILINE)
+            fr'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<start>\S+)\|'
+            fr'(?P<end>\S+)\|(?P<nodespec>.*)',
+            completed.stdout, re.MULTILINE)
         )
         if not state_match:
             self.log(
@@ -552,6 +570,9 @@ class SlurmJobScheduler(sched.JobScheduler):
 
             # Use ',' to join nodes to be consistent with Slurm syntax
             job._nodespec = ','.join(m.group('nodespec') for m in jobarr_info)
+            self._update_start_time(
+                job, (m.group('start') for m in jobarr_info)
+            )
             self._update_completion_time(
                 job, (m.group('end') for m in jobarr_info)
             )

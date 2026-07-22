@@ -411,6 +411,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         self._state = None
         self._nodelist = []
         self._submit_time = None
+        self._start_time = None
         self._completion_time = None
 
         # Job errors discovered while polling; if not None this will be raised
@@ -584,6 +585,36 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         :type: :class:`float` or :class:`None`
         '''
         return self._submit_time
+
+    @property
+    def start_time(self):
+        '''The actual start time of this job as a floating point number
+        expressed in seconds since the epoch, in UTC.
+
+        This attribute is :class:`None` if the job hasn't started running
+        yet, or if the backend scheduler does not report a distinct start
+        time (in which case it falls back to :attr:`submit_time`).
+
+        Unlike :attr:`submit_time`, which marks when the job was submitted
+        to the queue, this timestamp marks when the job actually began
+        executing, excluding any time spent pending in the scheduler queue.
+        This makes ``completion_time - start_time`` a queue-wait-free
+        measure of a job's execution duration, as opposed to
+        ``completion_time - submit_time`` which also includes time spent
+        waiting in the queue.
+
+        The accuracy of this timestamp depends on the backend scheduler.
+        The ``slurm`` scheduler backend relies on job accounting (``sacct``)
+        and returns the actual dispatch time of the job. Backends that do
+        not support a distinct start time report :attr:`submit_time`
+        instead.
+
+        .. versionadded:: 4.11
+
+        :type: :class:`float` or :class:`None`
+        '''
+        return self._start_time if self._start_time is not None \
+            else self._submit_time
 
     def prepare(self, commands, environs=None, prepare_cmds=None,
                 strict_flex=False, **gen_opts):

@@ -2249,6 +2249,12 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
         if self.job:
             return self.job.submit_time
 
+    @loggable_as('job_start_time_unix')
+    @property
+    def _job_start_time(self):
+        if self.job:
+            return self.job.start_time
+
     @loggable_as('job_completion_time_unix')
     @property
     def _job_completion_time(self):
