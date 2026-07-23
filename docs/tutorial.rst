@@ -2275,24 +2275,26 @@ You can also combine :option:`--list-stored-testcases` and :option:`--describe-s
 
    reframe --list-stored-testcases=now-1d:now/mean:/ -n stream_test% -E 'num_threads == 2'
 
-To list individual results from past tests, you can aggregate on a unique field, e.g., `uuid`.
-Since the value is unique, the aggregation will just return the value:
+To list individual results from past tests, you can aggregate on a combination of fields that are unique, e.g., `uuid,pvar`.
+Since the value is unique, the aggregation `mean` equals the single value.
+Using the additional aggregation `count`, we can ensure that each line indeed represents only one test run.
 
 .. code-block:: bash
    :caption: Run in the single-node container.
 
-   reframe --list-stored-testcases=now-1d:now/mean:uuid/name,sysenv,pvar,punit,pval
+   reframe --list-stored-testcases=now-1d:now/count,mean:uuid,pvar/name,sysenv,pvar,punit,pval
 
 .. code-block:: console
 
-   name         sysenv                   pvar              punit      pval (mean)
-   -----------  -----------------------  ----------------  -------  -------------
-   stream_test  generic:default+builtin  copy_bw|triad_bw  MB/s           28583.8
-   stream_test  generic:default+builtin  copy_bw|triad_bw  MB/s           28281.3
+   pvar      name         sysenv                   punit      pval (count)    pval (mean)
+   --------  -----------  -----------------------  -------  --------------  -------------
+   copy_bw   stream_test  generic:default+builtin  MB/s                  1        34281.2
+   triad_bw  stream_test  generic:default+builtin  MB/s                  1        23154.4
    ...
-   stream_test  generic:default+builtin  copy_bw|triad_bw  MB/s           28539.7
-   stream_test  generic:default+builtin  copy_bw|triad_bw  MB/s           28755.4
+   copy_bw   stream_test  generic:default+builtin  MB/s                  1        34248.1
+   triad_bw  stream_test  generic:default+builtin  MB/s                  1        23532.4
 
+In case your test has only a single performance variable, aggregating over `uuid` is sufficient.
 
 Comparing performance of test cases
 -----------------------------------
