@@ -6,8 +6,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # This script prepares the README file for publication to PyPI. It essentially
-# removes all badges and replaces the dynamic logo selection with a static logo
-# for light backgrounds.
+# removes all badges, replaces the dynamic logo selection with a static logo
+# for light backgrounds, and rewrites GitHub-only alert blocks (e.g.
+# `> [!NOTE]`) into classic blockquotes, since PyPI's Markdown renderer does
+# not support GitHub's alert syntax.
 #
 # It should be run before build the distribution package:
 #
@@ -15,7 +17,30 @@
 #   uv build
 #   uv publish --token <PYPI_TOKEN>
 
+import re
 import sys
+
+ALERT_RE = re.compile(r'^>\s*\[!(\w+)\]\s*$')
+
+
+def unalert(lines):
+    '''Rewrite `> [!TYPE]` GitHub alert blocks as classic blockquotes.'''
+
+    new_lines = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        m = ALERT_RE.match(line.rstrip('\n'))
+        if m and i + 1 < len(lines) and lines[i + 1].startswith('>'):
+            alert_type = m.group(1).capitalize()
+            next_line = lines[i + 1].removeprefix('>').strip()
+            new_lines.append(f'> **{alert_type}:** {next_line}\n')
+            i += 2
+        else:
+            new_lines.append(line)
+            i += 1
+
+    return new_lines
 
 
 def print_usage():
@@ -46,6 +71,7 @@ def main():
 
             new_contents.append(line)
 
+    new_contents = unalert(new_contents)
     with open(readme_file, 'w') as fp:
         fp.write(''.join(new_contents))
 
