@@ -16,7 +16,7 @@ jobs:
       - name: Generate dist packages
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          ./ci-scripts/prepare-readme.py README.md
+          ./ci-scripts/pypi-genreadme.py README.md
           uv build
       - name: Publish ReFrame to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

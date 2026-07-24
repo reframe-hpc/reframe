@@ -137,6 +137,12 @@ Here is a list of the available extras during installation:
 | `graylog` | Install Graylog bindings |
 | `no-analytics` | Do not install the analytics layers; this will disable results storage feature but will make the installation more compact. |
 
+> [!NOTE]
+> Due to a limitation of the Python packaging spec, `pip` cannot use an extra to *exclude* a package that is otherwise a default dependency, so `pip install reframe-hpc[no-analytics]` will still pull in `polars`. `uv pip install reframe-hpc[no-analytics]` does not have this limitation and correctly skips `polars`. If you must use `pip`, keep `polars` out by uninstalling it explicitly after installing:
+> ```bash
+> pip install reframe-hpc
+> pip uninstall -y polars
+> ```
 
 ## Running from source
 
