@@ -68,10 +68,40 @@ def slurm_state_pending(state):
 _run_strict = functools.partial(osext.run_command, check=True)
 
 
+def _count_array_tasks(array_spec):
+    # The optional throttle does not affect the number of array tasks.
+    array_spec = array_spec.split('%', maxsplit=1)[0]
+    num_tasks = 0
+    for task_range in array_spec.split(','):
+        range_spec, *step_spec = task_range.split(':', maxsplit=1)
+        step = int(step_spec[0]) if step_spec else 1
+        bounds = [int(x) for x in range_spec.split('-', maxsplit=1)]
+        if len(bounds) == 1:
+            num_tasks += 1
+        else:
+            start, stop = bounds
+            num_tasks += len(range(start, stop + 1, step))
+
+    return num_tasks
+
+
+def _count_array_tasks_from_jobid(jobid):
+    try:
+        array_spec = jobid.split('_', maxsplit=1)[1]
+    except IndexError:
+        return 0
+
+    if array_spec.startswith('[') and array_spec.endswith(']'):
+        array_spec = array_spec[1:-1]
+
+    return _count_array_tasks(array_spec)
+
+
 class _SlurmJob(sched.Job):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._is_array = False
+        self._array_size = None
         self._is_cancelling = False
 
         # The compacted nodelist as reported by Slurm. This must be updated in
@@ -94,6 +124,10 @@ class _SlurmJob(sched.Job):
         return self._is_array
 
     @property
+    def array_size(self):
+        return self._array_size
+
+    @property
     def is_cancelling(self):
         return self._is_cancelling
 
@@ -107,9 +141,11 @@ class SlurmJobScheduler(sched.JobScheduler):
     # (https://slurm.schedmd.com/heterogeneous_jobs.html)
     # For job arrays the job_id has one of the following formats:
     #   * <job_id>_<array_task_id>
-    #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
+    #   * <job_id>_[<array_expression>]
+    # An array expression may contain lists, ranges, steps and a task
+    # throttle, e.g., ``1,3-7:2%2``.
     # (https://slurm.schedmd.com/job_array.html)
-    _jobid_patt = r'\d+(?:\+\d+|_\d+|_\[\d+-\d+\])?'
+    _jobid_patt = r'\d+(?:\+\d+|_(?:\d+|\[[\d,:%-]+\]))?'
 
     def __init__(self):
         self._prefix = '#SBATCH'
@@ -190,6 +226,14 @@ class SlurmJobScheduler(sched.JobScheduler):
         )
         if parsed_args.array:
             job._is_array = True
+            try:
+                job._array_size = _count_array_tasks(parsed_args.array)
+            except (TypeError, ValueError):
+                self.log(
+                    f'could not determine the number of tasks in Slurm '
+                    f'array expression {parsed_args.array!r}'
+                )
+
             self.log('Slurm job is a job array')
 
         # Slurm replaces '%a' by the corresponding SLURM_ARRAY_TASK_ID
@@ -480,6 +524,24 @@ class SlurmJobScheduler(sched.JobScheduler):
         if ct:
             job._completion_time = max(ct)
 
+    def _get_job_states(self, job, jobarr_info):
+        states = [m.group('state') for m in jobarr_info]
+        if not job.is_array or job.array_size is None:
+            return states
+
+        num_tasks = sum(
+            _count_array_tasks_from_jobid(m.group('jobid'))
+            for m in jobarr_info
+        )
+        if num_tasks < job.array_size:
+            self.log(
+                f'Slurm reports {num_tasks} of {job.array_size} tasks for '
+                f'job array {job.jobid}; keeping the job pending'
+            )
+            states.append('PENDING')
+
+        return states
+
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
 
@@ -542,7 +604,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 continue
 
             # Join the states with ',' in case of job arrays|heterogeneous jobs
-            job._state = ','.join(m.group('state') for m in jobarr_info)
+            job._state = ','.join(self._get_job_states(job, jobarr_info))
 
             if slurm_state_completed(job.state):
                 # Since Slurm exitcodes are positive take the maximum one
@@ -718,7 +780,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
                 continue
 
             # Join the states with ',' in case of job arrays
-            job._state = ','.join(s.group('state') for s in job_match)
+            job._state = ','.join(self._get_job_states(job, job_match))
 
             # Use ',' to join nodes to be consistent with Slurm syntax
             job._nodespec = ','.join(m.group('nodespec') for m in job_match)
