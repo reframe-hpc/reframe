@@ -11,6 +11,10 @@
             "type": "string",
             "pattern": "^[a-zA-Z_](?:[a-zA-Z0-9_-])*$"
         },
+        "alphanum_ext_vers_string": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_](?:[a-zA-Z0-9_.-])*$"
+        },
         "system_ref": {
             "type": "array",
             "items": {"type": "string"}
@@ -389,7 +393,7 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"$ref": "#/defs/alphanum_ext_string"},
+                    "name": {"$ref": "#/defs/alphanum_ext_vers_string"},
                     "modules": {"$ref": "#/defs/modules_list"},
                     "env_vars": {"$ref": "#/defs/envvar_list"},
                     "variables": {"$ref": "#/defs/envvar_list"},
