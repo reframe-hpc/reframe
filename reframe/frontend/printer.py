@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import os
 import shutil
 import time
 import traceback
@@ -12,8 +11,6 @@ from tabulate import tabulate
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility.color as color
-import reframe.utility.osext as osext
-from reframe.core.exceptions import BuildError, SanityError
 from reframe.core.runtime import runtime
 from reframe.frontend.reporting import format_testcase_from_json
 from reframe.utility import nodelist_abbrev
