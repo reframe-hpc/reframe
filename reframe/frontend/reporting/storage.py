@@ -217,6 +217,9 @@ class _SqliteStorage(StorageBackend):
         for run in report['runs']:
             for testcase in run['testcases']:
                 sys, part = testcase['system'], testcase['partition']
+                run_index = testcase['run_index']
+                testcase_index = testcase['testcase_index']
+                tc_uuid = f'{session_uuid}:{run_index}:{testcase_index}'
                 conn.execute(
                     'INSERT INTO testcases VALUES('
                     ':name, :system, :partition, :environ, '
@@ -227,11 +230,11 @@ class _SqliteStorage(StorageBackend):
                         'system': sys,
                         'partition': part,
                         'environ': testcase['environ'],
-                        'job_completion_time_unix': testcase[
+                        'job_completion_time_unix': testcase.get(
                             'job_completion_time_unix'
-                        ],
+                        ),
                         'session_uuid': session_uuid,
-                        'uuid': testcase['uuid']
+                        'uuid': tc_uuid
                     }
                 )
 

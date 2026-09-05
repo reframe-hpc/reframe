@@ -554,7 +554,7 @@ Options controlling ReFrame output
 
    Instruct ReFrame to generate a JUnit XML report in ``FILE``.
 
-   The generated report adheres to the XSD schema `here <https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd>`__ where each retry is treated as an individual testsuite.
+   The generated report adheres to the XSD schema in `reframe/schemas/junit.xsd <https://github.com/reframe-hpc/reframe/blob/develop/reframe/schemas/junit.xsd>`__, which is a superset of the original `Apache Ant JUnit XSD <https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd>`__, where each retry is treated as an individual testsuite.
 
    This option can also be set using the :envvar:`RFM_REPORT_JUNIT` environment variable or the :attr:`~config.general.report_junit` general configuration parameter.
 
@@ -562,6 +562,15 @@ Options controlling ReFrame output
 
    .. versionchanged:: 3.6.1
       Added support for retries in the JUnit XML report.
+
+   .. versionchanged:: 4.11
+      Failed test cases now include ``<system-out>`` / ``<system-err>`` elements with the tail of the captured build or run output, in addition to the ``<failure>`` element.
+      Each ``<testcase>`` also gets a ``file`` attribute pointing to the file where the test is defined.
+
+      .. note::
+         These additions are not part of the original Apache Ant JUnit XSD linked above, which only allows ``<system-out>``/``<system-err>`` at the ``<testsuite>`` level and does not define a ``file`` attribute on ``<testcase>``.
+         They match what `GitLab's Test Reports <https://docs.gitlab.com/ci/testing/unit_test_reports/>`__ feature parses, but other JUnit consumers with a stricter or differently-shaped schema (e.g., Jenkins) may reject them.
+         If you run into such a case, please report it by opening a Github issue.
 
 .. option:: -s, --stage=DIR
 
@@ -1762,6 +1771,19 @@ The following list summarizes the schema changes (version numbers refer to schem
 
       Since ReFrame 4.9, if a test's dependencies fail, the test is skipped and is put in the ``fail_deps`` state.
       Previously, it was treated as a normal failure.
+
+   .. admonition:: 5.0
+
+      This is a major schema revision that reworks how job information is reported and removes several properties that were never generally useful.
+
+      - The following ``.runs[].testcases[]`` properties are removed with no replacement: ``dependencies_actual``, ``dependencies_conceptual``, ``session_uuid``, ``time_compile``, ``time_performance``, ``time_run``, ``time_sanity``, ``time_setup``, ``time_total`` and ``uuid``.
+        A unique identifier for a test case can still be reconstructed from ``session_info.uuid``, ``run_index`` and the new ``testcase_index`` property.
+      - ``build_jobid``, ``build_stdout`` and ``build_stderr`` are renamed to ``build_job_id``, ``build_job_stdout`` and ``build_job_stderr`` respectively.
+      - The loggable attributes of a test's run job and, if present, its build job (see :attr:`~config.logging.handlers_perflog.format`) are now reported in full, under the ``job_*`` and ``build_job_*`` property prefixes respectively (e.g., ``job_state``, ``job_nodelist``, ``build_job_script_contents``).
+      - New properties ``job_stdout_contents``, ``job_stderr_contents``, ``build_job_stdout_contents`` and ``build_job_stderr_contents`` are added, holding the tail of the captured output for failed tests (see :attr:`~config.general.failure_inspect_lines`).
+      - New properties ``basename``, ``sysenv`` and ``testcase_index`` are added to ``.runs[].testcases[]``.
+      - New properties ``start_time_us``, ``start_timestamp``, ``end_time_us`` and ``end_timestamp`` are added to ``session_info``; ``time_start``, ``time_start_unix``, ``time_end`` and ``time_end_unix`` are retained for compatibility with the SQLite results backend only.
+      - The set of ``required`` properties for both ``session_info`` and testcases is reduced to the minimal identifying fields (``data_version``, ``hostname`` and ``uuid`` for sessions; ``name`` and ``result`` for testcases), since almost everything else may legitimately be absent depending on how far a test got in the pipeline before failing.
 
 
 Environment

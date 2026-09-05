@@ -88,8 +88,7 @@
                         },
                         "locking_enable": {"type": "boolean"},
                         "locking_file_mode": {"type": ["string", "null"]}
-                    },
-                    "required": ["prefix"]
+                    }
                 }
             ]
         },
@@ -669,9 +668,35 @@
         "logging/handlers_perflog/*_datefmt": "%FT%T",
         "logging/handlers_perflog/filelog_append": true,
         "logging/handlers_perflog/filelog_basedir": "./perflogs",
-        "logging/handlers_perflog/filelog_ignore_keys": [],
+        "logging/handlers_perflog/filelog_format": "%(check_result)s|%(check_job_completion_time)s|%(check_#ALL)s",
+        "logging/handlers_perflog/filelog_format_perfvars": "%(check_perf_value)s|%(check_perf_unit)s|%(check_perf_ref)s|%(check_perf_lower_thres)s|%(check_perf_upper_thres)s|",
+        "logging/handlers_perflog/filelog_ignore_keys": [
+            "check_build_job_script_contents",
+            "check_build_job_stderr_contents",
+            "check_build_job_stdout_contents",
+            "check_build_locally",
+            "check_build_time_limit",
+            "check_display_name",
+            "check_hashcode",
+            "check_job_script_contents",
+            "check_job_stderr_contents",
+            "check_job_stdout_contents",
+            "check_keep_files",
+            "check_local",
+            "check_maintainers",
+            "check_max_pending_time",
+            "check_outputdir",
+            "check_prefix",
+            "check_readonly_files",
+            "check_stagedir",
+            "check_strict_check",
+            "check_tags",
+            "check_time_limit",
+            "check_variables"
+        ],
         "logging/handlers_perflog/filelog_locking_enable": false,
         "logging/handlers_perflog/filelog_locking_file_mode": null,
+        "logging/handlers_perflog/filelog_prefix": "%(check_system)s/%(check_partition)s",
         "logging/handlers_perflog/graylog_extras": {},
         "logging/handlers_perflog/httpjson_extras": {},
         "logging/handlers_perflog/httpjson_ignore_keys": [],

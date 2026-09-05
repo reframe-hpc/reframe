@@ -467,18 +467,28 @@ class SlurmJobScheduler(sched.JobScheduler):
         node_descriptions = completed.stdout.splitlines()
         return _create_nodes(node_descriptions)
 
-    def _update_completion_time(self, job, timestamps):
-        if job._completion_time is not None:
+    def _update_timestamp(self, job, timestamp_attr,
+                          jobarr_timestamps_secs, reduce_fn):
+        '''Update a job local timestamp from a job array
+
+        :arg job: The job to update the timestamp for.
+        :arg timestamp_attr: The job timestamp attribute.
+        :arg jobarr_timestamps_secs: The job array timestamp values in
+            formatted as `%s`
+        :arg reduce_fn: A callable taking the list of converted timestamp
+            values in seconds and returning a single float value
+        '''
+        if getattr(job, timestamp_attr) is not None:
             return
 
         # Convert timestamps to floats
         ct = []
-        for ts in timestamps:
+        for ts in jobarr_timestamps_secs:
             with suppress(ValueError):
                 ct.append(float(ts))
 
         if ct:
-            job._completion_time = max(ct)
+            setattr(job, timestamp_attr, reduce_fn(ct))
 
     def poll(self, *jobs):
         '''Update the status of the jobs.'''
@@ -496,9 +506,9 @@ class SlurmJobScheduler(sched.JobScheduler):
             )
             try:
                 completed = _run_strict(
-                    f'{self._sacct} -S {t_start} -P '
+                    f'{self._sacct} --noheader -X -S {t_start} -P '
                     f'-j {",".join(job.jobid for job in jobs)} '
-                    f'-o jobid,state,exitcode,end,nodelist'
+                    f'-o jobid,state,exitcode,start,end,nodelist'
                 )
                 # Reset the retry counter if the command succeeds
                 self._num_sacct_failures = 0
@@ -519,8 +529,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         # We need the match objects, so we have to use finditer()
         state_match = list(re.finditer(
             fr'^(?P<jobid>{self._jobid_patt})\|(?P<state>\S+)([^\|]*)\|'
-            fr'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<end>\S+)\|'
-            fr'(?P<nodespec>.*)', completed.stdout, re.MULTILINE)
+            fr'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<start>\S+)\|'
+            fr'(?P<end>\S+)\|(?P<nodespec>.*)', completed.stdout, re.MULTILINE)
         )
         if not state_match:
             self.log(
@@ -552,8 +562,12 @@ class SlurmJobScheduler(sched.JobScheduler):
 
             # Use ',' to join nodes to be consistent with Slurm syntax
             job._nodespec = ','.join(m.group('nodespec') for m in jobarr_info)
-            self._update_completion_time(
-                job, (m.group('end') for m in jobarr_info)
+            self._update_timestamp(
+                job, '_completion_time',
+                [m.group('end') for m in jobarr_info], max
+            )
+            self._update_timestamp(
+                job, '_start_time', [m.group('start') for m in jobarr_info], min
             )
 
         # Cancel jobs that blocked or pending for too long
@@ -691,15 +705,16 @@ class SqueueJobScheduler(SlurmJobScheduler):
         # We don't run the command with check=True, because if the job has
         # finished already, squeue might return an error about an invalid
         # job id.
-        completed = osext.run_command(
-            f'{self._squeue} -h -j {",".join(job.jobid for job in jobs)} '
-            f'-o "%%i|%%T|%%N|%%r"'
-        )
+        with rt.temp_environment(env_vars={'SLURM_TIME_FORMAT': '%s'}):
+            completed = osext.run_command(
+                f'{self._squeue} -h -j {",".join(job.jobid for job in jobs)} '
+                f'-o "%%i|%%S|%%T|%%N|%%r"'
+            )
 
         # We need the match objects, so we have to use finditer()
         state_match = list(re.finditer(
-            fr'^(?P<jobid>{self._jobid_patt})\|(?P<state>\S+)\|'
-            fr'(?P<nodespec>\S*)\|(?P<reason>.+)',
+            fr'^(?P<jobid>{self._jobid_patt})\|(?P<start>\S+)\|'
+            fr'(?P<state>\S+)\|(?P<nodespec>\S*)\|(?P<reason>.+)',
             completed.stdout, re.MULTILINE)
         )
         jobinfo = {}
@@ -722,6 +737,10 @@ class SqueueJobScheduler(SlurmJobScheduler):
 
             # Use ',' to join nodes to be consistent with Slurm syntax
             job._nodespec = ','.join(m.group('nodespec') for m in job_match)
+
+            # Update job start times
+            self._update_timestamp(job, '_start_time',
+                                   [m.group('start') for m in job_match], min)
 
         pending_reasons = {}
         for jobid, states in jobinfo.items():

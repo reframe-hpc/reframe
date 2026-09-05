@@ -1308,6 +1308,7 @@ All logging handlers share the following set of common attributes:
 
    .. csv-table::
 
+      ``%(check_basename)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.name` attribute without any parameter suffixes; essentially the test's class name.
       ``%(check_build_locally)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.build_locally` attribute.
       ``%(check_build_time_limit)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.build_time_limit` attribute.
       ``%(check_descr)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.descr` attribute.
@@ -1320,14 +1321,18 @@ All logging handlers share the following set of common attributes:
       ``%(check_extra_resources)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.extra_resources` attribute.
       ``%(check_fail_phase)s``, The phase where the test has failed.
       ``%(check_fail_reason)s``, The failure reason if the test has failed.
+      ``%(check_filename)s``, The file where this test is defined.
+      ``%(check_fixture)s``, Whether this test is a fixture.
       ``%(check_hashcode)s``, The unique hash associated with this test.
       ``%(check_info)s``, Various information about this test; essentially the return value of the test's :func:`~reframe.core.pipeline.RegressionTest.info` function.
-      ``%(check_job_completion_time)s``, Same as the ``(check_job_completion_time_unix)s`` but formatted according to ``datefmt``.
+      ``%(check_job_completion_time)s``, Same as the ``%(check_job_completion_time_unix)s`` but formatted according to ``datefmt``.
       ``%(check_job_completion_time_unix)s``, The completion time of the associated run job (see :attr:`~reframe.core.schedulers.Job.completion_time`).
       ``%(check_job_exitcode)s``, The exit code of the associated run job.
+      ``%(check_job_id)s``, The ID of the associated run job.
       ``%(check_job_nodelist)s``, The list of nodes that the associated run job has run on.
-      ``%(check_job_submit_time)s``, The submission time of the associated run job (see :attr:`~reframe.core.schedulers.Job.submit_time`).
-      ``%(check_jobid)s``, The ID of the associated run job.
+      ``%(check_job_stderr)s``, The name of the file containing the standard error of the associated run job.
+      ``%(check_job_stdout)s``, The name of the file containing the standard output of the associated run job.
+      ``%(check_job_submit_time_us)s``, The submission time of the associated run job, in microseconds since the Epoch (see :attr:`~reframe.core.schedulers.Job.submit_time`).
       ``%(check_keep_files)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.keep_files` attribute.
       ``%(check_local)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.local` attribute.
       ``%(check_maintainers)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.maintainers` attribute.
@@ -1356,6 +1361,7 @@ All logging handlers share the following set of common attributes:
       ``%(check_stagedir)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.stagedir` attribute.
       ``%(check_strict_check)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.strict_check` attribute.
       ``%(check_system)s``, The name of the test's :attr:`~reframe.core.pipeline.RegressionTest.current_system`.
+      ``%(check_sysenv)s``, The combination of the test's current system, partition and programming environment, in the form ``<system>:<partition>+<environ>``.
       ``%(check_tags)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.tags` attribute.
       ``%(check_time_limit)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.time_limit` attribute.
       ``%(check_unique_name)s``, The value of the :attr:`~reframe.core.pipeline.RegressionTest.unique_name` attribute.
@@ -1370,6 +1376,8 @@ All logging handlers share the following set of common attributes:
 
    ReFrame allows you to log any test variable, parameter or property if they are marked as "loggable".
    The log record placeholder will have the form ``%(check_NAME)s`` where ``NAME`` is the variable name, the parameter name or the property name that is marked as loggable.
+
+   The loggable attributes of the test's run job and, if present, its build job are also exposed, using the ``%(check_job_NAME)s`` and ``%(check_build_job_NAME)s`` placeholder forms respectively, where ``NAME`` is a loggable attribute of :class:`~reframe.core.schedulers.Job`, such as ``stdout``, ``stderr``, ``jobid``, ``exitcode``, ``state``, ``nodelist``, ``nodelist_folded``, ``scheduler``, ``script_filename``, ``script_contents``, or the ``submit_time_us``/``submit_timestamp``, ``start_time_us``/``start_timestamp`` and ``completion_time_us``/``completion_timestamp`` pairs.
 
    There is also the special ``%(check_#ALL)s`` format placeholder which expands to all the loggable test attributes.
    These include all the above placeholders and any additional loggable variables or parameters defined by the test.
@@ -1398,6 +1406,13 @@ All logging handlers share the following set of common attributes:
 
 .. versionadded:: 4.8
    The ``%(hostname)s`` placeholder is added.
+
+.. versionchanged:: 4.11
+   The ``%(check_basename)s``, ``%(check_sysenv)s``, ``%(check_filename)s`` and ``%(check_fixture)s`` placeholders, as well as the ``%(check_build_job_NAME)s`` placeholder family, are added.
+
+.. deprecated:: 4.11
+   The ``%(check_jobid)s`` and ``%(check_job_submit_time)s`` placeholders are deprecated in favor of ``%(check_job_id)s`` and ``%(check_job_submit_time_us)s`` respectively, for consistency with the rest of the ``%(check_job_NAME)s`` placeholders.
+   The old placeholders keep working but emit a deprecation warning; they will be removed in a future release.
 
 
 .. py:attribute:: logging.handlers.format_perfvars
@@ -1512,6 +1527,18 @@ The ``filelog`` log handler
 This handler is meant for performance logging only and logs the performance of a test in one or more files.
 The additional properties for the ``filelog`` handler are the following:
 
+Unlike the other handlers, the ``filelog`` handler's :attr:`~config.logging.handlers_perflog.format` and :attr:`~config.logging.handlers_perflog.format_perfvars` default to values geared towards performance logging rather than to the generic, handler-wide defaults:
+
+.. code-block:: python
+
+   'format': '%(check_result)s|%(check_job_completion_time)s|%(check_#ALL)s',
+   'format_perfvars': ('%(check_perf_value)s|%(check_perf_unit)s|'
+                       '%(check_perf_ref)s|%(check_perf_lower_thres)s|'
+                       '%(check_perf_upper_thres)s|')
+
+.. versionchanged:: 4.11
+   The ``filelog``-specific defaults for :attr:`~config.logging.handlers_perflog.format` and :attr:`~config.logging.handlers_perflog.format_perfvars` are added; previously, a ``filelog`` handler without an explicit ``format`` would fall back to the generic ``"%(message)s"`` default, which produced empty performance log records.
+
 
 .. py:attribute:: logging.handlers_perflog..filelog..basedir
 
@@ -1523,14 +1550,37 @@ The additional properties for the ``filelog`` handler are the following:
 
 .. py:attribute:: logging.handlers_perflog..filelog..ignore_keys
 
+   :required: No
+   :default: See below.
+
    A list of log record `format placeholders <#config.logging.handlers.format>`__ that will be ignored by the special ``%(check_#ALL)s`` placeholder.
 
+   By default, the following keys are ignored, since they tend to be either bulky (e.g., script or captured output contents) or not generally useful in a performance log:
+
+   .. code-block:: python
+
+      ['check_build_job_script_contents', 'check_build_job_stderr_contents',
+       'check_build_job_stdout_contents', 'check_build_locally',
+       'check_build_time_limit', 'check_display_name', 'check_hashcode',
+       'check_job_script_contents', 'check_job_stderr_contents',
+       'check_job_stdout_contents', 'check_keep_files', 'check_local',
+       'check_maintainers', 'check_max_pending_time', 'check_outputdir',
+       'check_prefix', 'check_readonly_files', 'check_stagedir',
+       'check_strict_check', 'check_tags', 'check_time_limit',
+       'check_variables']
+
+   Setting this option explicitly in your configuration replaces this default list entirely; it is not merged with it.
+
    .. versionadded:: 4.3
+
+   .. versionchanged:: 4.11
+      A default value for this option is now provided; previously it defaulted to an empty list and the actual values was derived from the built-in configuration.
 
 
 .. py:attribute:: logging.handlers_perflog..filelog..prefix
 
-   :required: Yes
+   :required: No
+   :default: ``"%(check_system)s/%(check_partition)s"``
 
    This is a directory prefix (usually dynamic), appended to the :attr:`~config.logging.handlers_perflog..filelog..basedir`, where the performance logs of a test will be stored.
    This attribute accepts any of the check-specific `formatting placeholders <#config.logging.handlers_perflog.format>`__.
@@ -1549,6 +1599,10 @@ The additional properties for the ``filelog`` handler are the following:
             ...
         system2/
         ...
+
+   .. versionchanged:: 4.11
+      This option is no longer required and now defaults to ``"%(check_system)s/%(check_partition)s"``.
+      Previously, it was being derived by the built-in configuration.
 
 
 .. py:attribute:: logging.handlers_perflog..filelog..append
@@ -2035,6 +2089,9 @@ General Configuration
    Number of the last lines of stdout/stderr to be printed in case of test failures.
 
    .. versionadded:: 4.7
+
+   .. versionchanged:: 4.11
+      This option now also controls the amount of stdout/stderr content captured in the ``*_stdout_contents``/``*_stderr_contents`` fields of the run report and in the JUnit XML report (see :option:`--report-junit`).
 
 
 .. py:attribute:: general.flex_alloc_strict
