@@ -9,7 +9,7 @@
         },
         "alphanum_ext_string": {
             "type": "string",
-            "pattern": "^[a-zA-Z_](?:[a-zA-Z0-9_-])*$"
+            "pattern": "^[a-zA-Z0-9_](?:[a-zA-Z0-9_.+-])*$"
         },
         "system_ref": {
             "type": "array",
@@ -354,16 +354,14 @@
                                 },
                                 "extras": {
                                     "type": "object",
-                                    "propertyNames": {
-                                        "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
-                                    }
+                                    "propertyNames": {"$ref": "#/defs/alphanum_string"}
                                 },
                                 "resources": {
                                     "type": "array",
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "name": {"type": "string"},
+                                            "name": {"$ref": "#/defs/alphanum_string"},
                                             "options": {
                                                 "type": "array",
                                                 "items": {"type": "string"}
@@ -423,9 +421,7 @@
                     },
                     "extras": {
                         "type": "object",
-                        "propertyNames": {
-                            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
-                        }
+                        "propertyNames": {"$ref": "#/defs/alphanum_string"}
                     },
                     "features": {
                         "type": "array",
@@ -433,9 +429,7 @@
                     },
                     "resources": {
                         "type": "object",
-                        "propertyNames": {
-                            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
-                        },
+                        "propertyNames": {"$ref": "#/defs/alphanum_string"},
                         "additionalProperties": {
                             "type": "object",
                             "additionalProperties": true
