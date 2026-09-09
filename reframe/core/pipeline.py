@@ -83,7 +83,7 @@ XfailRef = typ.make_meta_type('XfailRef', _XFailReference)
 
 
 # Valid systems/environments mini-language
-_N = r'(\w[-.\w]*)'         # name
+_N = r'(\w[-.+\w]*)'        # name
 _NW = rf'(\*|{_N})'         # name or wildcard
 _F = rf'([+-]{_N})'         # feature
 _OP = r'([=<>]|!=|>=|<=)'   # relational operator (unused for the moment)
@@ -669,8 +669,12 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.6
     #:    Default value changed from ``None`` to ``required``.
     #:
-    #: .. versionchanged:: 3.11.0
+    #: .. versionchanged:: 3.11
     #:    Extend syntax to support features and key/value pairs.
+    #:
+    #: .. versionchanged:: 4.11
+    #:    Environment and feature names may now start with a digit and may
+    #:    contain ``.`` and ``+``.
     valid_prog_environs = variable(typ.List[typ.Str[_VALID_ENV_SYNTAX]])
 
     #: List of systems or system features or system properties required by this
@@ -755,12 +759,16 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #: .. versionchanged:: 3.6
     #:    Default value changed from ``None`` to ``required``.
     #:
-    #:  .. versionchanged:: 3.11.0
+    #:  .. versionchanged:: 3.11
     #:     Extend syntax to support features and key/value pairs.
     #:
     #:   .. versionchanged:: 4.10
     #:      Support for combining an explicit system partition combination with
     #:      features and extras.
+    #:
+    #:   .. versionchanged:: 4.11
+    #:      System, partition and feature names may now start with a digit and
+    #:      may contain ``.`` and ``+``.
     valid_systems = variable(typ.List[typ.Str[_VALID_SYS_SYNTAX]])
 
     #: A detailed description of the test.

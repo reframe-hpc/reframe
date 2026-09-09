@@ -150,6 +150,38 @@ def test_validate_config_invalid_syntax():
         site_config.validate()
 
 
+def test_validate_config_extended_names():
+    # System/partition/environment names and feature names may start with a
+    # digit and may contain `.` and `+`.
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config['systems'][0]['name'] = '0sys.x+y'
+    site_config['systems'][0]['partitions'][0]['name'] = 'gpu+mps'
+    site_config['systems'][0]['partitions'][0]['features'] = ['multi-gpu.v2',
+                                                              'sm+']
+    site_config['environments'][0]['name'] = 'g++'
+    site_config.validate()
+
+    for bad in ['.sys', '+sys', '-sys', 'sys:x', 'sys x']:
+        site_config['systems'][0]['name'] = bad
+        with pytest.raises(ConfigError,
+                           match=r'could not validate configuration file'):
+            site_config.validate()
+
+
+def test_validate_config_extras_keys_strict():
+    # Extras keys stay POSIX alphanumeric identifiers even though feature and
+    # name patterns are more permissive.
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config['systems'][0]['partitions'][0]['extras'] = {'key_1': 1}
+    site_config.validate()
+
+    for bad in {'key-1': 1}, {'key.1': 1}, {'key+1': 1}, {'1key': 1}:
+        site_config['systems'][0]['partitions'][0]['extras'] = bad
+        with pytest.raises(ConfigError,
+                           match=r'could not validate configuration file'):
+            site_config.validate()
+
+
 def test_select_subconfig_autodetect():
     site_config = config.load_config('reframe/core/settings.py')
     site_config.select_subconfig()

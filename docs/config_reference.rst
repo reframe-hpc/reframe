@@ -125,7 +125,10 @@ System Configuration
    :required: Yes
 
    The name of this system.
-   Only alphanumeric characters, dashes (``-``) and underscores (``_``) are allowed.
+   The name may contain alphanumeric characters, underscores (``_``), dots (``.``), plus (``+``) and minus (``-``) signs, but it must not start with ``.``, ``+`` or ``-``.
+
+   .. versionchanged:: 4.11
+      Names may now start with a digit and may contain ``.`` and ``+``.
 
 .. py:attribute:: systems.descr
 
@@ -281,7 +284,10 @@ System Partition Configuration
    :required: Yes
 
    The name of this partition.
-   Only alphanumeric characters, dashes (``-``) and underscores (``_``) are allowed.
+   The name may contain alphanumeric characters, underscores (``_``), dots (``.``), plus (``+``) and minus (``-``) signs, but it must not start with ``.``, ``+`` or ``-``.
+
+   .. versionchanged:: 4.11
+      Names may now start with a digit and may contain ``.`` and ``+``.
 
 .. py:attribute:: systems.partitions.descr
 
@@ -805,7 +811,10 @@ System Partition Configuration
    User defined features of the partition.
 
    These are accessible through the :attr:`~reframe.core.systems.SystemPartition.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
-   The values of this list must be alphanumeric strings starting with a non-digit character and may also contain a ``-``.
+   The values of this list must be alphanumeric strings that may also contain ``-``, ``.`` and ``+``, but a feature name must not start with ``-``, ``.`` or ``+``.
+
+   .. versionchanged:: 4.11
+      Feature names may now start with a digit and may contain ``.`` and ``+``.
 
    .. versionadded:: 3.11.0
 
@@ -818,7 +827,8 @@ System Partition Configuration
    User defined attributes of the partition.
 
    These are accessible through the :attr:`~reframe.core.systems.SystemPartition.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_partition` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_systems`.
-   The attributes of this object must be alphanumeric strings starting with a non-digit character and their values can be of any type.
+   The keys of this object must be POSIX alphanumeric strings (i.e., starting with a non-digit character and may also contain underscores (``_``)); their values can be of any type.
+   Unlike partition :attr:`~config.systems.partitions.features`, extras keys are restricted to plain identifiers and may not contain ``.``, ``+`` or ``-``.
 
    By default, the values of the :attr:`~config.systems.partitions.scheduler` and :attr:`~config.systems.partitions.launcher` of the partition are added to the partition's extras, if not already present.
 
@@ -900,7 +910,12 @@ ReFrame allows you to define custom scheduler resources for each partition that 
    :required: Yes
 
   The name of this resources.
+
   This name will be used to request this resource in a regression test's :attr:`~reframe.core.pipeline.RegressionTest.extra_resources`.
+  It must be a POSIX alphanumeric string (i.e., starting with a non-digit character and may also contain underscores (``_``)).
+
+  .. versionchanged:: 4.11
+     The resource name is now validated; previously any string was accepted.
 
 
 .. py:attribute:: systems.partitions.resources.options
@@ -987,6 +1002,10 @@ They are associated with `system partitions <#system-partition-configuration>`__
    :required: Yes
 
    The name of this environment.
+   The name may contain alphanumeric characters, underscores (``_``), dots (``.``), plus (``+``) and minus (``-``) signs, but it must not start with ``.``, ``+`` or ``-``.
+
+   .. versionchanged:: 4.11.0
+      Names may now start with a digit and may contain ``.`` and ``+``.
 
 
 .. py:attribute:: environments.modules
@@ -1024,7 +1043,10 @@ They are associated with `system partitions <#system-partition-configuration>`__
 
    User defined features of the environment.
    These are accessible through the :attr:`~reframe.core.environments.Environment.features` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
-   The values of this list must be alphanumeric strings starting with a non-digit character and may also contain a ``-``.
+   The values of this list must be alphanumeric strings that may also contain ``-``, ``.`` and ``+``, but a feature name must not start with ``-``, ``.`` or ``+``.
+
+   .. versionchanged:: 4.11
+      Feature names may now start with a digit and may contain ``.`` and ``+``.
 
    .. versionadded:: 3.11.0
 
@@ -1036,7 +1058,8 @@ They are associated with `system partitions <#system-partition-configuration>`__
 
    User defined attributes of the environment.
    These are accessible through the :attr:`~reframe.coreenvironments.Environment.extras` attribute of the :attr:`~reframe.core.pipeline.RegressionTest.current_environ` and can also be selected through the extended syntax of :attr:`~reframe.core.pipeline.RegressionTest.valid_prog_environs`.
-   The attributes of this object must be alphanumeric strings starting with a non-digit character and their values can be of any type.
+   The keys of this object must be POSIX alphanumeric strings (i.e., starting with a non-digit character and may also contain underscores (``_``)); their values can be of any type.
+   Unlike environment :attr:`~config.environments.features`, extras keys are restricted to plain identifiers and may not contain ``.``, ``+`` or ``-``.
 
    .. versionadded:: 3.9.1
 
