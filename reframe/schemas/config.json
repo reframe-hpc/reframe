@@ -19,8 +19,8 @@
             "type": "array",
             "items": {
                 "type": "array",
-                "items": [{"$ref": "#/defs/alphanum_ext_string"}],
-                "additionalProperties": false
+                "items": [{"$ref": "#/defs/alphanum_string"}, {}],
+                "additionalItems": false
             }
         },
         "modules_list": {
