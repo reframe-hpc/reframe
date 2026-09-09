@@ -201,6 +201,7 @@ System Configuration
    A list of environment variables to be set always when running on this system.
    These variables modify the ReFrame environment.
    Each environment variable is specified as a two-element list containing the variable name and its value.
+   The variable name must be a valid POSIX shell name: it may contain only alphanumeric characters and underscores (``_``) and must not start with a digit.
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
@@ -699,6 +700,7 @@ System Partition Configuration
 
    A list of environment variables to be set before running a regression test on this partition.
    Each environment variable is specified as a two-element list containing the variable name and its value.
+   The variable name must be a valid POSIX shell name: it may contain only alphanumeric characters and underscores (``_``) and must not start with a digit.
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
@@ -875,6 +877,7 @@ ReFrame can launch containerized applications, but you need to configure properl
 
    List of environment variables to be set when running containerized tests using this container platform.
    Each environment variable is specified as a two-element list containing the variable name and its value.
+   The variable name must be a valid POSIX shell name: it may contain only alphanumeric characters and underscores (``_``) and must not start with a digit.
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
@@ -1004,6 +1007,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
 
    A list of environment variables to be set when loading this environment.
    Each environment variable is specified as a two-element list containing the variable name and its value.
+   The variable name must be a valid POSIX shell name: it may contain only alphanumeric characters and underscores (``_``) and must not start with a digit.
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.

@@ -150,6 +150,19 @@ def test_validate_config_invalid_syntax():
         site_config.validate()
 
 
+def test_validate_config_env_vars_name():
+    # Environment variable names must be POSIX shell names; a name containing
+    # a `-` must be rejected (see GH #<issue>).
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config['systems'][0]['env_vars'] = [['FOO_BAR', 1]]
+    site_config.validate()
+
+    site_config['systems'][0]['env_vars'] = [['FOO-BAR', 1]]
+    with pytest.raises(ConfigError,
+                       match=r'could not validate configuration file'):
+        site_config.validate()
+
+
 def test_select_subconfig_autodetect():
     site_config = config.load_config('reframe/core/settings.py')
     site_config.select_subconfig()
