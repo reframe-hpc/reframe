@@ -20,7 +20,8 @@ import reframe.utility.osext as osext
 from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError,
-                                     JobSchedulerError)
+                                     JobSchedulerError,
+                                     SkipTestError)
 from reframe.utility import nodelist_abbrev, seconds_to_hms
 
 
@@ -545,6 +546,12 @@ class SlurmJobScheduler(sched.JobScheduler):
             job._state = ','.join(m.group('state') for m in jobarr_info)
 
             if slurm_state_completed(job.state):
+                # If the job has hit its DEADLINE, skip the test
+                if job.state == 'DEADLINE':
+                    job._exception = SkipTestError(
+                        f'the associated job {job.jobid} has expired'
+                    )
+
                 # Since Slurm exitcodes are positive take the maximum one
                 job._exitcode = max(
                     int(m.group('exitcode')) for m in jobarr_info
