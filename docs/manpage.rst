@@ -731,6 +731,10 @@ Options controlling ReFrame execution
    .. note::
       This option will not work with the :ref:`test generation options <test-generators>`.
 
+   .. note::
+      ReFrame serializes test cases to JSON inside their respective stage directory and restores them from there.
+      As a result, any custom user attributes that are not natively representable in JSON, such as dictionaries with non-string keys, may not be restored correctly.
+
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.6.1
