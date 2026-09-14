@@ -302,7 +302,7 @@ System Partition Configuration
    - ``lsf``: Jobs will be launched using the `LSF <https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=lsf-session-scheduler>`__ scheduler.
    - ``oar``: Jobs will be launched using the `OAR <https://oar.imag.fr/>`__ scheduler.
    - ``pbs``: Jobs will be launched using the `PBS <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
-   - ``pbspro``: Jobs will be launched using the `PBS Professional<https://altair.com/pbs-professional>`__ scheduler.
+   - ``pbspro``: Jobs will be launched using the `PBS Professional <https://altair.com/pbs-professional>`__ scheduler.
    - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
    - ``slurm``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend requires job accounting to be enabled in the target system.
