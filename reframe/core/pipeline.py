@@ -240,7 +240,10 @@ class RegressionTestDict(UserDict):
 
     The ``$index`` special key is consumed upon the dictionary's construction
     and it can later be retrieved explicitly through the :attr:`index`
-    property. The dictionary can be queried as any other Python dictionary,
+    property. Any other key is retained as-is, including keys starting with a
+    ``$``; subclasses may reserve additional special keys.
+
+    The dictionary can be queried as any other Python dictionary,
     e.g., ``xdict[16]["bar"]`` will give "aaa". However, if keyed with a test,
     it will determine the values of every level based on indexed test
     attributes. For example,
@@ -427,11 +430,20 @@ def RegressionTestDictType(*args, **kwargs):
 
 
 class _ReferenceDict(RegressionTestDict):
-    '''A specialized :class:`RegressionTestDict` that can handle also external
-    references
+    '''A specialized :class:`RegressionTestDict` for the test :attr:`reference`
+    variable.
 
-    An external references file can be specified with the special key
-    ``$ref``.
+    On top of :class:`RegressionTestDict`, this type understands the ``$ref``
+    special key, which points to an external references file.
+
+    Any other top-level key that starts with a ``$`` -- either in the inline
+    dictionary or in a per-test entry of an external references file -- is
+    *reserved*: it is dropped upon construction and takes part neither in the
+    type validation of the reference values nor in the reference lookup. This
+    allows attaching comments or metadata to the reference data (e.g. through a
+    ``$comment`` key) and keeps existing references forward compatible with
+    special keys that may be introduced in future versions. The ``$index`` key
+    retains its usual meaning.
     '''
     # Reference dictionary value type
     _REF3_TYPE = typ.Tuple[~Deferrable, ~Deferrable, ~Deferrable]
@@ -440,6 +452,10 @@ class _ReferenceDict(RegressionTestDict):
     _REFTUPLE_TYPE = _REF3_TYPE | _REF4_TYPE | XfailRef
     _VALUE_TYPE = typ.Dict[str, _REFTUPLE_TYPE]
 
+    #: Special keys with a defined meaning; these are consumed by the relevant
+    #: code paths and are *not* dropped by :meth:`_consume_special_keys`.
+    _RESERVED_KEYS = ('$index', '$ref')
+
     def __init__(self, user_dict=None, *, test):
         user_dict = user_dict or {}
         self.__ref_file = user_dict.pop('$ref', None)
@@ -447,10 +463,25 @@ class _ReferenceDict(RegressionTestDict):
             # Reset the user dictionary; it will be populated from the
             # external reference file
             user_dict = {}
+        else:
+            self._consume_special_keys(user_dict)
 
         super().__init__(user_dict, value_type=self._VALUE_TYPE, protocol='ref')
         if self.__ref_file and test is not None:
             self.resolve_external_references(test)
+
+    @classmethod
+    def _consume_special_keys(cls, user_dict):
+        '''Drop in place all unknown ``$``-prefixed keys from ``user_dict``.
+
+        Keys in :attr:`_RESERVED_KEYS` have a defined meaning and are left
+        untouched.
+        '''
+        unknown = [k for k in user_dict
+                   if isinstance(k, str) and k.startswith('$') and
+                   k not in cls._RESERVED_KEYS]
+        for k in unknown:
+            del user_dict[k]
 
     def is_external(self):
         return self.__ref_file is not None
@@ -468,6 +499,7 @@ class _ReferenceDict(RegressionTestDict):
                 os.path.join(ref_prefix, self.__ref_file)
             )
             self._index = user_dict.pop('$index', None)
+            self._consume_special_keys(user_dict)
             self.data = user_dict
             try:
                 self.validate(self._VALUE_TYPE)
@@ -1374,6 +1406,11 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #: For a step-by-step example, see :ref:`howto-reference-index` in the
     #: :doc:`howto`.
     #:
+    #: Any top-level key starting with a ``$`` other than ``$index`` and
+    #: ``$ref`` (both inline and in a per-test entry of an external file) is
+    #: reserved and silently ignored. This can be used to annotate the
+    #: reference data, e.g. with a ``$comment`` key.
+    #:
     #: :type: A dictionary with a special structure as described above.
     #:   The elements of reference tuples cannot be deferrable expressions.
     #: :default: ``{}``
@@ -1404,6 +1441,10 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
     #:     .. versionadded:: 4.10
     #:        Support for custom reference indexes as well as external
     #:        references.
+    #:
+    #:     .. versionchanged:: 4.11
+    #:        Unknown ``$``-prefixed top-level keys are now ignored instead of
+    #:        raising a validation error.
     reference = variable(_ReferenceDict, field=_ReferenceDictField, value={},
                          allow_implicit=True, loggable=False)
 

@@ -1787,6 +1787,7 @@ def test_reference_deferrable(make_perftest):
 def test_reference_index(make_perftest):
     dummytest = make_perftest({
         '$index': ('x', 'y'),
+        '$comment': 'Unknown special keys must be ignored',
         1: {2: {'value1': (1., -0.1, 0.1, None)}},
         2: {2: {'value1': (2., -0.1, 0.1, None)}}
     })
@@ -2011,6 +2012,32 @@ def test_reference_external_xfail(make_perftest, sanity_file, perf_file, ref_fil
     _run_sanity(dummytest_modern, *dummy_gpu_exec_ctx)
 
 
+def test_reference_external_special_keys(make_perftest, make_path,
+                                         sanity_file, perf_file, ref_file,
+                                         dummy_gpu_exec_ctx):
+    # Unknown `$`-prefixed keys in an external reference file must be ignored
+    ref_file.write_yaml({
+        'MyTest': {
+            '$index': ['$processor.arch', '$dev.gpu.model'],
+            '$comment': 'Unknown special keys must be ignored',
+            'skylake': {
+                'p100': {
+                    'value1': [1.4, -0.1, 0.1, None],
+                    'value2': [1.7, -0.1, 0.1, None],
+                    'value3': [3.1, -0.1, 0.1, None]
+                }
+            }
+        }
+    })
+    dummytest = make_perftest({'$ref': make_path(ref_file)})
+    dummytest.require_reference = True
+    sanity_file.write_text('result = success\n')
+    perf_file.write_text('perf1 = 1.3\n')
+    perf_file.write_text('perf2 = 1.7\n')
+    perf_file.write_text('perf3 = 3.1\n')
+    _run_sanity(dummytest, *dummy_gpu_exec_ctx)
+
+
 @pytest.fixture(params=[
     ['$invalid_modifier', 'expected', [1.4, -0.1, 0.1, None]],
     [],
@@ -2104,6 +2131,15 @@ def test_regressiondict_custom_protocol(dummy_gpu_exec_ctx):
     test.x = 1
     with pytest.raises(KeyError):
         test.foo[test]
+
+
+def test_regressiondict_keeps_special_keys():
+    # `$`-prefixed keys are only reserved by `_ReferenceDict`; a plain
+    # `RegressionTestDict` must retain them as regular data.
+    d = rfm.RegressionTestDict({'$index': ('x',), '$foo': 1, 'a': 2})
+    assert d.index == ('x',)
+    assert d['$foo'] == 1
+    assert d['a'] == 2
 
 
 def test_performance_invalid_value(make_test_classic, sanity_file,
