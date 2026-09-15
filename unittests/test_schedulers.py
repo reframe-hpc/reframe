@@ -9,8 +9,10 @@ import re
 import signal
 import socket
 import time
+from types import SimpleNamespace
 
 import reframe.core.runtime as rt
+import reframe.core.schedulers.slurm as slurm
 import reframe.utility.osext as osext
 import unittests.utility as test_util
 from reframe.core.backends import (getlauncher, getscheduler)
@@ -577,6 +579,69 @@ def test_submit_job_array(make_job, slurm_only, exec_ctx):
         output = fp.read()
         assert all([re.search('Task id: 0', output),
                     re.search('Task id: 1', output)])
+
+
+@pytest.mark.parametrize('array_spec,num_tasks', [
+    ('0-1', 2),
+    ('0-1%1', 2),
+    ('1,3,5,7', 4),
+    ('1-7:2', 4),
+    ('1,3-7:2%2', 4),
+])
+def test_slurm_count_array_tasks(array_spec, num_tasks):
+    assert slurm._count_array_tasks(array_spec) == num_tasks
+
+
+@pytest.mark.parametrize('jobid', [
+    '123_1',
+    '123_[1%1]',
+    '123_[0-1%1]',
+    '123_[1,3-7:2%2]',
+])
+def test_slurm_array_jobid_pattern(jobid):
+    assert re.fullmatch(slurm.SlurmJobScheduler._jobid_patt, jobid)
+
+
+@pytest.mark.parametrize('sacct_output,expected_state,expected_finished', [
+    (
+        '123_0|COMPLETED|0:0|1|nid001\n',
+        'COMPLETED,PENDING',
+        False,
+    ),
+    (
+        '123_0|COMPLETED|0:0|1|nid001\n'
+        '123_[1%1]|PENDING|0:0|Unknown|\n',
+        'COMPLETED,PENDING',
+        False,
+    ),
+    (
+        '123_0|COMPLETED|0:0|1|nid001\n'
+        '123_1|COMPLETED|0:0|2|nid002\n',
+        'COMPLETED,COMPLETED',
+        True,
+    ),
+])
+def test_slurm_poll_job_array(make_job, slurm_only, testsys_exec_ctx,
+                              monkeypatch,
+                              sacct_output, expected_state,
+                              expected_finished):
+    job = make_job()
+    if job.scheduler.registered_name != 'slurm':
+        pytest.skip('test exercises the sacct Slurm backend')
+
+    job.options = ['--array=0-1%1']
+    job.scheduler.emit_preamble(job)
+    job._jobid = '123'
+    job._submit_time = time.time()
+    monkeypatch.setattr(
+        slurm, '_run_strict',
+        lambda *args, **kwargs: SimpleNamespace(stdout=sacct_output)
+    )
+
+    job.scheduler.poll(job)
+    assert job.array_size == 2
+    assert job.state == expected_state
+    assert job.finished() is expected_finished
 
 
 def test_cancel(make_job, exec_ctx):
