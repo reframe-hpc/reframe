@@ -47,7 +47,7 @@ class _prepare_reframe:
         self._workdir = os.path.abspath(
             tempfile.mkdtemp(prefix='rfm.', dir=self._prefix)
         )
-        paths = ['reframe/', 'README.md', 'pyproject.toml']
+        paths = ['reframe/', 'tools/', 'README.md', 'pyproject.toml']
         use_pip = False
         custom_command = runtime.runtime().get_option(
             'general/0/remote_install'

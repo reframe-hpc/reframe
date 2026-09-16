@@ -80,8 +80,7 @@ path = "reframe/__init__.py"
 include = [
     "/reframe/**/*.py",
     "/reframe/schemas/**/*",
-    "/docs/man/man1/reframe.1",
-    "/docs/man/man8/reframe.settings.8",
+    "/docs",
     "/examples",
     "/share/completions",
     "/tools",
@@ -89,14 +88,22 @@ include = [
     "/LICENSE",
     "/REAMDE.md",
 ]
+exclude = [
+    "/docs/_build",
+    "/docs/html",
+    "/docs/doctrees",
+    "/docs/man",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["reframe"]
 
+[tool.hatch.build.hooks.custom]
+path = "tools/hatch_build.py"
 
 [tool.hatch.build.targets.wheel.shared-data]
 "docs/man/man1/reframe.1" = "share/man/man1/reframe.1"
-"docs/man/man8/reframe.8" = "share/man/man8/reframe.8"
+"docs/man/man8/reframe.settings.8" = "share/man/man8/reframe.settings.8"
 "examples" = "share/doc/reframe-hpc/examples"
 "share/completions/reframe.bash" = "share/bash-completion/completions/reframe"
 "share/completions/reframe.fish" = "share/fish/vendor_completions.d/reframe.fish"

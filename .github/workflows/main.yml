@@ -114,6 +114,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Generate Wheel
+        env:
+          _RFM_BUILD_DOCS: 1
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           uv build
@@ -124,6 +126,10 @@ jobs:
         run: |
           reframe -V
           reframe -l
+      - name: Check Man Pages
+        run: |
+          unzip -l dist/*.whl | grep -q 'share/man/man1/reframe\.1'
+          unzip -l dist/*.whl | grep -q 'share/man/man8/reframe\.settings\.8'
 
   docvalidation:
     runs-on: ubuntu-latest
