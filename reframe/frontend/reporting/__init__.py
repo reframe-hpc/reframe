@@ -5,7 +5,6 @@
 
 import decimal
 import functools
-import inspect
 import json
 import jsonschema
 import lxml.etree as etree
@@ -16,12 +15,15 @@ import socket
 import time
 import uuid
 from collections import UserDict
+from pathlib import Path
 
 import reframe as rfm
 import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
-from reframe.core.exceptions import ReframeError, what, is_severe, reraise_as
+import reframe.utility.sanity as sn
+from reframe.core.exceptions import BuildError, ReframeError, SanityError, what, is_severe, reraise_as
 from reframe.core.logging import getlogger, _format_time_rfc3339, time_function
+from reframe.core.runtime import runtime
 from reframe.core.warnings import suppress_deprecations
 from reframe.utility import nodelist_abbrev, OrderedSet
 from .storage import StorageBackend
@@ -30,7 +32,7 @@ from .utility import parse_cmp_spec, parse_query_spec
 # The schema data version
 # Major version bumps are expected to break the validation of previous schemas
 
-DATA_VERSION = '4.2'
+DATA_VERSION = '5.0'
 _SCHEMA = None
 _RESERVED_SESSION_INFO_KEYS = None
 _DATETIME_FMT = r'%Y%m%dT%H%M%S%z'
@@ -251,6 +253,9 @@ class RunReport:
             'runs': [],
             'restored_cases': []
         }
+        self.__fail_context = runtime().get_option(
+            'general/0/failure_inspect_lines'
+        )
         now = time.time()
         self.update_timestamps(now, now)
 
@@ -279,6 +284,13 @@ class RunReport:
 
     def update_timestamps(self, ts_start, ts_end):
         self.__report['session_info'].update({
+            'start_time_us': int(ts_start * 1_000_000),
+            'start_timestamp': _format_time_rfc3339(ts_start, _DATETIME_FMT),
+            'end_time_us': int(ts_end * 1_000_000),
+            'end_timestamp': _format_time_rfc3339(ts_end, _DATETIME_FMT),
+
+            # The following are kept for compatibility purposes with the
+            # current SQLite backend
             'time_start': time.strftime(_DATETIME_FMT,
                                         time.localtime(ts_start)),
             'time_start_unix': ts_start,
@@ -298,7 +310,18 @@ class RunReport:
         self.__report['session_info'].update(extras)
 
     def update_run_stats(self, stats):
-        session_uuid = self.__report['session_info']['uuid']
+        def _job_contents(check, job, job_attr):
+            if job is None:
+                return None
+
+            try:
+                jobout = sn.evaluate(getattr(job, job_attr))
+                return ''.join(osext.tail(
+                    Path(check.stagedir) / jobout, self.__fail_context
+                ))
+            except (OSError, UnicodeError):
+                return None
+
         for runidx, tasks in stats.runs():
             testcases = []
             num_failures = 0
@@ -310,46 +333,15 @@ class RunReport:
                 # these are not set inside the check.
                 check, partition, environ = t.testcase
                 entry = {
-                    'build_jobid': None,
-                    'build_stderr': None,
-                    'build_stdout': None,
-                    'dependencies_actual': [
-                        (d.check.unique_name,
-                         d.partition.fullname, d.environ.name)
-                        for d in t.testcase.deps
-                    ],
-                    'dependencies_conceptual': [
-                        d[0] for d in t.check.user_deps()
-                    ],
                     'environ': environ.name,
                     'fail_phase': None,
                     'fail_reason': None,
-                    'filename': inspect.getfile(type(check)),
-                    'fixture': check.is_fixture(),
-                    'job_completion_time': None,
-                    'job_completion_time_unix': None,
-                    'job_stderr': None,
-                    'job_stdout': None,
                     'partition': partition.name,
                     'result': t.result,
                     'run_index': runidx,
+                    'testcase_index': tidx,
                     'scheduler': partition.scheduler.registered_name,
-                    'session_uuid': session_uuid,
-                    'time_compile': t.duration('compile_complete'),
-                    'time_performance': t.duration('performance'),
-                    'time_run': t.duration('run_complete'),
-                    'time_sanity': t.duration('sanity'),
-                    'time_setup': t.duration('setup'),
-                    'time_total': t.duration('total'),
-                    'uuid': f'{session_uuid}:{runidx}:{tidx}'
                 }
-                if check.job:
-                    entry['job_stderr'] = check.stderr.evaluate()
-                    entry['job_stdout'] = check.stdout.evaluate()
-
-                if check.build_job:
-                    entry['build_stderr'] = check.build_stderr.evaluate()
-                    entry['build_stdout'] = check.build_stdout.evaluate()
 
                 if t.failed:
                     num_failures += 1
@@ -371,10 +363,10 @@ class RunReport:
                 elif t.succeeded:
                     entry['outputdir'] = check.outputdir
 
-                # Add any loggable variables and parameters
+                # Add any loggable test variables and parameters
                 test_cls = type(check)
                 for name, alt_name in test_cls.loggable_attrs():
-                    if alt_name == 'partition' or alt_name == 'environ':
+                    if alt_name in {'partition', 'environ'}:
                         # We set those from the testcase
                         continue
 
@@ -391,11 +383,46 @@ class RunReport:
                     except AttributeError:
                         entry[key] = '<undefined>'
 
-                if entry['job_completion_time_unix']:
-                    entry['job_completion_time'] = _format_time_rfc3339(
-                        entry['job_completion_time_unix'],
-                        '%FT%T%:z'
-                    )
+                # Add any loggable job variables
+                if check.build_job:
+                    job_type = type(check.build_job)
+                    for name, alt_name in job_type.loggable_attrs():
+                        key = alt_name if alt_name else name
+                        entry[f'build_job_{key}'] = getattr(check.build_job,
+                                                            name)
+
+                if check.job:
+                    job_type = type(check.job)
+                    for name, alt_name in job_type.loggable_attrs():
+                        key = alt_name if alt_name else name
+                        entry[f'job_{key}'] = getattr(check.job, name)
+
+                    # Add the legacy entries
+                    if entry['job_completion_time_us'] is not None:
+                        entry['job_completion_time_unix'] = (
+                            entry['job_completion_time_us'] / 1_000_000
+                        )
+                        entry['job_completion_time'] = _format_time_rfc3339(
+                            entry['job_completion_time_unix'], r'%FT%T%:z'
+                        )
+
+                # Store stdout/stderr contents in case of failures
+                if t.result in {'fail', 'xpass'}:
+                    exc_value = t.exc_info[1] if t.exc_info else None
+                    if isinstance(exc_value, BuildError):
+                        entry['build_job_stdout_contents'] = _job_contents(
+                            check, check.build_job, 'stdout'
+                        )
+                        entry['build_job_stderr_contents'] = _job_contents(
+                            check, check.build_job, 'stderr'
+                        )
+                    elif isinstance(exc_value, SanityError):
+                        entry['job_stdout_contents'] = _job_contents(
+                            check, check.job, 'stdout'
+                        )
+                        entry['job_stderr_contents'] = _job_contents(
+                            check, check.job, 'stderr'
+                        )
 
                 testcases.append(entry)
 
@@ -500,7 +527,8 @@ class RunReport:
         xml_testsuites = etree.Element('testsuites')
         # Create a XSD-friendly timestamp
         session_ts = time.strftime(
-            r'%FT%T', time.localtime(report['session_info']['time_start_unix'])
+            r'%FT%T',
+            time.localtime(report['session_info']['start_time_us'] / 1_000_000)
         )
         for run_id, rfm_run in enumerate(report['runs']):
             xml_testsuite = etree.SubElement(
@@ -523,13 +551,14 @@ class RunReport:
                 testcase = etree.SubElement(
                     xml_testsuite, 'testcase',
                     attrib={
-                        'classname': tc['filename'],
+                        'classname': tc['basename'],
+                        'file': tc['filename'],
                         'name': casename,
 
                         # XSD schema does not like the exponential format and
                         # since we do not want to impose a fixed width, we pass
                         # it to `Decimal` to format it automatically.
-                        'time': str(decimal.Decimal(tc['time_total'] or 0)),
+                        'time': str(decimal.Decimal(tc.get('time_total') or 0)),
                     }
                 )
                 if tc['result'] == 'fail':
@@ -540,6 +569,22 @@ class RunReport:
                                                      'message': fail_phase}
                     )
                     testcase_msg.text = f"{tc['fail_phase']}: {fail_reason}"
+
+                stdout_contents = (tc.get('build_job_stdout_contents') or
+                                   tc.get('job_stdout_contents'))
+                if stdout_contents:
+                    testcase_stdout = etree.SubElement(testcase, 'system-out')
+                    testcase_stdout.text = etree.CDATA(
+                        ''.join(stdout_contents)
+                    )
+
+                stderr_contents = (tc.get('build_job_stderr_contents') or
+                                   tc.get('job_stderr_contents'))
+                if stderr_contents:
+                    testcase_stderr = etree.SubElement(testcase, 'system-err')
+                    testcase_stderr.text = etree.CDATA(
+                        ''.join(stderr_contents)
+                    )
 
             testsuite_stdout = etree.SubElement(xml_testsuite, 'system-out')
             testsuite_stdout.text = ''
@@ -572,11 +617,11 @@ class _TCProxy(UserDict):
                                   testcase['environ'])
 
         def _job_nodelist():
-            nodelist = testcase['job_nodelist']
+            nodelist = testcase.get('job_nodelist', [])
             if isinstance(nodelist, str):
                 return nodelist
             else:
-                return nodelist_abbrev(testcase['job_nodelist'])
+                return nodelist_abbrev(nodelist)
 
         if isinstance(testcase, _TCProxy):
             testcase = testcase.data

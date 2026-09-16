@@ -15,10 +15,12 @@ import reframe.core.runtime as runtime
 import reframe.core.shell as shell
 import reframe.utility.jsonext as jsonext
 import reframe.utility.typecheck as typ
+from reframe.core.builtins import loggable, loggable_as, variable
 from reframe.core.exceptions import JobError, JobNotStartedError, SkipTestError
 from reframe.core.launchers import JobLauncher
-from reframe.core.logging import getlogger, DEBUG2
+from reframe.core.logging import getlogger, DEBUG2, _format_time_rfc3339
 from reframe.core.meta import RegressionTestMeta
+from reframe.utility import nodelist_abbrev
 
 
 class JobMeta(RegressionTestMeta, abc.ABCMeta):
@@ -104,23 +106,21 @@ class JobScheduler(abc.ABC, metaclass=JobSchedulerMeta):
         '''Filter nodes by their state
 
         :arg nodelist: List of :class:`Node` instances to filter.
-        :arg state: The state of the nodes.
-            If ``all``, the initial list is returned untouched.
-            If ``avail``, only the available nodes will be returned.
-            All other values are interpreted as a state string.
-            The pipe character ``|`` can be used as to specify multiple
-            alternative node states.
-            State match is exclusive unless the ``*`` is added at the end of the
-            state string.
-            When defining multiple states using ``|``, ``*`` has to be added at
-            the end of each alternative state for which a non-exclusive match is
-            required.
+        :arg state: The state of the nodes. If ``all``, the initial list is
+            returned untouched. If ``avail``, only the available nodes will be
+            returned. All other values are interpreted as a state string. The
+            pipe character ``|`` can be used as to specify multiple
+            alternative node states. State match is exclusive unless the ``*``
+            is added at the end of the state string. When defining multiple
+            states using ``|``, ``*`` has to be added at the end of each
+            alternative state for which a non-exclusive match is required.
 
         :returns: the filtered node list
 
         .. versionchanged:: 4.9
 
-           Support the ``|`` character to filter according to alternative states.
+           Support the ``|`` character to filter according to alternative
+           states.
 
         .. versionchanged:: 4.10
 
@@ -231,6 +231,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:
     #: :type: integral
     #: :default: ``1``
+    #: :loggable: No
     #:
     #: .. note::
     #:    This attribute is set by the framework just before submitting the job
@@ -240,111 +241,123 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:
     #: .. versionchanged:: 4.1
     #:    Allow :obj:`None` values
-    num_tasks = variable(int, type(None), value=1)
+    num_tasks = variable(int, type(None), value=1, loggable=False)
 
     #: Number of tasks per node for this job.
     #:
     #: :type: integral or :class:`NoneType`
     #: :default: ``None``
+    #: :loggable: No
     #:
     #: .. note::
     #:    This attribute is set by the framework just before submitting the job
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    num_tasks_per_node = variable(int, type(None), value=None)
+    num_tasks_per_node = variable(int, type(None), value=None, loggable=False)
 
     #: Number of tasks per core for this job.
     #:
     #: :type: integral or :class:`NoneType`
     #: :default: ``None``
+    #: :loggable: No
     #:
     #: .. note::
     #:    This attribute is set by the framework just before submitting the job
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    num_tasks_per_core = variable(int, type(None), value=None)
+    num_tasks_per_core = variable(int, type(None), value=None, loggable=False)
 
     #: Number of tasks per socket for this job.
     #:
     #: :type: integral or :class:`NoneType`
     #: :default: ``None``
+    #: :loggable: No
     #:
     #: .. note::
     #:    This attribute is set by the framework just before submitting the job
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    num_tasks_per_socket = variable(int, type(None), value=None)
+    num_tasks_per_socket = variable(int, type(None), value=None,
+                                    loggable=False)
 
     #: Number of processing elements associated with each task for this job.
     #:
     #: :type: integral or :class:`NoneType`
     #: :default: ``None``
+    #: :loggable: No
     #:
     #: .. note::
     #:    This attribute is set by the framework just before submitting the job
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    num_cpus_per_task = variable(int, type(None), value=None)
+    num_cpus_per_task = variable(int, type(None), value=None, loggable=False)
 
     #: Enable SMT for this job.
     #:
     #: :type: :class:`bool` or :class:`NoneType`
     #: :default: ``None``
+    #: :loggable: No
     #:
     #: .. note::
     #:    This attribute is set by the framework just before submitting the job
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    use_smt = variable(bool, type(None), value=None)
+    use_smt = variable(bool, type(None), value=None, loggable=False)
 
     #: Request exclusive access on the nodes for this job.
     #:
     #: :type: :class:`bool`
     #: :default: ``false``
+    #: :loggable: No
     #:
     #: .. note::
     #:    This attribute is set by the framework just before submitting the job
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    exclusive_access = variable(bool, value=False)
+    exclusive_access = variable(bool, value=False, loggable=False)
 
     #: Time limit for this job.
     #:
     #: See :attr:`reframe.core.pipeline.RegressionTest.time_limit` for more
     #: details.
     #:
+    #: :loggable: No
+    #:
     #: .. note::
     #:    This attribute is set by the framework just before submitting the job
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    time_limit = variable(type(None), typ.Duration,
-                          value=None, allow_implicit=True)
+    time_limit = variable(type(None), typ.Duration, value=None,
+                          allow_implicit=True, loggable=False)
 
     #: Maximum pending time for this job.
     #:
     #: See :attr:`reframe.core.pipeline.RegressionTest.max_pending_time` for
     #: more details.
     #:
+    #: :loggable: No
+    #:
     #: .. note::
     #:    This attribute is set by the framework just before submitting the job
     #:    based on the test information.
     #:
     #: .. versionadded:: 3.11.0
-    max_pending_time = variable(type(None), typ.Duration,
-                                value=None, allow_implicit=True)
+    max_pending_time = variable(type(None), typ.Duration, value=None,
+                                allow_implicit=True, loggable=False)
 
     #: Arbitrary options to be passed to the backend job scheduler.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = variable(typ.List[str], value=[])
+    #: :loggable: No
+    options = variable(typ.List[str], value=[], loggable=False)
 
     #: The (parallel) program launcher that will be used to launch the
     #: (parallel) executable of this job.
@@ -366,7 +379,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:        self.job.launcher = getlauncher('local')()
     #:
     #: :type: :class:`reframe.core.launchers.JobLauncher`
-    launcher = variable(JobLauncher)
+    #: :loggable: No
+    launcher = variable(JobLauncher, loggable=False)
 
     #: Pin the jobs on the given nodes.
     #:
@@ -376,9 +390,13 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
+    #: :loggable: No
     #:
     #: .. versionadded:: 3.11.0
-    pin_nodes = variable(typ.List[str], value=[])
+    pin_nodes = variable(typ.List[str], value=[], loggable=False)
+
+    # FIXME: Make this a configuration variable
+    _DATEFMT = r'%Y%m%dT%H%M%S%z'
 
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,
@@ -395,6 +413,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         self._name = name
         self._workdir = workdir
         self._script_filename = script_filename or f'{name}.sh'
+        self._script_contents = ''
 
         basename, _ = os.path.splitext(self._script_filename)
         self._stdout = stdout or f'{basename}.out'
@@ -411,6 +430,7 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         self._state = None
         self._nodelist = []
         self._submit_time = None
+        self._start_time = None
         self._completion_time = None
 
         # Job errors discovered while polling; if not None this will be raised
@@ -424,47 +444,86 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         ret.launcher = launcher
         return ret
 
+    def format_timestamp(self, ts):
+        return _format_time_rfc3339(ts, self._DATEFMT)
+
     @property
     def name(self):
-        '''The name of this job.'''
+        '''The name of this job.
+
+        :loggable: No
+        '''
         return self._name
 
     @property
     def workdir(self):
-        '''The working directory for this job.'''
+        '''The working directory for this job.
+
+        :loggable: No
+        '''
         return self._workdir
 
     @property
     def cli_options(self):
         '''The scheduler options passed through the :option:`-J` command line
-        options.'''
+        options.
+
+        :loggable: No
+        '''
         return self._cli_options
 
+    @loggable
     @property
     def script_filename(self):
-        '''The filename of the generated job script.'''
+        '''The filename of the generated job script.
+
+        :loggable: Yes
+        '''
         return self._script_filename
 
+    @loggable
+    @property
+    def script_contents(self) -> str:
+        '''The contents of the generated job script
+
+        :loggable: Yes
+        '''
+        return self._script_contents
+
+    @loggable
     @property
     def stdout(self):
-        '''The file where the standard output of the job is saved.'''
+        '''The file where the standard output of the job is saved.
+
+        :loggable: Yes
+        '''
         return self._stdout
 
+    @loggable
     @property
     def stderr(self):
-        '''The file where the standard error of the job is saved.'''
+        '''The file where the standard error of the job is saved.
+
+        :loggable: Yes
+        '''
         return self._stderr
 
     @property
     def sched_flex_alloc_nodes(self):
         '''The argument of the :option:`--flex-alloc-nodes` command line
-        option.'''
+        option.
+
+        :loggable: No
+        '''
         return self._sched_flex_alloc_nodes
 
     @property
     def sched_access(self):
         '''The partition's :attr:`~config.systems.partitions.access`
-        options.'''
+        options.
+
+        :loggable: No
+        '''
         return self._sched_access
 
     @property
@@ -486,13 +545,50 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         significantly.
 
         :type: :class:`float` or :class:`None`
+        :loggable: No
         '''
         return self._completion_time
 
+    @loggable
+    @property
+    def completion_time_us(self) -> int | None:
+        '''Same as :attr:`completion_time`, but expressed in microseconds
+        since the Epoch.
+
+        :loggable: Yes
+        '''
+        if self._completion_time is not None:
+            return int(self._completion_time * 1_000_000)
+
+    @loggable
+    @property
+    def completion_timestamp(self):
+        '''The :attr:`completion_time` formatted as an RFC3339 timestamp.
+
+        :loggable: Yes
+        '''
+        return self.format_timestamp(self.completion_time)
+
     @property
     def scheduler(self):
-        '''The scheduler where this job is assigned to.'''
+        '''The scheduler where this job is assigned to.
+
+        :loggable: No; see :attr:`_scheduler_name` for the loggable form
+            of this property, logged as ``scheduler``.
+        '''
         return self._scheduler
+
+    @loggable_as('scheduler')
+    @property
+    def _scheduler_name(self):
+        '''The registered name of this job's scheduler.
+
+        This is the value actually reported when logging the ``scheduler``
+        attribute; see :attr:`scheduler` for the full scheduler object.
+
+        :loggable: Yes (logged as ``scheduler``)
+        '''
+        return self._scheduler.registered_name
 
     @property
     def exception(self):
@@ -500,9 +596,12 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
 
         The scheduler will raise this exception the next time the status of
         this job is queried.
+
+        :loggable: No
         '''
         return self._exception
 
+    @loggable_as('id')
     @property
     def jobid(self):
         '''The ID of this job.
@@ -513,9 +612,11 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
            Job ID type is now a string.
 
         :type: :class:`str` or :class:`None`
+        :loggable: Yes (logged as ``id``)
         '''
         return str(self._jobid) if self._jobid is not None else None
 
+    @loggable
     @property
     def exitcode(self):
         '''The exit code of this job.
@@ -525,9 +626,11 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         .. versionadded:: 2.21
 
         :type: :class:`int` or :class:`None`
+        :loggable: Yes
         '''
         return self._exitcode
 
+    @loggable
     @property
     def state(self):
         '''The state of this job.
@@ -537,9 +640,11 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         .. versionadded:: 2.21
 
         :type: :class`str` or :class:`None`
+        :loggable: Yes
         '''
         return self._state
 
+    @loggable
     @property
     def nodelist(self):
         '''The list of node names assigned to this job.
@@ -567,8 +672,18 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
            Default value is the empty list.
 
         :type: :class:`List[str]`
+        :loggable: Yes
         '''
         return self._nodelist
+
+    @loggable
+    @property
+    def nodelist_folded(self):
+        '''The folded :attr:`nodelist` in hostlist format.
+
+        :loggable: Yes
+        '''
+        return nodelist_abbrev(self.nodelist)
 
     @property
     def submit_time(self):
@@ -582,8 +697,62 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
         scheduler.
 
         :type: :class:`float` or :class:`None`
+        :loggable: No
         '''
         return self._submit_time
+
+    @loggable
+    @property
+    def submit_time_us(self) -> int | None:
+        '''Same as :attr:`submit_time`, but expressed in microseconds since
+        the Epoch.
+
+        :loggable: Yes
+        '''
+        if self._submit_time is not None:
+            return int(self._submit_time * 1_000_000)
+
+    @loggable
+    @property
+    def submit_timestamp(self):
+        '''The :attr:`submit_time` formatted as an RFC3339 timestamp.
+
+        :loggable: Yes
+        '''
+        return self.format_timestamp(self._submit_time)
+
+    @property
+    def start_time(self):
+        '''The time this job started running, as a floating point number
+        expressed in seconds since the epoch, in UTC.
+
+        This attribute is :class:`None` if the job hasn't started running
+        yet.
+
+        :type: :class:`float` or :class:`None`
+        :loggable: No
+        '''
+        return self._start_time
+
+    @loggable
+    @property
+    def start_time_us(self) -> int | None:
+        '''Same as :attr:`start_time`, but expressed in microseconds since
+        the Epoch.
+
+        :loggable: Yes
+        '''
+        if self._start_time is not None:
+            return int(self._start_time * 1_000_000)
+
+    @loggable
+    @property
+    def start_timestamp(self):
+        '''The :attr:`start_time` formatted as an RFC3339 timestamp.
+
+        :loggable: Yes
+        '''
+        return self.format_timestamp(self._start_time)
 
     def prepare(self, commands, environs=None, prepare_cmds=None,
                 strict_flex=False, **gen_opts):
@@ -621,6 +790,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
             builder.write(runtime.emit_loadenv_commands(*environs))
             for c in commands:
                 builder.write_body(c)
+
+            self._script_contents = builder.finalize()
 
     def guess_num_tasks(self):
         num_tasks_per_node = self.num_tasks_per_node or 1

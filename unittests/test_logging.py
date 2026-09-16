@@ -194,7 +194,7 @@ def test_rfc3339_timezone_wrong_directive(logfile, logger_without_check):
 
 def test_logger_job_attributes(logfile, logger_with_check):
     formatter = rlog.RFC3339Formatter(
-        '%(check_jobid)s %(check_job_nodelist)s')
+        '%(check_job_id)s %(check_job_nodelist)s')
     logger_with_check.logger.handlers[0].setFormatter(formatter)
     logger_with_check.info('xxx')
     assert _pattern_in_logfile(r'12345 localhost', logfile)

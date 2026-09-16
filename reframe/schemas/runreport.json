@@ -6,23 +6,34 @@
         "testcase_type": {
             "type": "object",
             "properties": {
-                "build_jobid": {"type": ["string", "null"]},
-                "build_stderr": {"type": ["string", "null"]},
-                "build_stdout": {"type": ["string", "null"]},
-                "dependencies_actual": {
-                    "type": "array",
-                    "items": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
+                "basename": {"type": "string"},
+                "build_job_completion_time_us": {"type": ["number", "null"]},
+                "build_job_completion_timestamp": {"type": ["string", "null"]},
+                "build_job_exitcode": {"type": ["number", "null"]},
+                "build_job_id": {"type": ["string", "null"]},
+                "build_job_nodelist": {
+                    "type": "array", "items": {"type": "string"}
                 },
-                "dependencies_conceptual": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
+                "build_job_nodelist_folded": {"type": ["string", "null"]},
+                "build_job_scheduler": {"type": ["string", "null"]},
+                "build_job_script_contents": {"type": ["string", "null"]},
+                "build_job_script_filename": {"type": ["string", "null"]},
+                "build_job_start_time_us": {"type": ["number", "null"]},
+                "build_job_start_timestamp": {"type": ["string", "null"]},
+                "build_job_state": {"type": ["string", "null"]},
+                "build_job_stderr": {"type": ["string", "null"]},
+                "build_job_stderr_contents": {"type": ["string", "null"]},
+                "build_job_stdout": {"type": ["string", "null"]},
+                "build_job_stdout_contents": {"type": ["string", "null"]},
+                "build_job_submit_time_us": {"type": ["number", "null"]},
+                "build_job_submit_timestamp": {"type": ["string", "null"]},
+                "build_locally": {"type": "boolean"},
+                "build_time_limit": {"type": ["number", "null"]},
+                "descr": {"type": "string"},
+                "display_name": {"type": "string"},
+                "env_vars": {"type": "object"},
                 "environ": {"type": ["string", "null"]},
+                "exclusive_access": {"type": "boolean"},
                 "fail_info": {
                     "type": ["object", "null"],
                     "properties": {
@@ -40,30 +51,64 @@
                 "fail_severe": {"type": "boolean"},
                 "filename": {"type": "string"},
                 "fixture": {"type": "boolean"},
+                "hashcode": {"type": "string"},
                 "job_completion_time": {"type": ["string", "null"]},
                 "job_completion_time_unix": {"type": ["number", "null"]},
+                "job_completion_time_us": {"type": ["number", "null"]},
+                "job_completion_timestamp": {"type": ["string", "null"]},
+                "job_exitcode": {"type": ["number", "null"]},
+                "job_id": {"type": ["string", "null"]},
+                "job_nodelist": {
+                    "type": "array", "items": {"type": "string"}
+                },
+                "job_nodelist_folded": {"type": ["string", "null"]},
+                "job_scheduler": {"type": ["string", "null"]},
+                "job_script_contents": {"type": ["string", "null"]},
+                "job_script_filename": {"type": ["string", "null"]},
+                "job_start_time_us": {"type": ["number", "null"]},
+                "job_start_timestamp": {"type": ["string", "null"]},
+                "job_state": {"type": ["string", "null"]},
                 "job_stderr": {"type": ["string", "null"]},
+                "job_stderr_contents": {"type": ["string", "null"]},
                 "job_stdout": {"type": ["string", "null"]},
+                "job_stdout_contents": {"type": ["string", "null"]},
+                "job_submit_time_us": {"type": ["number", "null"]},
+                "job_submit_timestamp": {"type": ["string", "null"]},
+                "keep_files": {"type": "array", "items": {"type": "string"}},
+                "local": {"type": "boolean"},
+                "maintainers": {"type": "array", "items": {"type": "string"}},
+                "max_pending_time": {"type": ["number", "null"]},
+                "modules": {"type": "array"},
                 "name": {"type": "string"},
+                "num_cpus_per_task": {"type": ["number", "null"]},
+                "num_gpus_per_node": {"type": ["number", "null"]},
+                "num_tasks": {"type": ["number", "null"]},
+                "num_tasks_per_core": {"type": ["number", "null"]},
+                "num_tasks_per_node": {"type": ["number", "null"]},
+                "num_tasks_per_socket": {"type": ["number", "null"]},
                 "outputdir": {"type": ["string", "null"]},
                 "perfvalues": {"type": "object"},
                 "partition": {"type": ["string", "null"]},
+                "prefix": {"type": "string"},
+                "readonly_files": {
+                    "type": "array", "items": {"type": "string"}
+                },
                 "result": {"type": "string"},
+                "run_index": {"type": "number"},
                 "scheduler": {"type": "string"},
+                "short_name": {"type": "string"},
+                "stagedir": {"type": ["string", "null"]},
+                "strict_check": {"type": "boolean"},
+                "sysenv": {"type": ["string", "null"]},
                 "system": {"type": "string"},
-                "time_compile": {"type": ["number", "null"]},
-                "time_performance": {"type": ["number", "null"]},
-                "time_run": {"type": ["number", "null"]},
-                "time_sanity": {"type": ["number", "null"]},
-                "time_setup": {"type": ["number", "null"]},
-                "time_total": {"type": ["number", "null"]},
+                "tags": {"type": "array", "items": {"type": "string"}},
+                "testcase_index": {"type": "number"},
+                "time_limit": {"type": ["number", "null"]},
                 "unique_name": {"type": "string"},
-                "uuid": {"type": "string"}
+                "use_multithreading": {"type": ["boolean", "null"]},
+                "variables": {"type": "object"}
             },
-            "required": ["environ", "fail_phase", "fail_reason", "filename",
-                         "job_completion_time_unix", "name", "perfvalues",
-                         "partition", "result", "system", "time_total",
-                         "unique_name"]
+            "required": ["name", "result"]
         }
     },
     "type": "object",
@@ -77,6 +122,8 @@
                     "items": {"type": "string"}
                 },
                 "data_version": {"type": "string"},
+                "end_time_us": {"type": "number"},
+                "end_timestamp": {"type": "string"},
                 "hostname": {"type": "string"},
                 "log_files": {
                     "type": "array",
@@ -89,6 +136,8 @@
                 "prefix_output": {"type": "string"},
                 "prefix_stage": {"type": "string"},
                 "session_uuid": {"type": "string"},
+                "start_time_us": {"type": "number"},
+                "start_timestamp": {"type": "string"},
                 "time_elapsed": {"type": "number"},
                 "time_end": {"type": "string"},
                 "time_end_unix": {"type": "number"},
@@ -99,9 +148,7 @@
                 "version": {"type": "string"},
                 "workdir": {"type": "string"}
             },
-            "required": ["data_version", "hostname",
-                         "time_elapsed", "time_end_unix", "time_start_unix",
-                         "uuid"]
+            "required": ["data_version", "hostname", "uuid"]
         },
         "restored_cases": {
             "type": "array",
