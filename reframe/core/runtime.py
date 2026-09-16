@@ -308,7 +308,7 @@ def _is_valid_part(part, valid_systems):
             elif subspec.startswith('-'):
                 minus_feats.append(subspec[1:])
             elif subspec.startswith('%'):
-                key, val = subspec[1:].split('=')
+                key, val = subspec[1:].split('=', maxsplit=1)
                 props[key] = val
             else:
                 # If there is a system:partition specified, make sure it
@@ -367,7 +367,7 @@ def _is_valid_env(env, valid_prog_environs):
                 elif subspec.startswith('-'):
                     minus_feats.append(subspec[1:])
                 elif subspec.startswith('%'):
-                    key, val = subspec[1:].split('=')
+                    key, val = subspec[1:].split('=', maxsplit=1)
                     props[key] = val
 
             have_plus_feats = all(ft in env.features or ft in env.extras
