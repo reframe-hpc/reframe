@@ -77,7 +77,7 @@ site_configuration = {
             # ReFrame extra, but this at the moment does not seem
             # straightforward.
             'remote_install': [
-                'cp -t . -r ../reframe ../README.md ../pyproject.toml',  # noqa: E501
+                'cp -t . -r ../reframe ../tools ../README.md ../pyproject.toml',  # noqa: E501
                 'uv tool install .'
             ]
         }
