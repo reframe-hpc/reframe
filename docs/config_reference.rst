@@ -347,6 +347,14 @@ System Partition Configuration
    .. versionadded:: 4.10
       The ``pbspro`` scheduler is added.
 
+   .. versionchanged:: 4.11
+      Tests whose Slurm job has expired are now skipped instead of failed.
+
+   .. note::
+      If a job submitted through the ``slurm`` backend ends up in the ``DEADLINE`` state, i.e., it did not start before the deadline set with ``--deadline``, the associated test will be skipped and not failed.
+      This applies to the ``slurm`` backend only;
+      the ``squeue`` backend does not treat expired jobs specially, because once the job is out of the queue, its state cannot be retrieved.
+
    .. note::
       The Slurm-based backends unset all ``SBATCH_*`` environment variables before submitting a job.
       This is done to avoid environment variables bypassing ReFrame's configuration.
