@@ -2330,3 +2330,122 @@ Finally, a stored session can be deleted using the :option:`--delete-stored-sess
    reframe --delete-stored-sessions=47e8d98f-e2b9-4019-9a41-1c44d8a53d1b
 
 Deleting a session will also delete all its test cases from the database.
+
+
+.. _inspecting-past-results-analytics:
+
+Inspecting past results with analytics
+======================================
+
+.. versionadded:: 4.11
+
+The previous section uses ReFrame's original result storage, which is now deprecated.
+Its successor is :ref:`analytics <analytics>`, which keeps the results in a single flat table that you query with SQL instead of reaching them through a fixed set of options.
+This section shows the same kind of inspection on the new backend.
+Enable it with:
+
+.. code-block:: bash
+
+   export RFM_ANALYTICS_ENABLE=1
+   export RFM_TABLE_FORMAT=plain
+
+.. note::
+
+   As in the previous section, you need to rerun some of the earlier experiments to have anything to look at.
+   The output below was produced by running ``reframe -c stream/stream_runonly.py -r`` three times.
+
+   Analytics and the deprecated result storage cannot be enabled at the same time, so unset :envvar:`RFM_ENABLE_RESULTS_STORAGE` if you were following the previous section.
+
+Everything that reads the database is under the ``analyze`` subcommand.
+Instead of a fixed set of query options, it offers a set of *query templates* that you can list:
+
+.. code-block:: bash
+   :caption: Run in the single-node container.
+
+   reframe analyze --list-queries
+
+.. code-block:: console
+
+   Name            Description                                                   Path
+   --------------  ------------------------------------------------------------  --------------------------------------------------------------------------------------------
+   perf            Base performance query: an aggregate of every performance     /home/user/.local/share/uv/tools/reframe-hpc/share/reframe/queries/duckdb/perf.sql
+                   variable, per test case and system/environment. The
+                   aggregation is the mean unless `agg` says otherwise, and the
+                   result column is named after it.
+   perf-compare    Compare two sets of results along one dimension: two          /home/user/.local/share/uv/tools/reframe-hpc/share/reframe/queries/duckdb/perf-compare.sql
+                   versions, two parameters, two system/environment
+                   combinations, and so on.
+   perf-report     Performance report of a single session against what came      /home/user/.local/share/uv/tools/reframe-hpc/share/reframe/queries/duckdb/perf-report.sql
+                   before it.
+   perf-stats      As `perf`, but with the distribution of each performance      /home/user/.local/share/uv/tools/reframe-hpc/share/reframe/queries/duckdb/perf-stats.sql
+                   variable instead of just its mean.
+   ref-suggestion  Suggest a reference tuple for each performance variable, in   /home/user/.local/share/uv/tools/reframe-hpc/share/reframe/queries/duckdb/ref-suggestion.sql
+                   the fractional form a test declares it: (ref, lower_thres,
+                   upper_thres).
+
+Running one is a matter of naming it.
+The ``perf`` template aggregates every performance variable that has been recorded:
+
+.. code-block:: bash
+   :caption: Run in the single-node container.
+
+   reframe analyze --query perf
+
+.. code-block:: console
+
+   name         sysenv                   pvar        pval (mean)  punit
+   -----------  -----------------------  --------  -------------  -------
+   stream_test  generic:default+builtin  copy_bw         20899.2  MB/s
+   stream_test  generic:default+builtin  triad_bw          14769  MB/s
+
+A template takes parameters as ``KEY=VALUE`` arguments, and ``--list-queries NAME`` describes the ones it accepts.
+The ``perf-stats`` template, for instance, reports the whole distribution of each variable rather than just its mean:
+
+.. code-block:: bash
+   :caption: Run in the single-node container.
+
+   reframe analyze --query perf-stats
+
+.. code-block:: console
+
+   name         sysenv                   pvar      punit      samples    pval (mean)    pval (stddev)    pval (min)    pval (p03)    pval (p05)    pval (p50)    pval (p95)    pval (p97)    pval (max)
+   -----------  -----------------------  --------  -------  ---------  -------------  ---------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------
+   stream_test  generic:default+builtin  copy_bw   MB/s             3        20899.2          791.072       19988.8       20066.9       20118.9       21290.2       21405.8         21411       21418.7
+   stream_test  generic:default+builtin  triad_bw  MB/s             3          14769          219.151       14552.6       14565.3       14573.7       14763.5       14968.1       14977.2       14990.8
+
+Since the templates are plain SQL files, you are not limited to the ones that ReFrame ships: you can write your own and put them on the :attr:`~config.analytics.query_search_path`, or pipe a one-off query straight in:
+
+.. code-block:: bash
+   :caption: Run in the single-node container.
+
+   echo 'select count(*) as rows, count(distinct sess_uuid) as sessions from testcases' | reframe analyze --query -
+
+.. code-block:: console
+
+     rows    sessions
+   ------  ----------
+       10           5
+
+See :ref:`results-schema` for the columns you can query and :ref:`query-templates` for how to write a template of your own.
+
+Finally, :option:`--performance-report` reports the session that has just run out of the database.
+With ``compare`` it also compares it against the preceding week:
+
+.. code-block:: bash
+   :caption: Run in the single-node container.
+
+   reframe -c stream/stream_runonly.py -r --performance-report=compare
+
+.. code-block:: console
+
+   Current session stored in the analytics database with UUID: 0498889e-d82c-4ea8-a28c-249b62e33f67
+
+   ============================== PERFORMANCE REPORT ==============================
+
+   name         sysenv                   pvar      punit    presult       pval    baseline (mean)    baseline (samples)    pdiff (%)
+   -----------  -----------------------  --------  -------  ---------  -------  -----------------  --------------------  -----------
+   stream_test  generic:default+builtin  copy_bw   MB/s     pass       20281.2              20617                     4        -1.63
+   stream_test  generic:default+builtin  triad_bw  MB/s     pass       15892.5            14704.2                     4         8.08
+
+The ``baseline (samples)`` column is how many past measurements the baseline was computed from, which is what tells you whether a ``pdiff (%)`` is worth believing.
+The aggregation and the window are both selectable, as in ``--performance-report=compare:median:30d``; see :ref:`analytics-performance-report`.

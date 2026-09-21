@@ -1987,12 +1987,100 @@ The options of an execution mode will be passed to ReFrame as if they were speci
       The scope of all modes options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
 
 
+.. _analytics-configuration:
+
+Analytics configuration
+=======================
+
+.. versionadded:: 4.11
+
+The options of this section configure :ref:`analytics <analytics>`, which supersedes the deprecated :ref:`result storage <storage-configuration>`.
+
+.. py:attribute:: analytics.database
+
+   :required: No
+   :default: ``"duckdb://${HOME}/.reframe/reports/results.duckdb"``
+
+   URI of the analytics database, in the form ``<backend>://<location>``.
+
+   The scheme selects the backend and the location is interpreted by the backend itself; for the file-based backends it is simply a path, so that an absolute path carries three slashes in total, as in ``duckdb:///scratch/results.duckdb``.
+   Any environment variable reference is expanded before the URI is parsed, and a variable holding an absolute path supplies that third slash itself, which is how the default value above is spelled with two.
+
+   Currently, the only supported backend is DuckDB.
+
+.. py:attribute:: analytics.enable
+
+   :required: No
+   :default: :obj:`False`
+
+   Enable analytics.
+
+   .. note::
+      Analytics and the deprecated :attr:`~config.storage.enable` cannot be set at the same time.
+
+.. py:attribute:: analytics.query_search_path
+
+   :required: No
+   :default: ``[]``
+
+   A list of directories to look for :ref:`query templates <query-templates>` in, before the ones that ReFrame ships.
+
+   A template found in an earlier directory shadows one of the same name found later, so a template here may replace a shipped one.
+   See :ref:`query-search-path` for the full lookup order.
+
+.. py:attribute:: analytics.target_systems
+
+   :required: No
+   :default: ``["*"]``
+
+   A list of systems *only* that this analytics configuration is valid for.
+
+   For a detailed description of this property, have a look at the :attr:`~environments.target_systems` definition for environments.
+
+   .. note::
+      The scope of all analytics options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
+
+.. py:attribute:: analytics.write_retries_max
+
+   :required: No
+   :default: ``5``
+
+   How many times to retry a busy analytics database before falling back to a Parquet file.
+
+   This counts the retries *after* the first attempt, so the default of ``5`` means six attempts in total.
+   Once they are exhausted, the results are written to a Parquet file next to the database and must be imported with ``analyze --import``; they are never lost.
+
+.. py:attribute:: analytics.write_retry_interval_base
+
+   :required: No
+   :default: ``1.0``
+
+   The nominal interval in seconds before the first retry of a busy analytics database.
+
+   The interval doubles on every subsequent retry, up to :attr:`~config.analytics.write_retry_interval_max`, and is randomized, so that processes competing for the database spread out instead of colliding again.
+   The randomization is deliberately not configurable.
+
+.. py:attribute:: analytics.write_retry_interval_max
+
+   :required: No
+   :default: ``60.0``
+
+   The upper bound in seconds of the nominal retry interval of a busy analytics database.
+
+
 .. _storage-configuration:
 
 Result storage configuration
 ============================
 
 .. versionadded:: 4.7
+
+.. deprecated:: 4.11
+
+   Result storage is superseded by :ref:`analytics <analytics-configuration>`.
+   All the options of this section will be removed in a future version.
+   The two backends are mutually exclusive, so :attr:`~config.storage.enable`
+   must be unset in order to enable analytics.
 
 .. py:attribute:: storage.backend
 
@@ -2003,6 +2091,10 @@ Result storage configuration
 
    Currently, only Sqlite can be used as a storage backend.
 
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <storage-configuration>`.
+
 
 .. py:attribute:: storage.enable
 
@@ -2010,6 +2102,10 @@ Result storage configuration
    :default: :obj:`False`
 
    Enable results storage.
+
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <storage-configuration>`.
 
 
 .. py:attribute:: storage.sqlite_conn_timeout
@@ -2019,6 +2115,10 @@ Result storage configuration
 
    Timeout in seconds for SQLite database connections.
 
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <storage-configuration>`.
+
 
 .. py:attribute:: storage.sqlite_db_file
 
@@ -2026,6 +2126,11 @@ Result storage configuration
    :default: ``"${HOME}/.reframe/reports/results.db"``
 
    The SQLite database file to use.
+
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <storage-configuration>`.
+
 
 .. py:attribute:: storage.sqlite_db_file_mode
 
@@ -2036,6 +2141,10 @@ Result storage configuration
 
    The mode will only taken into account upon creation of the DB file.
    Permissions of an existing DB file have to be changed manually.
+
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <storage-configuration>`.
 
 
 .. py:attribute:: storage.target_systems
@@ -2049,6 +2158,10 @@ Result storage configuration
 
    .. note::
       The scope of all storage options is system-wide, so only system names can be specified in this list, otherwise the scope will be ignored.
+
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <storage-configuration>`.
 
 
 .. _general-configuration:
@@ -2235,6 +2348,25 @@ General Configuration
    For a list of available log levels, refer to the :attr:`~config.logging.level` logger configuration parameter.
 
    .. versionadded:: 4.0.0
+
+
+.. py:attribute:: general.perf_report_spec
+
+   :required: No
+   :default: ``"show"``
+
+   The default argument of the :option:`--performance-report` option.
+
+   Its syntax depends on the enabled results backend.
+   With :ref:`analytics <analytics-configuration>` it is either ``show`` or ``compare[:<agg>[:<N>d]]``, as described in :ref:`analytics-performance-report`.
+   With the deprecated :ref:`result storage <storage-configuration>` it is a ``CMPSPEC``, as described in :ref:`querying-past-results`.
+
+   .. versionadded:: 4.7
+
+   .. versionchanged:: 4.11
+
+      The default was ``"now-1d:now/last:/+job_nodelist+result"``, which is a
+      ``CMPSPEC`` of the deprecated result storage.
 
 
 .. py:attribute:: general.remote_detect

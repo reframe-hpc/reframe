@@ -58,11 +58,14 @@ reframe = "reframe.frontend.cli:main"
 [project.optional-dependencies]
 graylog = ["pygelf ~= 0.4"]
 no-analytics = []
+analytics = ["duckdb ~= 1.5", "pyarrow ~= 25.0"]
 
 [dependency-groups]
 dev = [
     "coverage ~= 7.13",
+    "duckdb ~= 1.5",
     "polars ~= 1.39",
+    "pyarrow ~= 25.0",
     "pytest ~= 9.0",
     "pytest-forked ~= 1.6",
     "pytest-rerunfailures ~= 16.1"
@@ -83,6 +86,7 @@ include = [
     "/docs",
     "/examples",
     "/share/completions",
+    "/share/reframe/queries",
     "/tools",
     "/CONTRIBUTING.md",
     "/LICENSE",
@@ -103,9 +107,11 @@ path = "tools/hatch_build.py"
 
 [tool.hatch.build.targets.wheel.shared-data]
 "docs/man/man1/reframe.1" = "share/man/man1/reframe.1"
+"docs/man/man1/reframe-analyze.1" = "share/man/man1/reframe-analyze.1"
 "docs/man/man8/reframe.settings.8" = "share/man/man8/reframe.settings.8"
 "examples" = "share/doc/reframe-hpc/examples"
 "share/completions/reframe.bash" = "share/bash-completion/completions/reframe"
+"share/reframe/queries" = "share/reframe/queries"
 "share/completions/reframe.fish" = "share/fish/vendor_completions.d/reframe.fish"
 "share/completions/reframe.tcsh" = "share/reframe/completions/reframe.tcsh"
 
