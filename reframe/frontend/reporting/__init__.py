@@ -193,7 +193,20 @@ def _expand_report_filename(filepatt, *, newfile):
     return filepatt.format(sessionid=new_id)
 
 
-def _restore_session(filename):
+def load_report(filename):
+    '''Load a run report from a file and validate it against the report
+    schema.
+
+    Validation is structural only: it does not guarantee that the report
+    follows the current :data:`DATA_VERSION`, since the schema is permissive
+    and reports of a previous data version may validate against it as well.
+    Use :func:`data_version_of` to check that.
+
+    :arg filename: path of the report file.
+    :returns: the report as a dictionary.
+    :raises ReframeError: if the file cannot be read or does not validate.
+    '''
+
     filename = _expand_report_filename(filename, newfile=False)
     try:
         with open(filename) as fp:
@@ -221,7 +234,17 @@ def _restore_session(filename):
             f'found: {found_ver})'
         ) from e
 
-    return _RestoredSessionInfo(report)
+    return report
+
+
+def data_version_of(report):
+    '''Return the data version of a report, or :obj:`None` if it has none.'''
+
+    return report['session_info'].get('data_version')
+
+
+def _restore_session(filename):
+    return _RestoredSessionInfo(load_report(filename))
 
 
 def restore_session(*filenames):

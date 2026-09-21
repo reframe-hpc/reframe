@@ -129,6 +129,12 @@ Test commands
 Result storage commands
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+.. deprecated:: 4.11
+
+   These commands belong to the deprecated result storage and will be removed
+   in a future version. Use :ref:`analytics <analytics>` and its
+   :ref:`analyze <the-analyze-command>` command instead.
+
 .. option:: --delete-stored-sessions=SELECT_SPEC
 
    Delete the stored sessions matching the given selection criteria.
@@ -206,6 +212,22 @@ Result storage commands
    These options are relevant only in conjunction with the :option:`--performance-compare` and :option:`--performance-report` options
 
    .. versionadded:: 4.9
+
+
+Analytics commands
+^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 4.11
+
+Unlike every other command, the analytics commands are grouped under an ``analyze`` *subcommand* that takes its own options:
+
+.. code-block:: bash
+
+   reframe analyze --list-queries
+   reframe analyze --query perf-stats agg=p95
+   reframe analyze --import results.parquet
+
+For a complete description of the analytics backend and of the options of the ``analyze`` command, please refer to the :doc:`reframe-analyze(1) <analytics>` man page.
 
 
 Other commands
@@ -1178,18 +1200,32 @@ Miscellaneous options
 
 .. _--performance-report:
 
-.. option:: --performance-report[=CMPSPEC]
+.. option:: --performance-report[=SPEC]
 
    Print a report summarizing the performance of all performance tests that have run in the current session.
 
-   For each test all of their performance variables are reported and optionally compared to past results based on the ``CMPSPEC`` specified.
-   If not specified, ``CMPSPEC`` defaults to ``now:now/last:/+job_nodelist+result``, meaning that the current performance will not be compared to any past run and, additionally, the ``job_nodelist`` and the test result (``pass`` or ``fail``) will be listed.
+   The syntax of ``SPEC`` depends on which results backend is enabled.
 
+   With :ref:`analytics <analytics>` enabled, ``SPEC`` is either ``show``, which reports the session on its own, or ``compare[:<agg>[:<N>d]]``, which compares it against the ``N`` days preceding it.
+   It defaults to ``show``.
+   See :ref:`analytics-performance-report` for the details, and note that a ``CMPSPEC`` of the deprecated result storage is rejected rather than reinterpreted.
+
+   With the deprecated :ref:`result storage <result-storage>`, ``SPEC`` is a ``CMPSPEC``.
+   For each test all of their performance variables are reported and optionally compared to past results based on the ``CMPSPEC`` specified.
+   If not specified, ``CMPSPEC`` defaults to ``now-1d:now/last:/+job_nodelist+result``, meaning that the current performance will be compared to the last run of the preceding 24 hours and, additionally, the ``job_nodelist`` and the test result (``pass`` or ``fail``) will be listed.
    For the exact syntax of ``CMPSPEC``, refer to :ref:`querying-past-results`.
 
    .. versionchanged:: 4.7
 
       The format of the performance report has changed and the optional ``CMPSPEC`` argument is now added.
+
+   .. versionchanged:: 4.11
+
+      The argument takes the ``show`` and ``compare`` syntax described above
+      when analytics is enabled. The documented default of the ``CMPSPEC``
+      form was also corrected: it has been
+      ``now-1d:now/last:/+job_nodelist+result`` ever since 4.7, not
+      ``now:now/last:/+job_nodelist+result``.
 
 .. option:: -q, --quiet
 
@@ -1406,10 +1442,22 @@ Very large test names meant also very large path names which could also lead to 
 Fixtures followed a similar naming pattern making them hard to debug.
 
 
+.. _result-storage:
+
 Result storage
 ==============
 
 .. versionadded:: 4.7
+
+.. deprecated:: 4.11
+
+   Result storage is superseded by :ref:`analytics <analytics>`, which stores
+   the results in a database that is meant to be queried directly with SQL.
+   The ``storage/*`` configuration options, the :envvar:`RFM_SQLITE_DB_FILE`
+   and :envvar:`RFM_SQLITE_CONN_TIMEOUT` environment variables and all the
+   options of the :ref:`commands` section that act on stored sessions will be
+   removed in a future version. The two backends are mutually exclusive, so
+   enabling analytics requires disabling result storage.
 
 ReFrame stores the results of every session that has executed at least one test into a database.
 There is only one storage backend supported at the moment and this is SQLite.
@@ -1440,6 +1488,15 @@ Querying past results
 =====================
 
 .. versionadded:: 4.7
+
+.. deprecated:: 4.11
+
+   The ``CMPSPEC`` syntax described in this section belongs to the deprecated
+   :ref:`result storage <result-storage>`. With :ref:`analytics <analytics>`
+   enabled, past results are queried with
+   :ref:`query templates <query-templates>` instead and
+   :option:`--performance-report` takes
+   :ref:`its own syntax <analytics-performance-report>`.
 
 ReFrame provides several options for querying and inspecting past sessions and test case results.
 All those options follow a common syntax that builds on top of the following elements:
@@ -1843,6 +1900,96 @@ Here is an alphabetical list of the environment variables recognized by ReFrame.
 Whenever an environment variable is associated with a configuration option, its default value is omitted as it is the same.
 
 
+.. envvar:: RFM_ANALYTICS_DATABASE
+
+   The URI of the analytics database.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--database` of :doc:`reframe-analyze(1) <analytics>`
+      Associated configuration parameter :attr:`~config.analytics.database`
+      ================================== ==================
+
+   .. versionadded:: 4.11
+
+
+.. envvar:: RFM_ANALYTICS_ENABLE
+
+   Enable analytics.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.analytics.enable`
+      ================================== ==================
+
+   .. versionadded:: 4.11
+
+
+.. envvar:: RFM_ANALYTICS_QUERY_SEARCH_PATH
+
+   A colon-separated list of directories to look for query templates in, before the ones that ReFrame ships.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.analytics.query_search_path`
+      ================================== ==================
+
+   .. versionadded:: 4.11
+
+
+.. envvar:: RFM_ANALYTICS_WRITE_RETRIES_MAX
+
+   How many times to retry a busy analytics database.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.analytics.write_retries_max`
+      ================================== ==================
+
+   .. versionadded:: 4.11
+
+
+.. envvar:: RFM_ANALYTICS_WRITE_RETRY_INTERVAL_BASE
+
+   The nominal interval of the first retry of a busy analytics database in seconds.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.analytics.write_retry_interval_base`
+      ================================== ==================
+
+   .. versionadded:: 4.11
+
+
+.. envvar:: RFM_ANALYTICS_WRITE_RETRY_INTERVAL_MAX
+
+   The upper bound of the nominal retry interval of a busy analytics database in seconds.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.analytics.write_retry_interval_max`
+      ================================== ==================
+
+   .. versionadded:: 4.11
+
+
 .. envvar:: RFM_AUTODETECT_FQDN
 
    Use the fully qualified domain name as the hostname.
@@ -2039,6 +2186,27 @@ Whenever an environment variable is associated with a configuration option, its 
    .. versionadded:: 4.0.0
 
 
+.. envvar:: RFM_ENABLE_RESULTS_STORAGE
+
+   Enable the storing of run results in the results database.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :attr:`~config.storage.enable`
+      ================================== ==================
+
+   .. versionadded:: 4.7
+
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <result-storage>`. Unset it
+      and set :envvar:`RFM_ANALYTICS_ENABLE` instead; the two backends cannot
+      be enabled at the same time.
+
+
 .. envvar:: RFM_FLEX_ALLOC_STRICT
 
    Fail flexible tests if their minimum task requirement is not satisfied.
@@ -2218,7 +2386,10 @@ Whenever an environment variable is associated with a configuration option, its 
 
 .. envvar:: RFM_PERF_REPORT_SPEC
 
-   The default ``CMPSPEC`` of the :option:`--performance-report` option.
+   The default argument of the :option:`--performance-report` option.
+
+   Its syntax depends on the enabled results backend; see
+   :option:`--performance-report`.
 
    .. table::
       :align: left
@@ -2544,6 +2715,10 @@ Whenever an environment variable is associated with a configuration option, its 
 
    .. versionadded:: 4.7
 
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <result-storage>`.
+
 
 .. envvar:: RFM_SQLITE_DB_FILE
 
@@ -2559,6 +2734,10 @@ Whenever an environment variable is associated with a configuration option, its 
 
    .. versionadded:: 4.7
 
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <result-storage>`.
+
 
 .. envvar:: RFM_SQLITE_DB_FILE_MODE
 
@@ -2573,6 +2752,10 @@ Whenever an environment variable is associated with a configuration option, its 
       ================================== ==================
 
    .. versionadded:: 4.7
+
+   .. deprecated:: 4.11
+
+      Part of the deprecated :ref:`result storage <result-storage>`.
 
 
 .. envvar:: RFM_SYSLOG_ADDRESS

@@ -167,8 +167,9 @@ Here is a list of the available extras during installation:
    ================ ====================
    Extra            Description
    ================ ====================
+   ``analytics``    Install the dependencies of the :ref:`analytics <analytics>` backend; required in order to enable it.
    ``graylog``      Install Graylog bindings
-   ``no-analytics`` Do not install the analytics layers; this will disable results storage feature but will make the installation more compact.
+   ``no-analytics`` Do not install ``polars``, which is needed only by the deprecated :ref:`result storage <result-storage>`; this disables result storage but makes the installation more compact. It has no effect on the :ref:`analytics <analytics>` backend, which is selected by the ``analytics`` extra instead.
    ================ ====================
 
 .. note::

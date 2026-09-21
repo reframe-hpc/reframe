@@ -66,6 +66,7 @@ Papers
    tutorial
    howto
    topics
+   analytics
    manuals
    whats_new_40
    hpctestlib
