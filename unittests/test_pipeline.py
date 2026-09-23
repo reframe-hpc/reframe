@@ -356,12 +356,18 @@ def test_valid_systems_syntax(hellotest):
     hellotest.valid_systems = ['sys:part']
     hellotest.valid_systems = ['sys-0']
     hellotest.valid_systems = ['sys:part-0']
+    hellotest.valid_systems = ['0sys:1part']
+    hellotest.valid_systems = ['sys.x:part.y']
+    hellotest.valid_systems = ['sys:gpu+mps']
     hellotest.valid_systems = ['+x0']
     hellotest.valid_systems = ['-y0']
     hellotest.valid_systems = ['%z0=w0']
+    hellotest.valid_systems = ['+gpu+mps']
+    hellotest.valid_systems = ['+multi-gpu.v2']
     hellotest.valid_systems = ['+x0 -y0 %z0=w0']
     hellotest.valid_systems = ['-y0 +x0 %z0=w0']
     hellotest.valid_systems = ['%z0=w0 +x0 -y0']
+    hellotest.valid_systems = ['%z0=a+b=c']
     hellotest.valid_systems = ['sys:part +x0 +y0']
     hellotest.valid_systems = ['sys:part +x0 +y0 %z0=w0']
     hellotest.valid_systems = ['+x0 sys:part']
@@ -430,11 +436,11 @@ def test_valid_systems_syntax(hellotest):
     with pytest.raises(TypeError):
         hellotest.valid_systems = ['+foo sys0:part0 sys0:part1']
 
-    for sym in '!@#$^&()=<>':
+    for sym in '!@#$^&()=<>.':
         with pytest.raises(TypeError):
             hellotest.valid_systems = [f'{sym}foo']
 
-    for sym in '!@#$%^&*()+=<>':
+    for sym in '!@#$%^&*()=<>':
         with pytest.raises(TypeError):
             hellotest.valid_systems = [f'foo{sym}']
 
@@ -444,6 +450,9 @@ def test_valid_prog_environs_syntax(hellotest):
     hellotest.valid_prog_environs = ['env']
     hellotest.valid_prog_environs = ['env-0']
     hellotest.valid_prog_environs = ['env.0']
+    hellotest.valid_prog_environs = ['0env']
+    hellotest.valid_prog_environs = ['g++']
+    hellotest.valid_prog_environs = ['gcc-11.2+omp']
     hellotest.valid_prog_environs = ['+x0']
     hellotest.valid_prog_environs = ['-y0']
     hellotest.valid_prog_environs = ['%z0=w0']
@@ -451,6 +460,7 @@ def test_valid_prog_environs_syntax(hellotest):
     hellotest.valid_prog_environs = ['-y0 +x0 %z0=w0']
     hellotest.valid_prog_environs = ['%z0=w0 +x0 -y0']
     hellotest.valid_prog_environs = ['+foo.bar']
+    hellotest.valid_prog_environs = ['+gpu+mps']
     hellotest.valid_prog_environs = ['%foo.bar=a$xx']
 
     with pytest.raises(TypeError):
@@ -495,11 +505,11 @@ def test_valid_prog_environs_syntax(hellotest):
     with pytest.raises(TypeError):
         hellotest.valid_prog_environs = ['%']
 
-    for sym in '!@#$^&()=<>:':
+    for sym in '!@#$^&()=<>:.':
         with pytest.raises(TypeError):
             hellotest.valid_prog_environs = [f'{sym}foo']
 
-    for sym in '!@#$%^&*()+=<>:':
+    for sym in '!@#$%^&*()=<>:':
         with pytest.raises(TypeError):
             hellotest.valid_prog_environs = [f'foo{sym}']
 
