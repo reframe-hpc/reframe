@@ -603,10 +603,14 @@ class SlurmJobScheduler(sched.JobScheduler):
         else:
             job_ids = ",".join(pending_jobs.keys())
             completed = osext.run_command(
-                f'{self._squeue} -h -j {job_ids} -o "%A|%r"'
+                f'{self._squeue} -h -j {job_ids} -o "%i|%r"'
             )
             for line in completed.stdout.splitlines():
                 jobid, reason = line.split('|', maxsplit=1)
+
+                # Normalize job array (`_`) and heterogeneous job (`+`)
+                # ids to their base job id
+                jobid = re.split(r'_|\+', jobid)[0]
 
                 # pending_reasons is a list to accommodate for job arrays
                 pending_job = pending_jobs[jobid]

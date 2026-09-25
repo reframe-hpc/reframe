@@ -14,6 +14,8 @@ jobs:
         with:
           python-version: 3.14
       - name: Generate dist packages
+        env:
+          _RFM_BUILD_DOCS: 1
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           ./ci-scripts/pypi_genreadme.py README.md

@@ -1052,8 +1052,8 @@ We will focus only on the new system configuration as the rest of the configurat
    :lines: 22-43
 
 We define two partitions, one named ``login`` where we are running tests locally (emulating the login nodes of an HPC cluster) and another one named ``compute`` (emulating the compute nodes of an HPC cluster), where we will be submitting test jobs with Slurm and ``srun``.
-We use the ``squeue`` scheduler backend, because our Slurm installation does not have job accounting, so we instruct ReFrame to use the ``squeue`` command for querying the job state.
-If your Slurm installation has job accounting enabled, you should prefer the ``slurm`` backend, which uses the ``sacct`` for retrieving the job state, which is more reliable.
+We use the ``slurm`` scheduler backend, which uses the ``sacct`` command for querying the job state; this requires Slurm's job accounting to be enabled, as it is in our pseudo cluster.
+If your Slurm installation does not have job accounting enabled, you should use the ``squeue`` backend instead, which relies on the ``squeue`` command for retrieving the job state.
 
 Another important parameter is :attr:`~config.systems.partitions.access`, which denotes the job scheduler options needed to access the desired nodes.
 In our example, it is redundant to define it as the ``all`` partition is the default, but in most real cases, you will have to define the :attr:`~config.systems.partitions.access` options.

@@ -204,6 +204,7 @@ System Configuration
    A list of environment variables to be set always when running on this system.
    These variables modify the ReFrame environment.
    Each environment variable is specified as a two-element list containing the variable name and its value.
+   The variable name must be a valid POSIX shell name: it may contain only alphanumeric characters and underscores (``_``) and must not start with a digit.
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
@@ -308,7 +309,7 @@ System Partition Configuration
    - ``lsf``: Jobs will be launched using the `LSF <https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=lsf-session-scheduler>`__ scheduler.
    - ``oar``: Jobs will be launched using the `OAR <https://oar.imag.fr/>`__ scheduler.
    - ``pbs``: Jobs will be launched using the `PBS <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
-   - ``pbspro``: Jobs will be launched using the `PBS Professional<https://altair.com/pbs-professional>`__ scheduler.
+   - ``pbspro``: Jobs will be launched using the `PBS Professional <https://altair.com/pbs-professional>`__ scheduler.
    - ``sge``: Jobs will be launched using the `Sun Grid Engine <https://arc.liv.ac.uk/SGE/htmlman/manuals.html>`__ scheduler.
    - ``slurm``: Jobs will be launched using the `Slurm <https://www.schedmd.com/>`__ scheduler.
      This backend requires job accounting to be enabled in the target system.
@@ -713,6 +714,7 @@ System Partition Configuration
 
    A list of environment variables to be set before running a regression test on this partition.
    Each environment variable is specified as a two-element list containing the variable name and its value.
+   The variable name must be a valid POSIX shell name: it may contain only alphanumeric characters and underscores (``_``) and must not start with a digit.
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
@@ -893,6 +895,7 @@ ReFrame can launch containerized applications, but you need to configure properl
 
    List of environment variables to be set when running containerized tests using this container platform.
    Each environment variable is specified as a two-element list containing the variable name and its value.
+   The variable name must be a valid POSIX shell name: it may contain only alphanumeric characters and underscores (``_``) and must not start with a digit.
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
@@ -1031,6 +1034,7 @@ They are associated with `system partitions <#system-partition-configuration>`__
 
    A list of environment variables to be set when loading this environment.
    Each environment variable is specified as a two-element list containing the variable name and its value.
+   The variable name must be a valid POSIX shell name: it may contain only alphanumeric characters and underscores (``_``) and must not start with a digit.
    You may reference other environment variables when defining an environment variable here.
    ReFrame will expand its value.
    Variables are set after the environment modules are loaded.
