@@ -82,6 +82,10 @@ GPU benchmarks
    :members:
    :show-inheritance:
 
+.. automodule:: hpctestlib.microbenchmarks.gpu.pantheon
+   :members:
+   :show-inheritance:
+
 
 Python
 ======
