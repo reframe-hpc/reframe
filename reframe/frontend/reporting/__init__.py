@@ -523,6 +523,23 @@ class RunReport:
     def generate_xml_report(self):
         '''Generate a JUnit report from a standard ReFrame JSON report.'''
 
+        def _phase_time(start, end):
+            if start is None or end is None:
+                return decimal.Decimal(0)
+
+            return decimal.Decimal(end - start) / 1_000_000
+
+        def _total_time(tc):
+            # Total test time as the sum of the build and run job elapsed
+            # times; submission wait time is excluded, since both phases
+            # are timed from when their job started running.
+            return (
+                _phase_time(tc.get('build_job_start_time_us'),
+                            tc.get('build_job_completion_time_us')) +
+                _phase_time(tc.get('job_start_time_us'),
+                            tc.get('job_completion_time_us'))
+            )
+
         report = self.__report
         xml_testsuites = etree.Element('testsuites')
         # Create a XSD-friendly timestamp
@@ -558,7 +575,7 @@ class RunReport:
                         # XSD schema does not like the exponential format and
                         # since we do not want to impose a fixed width, we pass
                         # it to `Decimal` to format it automatically.
-                        'time': str(decimal.Decimal(tc.get('time_total') or 0)),
+                        'time': str(_total_time(tc)),
                     }
                 )
                 if tc['result'] == 'fail':

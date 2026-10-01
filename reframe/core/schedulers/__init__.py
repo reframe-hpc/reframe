@@ -563,7 +563,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     @loggable
     @property
     def completion_timestamp(self):
-        '''The :attr:`completion_time` formatted as an RFC3339 timestamp.
+        '''The :attr:`completion_time` formatted as a compact ISO 8601
+        timestamp.
 
         :loggable: Yes
         '''
@@ -715,7 +716,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     @loggable
     @property
     def submit_timestamp(self):
-        '''The :attr:`submit_time` formatted as an RFC3339 timestamp.
+        '''The :attr:`submit_time` formatted as a compact ISO 8601
+        timestamp.
 
         :loggable: Yes
         '''
@@ -748,7 +750,8 @@ class Job(jsonext.JSONSerializable, metaclass=JobMeta):
     @loggable
     @property
     def start_timestamp(self):
-        '''The :attr:`start_time` formatted as an RFC3339 timestamp.
+        '''The :attr:`start_time` formatted as a compact ISO 8601
+        timestamp.
 
         :loggable: Yes
         '''
