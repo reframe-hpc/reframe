@@ -196,3 +196,15 @@ def test_regression_check_validator_recognizes_imported_simple_test_alias():
     validator = RegressionCheckValidator()
     validator.visit(source)
     assert validator.valid
+
+
+def test_reframe_module_alias_call_decorator_is_recognized():
+    source = ast.parse(
+        'import reframe as rfm\n'
+        '@rfm.simple_test()\n'
+        'class Example:\n'
+        '    pass\n'
+    )
+    validator = RegressionCheckValidator()
+    validator.visit(source)
+    assert validator.valid
