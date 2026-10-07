@@ -601,6 +601,24 @@ def test_execution_modes(run_reframe, run_action):
     assert 'Ran 1/1 test case' in stdout
 
 
+def test_execution_mode_preserves_prgenv_filter(run_reframe, monkeypatch):
+    monkeypatch.setenv('TEST_NAME_PATTERN', '^HelloTest$')
+    monkeypatch.setenv('VAR', 'x')
+    monkeypatch.setenv('VAL', '1')
+    returncode, stdout, _ = run_reframe(
+        system='testsys:gpu',
+        mode='env_vars',
+        action='list_concretized',
+        environs=[],
+        local=False,
+        more_options=['-p', 'PrgEnv-gnu']
+    )
+    assert returncode == 0
+    assert 'HelloTest' in stdout
+    assert 'testsys:gpu+PrgEnv-gnu' in stdout
+    assert 'testsys:gpu+builtin' not in stdout
+
+
 def test_execution_modes_envvar_expansion(run_reframe, monkeypatch):
     monkeypatch.setenv('TEST_NAME_PATTERN', '^HelloTest$')
     monkeypatch.setenv('VAR', 'x')

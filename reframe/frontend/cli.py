@@ -1096,7 +1096,8 @@ def main():
 
                 # Parse the mode's options and reparse the command-line
                 options = argparser.parse_args(mode_args,
-                                               suppress_required=True)
+                                               suppress_required=True,
+                                               suppress_defaults=True)
                 options = argparser.parse_args(namespace=options.cmd_options)
                 options.update_config(site_config)
 
