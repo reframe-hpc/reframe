@@ -35,6 +35,13 @@ from reframe.frontend.testgenerators import (distribute_tests,
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.executors import Runner, generate_testcases
+from reframe.frontend.exitcodes import (
+    EXIT_ERROR,
+    EXIT_FAILURE_PERFORMANCE,
+    EXIT_FAILURE_SANITY,
+    EXIT_SUCCESS,
+    EXIT_ERROR_USAGE
+)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
@@ -243,8 +250,53 @@ def calc_verbosity(site_config, quiesce):
     return curr_verbosity - quiesce
 
 
+def run_exitcode(failed_tasks):
+    '''Determine the exit code of a run session from its failed tasks.
+
+    - :obj:`EXIT_SUCCESS`: no failed tasks.
+    - :obj:`EXIT_FAILURE_SANITY`: at least one task failed in the sanity stage.
+    - :obj:`EXIT_FAILURE_PERFORMANCE`: all failed tasks failed in the
+      performance stage.
+    - :obj:`EXIT_ERROR`: any other failure.
+
+    Command-line misuse (:obj:`EXIT_ERROR_USAGE`) is handled separately.
+    '''
+
+    if not failed_tasks:
+        return EXIT_SUCCESS
+
+    stages = {t.failed_stage for t in failed_tasks}
+    if 'sanity' in stages:
+        return EXIT_FAILURE_SANITY
+
+    if stages == {'performance'}:
+        return EXIT_FAILURE_PERFORMANCE
+
+    return EXIT_ERROR
+
+
+def report_run_failure(printer, *exc_info):
+    '''Print the error that stopped the run session.'''
+
+    tb = ''.join(traceback.format_exception(*exc_info))
+    message = f'run session stopped: {errors.what(*exc_info)}'
+    if errors.is_warning(*exc_info):
+        printer.warning(message)
+    else:
+        printer.error(message)
+
+    if errors.is_exit_request(*exc_info):
+        # Print stack traces for exit requests when debugging
+        printer.debug(tb)
+    elif errors.is_severe(*exc_info):
+        printer.error(tb)
+    else:
+        printer.verbose(tb)
+
+
 class exit_gracefully_on_error:
-    def __init__(self, message, logger=None, exceptions=None, exitcode=1):
+    def __init__(self, message, logger=None, exceptions=None,
+                 exitcode=EXIT_ERROR):
         self.__message = message
         self.__logger = logger or PrettyPrinter()
         self.__exceptions = exceptions or (Exception,)
@@ -989,7 +1041,7 @@ def main():
     options = argparser.parse_args()
     if len(sys.argv) == 1:
         argparser.print_help()
-        sys.exit(1)
+        sys.exit(EXIT_ERROR_USAGE)
 
     # First configure logging with our generic configuration so as to be able
     # to print pretty messages; logging will be reconfigured by user's
@@ -1092,7 +1144,7 @@ def main():
                         'action options are not allowed in modes: '
                         f'{" ".join(action_opts)}'
                     )
-                    sys.exit(1)
+                    sys.exit(EXIT_ERROR_USAGE)
 
                 # Parse the mode's options and reparse the command-line
                 options = argparser.parse_args(mode_args,
@@ -1104,11 +1156,11 @@ def main():
     except (OSError, errors.ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
         printer.info(logfiles_message())
-        sys.exit(1)
+        sys.exit(EXIT_ERROR)
     except errors.ReframeError as e:
         printer.error(str(e))
         printer.info(logfiles_message())
-        sys.exit(1)
+        sys.exit(EXIT_ERROR)
 
     printer.colorize = site_config.get('general/0/colorize')
     if not restrict_logging():
@@ -1121,7 +1173,7 @@ def main():
     except errors.ConfigError as e:
         printer.error(f'failed to initialize runtime: {e}')
         printer.info(logfiles_message())
-        sys.exit(1)
+        sys.exit(EXIT_ERROR)
 
     if not validate_storage_options(options,
                                     ['--delete-stored-sessions',
@@ -1130,7 +1182,7 @@ def main():
                                      '--list-stored-sessions',
                                      '--list-stored-testcases',
                                      '--performance-compare']):
-        sys.exit(1)
+        sys.exit(EXIT_ERROR_USAGE)
 
     rt = runtime.runtime()
     try:
@@ -1145,7 +1197,7 @@ def main():
 
     except (errors.ConfigError, OSError) as e:
         printer.error('could not load module mappings: %s' % e)
-        sys.exit(1)
+        sys.exit(EXIT_ERROR)
 
     if (osext.samefile(rt.stage_prefix, rt.output_prefix) and
         not site_config.get('general/0/keep_stage_files')):
@@ -1153,7 +1205,7 @@ def main():
                       "if this is on purpose, please use the "
                       "'--keep-stage-files' option.")
         printer.info(logfiles_message())
-        sys.exit(1)
+        sys.exit(EXIT_ERROR_USAGE)
 
     if options.list_stored_sessions:
         with exit_gracefully_on_error('failed to retrieve session data',
@@ -1163,7 +1215,7 @@ def main():
                 spec = '19700101T0000+0000:now'
 
             printer.table(reporting.session_data(spec), disable_numparse=True)
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
     if options.list_stored_testcases:
         namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
@@ -1173,7 +1225,7 @@ def main():
             printer.table(reporting.testcase_data(
                 options.list_stored_testcases, namepatt, filt
             ))
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
     if options.describe_stored_sessions:
         # Restore logging level
@@ -1185,7 +1237,7 @@ def main():
             printer.info(
                 reporting.session_info(options.describe_stored_sessions)
             )
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
     if options.describe_stored_testcases:
         # Restore logging level
@@ -1199,7 +1251,7 @@ def main():
             printer.info(jsonext.dumps(reporting.testcase_info(
                 options.describe_stored_testcases, namepatt, filt
             ), indent=2))
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
     if options.delete_stored_sessions:
         query = options.delete_stored_sessions
@@ -1207,7 +1259,7 @@ def main():
             for uuid in reporting.delete_sessions(query):
                 printer.info(f'Session {uuid} deleted successfully.')
 
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
     if options.performance_compare:
         namepatt = '|'.join(n.replace('%', ' %') for n in options.names)
@@ -1223,7 +1275,7 @@ def main():
                 else:
                     printer.error('cannot apply `-E` option more than twice '
                                   'in performance comparisons')
-                    sys.exit(1)
+                    sys.exit(EXIT_ERROR_USAGE)
 
             printer.table(
                 reporting.performance_compare(
@@ -1231,7 +1283,7 @@ def main():
                     options.term_lhs, options.term_rhs
                 )
             )
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
     # Show configuration after everything is set up
     if options.show_config:
@@ -1252,7 +1304,7 @@ def main():
             else:
                 printer.info(jsonext.dumps(value, indent=2))
 
-        sys.exit(0)
+        sys.exit(EXIT_SUCCESS)
 
     if options.detect_host_topology:
         from reframe.utility.cpuinfo import cpuinfo
@@ -1273,9 +1325,9 @@ def main():
                 logging.getlogger().error(
                     f'could not write topology file: {topofile!r}'
                 )
-                sys.exit(1)
+                sys.exit(EXIT_ERROR)
 
-        sys.exit(0)
+        sys.exit(EXIT_SUCCESS)
 
     # Need to parse the cli options before autodetection
     parsed_job_options = []
@@ -1307,7 +1359,7 @@ def main():
             restored_session = reporting.restore_session(*filenames)
         except errors.ReframeError as err:
             printer.error(f'failed to load restore session: {err}')
-            sys.exit(1)
+            sys.exit(EXIT_ERROR)
 
         check_search_path = list(restored_session.slice('filename',
                                                         unique=True))
@@ -1466,7 +1518,7 @@ def main():
         if options.gpu_only and options.cpu_only:
             printer.error("options `--gpu-only' and `--cpu-only' "
                           "are mutually exclusive")
-            sys.exit(1)
+            sys.exit(EXIT_ERROR_USAGE)
 
         if options.gpu_only:
             printer.warning('the `--gpu-only` option is deprecated; '
@@ -1490,7 +1542,7 @@ def main():
                     "the option '--failed' can only be used "
                     "in combination with the '--restore-session' option"
                 )
-                sys.exit(1)
+                sys.exit(EXIT_ERROR_USAGE)
 
             def _case_failed(t):
                 rec = restored_session.case(t)
@@ -1622,18 +1674,18 @@ def main():
             # Restore logging level
             printer.setLevel(logging.INFO)
             describe_checks(testcases, printer)
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
         if options.list or options.list_detailed:
             concretized = (options.list == 'C' or
                            options.list_detailed == 'C')
             detailed = options.list_detailed is not None
             list_checks(testcases, printer, detailed, concretized)
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
         if options.list_tags:
             list_tags(testcases, printer)
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
         if options.ci_generate:
             list_checks(testcases, printer)
@@ -1649,7 +1701,7 @@ def main():
                 f'  Gitlab pipeline generated successfully '
                 f'in {options.ci_generate!r}.\n'
             )
-            sys.exit(0)
+            sys.exit(EXIT_SUCCESS)
 
         # Manipulate ReFrame's environment
         if site_config.get('general/0/purge_environment'):
@@ -1720,7 +1772,7 @@ def main():
                     f'with -vv for more information'
                 )
                 printer.debug(str(e))
-                sys.exit(1)
+                sys.exit(EXIT_ERROR)
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
 
@@ -1735,7 +1787,7 @@ def main():
             # This should not happen, since choices are handled by
             # argparser
             printer.error("unknown execution policy `%s': Exiting...")
-            sys.exit(1)
+            sys.exit(EXIT_ERROR_USAGE)
 
         exec_policy.skip_sanity_check = options.skip_sanity_check
         exec_policy.skip_performance_check = options.skip_performance_check
@@ -1810,10 +1862,10 @@ def main():
             # Print a failure report in case of failures.
             # If `--duration` or `--reruns` is used then take into account
             # all runs, else (i.e., `--max-retries`) only the last run.
-            success = True
             runid = None if options.duration or options.reruns else -1
-            if runner.stats.failed(run=runid):
-                success = False
+            failed_tasks = runner.stats.failed(run=runid)
+            exitcode = run_exitcode(failed_tasks)
+            if failed_tasks:
                 printer.failure_report(
                     report,
                     rerun_info=not options.distribute,
@@ -1905,34 +1957,16 @@ def main():
                         f'{e}'
                     )
 
-        if not success:
-            sys.exit(1)
-
-        sys.exit(0)
+        sys.exit(exitcode)
     except errors.RunSessionTimeout as err:
         printer.warning(f'run session stopped: {err}')
-        if not success:
-            sys.exit(1)
-        else:
-            sys.exit(0)
+        sys.exit(exitcode)
+    except errors.CommandLineError:
+        report_run_failure(printer, *sys.exc_info())
+        sys.exit(EXIT_ERROR_USAGE)
     except (Exception, KeyboardInterrupt, errors.ReframeFatalError):
-        exc_info = sys.exc_info()
-        tb = ''.join(traceback.format_exception(*exc_info))
-        message = f'run session stopped: {errors.what(*exc_info)}'
-        if errors.is_warning(*exc_info):
-            printer.warning(message)
-        else:
-            printer.error(message)
-
-        if errors.is_exit_request(*exc_info):
-            # Print stack traces for exit requests when debugging
-            printer.debug(tb)
-        elif errors.is_severe(*exc_info):
-            printer.error(tb)
-        else:
-            printer.verbose(tb)
-
-        sys.exit(1)
+        report_run_failure(printer, *sys.exc_info())
+        sys.exit(EXIT_ERROR)
     finally:
         try:
             logging.getprofiler().exit_region()     # region: 'test processing'
@@ -1940,7 +1974,7 @@ def main():
                 logging.save_log_files(rt.output_prefix)
         except OSError as e:
             printer.error(f'could not save log file: {e}')
-            sys.exit(1)
+            sys.exit(EXIT_ERROR)
         finally:
             if not restrict_logging():
                 printer.info(logfiles_message())
