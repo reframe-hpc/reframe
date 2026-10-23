@@ -1790,6 +1790,41 @@ The following list summarizes the schema changes (version numbers refer to schem
       - The set of ``required`` properties for both ``session_info`` and testcases is reduced to the minimal identifying fields (``data_version``, ``hostname`` and ``uuid`` for sessions; ``name`` and ``result`` for testcases), since almost everything else may legitimately be absent depending on how far a test got in the pipeline before failing.
 
 
+Exit Status
+===========
+
+ReFrame exits with one of the following values:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 90
+
+   * - Exit status
+     - Meaning
+   * - ``0``
+     - Success: the requested action completed and, if tests were run, all of them passed.
+   * - ``1``
+     - Generic error, e.g., an invalid configuration, a test failing in a pipeline stage other than sanity or performance checking, or an unexpected exception.
+   * - ``2``
+     - Command-line misuse, e.g., unknown options, invalid option values or incompatible combinations of options.
+   * - ``3``
+     - Sanity failure: at least one test failed in its sanity checking phase.
+   * - ``4``
+     - Performance failure: all the failed tests failed in their performance checking phase.
+
+When tests are run and fail, the exit status is determined as follows:
+
+1. If at least one test failed in the sanity checking phase, the exit status is ``3``.
+2. Otherwise, if all the failed tests failed in the performance checking phase, the exit status is ``4``.
+3. Otherwise, i.e., some test failed in any other phase, the exit status is ``1``.
+
+If :option:`--duration` or :option:`--reruns` is used, all the runs are taken into account, otherwise (e.g., with :option:`--max-retries`) only the last run is considered.
+
+.. versionchanged:: 4.11
+
+   Previously, ReFrame exited with ``1`` on any failure and ``0`` otherwise.
+
+
 Environment
 ===========
 
