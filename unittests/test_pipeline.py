@@ -2696,3 +2696,49 @@ def test_variables_deprecation():
         test.variables['BAR'] = 2
 
     assert test.env_vars['BAR'] == 2
+
+
+@pytest.fixture(params=[
+    rfm.RunOnlyRegressionTest, rfm.RegressionTest, rfm.CompileOnlyRegressionTest
+])
+def base_class(request):
+    return request.param
+
+
+def test_descr_by_docstring(base_class):
+    class Base(base_class):
+        pass
+
+    class Plugin(rfm.RegressionTestPlugin):
+        '''Test plugin'''
+
+    class Base2(Base, Plugin):
+        '''Base2 test'''
+
+    @rfm.simple_test
+    class Test(Base2):
+        '''Test
+
+        More text.
+        '''
+
+    @rfm.simple_test
+    class Test2(Base2):
+        pass
+
+    @rfm.simple_test
+    class Test3(Base2):
+        descr = 'Test3'
+
+    # Check docstring inheritance
+    assert Base.__doc__ is None
+    assert Base2.__doc__ == 'Base2 test'
+    assert re.fullmatch(r'Test\s+More text\.\s*', Test.__doc__) is not None
+    assert Test2.__doc__ == 'Base2 test'
+
+    # Check test's description
+    assert Base().descr == ''
+    assert Base2().descr == ''
+    assert Test().descr == 'Test'
+    assert Test2().descr == 'Base2 test'
+    assert Test3().descr == 'Test3'

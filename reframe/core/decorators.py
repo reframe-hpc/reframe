@@ -199,6 +199,10 @@ def simple_test(cls):
     .. versionadded:: 2.13
     '''
     if _validate_test(cls):
+        # Set the test's description from the class docstring if not present
+        if not cls.descr:
+            cls.setvar('descr', cls.__doc__.split('\n')[0])
+
         for n in range(cls.num_variants):
             _register_test(cls, variant_num=n)
 
