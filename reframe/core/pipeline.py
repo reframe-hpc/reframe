@@ -811,12 +811,25 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
 
     #: A detailed description of the test.
     #:
+    #: If this variable is not set explicitly, the description of a test
+    #: registered with :func:`@simple_test
+    #: <reframe.core.decorators.simple_test>` is set to the first line of the
+    #: test class's docstring.
+    #: If the test class does not define a docstring, it is inherited from the
+    #: closest base class that defines one, ignoring the ReFrame built-in test
+    #: classes.
+    #: If no docstring is found, the description is the empty string.
+    #:
     #: :type: :class:`str`
     #: :default: ``''``
     #: :loggable: Yes
     #:
     #: .. versionchanged:: 4.0
     #:    The default value is now the empty string.
+    #:
+    #: .. versionchanged:: 4.11
+    #:    If not set, the test's description is derived from the test class's
+    #:    docstring.
     descr = variable(str, value='', loggable=True)
 
     #: The path to the source file or source directory of the test.
@@ -1862,6 +1875,18 @@ class RegressionTest(RegressionTestPlugin, jsonext.JSONSerializable):
                     prefix = curr_prefix
 
         cls._rfm_prefix = prefix
+
+        #  If not a builtin class and if the docstring is not defined, inherit
+        #  it from the base class
+        builtin_test_cls = {
+            'RegressionTest',
+            'CompileOnlyRegressionTest',
+            'RunOnlyRegressionTest'
+        }
+        for c in (cls, *cls._rfm_bases):
+            if c.__doc__ is not None and c.__name__ not in builtin_test_cls:
+                cls.__doc__ = c.__doc__
+                break
 
     @deferrable
     def __rfm_init__(self):
