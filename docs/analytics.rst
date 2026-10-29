@@ -28,7 +28,7 @@ This is the successor of the :ref:`SQLite result storage <result-storage>` and i
 
    .. code-block:: bash
 
-      pip install reframe-hpc[analytics]
+      pip install 'reframe-hpc[analytics]'
 
 
 Enabling analytics

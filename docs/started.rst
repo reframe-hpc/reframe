@@ -34,10 +34,13 @@ ReFrame can be installed using the `uv <https://astral.sh/uv/>`__ package manage
    uv tool install reframe-hpc
 
    # Install with Graylog bindings
-   uv tool install reframe-hpc --extra graylog
+   uv tool install 'reframe-hpc[graylog]'
 
    # Install a dev release from Github
    uv tool install git+https://github.com/reframe-hpc/reframe.git@VERSION_TAG
+
+   # Install a dev release with an extra
+   uv tool install 'reframe-hpc[analytics] @ git+https://github.com/reframe-hpc/reframe.git@VERSION_TAG'
 
 
 ----
@@ -52,10 +55,13 @@ ReFrame is available as a `PyPI <https://pypi.org/project/reframe-hpc/>`__ packa
    pip install reframe-hpc
 
    # Install with Graylog bindings
-   pip install reframe-hpc[graylog]
+   pip install 'reframe-hpc[graylog]'
 
    # Install a dev release from Github
    pip install git+https://github.com/reframe-hpc/reframe.git@VERSION_TAG
+
+   # Install a dev release with an extra
+   pip install 'reframe-hpc[analytics] @ git+https://github.com/reframe-hpc/reframe.git@VERSION_TAG'
 
 
 -----------
@@ -146,40 +152,36 @@ This will install the man pages as well as the `Graylog <https://docs.graylog.or
 Installation extras
 -------------------
 
-When installing ReFrame you can opt-in or opt-out from certain features.
+When installing ReFrame you can opt-in for certain features.
 Using ``pip`` you can do this as follows:
 
 .. code-block:: bash
 
     # Opt-in for an extra
-    pip instal reframe-hpc[extra]
+    pip install 'reframe-hpc[extra]'
 
-    # Opt-out from a feature
-    pip install reframe-hpc[no-extra]
+Quote the argument: the brackets are globbing characters in some shells and ``zsh``, for one, will refuse the command with ``no matches found``.
 
 Check your preferred package manager on how it treats optional dependencies.
+An extra cannot be attached to a plain VCS URL, so a dev release that needs one is installed by naming the package and passing the URL as a direct reference, as shown above.
 
 Here is a list of the available extras during installation:
 
 .. table::
    :align: center
 
-   ================ ====================
-   Extra            Description
-   ================ ====================
-   ``analytics``    Install the dependencies of the :ref:`analytics <analytics>` backend; required in order to enable it.
-   ``graylog``      Install Graylog bindings
-   ``no-analytics`` Do not install ``polars``, which is needed only by the deprecated :ref:`result storage <result-storage>`; this disables result storage but makes the installation more compact. It has no effect on the :ref:`analytics <analytics>` backend, which is selected by the ``analytics`` extra instead.
-   ================ ====================
+   ==================== ====================
+   Extra                Description
+   ==================== ====================
+   ``analytics``        Install the dependencies of the :ref:`analytics <analytics>` backend; required in order to enable it.
+   ``analytics-legacy`` Install ``polars``, which is needed only by the deprecated :ref:`result storage <result-storage>`; required in order to enable it.
+   ``graylog``          Install Graylog bindings
+   ==================== ====================
 
-.. note::
+.. versionchanged:: 4.11
 
-   Due to a limitation of the Python packaging spec, ``pip`` cannot use an extra to *exclude* a package that is otherwise a default dependency, so ``pip install reframe-hpc[no-analytics]`` will still pull in ``polars``. ``uv pip install reframe-hpc[no-analytics]`` does not have this limitation and correctly skips ``polars``. If you must use ``pip``, keep ``polars`` out by uninstalling it explicitly after installing:
-
-   .. code-block:: bash
-
-      pip install reframe-hpc
-      pip uninstall -y polars
+   ``polars`` is no longer installed by default and the ``no-analytics`` extra is removed.
+   The deprecated :ref:`result storage <result-storage>` now requires the ``analytics-legacy`` extra.
 
 
 Enabling auto-completion
