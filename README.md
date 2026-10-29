@@ -117,36 +117,31 @@ The only "downside" of this method is that you have to always invoke ReFrame thr
 
 ### Installation extras
 
-When installing ReFrame you can opt-in or opt-out from certain features.
+When installing ReFrame you can opt-in for certain features.
 For example, using `pip` you can use the brackets syntax:
 
 ```bash
 # Opt-in for an extra
-pip install reframe-hpc[extra]
-
-# Opt-out from a feature
-pip install reframe-hpc[no-feature]
+pip install 'reframe-hpc[extra]'
 ```
 
-With `uv` you can either use the brackets notation or use the `--extra` option.
+With `uv` use the same brackets notation:
+
+```bash
+uv tool install 'reframe-hpc[extra]'
+```
+
+> [!NOTE]
+> Quote the argument: the brackets are globbing characters in some shells and `zsh`, for one, will refuse the command with `no matches found`.
+> Note also that `uv pip install` and `uv sync` accept an `--extra` option, but `uv tool install` does not.
 
 Here is a list of the available extras during installation:
 
 | Extra | Description |
 |---|---|
+| `analytics` | Install the dependencies of the [analytics](https://reframe-hpc.readthedocs.io/en/latest/analytics.html) backend; required in order to enable it. |
+| `analytics-legacy` | Install `polars`, which is needed only by the deprecated results storage; required in order to enable it. |
 | `graylog` | Install Graylog bindings |
-| `no-analytics` | Do not install the analytics layers; this will disable results storage feature but will make the installation more compact. |
-
-> [!NOTE]
-> Due to a limitation of the Python packaging spec, `pip` cannot use an extra to *exclude* a package that is otherwise a default dependency, so `pip install reframe-hpc[no-analytics]` will still pull in `polars`. `uv pip install reframe-hpc[no-analytics]` does not have this limitation and correctly skips `polars`. If you must use `pip`, keep `polars` out by uninstalling it explicitly after installing:
-> ```bash
-> pip install reframe-hpc
-> pip uninstall -y polars
-> ```
-
-> [!WARNING]
-> `uv` versions older than 0.11.33 have a [bug](https://github.com/astral-sh/uv/pull/20671) that mishandles marker-based default dependencies like `polars`, so a plain `uv tool install reframe-hpc` or `uv pip install reframe-hpc` (no extras at all) would silently skip `polars`, disabling the results storage feature without warning.
-> Make sure you are on `uv` 0.11.33 or later (`uv self update`).
 
 ## Running from source
 

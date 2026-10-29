@@ -1459,6 +1459,17 @@ Result storage
    removed in a future version. The two backends are mutually exclusive, so
    enabling analytics requires disabling result storage.
 
+.. note::
+   Result storage requires the ``analytics-legacy`` extra:
+
+   .. code-block:: bash
+
+      pip install 'reframe-hpc[analytics-legacy]'
+
+   .. versionchanged:: 4.11
+
+      ``polars`` is no longer installed by default.
+
 ReFrame stores the results of every session that has executed at least one test into a database.
 There is only one storage backend supported at the moment and this is SQLite.
 The full session information as recorded in a run report file (see :option:`--report-file`) is stored in the database.
