@@ -16,7 +16,8 @@ MIN_PYTHON_VERSION = (3, 10)
 if sys.version_info[:3] < MIN_PYTHON_VERSION:
     sys.stderr.write('Unsupported Python version: '
                      'Python >= %d.%d is required\n' % MIN_PYTHON_VERSION)
-    sys.exit(1)
+    from reframe.frontend.exitcodes import EXIT_ERROR
+    sys.exit(EXIT_ERROR)
 
 os.environ['RFM_INSTALL_PREFIX'] = INSTALL_PREFIX
 

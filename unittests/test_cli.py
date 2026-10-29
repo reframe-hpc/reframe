@@ -21,6 +21,8 @@ import reframe.frontend.reporting as reporting
 import reframe.utility.osext as osext
 import unittests.utility as test_util
 from reframe import INSTALL_PREFIX
+from reframe.frontend.exitcodes import (EXIT_ERROR, EXIT_FAILURE_PERFORMANCE,
+                                        EXIT_FAILURE_SANITY, EXIT_ERROR_USAGE)
 
 
 # Absolute path relative to the installation path
@@ -290,7 +292,7 @@ def test_check_failure(run_reframe):
         more_options=['-n', 'BadSetupCheck$']
     )
     assert 'FAILED' in stdout
-    assert returncode != 0
+    assert returncode == EXIT_ERROR
 
 
 def test_check_xfailures(run_reframe):
@@ -359,7 +361,7 @@ def test_check_sanity_failure(run_reframe, tmp_path, run_action):
         )
     else:
         assert 'FAILED' in stdout
-        assert returncode != 0
+        assert returncode == EXIT_FAILURE_SANITY
 
 
 def test_dont_restage(run_reframe, tmp_path):
@@ -472,7 +474,7 @@ def test_perflogdir_from_env(run_reframe, tmp_path, monkeypatch):
         more_options=['-n', 'PerformanceFailureCheck'],
         perflogdir='$FOODIR'
     )
-    assert returncode == 1
+    assert returncode == EXIT_FAILURE_PERFORMANCE
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert os.path.exists(tmp_path / 'perflogs' / 'generic' /
@@ -495,7 +497,7 @@ def test_performance_report(run_reframe, run_action, storage_enabled):
     )
 
     if run_action == 'run':
-        assert returncode == 1
+        assert returncode == EXIT_FAILURE_PERFORMANCE
     else:
         assert returncode == 0
 
@@ -545,7 +547,7 @@ def test_unknown_system(run_reframe):
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    assert returncode == 1
+    assert returncode == EXIT_ERROR
 
 
 def test_sanity_of_optconfig(run_reframe):
@@ -579,7 +581,7 @@ def test_same_output_stage_dir(run_reframe, tmp_path):
     returncode, *_ = run_reframe(
         more_options=['-o', output_dir, '-s', output_dir]
     )
-    assert returncode == 1
+    assert returncode == EXIT_ERROR_USAGE
 
     # Retry with --keep-stage-files
     returncode, *_ = run_reframe(
@@ -626,7 +628,7 @@ def test_invalid_mode_error(run_reframe):
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    assert returncode == 1
+    assert returncode == EXIT_ERROR
     assert f'ERROR: invalid mode: {mode!r}' in stdout
 
 
@@ -983,7 +985,7 @@ def test_unuse_module_path(run_reframe, user_exec_ctx, run_action):
     ms.searchpath_remove(module_path)
     assert "could not load module 'testmod_foo' correctly" in stdout
     assert 'Traceback' not in stderr
-    assert returncode == 1
+    assert returncode == EXIT_ERROR
 
 
 def test_use_module_path(run_reframe, user_exec_ctx, run_action):
@@ -1033,7 +1035,7 @@ def test_failure_stats(run_reframe, run_action):
         assert returncode == 0
         assert r'FAILURE STATISTICS' not in stdout
     else:
-        assert returncode != 0
+        assert returncode == EXIT_FAILURE_SANITY
         assert r'FAILURE STATISTICS' in stdout
         assert r'sanity        1     SanityFailureCheck' in stdout
 
@@ -1061,7 +1063,7 @@ def test_maxfail_invalid_option(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert "--maxfail: invalid int value: 'foo'" in stderr
-    assert returncode == 2
+    assert returncode == EXIT_ERROR_USAGE
 
 
 def test_maxfail_negative(run_reframe):
@@ -1073,7 +1075,7 @@ def test_maxfail_negative(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert "--maxfail should be a non-negative integer: -2" in stdout
-    assert returncode == 1
+    assert returncode == EXIT_ERROR_USAGE
 
 
 def test_distribute_build_remotely_runonly(run_reframe, run_action):
@@ -1111,7 +1113,7 @@ def test_repeat_invalid_option(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert errmsg in stdout
-    assert returncode == 1
+    assert returncode == EXIT_ERROR_USAGE
 
 
 def test_repeat_negative(run_reframe):
@@ -1123,7 +1125,7 @@ def test_repeat_negative(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert errmsg in stdout
-    assert returncode == 1
+    assert returncode == EXIT_ERROR_USAGE
 
 
 def test_parameterize_tests(run_reframe):
@@ -1160,7 +1162,7 @@ def test_parameterize_tests_invalid_params(run_reframe):
         checkpath=['unittests/resources/checks/hellocheck.py'],
         action='list'
     )
-    assert returncode == 1
+    assert returncode == EXIT_ERROR_USAGE
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert 'invalid parameter spec' in stdout
@@ -1175,7 +1177,7 @@ def test_reruns_negative(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert errmsg in stdout
-    assert returncode == 1
+    assert returncode == EXIT_ERROR_USAGE
 
 
 def test_reruns_with_duration(run_reframe):
@@ -1187,7 +1189,7 @@ def test_reruns_with_duration(run_reframe):
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert errmsg in stdout
-    assert returncode == 1
+    assert returncode == EXIT_ERROR_USAGE
 
 
 def test_exitcode_timeout(run_reframe):
@@ -1395,7 +1397,7 @@ def test_warn_as_error(run_reframe):
     )
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    assert returncode == 1
+    assert returncode == EXIT_ERROR
     assert 'warning as error' in stdout
 
 
@@ -1463,11 +1465,11 @@ def test_storage_options(run_reframe, tmp_path, table_format, monkeypatch):
 
     # Check that invalid argument do not crash CLI
     assert_no_crash(*run_reframe2(action='--describe-stored-session=0'),
-                    exitcode=1)
+                    exitcode=EXIT_ERROR)
     assert_no_crash(*run_reframe2(action='--describe-stored-testcases=0'),
-                    exitcode=1)
+                    exitcode=EXIT_ERROR)
     assert_no_crash(*run_reframe2(action='--list-stored-testcases=0'),
-                    exitcode=1)
+                    exitcode=EXIT_ERROR)
 
     # Remove session
     assert_no_crash(*run_reframe2(action=f'--delete-stored-session={uuid}'))
@@ -1498,7 +1500,7 @@ def test_disabled_results_storage(run_reframe, storage_option, monkeypatch):
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         action=action,
         more_options=more_options
-    ), exitcode=1)[1]
+    ), exitcode=EXIT_ERROR_USAGE)[1]
     assert 'requires results storage' in stdout
 
 
@@ -1510,7 +1512,7 @@ def test_session_annotations(run_reframe, monkeypatch):
         more_options=['--session-extras', 'key1=val1,key2=val2',
                       '--session-extras', 'key3=val3',
                       '-n', '^PerformanceFailureCheck']
-    ), exitcode=1)
+    ), exitcode=EXIT_FAILURE_PERFORMANCE)
 
     stdout = assert_no_crash(*run_reframe(action='--list-stored-sessions'))[1]
     for text in ['key1', 'key2', 'val1', 'val2']:
