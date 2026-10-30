@@ -1858,6 +1858,8 @@ The following list summarizes the schema changes (version numbers refer to schem
       - The set of ``required`` properties for both ``session_info`` and testcases is reduced to the minimal identifying fields (``data_version``, ``hostname`` and ``uuid`` for sessions; ``name`` and ``result`` for testcases), since almost everything else may legitimately be absent depending on how far a test got in the pipeline before failing.
 
 
+.. _exit-status:
+
 Exit Status
 ===========
 

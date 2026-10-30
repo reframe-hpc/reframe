@@ -1354,7 +1354,7 @@ def main():
         sys.exit(EXIT_ERROR)
 
     if not validate_backend_options(options):
-        sys.exit(1)
+        sys.exit(EXIT_ERROR_USAGE)
 
     if not validate_storage_options(options,
                                     ['--delete-stored-sessions',

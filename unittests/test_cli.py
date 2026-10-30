@@ -1534,7 +1534,7 @@ def test_backends_are_mutually_exclusive(run_reframe, monkeypatch):
     stdout = assert_no_crash(*run_reframe(
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         action='--list-stored-sessions'
-    ), exitcode=1)[1]
+    ), exitcode=EXIT_ERROR_USAGE)[1]
     assert 'cannot be enabled at the same time' in stdout
 
 
@@ -1620,7 +1620,7 @@ def test_analytics_performance_report(run_reframe, analytics_config):
             action='-r',
             more_options=['-C', analytics_config,
                           '-n', '^PerformanceFailureCheck', *more]
-        ), exitcode=1)[1]
+        ), exitcode=EXIT_FAILURE_PERFORMANCE)[1]
 
     # `show` is the default, so the session is reported on its own
     stdout = _run('--performance-report')
@@ -1651,7 +1651,7 @@ def test_analytics_performance_report_fallback(
         action='-r',
         more_options=['-C', analytics_config, '--performance-report',
                       '-n', '^PerformanceFailureCheck']
-    ), exitcode=1)[1]
+    ), exitcode=EXIT_FAILURE_PERFORMANCE)[1]
     assert 'must be imported manually' in stdout
     assert 'uuid.parquet' in stdout
     assert 'not in the database yet' in stdout
@@ -1673,7 +1673,7 @@ def test_analytics_performance_report_store_failed(
         action='-r',
         more_options=['-C', analytics_config, '--performance-report',
                       '-n', '^PerformanceFailureCheck']
-    ), exitcode=1)[1]
+    ), exitcode=EXIT_FAILURE_PERFORMANCE)[1]
     assert 'failed to store results' in stdout
     assert 'was not stored in the analytics database' in stdout
     assert 'PERFORMANCE REPORT' not in stdout
@@ -1687,7 +1687,7 @@ def test_analytics_performance_report_bad_spec(run_reframe, analytics_config):
         checkpath=['unittests/resources/checks/frontend_checks.py'],
         action='-r',
         more_options=['-C', analytics_config, '--performance-report=compre']
-    ), exitcode=1)[1]
+    ), exitcode=EXIT_ERROR_USAGE)[1]
     assert 'invalid performance report spec' in stdout
     assert 'PERFORMANCE REPORT' not in stdout
 
