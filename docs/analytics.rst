@@ -248,6 +248,29 @@ The remaining options of ``analyze`` behave exactly as they do for the main comm
    ``analyze`` does not consult :attr:`~config.analytics.enable`, so past results can be queried without enabling the recording of new ones.
 
 
+Exit status
+-----------
+
+``analyze`` follows the exit status convention of the main command, described in :ref:`exit-status`:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 90
+
+   * - Exit status
+     - Meaning
+   * - ``0``
+     - Success: the requested action completed.
+   * - ``1``
+     - Generic error, e.g., an invalid configuration, a database that cannot be read, a query that fails or a file that cannot be imported.
+   * - ``2``
+     - Command-line misuse, e.g., unknown options, a malformed query parameter or no action at all.
+
+The statuses that report test failures, ``3`` and ``4``, never occur, since ``analyze`` runs no tests.
+
+.. versionadded:: 4.11
+
+
 .. _query-templates:
 
 Query templates

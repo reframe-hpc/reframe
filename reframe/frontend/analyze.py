@@ -18,6 +18,8 @@ import reframe.frontend.argparse as argparse
 import reframe.frontend.reporting as reporting
 from reframe.analytics import queries
 from reframe.frontend.cli import calc_verbosity, logfiles_message
+from reframe.frontend.exitcodes import (EXIT_ERROR, EXIT_ERROR_USAGE,
+                                        EXIT_SUCCESS)
 from reframe.frontend.printer import PrettyPrinter
 
 
@@ -212,7 +214,7 @@ def _import_files(filenames, database, printer):
         except analytics.BackendBusy as err:
             # The database would stay busy for the remaining files, too
             printer.error(f'could not import {filename!r}: {err}')
-            return 1
+            return EXIT_ERROR
         except errors.ReframeError as err:
             printer.error(str(err))
             num_failed += 1
@@ -223,7 +225,7 @@ def _import_files(filenames, database, printer):
         else:
             printer.info(f'Skipped {filename!r}: already imported')
 
-    return 1 if num_failed else 0
+    return EXIT_ERROR if num_failed else EXIT_SUCCESS
 
 
 def _describe_query(template, database, printer):
@@ -255,16 +257,16 @@ def _list_queries(name, database, printer):
     try:
         if name != 'all':
             _describe_query(name, database, printer)
-            return 0
+            return EXIT_SUCCESS
 
         templates = analytics.query_templates(database)
     except errors.ReframeError as err:
         printer.error(str(err))
-        return 1
+        return EXIT_ERROR
 
     if not templates:
         printer.info('No query templates found')
-        return 0
+        return EXIT_SUCCESS
 
     rows = [['Name', 'Description', 'Path']]
     for name, path in templates.items():
@@ -281,28 +283,32 @@ def _list_queries(name, database, printer):
         rows.append([name, summary, path])
 
     printer.table(rows, maxcolwidths=[None, 60, None])
-    return 0
+    return EXIT_SUCCESS
 
 
 def _run_query(args, database, printer):
     template, *params = args
     try:
-        columns, rows = analytics.query(
-            template, queries.parse_params(params), database
-        )
+        params = queries.parse_params(params)
     except errors.ReframeError as err:
         printer.error(str(err))
-        return 1
+        return EXIT_ERROR_USAGE
+
+    try:
+        columns, rows = analytics.query(template, params, database)
+    except errors.ReframeError as err:
+        printer.error(str(err))
+        return EXIT_ERROR
     except KeyboardInterrupt:
         printer.error('query interrupted')
-        return 1
+        return EXIT_ERROR
 
     if not rows:
         printer.info('The query returned no results')
     else:
         printer.table([columns, *rows])
 
-    return 0
+    return EXIT_SUCCESS
 
 
 def main(argv):
@@ -315,7 +321,7 @@ def main(argv):
     argparser = _setup_parser()
     if not argv:
         argparser.print_help()
-        return 1
+        return EXIT_ERROR_USAGE
 
     options = argparser.parse_args(argv)
 
@@ -330,7 +336,7 @@ def main(argv):
     printer.colorize = site_config.get('general/0/colorize')
     printer.adjust_verbosity(calc_verbosity(site_config, options.quiet))
     if _init_runtime(options, printer) is None:
-        return 1
+        return EXIT_ERROR
 
     try:
         if options.import_files:
@@ -345,7 +351,7 @@ def main(argv):
     except ImportError as err:
         printer.error(f'{err}; please reinstall ReFrame with the `analytics` '
                       f'extra enabled')
-        return 1
+        return EXIT_ERROR
     except KeyboardInterrupt:
         printer.error('interrupted')
-        return 1
+        return EXIT_ERROR
