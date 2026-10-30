@@ -20,6 +20,7 @@ import reframe.core.runtime as rt
 import reframe.frontend.reporting as reporting
 import reframe.utility.osext as osext
 import unittests.utility as test_util
+from reframe.core.exceptions import ReframeError
 from reframe import INSTALL_PREFIX
 from reframe.frontend.exitcodes import (EXIT_ERROR, EXIT_FAILURE_PERFORMANCE,
                                         EXIT_FAILURE_SANITY, EXIT_ERROR_USAGE)
@@ -1502,6 +1503,193 @@ def test_disabled_results_storage(run_reframe, storage_option, monkeypatch):
         more_options=more_options
     ), exitcode=EXIT_ERROR_USAGE)[1]
     assert 'requires results storage' in stdout
+
+
+# These emit machine-readable JSON, for which ReFrame mutes the logger so that
+# nothing pollutes stdout; the deprecation cannot be shown for them
+JSON_STORAGE_OPTIONS = ('--describe-stored-sessions',
+                        '--describe-stored-testcases')
+
+
+def test_storage_options_are_deprecated(run_reframe, storage_option,
+                                        monkeypatch):
+    monkeypatch.setenv('RFM_ENABLE_RESULTS_STORAGE', 'yes')
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action=storage_option
+    )
+    assert 'Traceback' not in stdout
+
+    option = storage_option.split('=')[0]
+    if option in JSON_STORAGE_OPTIONS:
+        assert 'deprecated' not in stdout
+    else:
+        assert f'option `{option}` is deprecated' in stdout
+        assert 'results storage is deprecated' in stdout
+
+
+def test_backends_are_mutually_exclusive(run_reframe, monkeypatch):
+    monkeypatch.setenv('RFM_ENABLE_RESULTS_STORAGE', 'yes')
+    monkeypatch.setenv('RFM_ANALYTICS_ENABLE', 'yes')
+    stdout = assert_no_crash(*run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action='--list-stored-sessions'
+    ), exitcode=EXIT_ERROR_USAGE)[1]
+    assert 'cannot be enabled at the same time' in stdout
+
+
+@pytest.mark.parametrize('envvar,option,value,expected', [
+    ('RFM_ANALYTICS_ENABLE', 'analytics/0/enable', 'yes', True),
+    ('RFM_ANALYTICS_DATABASE', 'analytics/0/database',
+     'duckdb:///tmp/x.duckdb', 'duckdb:///tmp/x.duckdb'),
+    ('RFM_ANALYTICS_WRITE_RETRIES_MAX', 'analytics/0/write_retries_max',
+     '9', 9),
+    ('RFM_ANALYTICS_WRITE_RETRY_INTERVAL_BASE',
+     'analytics/0/write_retry_interval_base', '0.25', 0.25),
+    ('RFM_ANALYTICS_WRITE_RETRY_INTERVAL_MAX',
+     'analytics/0/write_retry_interval_max', '12', 12.0),
+    ('RFM_ANALYTICS_QUERY_SEARCH_PATH', 'analytics/0/query_search_path',
+     '/a:/b', ['/a', '/b']),
+])
+def test_analytics_envvars(run_reframe, monkeypatch, envvar, option, value,
+                           expected):
+    # The numeric ones in particular arrive as strings and have to be
+    # converted, which only happens if the option declares a `type`
+    monkeypatch.setenv(envvar, value)
+    stdout = assert_no_crash(*run_reframe(
+        action=f'--show-config={option}'
+    ))[1]
+    assert json.loads(stdout) == expected
+
+
+def test_parse_perf_report_spec():
+    import reframe.frontend.cli as cli
+
+    assert cli.parse_perf_report_spec('show') == {'lookback': 0}
+    assert cli.parse_perf_report_spec('compare') == {}
+    assert cli.parse_perf_report_spec('compare:median') == {'agg': 'median'}
+    assert cli.parse_perf_report_spec('compare:median:30d') == {
+        'agg': 'median', 'lookback': 30
+    }
+
+    # The aggregation may be left out while the window is given
+    assert cli.parse_perf_report_spec('compare::14d') == {'lookback': 14}
+
+
+@pytest.mark.parametrize('spec', [
+    'show:mean', 'compre', 'compare:mean:30', 'compare:mean:30days',
+    'compare:a:b:c', ''
+])
+def test_parse_perf_report_spec_invalid(spec):
+    import reframe.frontend.cli as cli
+
+    with pytest.raises(ReframeError,
+                       match='invalid performance report spec'):
+        cli.parse_perf_report_spec(spec)
+
+
+def test_parse_perf_report_spec_legacy():
+    # The deprecated results-storage syntax gets a hint of its own, since it
+    # is what anyone upgrading will have in their configuration
+    import reframe.frontend.cli as cli
+
+    with pytest.raises(ReframeError, match='deprecated results storage'):
+        cli.parse_perf_report_spec('now-1d:now/last:/+job_nodelist+result')
+
+
+@pytest.fixture
+def analytics_config(tmp_path):
+    '''A configuration storing results in a throwaway analytics database'''
+
+    cfg = tmp_path / 'analytics_config.py'
+    cfg.write_text(
+        'site_configuration = {\n'
+        '    "analytics": [{"enable": True,\n'
+        f'                   "database": "duckdb://{tmp_path}/an.duckdb"}}]\n'
+        '}\n'
+    )
+    return str(cfg)
+
+
+def test_analytics_performance_report(run_reframe, analytics_config):
+    pytest.importorskip('duckdb')
+
+    def _run(*more):
+        return assert_no_crash(*run_reframe(
+            checkpath=['unittests/resources/checks/frontend_checks.py'],
+            action='-r',
+            more_options=['-C', analytics_config,
+                          '-n', '^PerformanceFailureCheck', *more]
+        ), exitcode=EXIT_FAILURE_PERFORMANCE)[1]
+
+    # `show` is the default, so the session is reported on its own
+    stdout = _run('--performance-report')
+    assert 'PERFORMANCE REPORT' in stdout
+    assert 'baseline' not in stdout
+
+    # `compare` adds the baseline, aggregated as the template declares
+    stdout = _run('--performance-report=compare')
+    assert 'baseline (mean)' in stdout
+
+    stdout = _run('--performance-report=compare:median:30d')
+    assert 'baseline (median)' in stdout
+
+
+def test_analytics_performance_report_fallback(
+    run_reframe, analytics_config, monkeypatch
+):
+    # A busy database sends the results to a Parquet file instead, so there is
+    # nothing to query back out; the message has to say which of the two
+    # happened, since the session is safe in one case and lost in the other
+    pytest.importorskip('duckdb')
+
+    import reframe.analytics as analytics
+    monkeypatch.setattr(analytics, 'store',
+                        lambda *args, **kwargs: '/somewhere/uuid.parquet')
+    stdout = assert_no_crash(*run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action='-r',
+        more_options=['-C', analytics_config, '--performance-report',
+                      '-n', '^PerformanceFailureCheck']
+    ), exitcode=EXIT_FAILURE_PERFORMANCE)[1]
+    assert 'must be imported manually' in stdout
+    assert 'uuid.parquet' in stdout
+    assert 'not in the database yet' in stdout
+    assert 'PERFORMANCE REPORT' not in stdout
+
+
+def test_analytics_performance_report_store_failed(
+    run_reframe, analytics_config, monkeypatch
+):
+    pytest.importorskip('duckdb')
+
+    def _boom(*args, **kwargs):
+        raise OSError('disk on fire')
+
+    import reframe.analytics as analytics
+    monkeypatch.setattr(analytics, 'store', _boom)
+    stdout = assert_no_crash(*run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action='-r',
+        more_options=['-C', analytics_config, '--performance-report',
+                      '-n', '^PerformanceFailureCheck']
+    ), exitcode=EXIT_FAILURE_PERFORMANCE)[1]
+    assert 'failed to store results' in stdout
+    assert 'was not stored in the analytics database' in stdout
+    assert 'PERFORMANCE REPORT' not in stdout
+
+
+def test_analytics_performance_report_bad_spec(run_reframe, analytics_config):
+    pytest.importorskip('duckdb')
+
+    # A malformed spec must be caught before any test runs
+    stdout = assert_no_crash(*run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        action='-r',
+        more_options=['-C', analytics_config, '--performance-report=compre']
+    ), exitcode=EXIT_ERROR_USAGE)[1]
+    assert 'invalid performance report spec' in stdout
+    assert 'PERFORMANCE REPORT' not in stdout
 
 
 def test_session_annotations(run_reframe, monkeypatch):

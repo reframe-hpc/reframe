@@ -9,11 +9,13 @@ import itertools
 import json
 import os
 import random
+import re
 import shlex
 import sys
 import time
 import traceback
 
+import reframe.analytics as analytics
 import reframe.core.config as config
 import reframe.core.exceptions as errors
 import reframe.core.logging as logging
@@ -120,7 +122,10 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
                     descr_str = descr_value
 
                 details_fields.append(f'description: {descr_str}')
-                details = '\n' + '\n'.join(f'{prefix} {field}' for field in details_fields)
+                details = (
+                    '\n' + '\n'.join(f'{prefix} {field}'
+                                     for field in details_fields)
+                )
 
             lines.append(f'{prefix}^{name_info}{tc_info}{details}')
         return lines
@@ -151,7 +156,9 @@ def list_checks(testcases, printer, detailed=False, concretized=False):
 
             details_fields.append(f'description: {descr_str}')
 
-            details = '\n' + '\n'.join(f'  {field}' for field in details_fields)
+            details = (
+                '\n' + '\n'.join(f'  {field}' for field in details_fields)
+            )
 
         if concretized or (not concretized and
                            t.check.unique_name not in unique_checks):
@@ -322,6 +329,117 @@ class exit_gracefully_on_error:
             sys.exit(self.__exitcode)
 
 
+# The spec that the deprecated results storage understands; the configuration
+# default is the analytics syntax, so this is what an unset option means there
+LEGACY_PERF_REPORT_SPEC = 'now-1d:now/last:/+job_nodelist+result'
+
+_LOOKBACK_DAYS = re.compile(r'^(\d+)d$')
+
+
+def parse_perf_report_spec(spec):
+    '''Parse a `--performance-report` spec into `perf-report` parameters.
+
+    The spec is either ``show``, which reports the session on its own, or
+    ``compare[:<agg>[:<lookback>d]]``, which also compares it against the
+    preceding ``lookback`` days. Both fields are optional and default to
+    whatever the query template declares.
+
+    :arg spec: the spec to parse.
+    :returns: a dictionary of parameters for the ``perf-report`` template.
+    :raises ReframeError: if the spec cannot be parsed.
+    '''
+
+    def _invalid(reason):
+        msg = f'invalid performance report spec {spec!r}: {reason}'
+        if '/' in spec:
+            msg += ('; this is likely the syntax of the deprecated '
+                    'results storage, which analytics does not use')
+
+        return errors.ReframeError(
+            f'{msg}; it must be `show` or `compare[:<agg>[:<lookback>d]]`'
+        )
+
+    mode, *fields = spec.split(':')
+    if mode not in ('show', 'compare'):
+        raise _invalid(f'unknown mode {mode!r}')
+
+    if mode == 'show':
+        if fields:
+            raise _invalid('`show` takes no other field')
+
+        # Without a baseline there is nothing to aggregate either
+        return {'lookback': 0}
+
+    if len(fields) > 2:
+        raise _invalid('too many fields')
+
+    params = {}
+    if fields and fields[0]:
+        params['agg'] = fields[0]
+
+    if len(fields) == 2:
+        match = _LOOKBACK_DAYS.match(fields[1])
+        if not match:
+            raise _invalid(f'{fields[1]!r} is not a number of days, as in '
+                           f'`7d`')
+
+        params['lookback'] = int(match.group(1))
+
+    return params
+
+
+def perf_report_data(session, spec):
+    '''The performance of a stored session, through the `perf-report` query.
+
+    :arg session: UUID of the session, which must be in the database already.
+    :arg spec: the `--performance-report` spec, as described in
+        :func:`parse_perf_report_spec`.
+    :returns: the report as a table, its header first.
+    '''
+
+    columns, rows = analytics.query(
+        'perf-report', {'session': session, **parse_perf_report_spec(spec)}
+    )
+    return [columns, *rows]
+
+
+def validate_backend_options(namespace):
+    '''Check the two results backends against each other.
+
+    The SQLite results storage is superseded by the analytics database and the
+    two cannot be enabled at the same time.
+    '''
+
+    rt = runtime.runtime()
+    storage_enabled = rt.get_option('storage/0/enable')
+    analytics_enabled = rt.get_option('analytics/0/enable')
+    logger = logging.getlogger()
+    if storage_enabled and analytics_enabled:
+        logger.error(
+            'results storage and analytics cannot be enabled at the same '
+            'time; results storage is deprecated, so either unset '
+            '`RFM_ENABLE_RESULTS_STORAGE` or disable analytics'
+        )
+        return False
+
+    if storage_enabled:
+        logger.warning(
+            'results storage is deprecated and will be removed, along with '
+            'all of its `storage/*` options; enable analytics instead by '
+            'setting `RFM_ANALYTICS_ENABLE=1`'
+        )
+    elif analytics_enabled and namespace.performance_report:
+        # Fail on a malformed spec now, rather than after the whole session
+        # has run
+        try:
+            parse_perf_report_spec(rt.get_option('general/0/perf_report_spec'))
+        except errors.ReframeError as err:
+            logger.error(str(err))
+            return False
+
+    return True
+
+
 def validate_storage_options(namespace, cmd_options):
     storage_enabled = runtime.runtime().get_option('storage/0/enable')
     for arg in cmd_options:
@@ -331,18 +449,26 @@ def validate_storage_options(namespace, cmd_options):
                 logging.getlogger().error(
                     f'option `{arg}` requires results storage; '
                     'either set `RFM_ENABLE_RESULTS_STORAGE=1` or set '
-                    '`"storage": [{"enable": True}]` in the configuration file'
+                    '`"storage": [{"enable": True}]` in the configuration '
+                    'file. Note that results storage is deprecated; prefer '
+                    'the `analyze` subcommand'
                 )
                 return False
 
-            # Results storage is enable; try to import polars to make sure the
-            # installation is sane
+            logging.getlogger().warning(
+                f'option `{arg}` is deprecated along with results storage '
+                f'and will be removed; use the `analyze` subcommand instead'
+            )
+
+            # Results storage is enabled; try to import polars to make sure
+            # the installation is sane
             try:
                 import polars   # noqa: F401
             except ImportError:
                 logging.getlogger().error(
                     'results storage requires polars to be installed; '
-                    'reinstall reframe-hpc with analytics turned on'
+                    'reinstall reframe-hpc with the `analytics-legacy` extra '
+                    'enabled'
                 )
                 return False
 
@@ -351,8 +477,18 @@ def validate_storage_options(namespace, cmd_options):
 
 @logging.time_function_noexit
 def main():
+    # Subcommands are dispatched before any option parsing; this will be
+    # generalized once the whole command line becomes verb-based, see
+    # https://github.com/reframe-hpc/reframe/issues/3617
+    if len(sys.argv) > 1 and sys.argv[1] == 'analyze':
+        from reframe.frontend.analyze import main as analyze_main
+        sys.exit(analyze_main(sys.argv[2:]))
+
     # Setup command line options
-    argparser = argparse.ArgumentParser()
+    argparser = argparse.ArgumentParser(
+        epilog=('Subcommands: analyze; '
+                'try `reframe analyze --help` for their options')
+    )
     action_options = argparser.add_mutually_exclusive_group(required=True)
     output_options = argparser.add_argument_group(
         'Options controlling ReFrame output'
@@ -868,6 +1004,55 @@ def main():
         help='Dump progress information for the async execution'
     )
     argparser.add_argument(
+        dest='enable_analytics',
+        envvar='RFM_ANALYTICS_ENABLE',
+        configvar='analytics/enable',
+        action='store_true',
+        help='Enable analytics'
+    )
+    argparser.add_argument(
+        dest='analytics_database',
+        envvar='RFM_ANALYTICS_DATABASE',
+        configvar='analytics/database',
+        help='URI of the analytics database'
+    )
+    argparser.add_argument(
+        dest='analytics_query_search_path',
+        envvar='RFM_ANALYTICS_QUERY_SEARCH_PATH :',
+        configvar='analytics/query_search_path',
+        action='append',
+        help='Directories to look for query templates in'
+    )
+    argparser.add_argument(
+        dest='analytics_write_retries_max',
+        envvar='RFM_ANALYTICS_WRITE_RETRIES_MAX',
+        configvar='analytics/write_retries_max',
+        action='store', type=int,
+        help='Retries after a failed attempt to write to the analytics '
+             'database'
+    )
+    argparser.add_argument(
+        dest='analytics_write_retry_interval_base',
+        envvar='RFM_ANALYTICS_WRITE_RETRY_INTERVAL_BASE',
+        configvar='analytics/write_retry_interval_base',
+        action='store', type=float,
+        help='Nominal interval of the first write retry in seconds'
+    )
+    argparser.add_argument(
+        dest='analytics_write_retry_interval_max',
+        envvar='RFM_ANALYTICS_WRITE_RETRY_INTERVAL_MAX',
+        configvar='analytics/write_retry_interval_max',
+        action='store', type=float,
+        help='Upper bound of the nominal write retry interval in seconds'
+    )
+    argparser.add_argument(
+        dest='enable_results_storage',
+        envvar='RFM_ENABLE_RESULTS_STORAGE',
+        configvar='storage/enable',
+        action='store_true',
+        help='Enable results storage'
+    )
+    argparser.add_argument(
         dest='perf_info_level',
         envvar='RFM_PERF_INFO_LEVEL',
         configvar='general/perf_info_level',
@@ -943,13 +1128,6 @@ def main():
         configvar='general/resolve_module_conflicts',
         action='store_true',
         help='Resolve module conflicts automatically'
-    )
-    argparser.add_argument(
-        dest='enable_results_storage',
-        envvar='RFM_ENABLE_RESULTS_STORAGE',
-        configvar='storage/enable',
-        action='store_true',
-        help='Enable results storage'
     )
     argparser.add_argument(
         dest='slurm_job_cancel_reasons',
@@ -1174,6 +1352,9 @@ def main():
         printer.error(f'failed to initialize runtime: {e}')
         printer.info(logfiles_message())
         sys.exit(EXIT_ERROR)
+
+    if not validate_backend_options(options):
+        sys.exit(EXIT_ERROR_USAGE)
 
     if not validate_storage_options(options,
                                     ['--delete-stored-sessions',
@@ -1430,6 +1611,7 @@ def main():
     # Print command line
     session_info = report['session_info']
     storage_status = 'on' if rt.get_option('storage/0/enable') else 'off'
+    analytics_status = 'on' if rt.get_option('analytics/0/enable') else 'off'
     printer.info('[ReFrame Setup]')
     print_infoline('version', session_info['version'])
     print_infoline('command', repr(session_info['cmdline']))
@@ -1454,6 +1636,11 @@ def main():
         'results database',
         f'[{storage_status}] '
         f'{osext.expandvars(rt.get_option("storage/0/sqlite_db_file"))!r}'
+    )
+    print_infoline(
+        'analytics database',
+        f'[{analytics_status}] '
+        f'{osext.expandvars(rt.get_option("analytics/0/database"))!r}'
     )
     printer.info('')
     try:
@@ -1876,13 +2063,23 @@ def main():
                         report, global_stats=options.duration or options.reruns
                     )
 
+            # The legacy comparison takes the in-memory report as its
+            # left-hand side and the database as its right-hand side, so the
+            # session must not be stored yet or `last` picks it as its own
+            # baseline and every difference comes out as zero
             if (options.performance_report and
-                not options.dry_run and not report.is_empty()):
+                not options.dry_run and not report.is_empty() and
+                not rt.get_option('analytics/0/enable')):
+                spec = rt.get_option('general/0/perf_report_spec')
                 try:
                     if rt.get_option('storage/0/enable'):
+                        if spec == 'show':
+                            # The option was left unset, so the configuration
+                            # default is the analytics one
+                            spec = LEGACY_PERF_REPORT_SPEC
+
                         data = reporting.performance_compare(
-                            rt.get_option('general/0/perf_report_spec'),
-                            report,
+                            spec, report,
                             term_lhs=options.term_lhs,
                             term_rhs=options.term_rhs
                         )
@@ -1928,7 +2125,7 @@ def main():
                         f'failed to create symlink to latest report: {e}'
                     )
 
-            # Store the generated report for analytics
+            # Store the generated report for analytics (legacy)
             if (rt.get_option('storage/0/enable') and
                 not report.is_empty() and not options.dry_run):
                 try:
@@ -1943,6 +2140,71 @@ def main():
                 else:
                     printer.info('Current session stored with UUID: '
                                  f'{sess_uuid}')
+
+            # Store the generated report in the analytics database. Only a
+            # session that actually reached the database can be queried back
+            # out of it, so the two outcomes are tracked apart
+            stored_uuid = None
+            fallback_file = None
+            if (rt.get_option('analytics/0/enable') and
+                not report.is_empty() and not options.dry_run):
+                try:
+                    parquet_file = analytics.store(report, persistent=True)
+                except Exception as e:
+                    printer.warning(
+                        f'failed to store results in the analytics '
+                        f'database: {e}'
+                    )
+                    printer.verbose(
+                        ''.join(traceback.format_exception(*sys.exc_info()))
+                    )
+                else:
+                    if parquet_file is None:
+                        stored_uuid = report['session_info']['uuid']
+                        printer.info('Current session stored in the analytics '
+                                     f'database with UUID: {stored_uuid}')
+                    else:
+                        fallback_file = parquet_file
+                        printer.warning(
+                            f'could not access the analytics database; '
+                            f'current session was stored in '
+                            f'{parquet_file!r} and must be imported manually'
+                        )
+
+            # Unlike the legacy one, this report queries the session back
+            # out of the database, so it has to come after the store -- which
+            # is also where it belongs, since a query that is slow or fails
+            # must not hold up storing the results
+            if (options.performance_report and
+                not options.dry_run and not report.is_empty() and
+                rt.get_option('analytics/0/enable')):
+                try:
+                    if fallback_file:
+                        raise errors.ReframeError(
+                            f'the current session is in {fallback_file!r} and '
+                            f'not in the database yet; import it with '
+                            f'`analyze --import` and query it from there'
+                        )
+
+                    if stored_uuid is None:
+                        raise errors.ReframeError(
+                            'the current session was not stored in the '
+                            'analytics database'
+                        )
+
+                    data = perf_report_data(
+                        stored_uuid,
+                        rt.get_option('general/0/perf_report_spec')
+                    )
+                except Exception as err:
+                    printer.warning(
+                        f'failed to generate performance report: {err}'
+                    )
+                    printer.verbose(
+                        ''.join(traceback.format_exception(*sys.exc_info()))
+                    )
+                else:
+                    printer.performance_report(data)
 
             # Generate the junit xml report for this session
             junit_report_file = rt.get_option('general/0/report_junit')

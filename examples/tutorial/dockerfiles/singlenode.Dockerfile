@@ -26,6 +26,6 @@ WORKDIR /home/user
 
 # Install reframe
 USER user
-RUN uv tool install /workspace/reframe
+RUN uv tool install '/workspace/reframe[analytics]'
 ENV PATH=/home/user/.local/bin:$PATH
 ENV MANPATH=/home/user/.local/share/uv/tools/reframe-hpc/share/man:

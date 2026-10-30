@@ -582,6 +582,24 @@
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 }
             }
+        },
+        "analytics": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "enable": {"type": "boolean"},
+                    "database": {"type": "string"},
+                    "query_search_path": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "write_retries_max": {"type": "integer"},
+                    "write_retry_interval_base": {"type": "number"},
+                    "write_retry_interval_max": {"type": "number"},
+                    "target_systems": {"$ref": "#/defs/system_ref"}
+                }
+            }
         }
     },
     "required": ["systems", "environments", "logging"],
@@ -618,7 +636,7 @@
         "general/module_mappings": [],
         "general/non_default_craype": false,
         "general/perf_info_level": "info",
-        "general/perf_report_spec": "now-1d:now/last:/+job_nodelist+result",
+        "general/perf_report_spec": "show",
         "general/poll_randomize_ms": null,
         "general/poll_rate_decay": 0.1,
         "general/poll_rate_max": 10,
@@ -702,6 +720,13 @@
         "logging/handlers_perflog/httpjson_retry_timeout": 0,
         "modes/options": [],
         "modes/target_systems": ["*"],
+        "analytics/enable": false,
+        "analytics/database": "duckdb://${HOME}/.reframe/reports/results.duckdb",
+        "analytics/query_search_path": [],
+        "analytics/write_retries_max": 5,
+        "analytics/write_retry_interval_base": 1.0,
+        "analytics/write_retry_interval_max": 60.0,
+        "analytics/target_systems": ["*"],
         "storage/enable": false,
         "storage/backend": "sqlite",
         "storage/sqlite_conn_timeout": 60,

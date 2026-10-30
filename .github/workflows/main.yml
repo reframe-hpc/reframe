@@ -129,7 +129,9 @@ jobs:
       - name: Check Man Pages
         run: |
           unzip -l dist/*.whl | grep -q 'share/man/man1/reframe\.1'
+          unzip -l dist/*.whl | grep -q 'share/man/man1/reframe-analyze\.1'
           unzip -l dist/*.whl | grep -q 'share/man/man8/reframe\.settings\.8'
+          unzip -l dist/*.whl | grep -q 'share/reframe/queries/duckdb/perf-report\.sql'
 
   docvalidation:
     runs-on: ubuntu-latest
