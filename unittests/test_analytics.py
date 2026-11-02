@@ -21,6 +21,7 @@ import reframe.utility.jsonext as jsonext
 import reframe.utility.osext as osext
 from reframe.analytics.backends import Backend, BackendBusy
 from reframe.core.exceptions import ReframeError, SanityError
+import reframe.frontend.reporting.legacy as legacy
 
 duckdb = pytest.importorskip('duckdb')
 pa = pytest.importorskip('pyarrow')
@@ -156,6 +157,49 @@ def test_flatten_empty_report():
     table = analytics.flatten({'session_info': {'uuid': 'u'}, 'runs': []})
     assert table.num_rows == 0
     assert table.schema.equals(schema.arrow_schema())
+
+
+def test_flatten_upgraded_legacy_report():
+    '''An upgraded 4.x report fills the typed columns of the schema'''
+
+    report = legacy.upgrade({
+        'session_info': {'data_version': '4.0', 'hostname': 'host',
+                         'uuid': 'sess-1', 'time_start_unix': 1700000000.0},
+        'restored_cases': [],
+        'runs': [{
+            'run_index': 0, 'num_cases': 1, 'num_failures': 0,
+            'testcases': [{
+                'name': 'TestA %x=1', 'system': 'testsys',
+                'partition': 'gpu', 'environ': 'gnu', 'result': 'success',
+                'jobid': 1234, 'scheduler': 'slurm',
+                'job_nodelist': ['nid001', 'nid002'],
+                'job_completion_time_unix': 1700000050.0,
+                'perfvalues': {
+                    'testsys:gpu:tflops': [10.0, 12.0, -0.1, 0.1, 'Tflop/s']
+                }
+            }]
+        }]
+    })
+    rows = analytics.flatten(report).to_pylist(maps_as_pydicts='strict')
+    assert len(rows) == 1
+
+    row = rows[0]
+    assert row['sysenv'] == 'testsys:gpu+gnu'
+    assert row['basename'] == 'TestA'
+    assert row['testcase_index'] == 0
+    assert row['job_id'] == '1234'
+    assert row['job_scheduler'] == 'slurm'
+    assert row['job_nodelist_folded'] == 'nid[001-002]'
+    assert row['job_completion_time_us'] == 1700000050000000
+
+    # The performance variable keeps neither its 4.x prefix nor a result
+    assert row['pvar'] == 'tflops'
+    assert row['pval'] == 10.0
+    assert row['presult'] is None
+
+    # The 4.x fields with no 5.0 column keep their original names
+    assert row['tc_data']['job_completion_time_unix'] == '1700000050.0'
+    assert row['sess_data']['data_version_orig'] == '4.0'
 
 
 @pytest.fixture
@@ -944,7 +988,8 @@ def test_analyze_subcommand_import_old_report(report, database, tmp_path):
     import reframe.frontend.reporting as reporting
     from unittests.test_cli import run_command_inline
 
-    report['session_info']['data_version'] = '4.2'
+    # A data version that is too old to be upgraded
+    report['session_info']['data_version'] = '3.1'
     path = tmp_path / 'old-report.json'
     path.write_text(jsonext.dumps(report))
 
@@ -957,7 +1002,46 @@ def test_analyze_subcommand_import_old_report(report, database, tmp_path):
         cli.main
     )
     assert exitcode == 1
-    assert 'data version 4.2 is not supported' in stdout
+    assert 'data version 3.1 is not supported' in stdout
+
+
+def test_analyze_subcommand_import_legacy_report(database, tmp_path):
+    '''A 4.x report is upgraded on the fly and imported'''
+
+    import reframe.frontend.cli as cli
+    from unittests.test_cli import run_command_inline
+
+    path = tmp_path / 'legacy-report.json'
+    path.write_text(jsonext.dumps({
+        'session_info': {'data_version': '4.2', 'hostname': 'host',
+                         'uuid': 'sess-legacy',
+                         'time_start_unix': 1700000000.0},
+        'restored_cases': [],
+        'runs': [{
+            'run_index': 0, 'num_cases': 1, 'num_failures': 0,
+            'testcases': [{
+                'name': 'TestA', 'system': 'testsys', 'partition': 'gpu',
+                'environ': 'gnu', 'result': 'success', 'jobid': '1234',
+                'perfvalues': {
+                    'testsys:gpu:tflops': [10.0, 12.0, -0.1, 0.1,
+                                           'Tflop/s', 'pass']
+                }
+            }]
+        }]
+    }))
+    exitcode, stdout, _ = run_command_inline(
+        ['reframe', 'analyze', '--database', database, '--import', str(path)],
+        cli.main
+    )
+    assert exitcode == 0
+    assert 'Imported 1 row(s)' in stdout
+
+    query = tmp_path / 'q.sql'
+    query.write_text("SELECT job_id, pvar, "
+                     "sess_data['data_version_orig'] AS orig "
+                     "FROM {{ table }}")
+    _, rows = analytics.query(str(query), database=database, search_path=[])
+    assert rows == [('1234', 'tflops', '4.2')]
 
 
 def test_analyze_subcommand_import_unknown_kind(database, tmp_path):

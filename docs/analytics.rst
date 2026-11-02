@@ -109,13 +109,46 @@ This is unlike the automatic storing of a run, which appends a session that is n
 
 .. note::
    The current report data version is ``5.0``, and a report is accepted when its *major* version matches, so any ``5.x`` report can be imported.
-   An older one is rejected, with a message naming the version it carries and the version that is required:
+   A report of data version ``4.0``, ``4.1`` or ``4.2`` is upgraded before it is imported, so that the fields that ``5.0`` renamed or derives end up in their columns.
+   The three fields that ``5.0`` added with no counterpart in the older reports are left empty: ``job_start_time_us``, ``job_start_timestamp`` and ``job_state``.
+   Test case fields that have no column of their own keep the names of the original report, so a ``tc_data`` key of an upgraded session may differ from its ``5.0`` equivalent.
+
+   The original data version is retained in the ``data_version_orig`` field of the session data, which makes the upgraded sessions identifiable:
+
+   .. code-block:: jinja
+
+      SELECT DISTINCT sess_uuid FROM {{ table }}
+      WHERE sess_data['data_version_orig'] IS NOT NULL
+
+   An even older report is rejected, with a message naming the version it carries and the oldest one that is supported:
 
    .. code-block:: console
 
-      ERROR: cannot import 'run-report-42.json': report data version 4.0 is not supported, 5.0 is required
+      ERROR: cannot import 'run-report-42.json': report data version 3.1 is not supported; 4.0 or later is required
 
    This is checked separately from the report schema, which is permissive enough that a report of an earlier data version validates against it as well and would be flattened incorrectly.
+
+
+Migrating the legacy results database
+-------------------------------------
+
+The sessions of the legacy SQLite database of :attr:`~config.storage.sqlite_db_file` can be moved into the analytics database with the ``tools/migrate_results_db.py`` script of the ReFrame source distribution.
+The legacy database stores whole run reports, so the script exports the sessions of a time period as a Parquet file, which :option:`--import` then reads:
+
+.. code-block:: bash
+
+   ./tools/migrate_results_db.py ~/.reframe/reports/results.db -p 20250101:20250401 -o 2025Q1.parquet
+   reframe analyze --import 2025Q1.parquet
+
+The time period follows the notation of :option:`--performance-compare` and selects the sessions by their start time; the whole database is exported if it is omitted.
+Reports of a previous data version are upgraded exactly as above, so a database that has been in use across ReFrame versions needs no special treatment.
+
+The script opens the legacy database read-only and never modifies it, which leaves the legacy backend fully functional during the migration; both backends may be enabled at the same time to compare their results.
+Since importing is idempotent, overlapping periods are harmless and an interrupted migration is resumed by repeating it.
+
+.. tip::
+   Export a large database in a few periods rather than as a single file.
+   Each file is imported in a single transaction, so an interrupted import has to be repeated for the whole file, whereas the sessions of the files already imported are skipped on the next attempt.
 
 
 .. _results-schema:
@@ -267,8 +300,6 @@ Exit status
      - Command-line misuse, e.g., unknown options, a malformed query parameter or no action at all.
 
 The statuses that report test failures, ``3`` and ``4``, never occur, since ``analyze`` runs no tests.
-
-.. versionadded:: 4.11
 
 
 .. _query-templates:

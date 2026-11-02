@@ -16,6 +16,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.argparse as argparse
 import reframe.frontend.reporting as reporting
+import reframe.frontend.reporting.legacy as legacy
 from reframe.analytics import queries
 from reframe.frontend.cli import calc_verbosity, logfiles_message
 from reframe.frontend.exitcodes import (EXIT_ERROR, EXIT_ERROR_USAGE,
@@ -196,11 +197,14 @@ def _import_one(filename, database):
     # The report schema is permissive, so a report of a previous data version
     # validates against it as well and would be flattened incorrectly
     version = reporting.data_version_of(report)
-    required = reporting.DATA_VERSION
-    if not version or version.split('.')[0] != required.split('.')[0]:
+    major = reporting.DATA_VERSION.split('.')[0]
+    if version in legacy.SUPPORTED:
+        report = legacy.upgrade(report)
+    elif not version or version.split('.')[0] != major:
         raise errors.ReframeError(
             f'cannot import {filename!r}: report data version '
-            f'{version or "n/a"} is not supported, {required} is required'
+            f'{version or "n/a"} is not supported; '
+            f'{legacy.SUPPORTED[0]} or later is required'
         )
 
     return analytics.import_report(report, database)
