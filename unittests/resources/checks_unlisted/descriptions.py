@@ -16,6 +16,7 @@ class BaseTest(rfm.RunOnlyRegressionTest):
         if self._descr != '__required__':
             self.descr = self._descr
 
+
 @rfm.simple_test
 class DerivedTest(BaseTest):
     test_with_descr = fixture(BaseTest)
