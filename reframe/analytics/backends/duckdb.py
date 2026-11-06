@@ -59,6 +59,9 @@ class DuckDBBackend(Backend):
             raise
 
     def append(self, table, dedup=False):
+        import pyarrow as pa
+        import pyarrow.compute as pc
+
         os.makedirs(os.path.dirname(self._db_file) or '.', exist_ok=True)
         conn = self._connect()
 
@@ -67,23 +70,35 @@ class DuckDBBackend(Backend):
         with conn:
             columns = ', '.join(f'{name} {_DUCKDB_TYPES[typ]}'
                                 for name, typ in COLUMNS.items())
-            conn.register('batch', table)
             conn.begin()
             try:
                 conn.execute(f'CREATE TABLE IF NOT EXISTS {TABLE_NAME} '
                              f'({columns})')
 
-                # The subquery sees the table as it was before this statement,
-                # so either all rows of a new session are inserted or none at
-                # all; it costs a lookup over the whole table, though
-                filt = ''
+                # The stored sessions are dropped from the batch itself, so
+                # that either all rows of a new session are inserted or none
+                # at all. Rejecting them inside the `INSERT` instead, be it
+                # with `NOT EXISTS` or with `NOT IN`, is planned as a hash
+                # join, which reorders the rows it inserts, see
+                # `test_append_dedup_order`
                 if dedup:
-                    filt = (f'WHERE NOT EXISTS (SELECT 1 FROM {TABLE_NAME} t '
-                            f'WHERE t.sess_uuid = b.sess_uuid)')
+                    conn.register('batch', table)
+                    stored = conn.execute(
+                        f'SELECT DISTINCT sess_uuid FROM {TABLE_NAME} '
+                        f'WHERE sess_uuid IN '
+                        f'(SELECT DISTINCT sess_uuid FROM batch)'
+                    ).fetchall()
+                    conn.unregister('batch')
+                    if stored:
+                        stored = pa.array([uuid for uuid, in stored],
+                                          table.schema.field('sess_uuid').type)
+                        table = table.filter(pc.invert(
+                            pc.is_in(table['sess_uuid'], value_set=stored)
+                        ))
 
+                conn.register('batch', table)
                 num_rows, = conn.execute(
-                    f'INSERT INTO {TABLE_NAME} BY NAME '
-                    f'SELECT * FROM batch b {filt}'
+                    f'INSERT INTO {TABLE_NAME} BY NAME SELECT * FROM batch'
                 ).fetchone()
             except BaseException:
                 conn.rollback()

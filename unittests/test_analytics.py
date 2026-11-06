@@ -273,6 +273,60 @@ def test_append_dedup_mixed_batch(report, database, db_file):
     ) == [('uuid-1', 3), ('uuid-2', 3)]
 
 
+def test_append_dedup_order(database, db_file):
+    '''A dedup append must store the rows in the order it got them.
+
+    The physical order of the rows is what makes the database compress and
+    what lets a query skip the parts of it that it does not need, so an
+    append may not shuffle its input. Rejecting the stored sessions inside
+    the `INSERT`, be it with `NOT EXISTS` or with `NOT IN`, is planned as a
+    hash join, which reorders the inserted rows chunk by chunk, also into an
+    empty table. The batch is therefore split in chunks, as
+    `pyarrow.parquet.read_table()` returns it; a batch of a single chunk is
+    scanned by a single thread and would pass either way.
+    '''
+
+    def batch(num_rows, start):
+        # `testcase_index` records the position of the row in the input
+        arrow_schema = schema.arrow_schema()
+        columns = {}
+        for field in arrow_schema:
+            if field.name == 'sess_uuid':
+                columns[field.name] = pa.array(
+                    [f'uuid-{(start + i) // 10}' for i in range(num_rows)],
+                    field.type
+                )
+            elif field.name == 'testcase_index':
+                columns[field.name] = pa.array(
+                    range(start, start + num_rows), field.type
+                )
+            else:
+                columns[field.name] = pa.nulls(num_rows, field.type)
+
+        table = pa.table(columns, schema=arrow_schema)
+        return pa.Table.from_batches(table.to_batches(max_chunksize=100),
+                                     schema=arrow_schema)
+
+    backend = Backend.create(database)
+
+    # The first batch goes into an empty table, as on a first import
+    assert backend.append(batch(2000, 0), dedup=True) == 2000
+
+    # The second batch repeats the last stored session, so that the dedup
+    # filter has something to reject
+    assert backend.append(batch(2000, 1990), dedup=True) == 1990
+
+    # `lag()` over an unordered window reads the rows as they are stored
+    assert _query(
+        db_file,
+        f'SELECT count(*) FROM ('
+        f'  SELECT testcase_index AS pos, '
+        f'         lag(testcase_index) OVER () AS prev '
+        f'  FROM {schema.TABLE_NAME}'
+        f') WHERE pos <= prev'
+    ) == [(0,)]
+
+
 def test_stored_types_and_values(report, database, db_file):
     analytics.store(report, database)
     types = {row[0]: row[1]
