@@ -3,13 +3,17 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import ast
 import os
-import pytest
 import shutil
+
+import pytest
 
 import reframe as rfm
 from reframe.core.exceptions import ReframeSyntaxError
-from reframe.frontend.loader import RegressionCheckLoader
+from reframe.frontend.loader import (
+    RegressionCheckLoader, RegressionCheckValidator
+)
 
 
 @pytest.fixture
@@ -167,3 +171,40 @@ def test_relative_import_outside_rfm_prefix(loader, tmp_path):
         str(tmp_path / 'testlib' / 'nested' / 'dummy.py')
     )
     assert len(tests) == 2
+
+
+def test_load_ignores_reframe_import_without_tests(loader, tmp_path):
+    test_file = tmp_path / 'helper.py'
+    marker = tmp_path / 'imported'
+    test_file.write_text(
+        'import reframe\n'
+        f"open({str(marker)!r}, 'w').close()\n",
+        encoding='utf-8',
+    )
+
+    assert loader.load_from_file(str(test_file)) == []
+    assert not marker.exists()
+
+
+def test_regression_check_validator_recognizes_imported_simple_test_alias():
+    source = ast.parse(
+        'from reframe import simple_test as register_test\n'
+        '@register_test\n'
+        'class Example:\n'
+        '    pass\n'
+    )
+    validator = RegressionCheckValidator()
+    validator.visit(source)
+    assert validator.valid
+
+
+def test_reframe_module_alias_call_decorator_is_recognized():
+    source = ast.parse(
+        'import reframe as rfm\n'
+        '@rfm.simple_test()\n'
+        'class Example:\n'
+        '    pass\n'
+    )
+    validator = RegressionCheckValidator()
+    validator.visit(source)
+    assert validator.valid
