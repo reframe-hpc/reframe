@@ -18,6 +18,7 @@ import reframe.utility.jsonext as jsonext
 import reframe.frontend.dependencies as dependencies
 import reframe.frontend.reporting as reporting
 import reframe.frontend.reporting.storage as report_storage
+import reframe.frontend.reporting.legacy as legacy
 from reframe.frontend.reporting.utility import (parse_cmp_spec, is_uuid,
                                                 QuerySelectorTestcase,
                                                 DEFAULT_GROUP_BY)
@@ -594,3 +595,118 @@ def test_storage_api(make_async_runner, make_cases, common_exec_ctx,
 
     # Try an invalid uuid
     backend.remove_sessions(from_session_uuid(0)) == []
+
+
+@pytest.fixture
+def legacy_report():
+    '''A minimal 4.x run report, as the SQLite backend stores it'''
+
+    return {
+        'session_info': {
+            'data_version': '4.2', 'hostname': 'host',
+            'uuid': 'sess-1', 'time_start_unix': 1700000000.0,
+            'time_end_unix': 1700000100.5
+        },
+        'restored_cases': [],
+        'runs': [{
+            'run_index': 0, 'num_cases': 2, 'num_failures': 1,
+            'testcases': [
+                {
+                    'name': 'TestA %x=1', 'system': 'sys', 'partition': 'p1',
+                    'environ': 'gnu', 'result': 'success', 'jobid': 1234,
+                    'scheduler': 'slurm', 'job_nodelist': ['nid001', 'nid002'],
+                    'job_submit_time': 1700000001.0,
+                    'job_completion_time_unix': 1700000050.0,
+                    'perfvalues': {
+                        'sys:p1:tflops': [10.0, 12.0, -0.1, 0.1, 'Tflop/s',
+                                          'fail']
+                    }
+                },
+                {
+                    'name': 'TestB', 'system': 'sys', 'partition': 'p1',
+                    'environ': 'gnu', 'result': 'fail', 'perfvalues': {}
+                }
+            ]
+        }]
+    }
+
+
+def test_legacy_upgrade(legacy_report):
+    report = legacy.upgrade(legacy_report)
+    session_info = report['session_info']
+    assert session_info['data_version'] == reporting.DATA_VERSION
+    assert session_info['data_version_orig'] == '4.2'
+    assert session_info['start_time_us'] == 1700000000000000
+    assert session_info['end_time_us'] == 1700000100500000
+    assert session_info['start_timestamp'].startswith('2023')
+
+    tc_a, tc_b = report['runs'][0]['testcases']
+
+    # Derived and renamed fields
+    assert tc_a['testcase_index'] == 0
+    assert tc_b['testcase_index'] == 1
+    assert tc_a['basename'] == 'TestA'
+    assert tc_a['sysenv'] == 'sys:p1+gnu'
+    assert tc_a['job_nodelist_folded'] == 'nid[001-002]'
+
+    # The job id is an integer in the oldest reports, but a string column
+    assert tc_a['job_id'] == '1234'
+    assert tc_a['job_scheduler'] == 'slurm'
+    assert tc_a['job_submit_time_us'] == 1700000001000000
+    assert tc_a['job_completion_time_us'] == 1700000050000000
+
+    # Fields with no 4.x counterpart
+    assert tc_a['job_state'] is None
+    assert tc_a['job_start_time_us'] is None
+
+    # A test case that never ran a job keeps its fields empty
+    assert tc_b['job_id'] is None
+    assert tc_b['job_completion_time_us'] is None
+
+    # The performance variables lose their system and partition prefix
+    assert list(tc_a['perfvalues']) == ['tflops']
+
+
+def test_legacy_upgrade_folded_nodelist(legacy_report):
+    tc = legacy_report['runs'][0]['testcases'][0]
+    tc['job_nodelist'] = 'nid[001-002]'
+    legacy.upgrade(legacy_report)
+    assert tc['job_nodelist_folded'] == 'nid[001-002]'
+    assert tc['job_nodelist'] == ['nid001', 'nid002']
+
+
+def test_legacy_upgrade_reftuple_without_result(legacy_report):
+    tc = legacy_report['runs'][0]['testcases'][0]
+    legacy_report['session_info']['data_version'] = '4.0'
+    tc['perfvalues'] = {'sys:p1:tflops': [10.0, 12.0, -0.1, 0.1, 'Tflop/s']}
+    legacy.upgrade(legacy_report)
+    assert tc['perfvalues']['tflops'] == (10.0, 12.0, -0.1, 0.1, 'Tflop/s',
+                                          None)
+
+
+def test_legacy_upgrade_derived_fields_are_kept(legacy_report):
+    '''Fields that a later 4.x report already has are not recomputed'''
+
+    tc = legacy_report['runs'][0]['testcases'][0]
+    tc['basename'] = 'Original'
+    tc['sysenv'] = 'other:p+e'
+    legacy.upgrade(legacy_report)
+    assert tc['basename'] == 'Original'
+    assert tc['sysenv'] == 'other:p+e'
+
+
+@pytest.fixture(params=['3.1', '5.0', None])
+def unsupported_version(request):
+    return request.param
+
+
+def test_legacy_upgrade_unsupported(legacy_report, unsupported_version):
+    legacy_report['session_info']['data_version'] = unsupported_version
+    with pytest.raises(ReframeError, match='cannot upgrade data version'):
+        legacy.upgrade(legacy_report)
+
+
+def test_legacy_upgrade_validates(legacy_report):
+    '''An upgraded report still validates against the report schema'''
+
+    _validate_runreport(legacy.upgrade(legacy_report))

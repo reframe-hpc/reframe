@@ -249,7 +249,10 @@ man_pages = [
      'The CLI frontend for managing and executing ReFrame tests',
      [author], 1),
     ('config_reference', 'reframe.settings', 'ReFrame Configuration Manual',
-     [author], 8)
+     [author], 8),
+    ('analytics', 'reframe-analyze',
+     'Recording and querying ReFrame results with the analytics backend',
+     [author], 1)
 ]
 manpages_url = (
     'http://man7.org/linux/man-pages/man{section}/{page}.{section}.html'
