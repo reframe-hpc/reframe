@@ -295,7 +295,8 @@ class ArgumentParser(_ArgumentHolder):
         for g in self._groups:
             self._defaults.__dict__.update(g._defaults.__dict__)
 
-    def parse_args(self, args=None, namespace=None, suppress_required=False):
+    def parse_args(self, args=None, namespace=None, suppress_required=False,
+                   suppress_defaults=False):
         '''Convert argument strings to objects and return them as attributes of
         a namespace.
 
@@ -311,6 +312,9 @@ class ArgumentParser(_ArgumentHolder):
 
         If `suppress_required` is true, required mutually-exclusive groups will
         be treated as optional for this parsing operation.
+
+        If defaults are suppressed, argument defaults will not be assigned
+        during this parsing operation.
         '''
 
         class suppress_required_groups:
@@ -355,9 +359,11 @@ class ArgumentParser(_ArgumentHolder):
         # the defaults
         for attr, val in options.__dict__.items():
             if val is None:
-                resolved = self._resolve_attr(attr,
-                                              [namespace, self._defaults])
-                options.__dict__[attr] = resolved
+                namespaces = [namespace]
+                if not suppress_defaults:
+                    namespaces.append(self._defaults)
+
+                options.__dict__[attr] = self._resolve_attr(attr, namespaces)
             elif self._option_map[attr][2] == 'append':
                 # 'append' options are combined with those from the given
                 # namespace, but *not* with the defaults (important)
