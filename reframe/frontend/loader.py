@@ -8,7 +8,6 @@
 #
 
 import ast
-import contextlib
 import inspect
 import os
 import sys
@@ -30,28 +29,46 @@ class no_op:
 
 class RegressionCheckValidator(ast.NodeVisitor):
     def __init__(self):
-        self._has_import = False
+        self._reframe_aliases = set()
+        self._simple_test_aliases = set()
         self._has_regression_test = False
 
     @property
     def valid(self):
-        return self._has_import or self._has_regression_test
+        return self._has_regression_test
 
     def visit_Import(self, node):
         for m in node.names:
-            if m.name.startswith('reframe'):
-                self._has_import = True
+            if m.name == 'reframe' or m.name.startswith('reframe.'):
+                self._reframe_aliases.add(m.asname or m.name.split('.')[0])
 
     def visit_ImportFrom(self, node):
-        if node.module is not None and node.module.startswith('reframe'):
-            self._has_import = True
+        if node.module == 'reframe' or (
+            node.module and node.module.startswith('reframe.')
+        ):
+            for m in node.names:
+                if m.name in ('simple_test', '*'):
+                    self._simple_test_aliases.add(m.asname or 'simple_test')
 
     def visit_ClassDef(self, node):
         for deco in node.decorator_list:
-            with contextlib.suppress(AttributeError):
-                if deco.attr == 'simple_test':
-                    self._has_regression_test = True
-                    break
+            if isinstance(deco, ast.Call):
+                deco = deco.func
+
+            if isinstance(deco, ast.Name):
+                is_simple_test = deco.id in self._simple_test_aliases
+            elif isinstance(deco, ast.Attribute):
+                is_simple_test = (
+                    deco.attr == 'simple_test'
+                    and isinstance(deco.value, ast.Name)
+                    and deco.value.id in self._reframe_aliases
+                )
+            else:
+                is_simple_test = False
+
+            if is_simple_test:
+                self._has_regression_test = True
+                break
 
 
 class RegressionCheckLoader:
