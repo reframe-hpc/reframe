@@ -108,9 +108,9 @@ class SlurmJobScheduler(sched.JobScheduler):
     # (https://slurm.schedmd.com/heterogeneous_jobs.html)
     # For job arrays the job_id has one of the following formats:
     #   * <job_id>_<array_task_id>
-    #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
+    #   * <job_id>_[<array_expression>], e.g., 123_[1-7:2%2]
     # (https://slurm.schedmd.com/job_array.html)
-    _jobid_patt = r'\d+(?:\+\d+|_\d+|_\[\d+-\d+\])?'
+    _jobid_patt = r'\d+(?:\+\d+|_\d+|_\[[^\]]+\])?'
 
     def __init__(self):
         self._prefix = '#SBATCH'
