@@ -13,6 +13,13 @@ services:
       MARIADB_ROOT_PASSWORD: "my-rfm-secret"
       MARIADB_DATABASE: "rfm_slurm_db"
       MARIADB_USER: "slurm"
+    # https://mariadb.com/docs/server/server-management/automated-mariadb-deployment-and-administration/docker-and-mariadb/using-healthcheck-sh
+    healthcheck:
+        test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+        start_period: 10s
+        interval: 10s
+        timeout: 5s
+        retries: 3
 
   munge-key-generator:
     image: ghcr.io/reframe-hpc/munge-ubuntu:22.04
@@ -31,7 +38,7 @@ services:
     container_name: slurmdbd
     hostname: slurmdbd
     healthcheck:
-        test: ["CMD-SHELL", "service slurmdbd status"]
+        test: ["CMD-SHELL", "sacctmgr show cluster"]
         interval: 10s
         timeout: 10s
         retries: 5
@@ -39,7 +46,7 @@ services:
       - "6819"
     depends_on:
       database:
-        condition: service_started
+        condition: service_healthy
       munge-key-generator:
         condition: service_healthy
     links:
