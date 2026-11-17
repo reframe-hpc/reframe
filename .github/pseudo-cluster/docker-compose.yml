@@ -38,7 +38,7 @@ services:
     container_name: slurmdbd
     hostname: slurmdbd
     healthcheck:
-        test: ["CMD-SHELL", "service slurmdbd status"]
+        test: ["CMD-SHELL", "sacctmgr show cluster"]
         interval: 10s
         timeout: 10s
         retries: 5
