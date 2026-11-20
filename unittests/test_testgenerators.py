@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import inspect
 import pytest
 
 import reframe as rfm
@@ -62,6 +63,10 @@ def test_distribute_testcases(sys0_exec_ctx):
     with pytest.raises(StopIteration):
         next(nodelist_iter)
 
+    # The generated tests are reported as defined in the original file
+    for tc in new_cases:
+        assert tc.check._filename == testcases[0].check._filename
+
 
 def test_repeat_testcases():
     loader = RegressionCheckLoader([
@@ -70,8 +75,11 @@ def test_repeat_testcases():
     testcases = executors.generate_testcases(loader.load_all())
     assert len(testcases) == 2
 
+    filename = testcases[0].check._filename
     testcases = repeat_tests(testcases, 10)
     assert len(testcases) == 20
+    for tc in testcases:
+        assert tc.check._filename == filename
 
 
 @pytest.fixture
@@ -110,3 +118,5 @@ def test_parameterize_tests(HelloTest):
                     'unknown': 1}
     )
     assert len(testcases) == 18
+    for tc in testcases:
+        assert tc.check._filename == inspect.getfile(HelloTest)
