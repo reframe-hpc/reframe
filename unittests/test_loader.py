@@ -167,3 +167,28 @@ def test_relative_import_outside_rfm_prefix(loader, tmp_path):
         str(tmp_path / 'testlib' / 'nested' / 'dummy.py')
     )
     assert len(tests) == 2
+
+
+def test_load_file_without_registered_tests(loader):
+    assert not loader._validate_source(
+        'unittests/resources/checks/pinnedcheck.py'
+    )
+
+
+@pytest.mark.parametrize('source,valid', [
+    ('import reframe as rfm\n@rfm.simple_test\nclass T: pass', True),
+    ('from reframe import simple_test\n@simple_test\nclass T: pass', True),
+    ('from reframe import simple_test as st\n@st\nclass T: pass', True),
+    ('from reframe import *\n@simple_test\nclass T: pass', True),
+    ('from reframefoo import simple_test\n@simple_test\nclass T: pass',
+     False),
+    ('import reframe as rfm\nrfm.simple_test(T)', True),
+    ('from reframe import simple_test as st\nst(T)', True),
+    ('import reframe as rfm\nclass T(rfm.RegressionTest): pass', False),
+    ('@simple_test\nclass T: pass', False),
+    ('from foo import simple_test\n@simple_test\nclass T: pass', False),
+])
+def test_validate_source(loader, tmp_path, source, valid):
+    test_file = tmp_path / 'test.py'
+    test_file.write_text(source)
+    assert loader._validate_source(str(test_file)) == valid

@@ -8,7 +8,6 @@
 #
 
 import ast
-import contextlib
 import inspect
 import os
 import sys
@@ -30,28 +29,42 @@ class no_op:
 
 class RegressionCheckValidator(ast.NodeVisitor):
     def __init__(self):
-        self._has_import = False
-        self._has_regression_test = False
+        self._simple_test_names = set()
+        self._registers_tests = False
 
     @property
     def valid(self):
-        return self._has_import or self._has_regression_test
-
-    def visit_Import(self, node):
-        for m in node.names:
-            if m.name.startswith('reframe'):
-                self._has_import = True
+        return self._registers_tests
 
     def visit_ImportFrom(self, node):
-        if node.module is not None and node.module.startswith('reframe'):
-            self._has_import = True
+        module = node.module or ''
+        if module == 'reframe' or module.startswith('reframe.'):
+            for m in node.names:
+                if m.name in ('simple_test', '*'):
+                    self._simple_test_names.add(m.asname or 'simple_test')
+
+    def _is_simple_test(self, node):
+        if isinstance(node, ast.Attribute):
+            return node.attr == 'simple_test'
+        elif isinstance(node, ast.Name):
+            return node.id in self._simple_test_names
+        else:
+            return False
 
     def visit_ClassDef(self, node):
-        for deco in node.decorator_list:
-            with contextlib.suppress(AttributeError):
-                if deco.attr == 'simple_test':
-                    self._has_regression_test = True
-                    break
+        if any(self._is_simple_test(d) for d in node.decorator_list):
+            self._registers_tests = True
+
+        # Custom visitors stop the traversal; resume it to find nested tests
+        self.generic_visit(node)
+
+    def visit_Call(self, node):
+        # Tests may also be registered by calling `simple_test()` directly
+        if self._is_simple_test(node.func):
+            self._registers_tests = True
+
+        # Resume the traversal to find nested calls, e.g. `foo(simple_test(t))`
+        self.generic_visit(node)
 
 
 class RegressionCheckLoader:
