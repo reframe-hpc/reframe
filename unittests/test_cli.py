@@ -618,6 +618,25 @@ def test_execution_modes_envvar_expansion(run_reframe, monkeypatch):
     assert 'Found 1 check(s)' in stdout
 
 
+def test_execution_modes_prgenv_filter(run_reframe, monkeypatch):
+    # The default of `-p` must not leak into the command-line filter
+    monkeypatch.setenv('TEST_NAME_PATTERN', '^HelloTest$')
+    monkeypatch.setenv('VAR', 'x')
+    monkeypatch.setenv('VAL', '1')
+    returncode, stdout, stderr = run_reframe(
+        system='testsys:gpu',
+        environs=['PrgEnv-gnu'],
+        mode='env_vars',
+        action='list_concretized',
+        local=False
+    )
+    assert returncode == 0
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 'testsys:gpu+PrgEnv-gnu' in stdout
+    assert 'testsys:gpu+builtin' not in stdout
+
+
 def test_invalid_mode_error(run_reframe):
     mode = 'invalid'
     returncode, stdout, stderr = run_reframe(

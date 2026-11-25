@@ -88,6 +88,21 @@ def test_parsing(argparser, foo_options, bar_options):
     assert options.barfoo
 
 
+def test_reparse_does_not_append_defaults(argparser, foo_options,
+                                          bar_options):
+    argparser.add_argument('--alist', action='append', default=['X'])
+    options = argparser.parse_args(['--foo', 'name'])
+    assert options.cmd_options.alist is None
+    assert options.cmd_options.bar is None
+    assert ['X'] == options.alist
+    assert 'BAR' == options.bar
+
+    options = argparser.parse_args(['--alist', 'Y'], options)
+    assert ['Y'] == options.alist
+    assert 'name' == options.foo
+    assert 'BAR' == options.bar
+
+
 @pytest.fixture
 def extended_parser():
     parser = ArgumentParser()
