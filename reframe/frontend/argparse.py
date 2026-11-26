@@ -121,8 +121,9 @@ class _Namespace:
                             f'cannot convert environment variable {envvar!r} '
                             f'to {arg_type.__name__!r}'
                         ) from err
-            else:
-                ret = default
+
+        if _undefined(ret):
+            ret = default
 
         return ret
 
@@ -154,7 +155,6 @@ class _Namespace:
 class _ArgumentHolder:
     def __init__(self, holder, shared_options=None):
         self._holder = holder
-        self._defaults = argparse.Namespace()
 
         # Map command-line options to environment variables and configuration
         # options. Values are tuples of the form (envvar, configvar)
@@ -235,12 +235,8 @@ class _ArgumentHolder:
             kwargs['const'] = True  if action == 'store_true'  else False
             kwargs['const'] = False if action == 'store_false' else True
 
-        # Remove defaults
-        try:
-            self._defaults.__dict__[opt_name] = kwargs['default']
-            del kwargs['default']
-        except KeyError:
-            self._defaults.__dict__[opt_name] = None
+        # Remove defaults; they are applied by `_Namespace` on access
+        kwargs.pop('default', None)
 
         if not flags:
             return None
@@ -291,10 +287,6 @@ class ArgumentParser(_ArgumentHolder):
 
         return None
 
-    def _update_defaults(self):
-        for g in self._groups:
-            self._defaults.__dict__.update(g._defaults.__dict__)
-
     def parse_args(self, args=None, namespace=None, suppress_required=False):
         '''Convert argument strings to objects and return them as attributes of
         a namespace.
@@ -304,10 +296,13 @@ class ArgumentParser(_ArgumentHolder):
 
         If `namespace` is not `None` and an attribute has not been assigned a
         value during the parsing process of argument strings `args`, a value
-        for it will be looked up first in `namespace` and if not found there,
-        it will be assigned the default value as specified in its corresponding
-        `add_argument()` call. If no default value was specified either, the
-        attribute will be set to `None`.
+        for it will be looked up in `namespace`.
+
+        Defaults are not assigned during parsing, so that the raw parsed
+        options contain only the options actually passed. The default value
+        specified in the corresponding `add_argument()` call is applied when
+        the option is accessed in the returned namespace, if it is not set
+        otherwise.
 
         If `suppress_required` is true, required mutually-exclusive groups will
         be treated as optional for this parsing operation.
@@ -348,16 +343,11 @@ class ArgumentParser(_ArgumentHolder):
         if isinstance(namespace, _Namespace):
             namespace = namespace.cmd_options
 
-        # Update parser's defaults with groups' defaults
-        self._update_defaults()
-
-        # Update the parsed options of those from the given namespace and/or
-        # the defaults
+        # Update the parsed options of those from the given namespace; defaults
+        # are not assigned here, they are applied by `_Namespace` on access
         for attr, val in options.__dict__.items():
             if val is None:
-                resolved = self._resolve_attr(attr,
-                                              [namespace, self._defaults])
-                options.__dict__[attr] = resolved
+                options.__dict__[attr] = self._resolve_attr(attr, [namespace])
             elif self._option_map[attr][2] == 'append':
                 # 'append' options are combined with those from the given
                 # namespace, but *not* with the defaults (important)
